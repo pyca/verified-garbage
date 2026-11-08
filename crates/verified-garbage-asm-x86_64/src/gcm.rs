@@ -6,17 +6,18 @@
 /// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
 
-/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must be valid for reads and writes of 1088 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 136]) {
     core::arch::naked_asm!(
-        r#"lea rax, [rip + {VG_GCM_CONSTS}]
+        r#".base64 "SMfAAAAAAEiJhwAEAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
@@ -30,17 +31,18 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must be valid for reads and writes of 1088 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 136]) {
     core::arch::naked_asm!(
-        r#"lea rax, [rip + {VG_GCM_CONSTS}]
+        r#".base64 "SMfAAAAAAEiJhwAEAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
@@ -54,35 +56,31 @@ lea rax, [rip + {VG_GCM_CONSTS}]
 /// The CPU features `vg_aes_gcm_prepare_pclmul_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
 
-/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must be valid for reads and writes of 1088 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx` and `pclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 136]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgPDg0MCwoJCMTh+W7ASLgHBgUEAwIBAMRh+W7gxMF5bMRIuAAAAAAAAAAAxOH5bshIuAAAAAAAAADCxGH5buDEwXFszMX6b7/wAAAAxOJBAPhIuAEAAAAAAAAAxGH5buhIuAAAAAAAAADCxGH5buDEQRFs7Ei4///////////EYflu8MRBCWz2xeFz9wHFoXPXP8TBIXP7CMWh69vFeXDf/8TBIXLTH8RBIf7exEEh393Foe/bxfp/nxABAADEY2FEwwDEY2FE0xHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7+DF+n+nAAEAAMRjWUTDAMRjWUTTEcRjWUTLAcRjWUTbEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp7+nF+n+vMAEAAMRjWUTEAMRjWUTUEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv8MX6f7cgAQAAxGNJRMMAxGNJRNMRxGNJRMsBxGNJRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEQSnv4cV6f6dQAQAAxGNRRMUAxGNRRNURxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8RBKe/oxXp/r0ABAADEY0lExQDEY0lE1RHEY0lEzQHEY0lE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/xxXp/t3ABAADEY0lExgDEY0lE1hHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7/jFen+/YAEAAMRjAUTDAMRjAUTTEcRjAUTLAcRjAUTbEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+HkAEAAMRjAUTFAMRjAUTVEcRjAUTNAcRjAUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp79HF+n+XsAEAAMRDGUTEAMRDGUTUEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6eAAQAAxEMBRMQAxEMBRNQRxEMBRMwBxEMBRNwQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv8cX6f7fQAQAAxEMRRMUAxEMRRNURxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/4xfp/v6ABAADEQwlExgDEQwlE1hHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp79jF+n+fwAEAAMRDAUTGAMRDAUTWEcRDAUTOAcRDAUTeEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp7+nF+n+v8AEAAMRDAUTHAMRDAUTXEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv4MV6f6fgAQAAxEN5RMcAxEN5RNcRxEN5RM8BxEN5RN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnvwcX6f4cQAgAAxENZRMcAxENZRNcRxENZRM8BxENZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6cAAgAAxENpRMcAxENpRNcRxENpRM8BxENpRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5cwAgAAxENBRMcAxENBRNcRxENBRM8BxENBRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv+cX6f78gAgAAxENJRMcAxENJRNcRxENJRM8BxENJRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv8cX6f7dQAgAAxENhRMcAxENhRNcRxENhRM8BxENhRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv2cX6f59AAgAAxENRRMcAxENRRNcRxENRRM8BxENRRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f69wAgAAxEMZRMcAxEMZRNcRxEMZRM8BxEMZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEQSnv4cV6f6dgAgAAxEN5RMcAxEN5RNcRxEN5RM8BxEN5RN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnvwcX6f4eQAgAAxENZRMcAxENZRNcRxENZRM8BxENZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6eAAgAAxENpRMcAxENpRNcRxENpRM8BxENpRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5ewAgAAxENBRMcAxENBRNcRxENBRM8BxENBRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv+cX6f7+gAgAAxENJRMcAxENJRNcRxENJRM8BxENJRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv8cX6f7fQAgAAxENhRMcAxENhRNcRxENhRM8BxENhRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv2cX6f5/AAgAAxENRRMcAxENRRNcRxENRRM8BxENRRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f6/wAgAAxEMZRMcAxEMZRNcRxEMZRM8BxEMZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEQSnv4cV6f6fgAgAAxEN5RMcAxEN5RNcRxEN5RM8BxEN5RN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnvwcX6f4cQAwAAxENZRMcAxENZRNcRxENZRM8BxENZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6cAAwAAxENpRMcAxENpRNcRxENpRM8BxENpRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5cwAwAAxENBRMcAxENBRNcRxENBRM8BxENBRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv+cX6f78gAwAAxENJRMcAxENJRNcRxENJRM8BxENJRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv8cX6f7dQAwAAxENhRMcAxENhRNcRxENhRM8BxENhRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv2cX6f59AAwAAxENRRMcAxENRRNcRxENRRM8BxENRRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f69wAwAAxEMZRMcAxEMZRNcRxEMZRM8BxEMZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEQSnv4cV6f6dgAwAAxEN5RMcAxEN5RNcRxEN5RM8BxEN5RN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnvwcX6f4eQAwAAxENZRMcAxENZRNcRxENZRM8BxENZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6eAAwAAxENpRMcAxENpRNcRxENpRM8BxENpRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5ewAwAAxENBRMcAxENBRNcRxENBRM8BxENBRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv+cX6f7+gAwAAxENJRMcAxENJRNcRxENJRM8BxENJRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv8cX6f7fQAwAAxENhRMcAxENhRNcRxENhRM8BxENhRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv2cX6f5/AAwAAxENRRMcAxENRRNcRxENRRM8BxENRRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f6/wAwAAxEMZRMcAxEMZRNcRxEMZRM8BxEMZRN8QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEQSnv4cV6f6fgAwAAww=="
+        r#".base64 "SMfAAAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnvwcX6f4eQAQAAxGMBRMUAxGMBRNURxGMBRM0BxGMBRN0QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5ewAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEQwFExADEQwFE1BHEQwFEzAHEQwFE3BDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t9ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv2MX6f5/AAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f6/wAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8RBKe/gxXp/p+ABAADEQ3lExwDEQ3lE1xHEQ3lEzwHEQ3lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Bxfp/hxACAADEQ1lExwDEQ1lE1xHEQ1lEzwHEQ1lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/hxfp/pwACAADEQ2lExwDEQ2lE1xHEQ2lEzwHEQ2lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Rxfp/lzACAADEQ0FExwDEQ0FE1xHEQ0FEzwHEQ0FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/5xfp/vyACAADEQ0lExwDEQ0lE1xHEQ0lEzwHEQ0lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t1ACAADEQ2FExwDEQ2FE1xHEQ2FEzwHEQ2FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Zxfp/n0ACAADEQ1FExwDEQ1FE1xHEQ1FEzwHEQ1FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/pxfp/r3ACAADEQxlExwDEQxlE1xHEQxlEzwHEQxlE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p2ACAADEQ3lExwDEQ3lE1xHEQ3lEzwHEQ3lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Bxfp/h5ACAADEQ1lExwDEQ1lE1xHEQ1lEzwHEQ1lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/hxfp/p4ACAADEQ2lExwDEQ2lE1xHEQ2lEzwHEQ2lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Rxfp/l7ACAADEQ0FExwDEQ0FE1xHEQ0FEzwHEQ0FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/5xfp/v6ACAADEQ0lExwDEQ0lE1xHEQ0lEzwHEQ0lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t9ACAADEQ2FExwDEQ2FE1xHEQ2FEzwHEQ2FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Zxfp/n8ACAADEQ1FExwDEQ1FE1xHEQ1FEzwHEQ1FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/pxfp/r/ACAADEQxlExwDEQxlE1xHEQxlEzwHEQxlE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p+ACAADEQ3lExwDEQ3lE1xHEQ3lEzwHEQ3lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Bxfp/hxADAADEQ1lExwDEQ1lE1xHEQ1lEzwHEQ1lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/hxfp/pwADAADEQ2lExwDEQ2lE1xHEQ2lEzwHEQ2lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Rxfp/lzADAADEQ0FExwDEQ0FE1xHEQ0FEzwHEQ0FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/5xfp/vyADAADEQ0lExwDEQ0lE1xHEQ0lEzwHEQ0lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t1ADAADEQ2FExwDEQ2FE1xHEQ2FEzwHEQ2FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Zxfp/n0ADAADEQ1FExwDEQ1FE1xHEQ1FEzwHEQ1FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/pxfp/r3ADAADEQxlExwDEQxlE1xHEQxlEzwHEQxlE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p2ADAADEQ3lExwDEQ3lE1xHEQ3lEzwHEQ3lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Bxfp/h5ADAADEQ1lExwDEQ1lE1xHEQ1lEzwHEQ1lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/hxfp/p4ADAADEQ2lExwDEQ2lE1xHEQ2lEzwHEQ2lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Rxfp/l7ADAADEQ0FExwDEQ0FE1xHEQ0FEzwHEQ0FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/5xfp/v6ADAADEQ0lExwDEQ0lE1xHEQ0lEzwHEQ0lE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t9ADAADEQ2FExwDEQ2FE1xHEQ2FEzwHEQ2FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/Zxfp/n8ADAADEQ1FExwDEQ1FE1xHEQ1FEzwHEQ1FE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/pxfp/r/ADAADEQxlExwDEQxlE1xHEQxlEzwHEQxlE3xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p+ADAADD"
 .p2align 6"#,
     )
 }
 
-/// The CPU features `vg_aes_gcm_prepare_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+/// Makes the 1088-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the 64-bit word at byte 1024, saying the powers are absent. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
+/// * `ctx` must be valid for reads and writes of 1088 bytes.
 /// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul(ctx: *mut [u64; 128]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 136]) {
     core::arch::naked_asm!(
-        r#".base64 "SLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMRIuAAAAAAAAAAAZkgPbshIuAAAAAAAAADCZkwPbuBmQQ9szPMPb7/wAAAAZg84APhIuAEAAAAAAAAAZkwPbuhIuAAAAAAAAADCZkwPbuBmRQ9s7Ei4//////////9mTA9u8GZFD2z2Zg9v32YPc/MBZkQPb99mQQ9z0z9mQQ9z+whmQQ/r22ZED3Df/2ZBD3LTH2ZFD/7eZkUP391mQQ/v2/MPf58QAQAAZkQPb8NmRA86RMMAZkQPb9NmRA86RNMRZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+DzD3+nAAEAAGZED2/EZkQPOkTDAGZED2/UZkQPOkTTEWZED2/MZkQPOkTLAWZED2/cZkQPOkTbEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb+pmQQ/v6fMPf68wAQAAZkQPb8RmRA86RMQAZkQPb9RmRA86RNQRZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/yZkEP7/DzD3+3IAEAAGZED2/GZkQPOkTDAGZED2/WZkQPOkTTEWZED2/OZkQPOkTLAWZED2/eZkQPOkTbEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkUPb+JmRQ/v4fNED3+nUAEAAGZED2/FZkQPOkTFAGZED2/VZkQPOkTVEWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v6mZFD+/o80QPf69AAQAAZkQPb8ZmRA86RMUAZkQPb9ZmRA86RNURZkQPb85mRA86RM0BZkQPb95mRA86RN0QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmRQ9v8mZFD+/x80QPf7dwAQAAZkQPb8ZmRA86RMYAZkQPb9ZmRA86RNYRZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/6ZkUP7/jzRA9/v2ABAABmRQ9vx2ZEDzpEwwBmRQ9v12ZEDzpE0xFmRQ9vz2ZEDzpEywFmRQ9v32ZEDzpE2xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/CZkEP78HzD3+HkAEAAGZFD2/HZkQPOkTFAGZFD2/XZkQPOkTVEWZFD2/PZkQPOkTNAWZFD2/fZkQPOkTdEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb9JmQQ/v0fMPf5ewAQAAZkUPb8RmRQ86RMQAZkUPb9RmRQ86RNQRZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+DzD3+ngAEAAGZFD2/HZkUPOkTEAGZFD2/XZkUPOkTUEWZFD2/PZkUPOkTMAWZFD2/fZkUPOkTcEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb/JmQQ/v8fMPf7fQAQAAZkUPb8VmRQ86RMUAZkUPb9VmRQ86RNURZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/6ZkEP7/jzD3+/oAEAAGZFD2/GZkUPOkTGAGZFD2/WZkUPOkTWEWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v2mZBD+/Y8w9/n8ABAABmRQ9vx2ZFDzpExgBmRQ9v12ZFDzpE1hFmRQ9vz2ZFDzpEzgFmRQ9v32ZFDzpE3hBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/qZkEP7+nzD3+v8AEAAGZFD2/HZkUPOkTHAGZFD2/XZkUPOkTXEWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v4mZFD+/g80QPf6fgAQAAZkQPb8BmRQ86RMcAZkQPb9BmRQ86RNcRZkQPb8hmRQ86RM8BZkQPb9hmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9vwmZBD+/B8w9/hxACAABmRA9vxGZFDzpExwBmRA9v1GZFDzpE1xFmRA9vzGZFDzpEzwFmRA9v3GZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/iZkEP7+HzD3+nAAIAAGZED2/CZkUPOkTHAGZED2/SZkUPOkTXEWZED2/KZkUPOkTPAWZED2/aZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb9JmQQ/v0fMPf5cwAgAAZkQPb8dmRQ86RMcAZkQPb9dmRQ86RNcRZkQPb89mRQ86RM8BZkQPb99mRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v+mZBD+/58w9/vyACAABmRA9vxmZFDzpExwBmRA9v1mZFDzpE1xFmRA9vzmZFDzpEzwFmRA9v3mZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/yZkEP7/HzD3+3UAIAAGZED2/DZkUPOkTHAGZED2/TZkUPOkTXEWZED2/LZkUPOkTPAWZED2/bZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb9pmQQ/v2fMPf59AAgAAZkQPb8VmRQ86RMcAZkQPb9VmRQ86RNcRZkQPb81mRQ86RM8BZkQPb91mRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v6mZBD+/p8w9/r3ACAABmRQ9vxGZFDzpExwBmRQ9v1GZFDzpE1xFmRQ9vzGZFDzpEzwFmRQ9v3GZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZFD2/iZkUP7+HzRA9/p2ACAABmRA9vwGZFDzpExwBmRA9v0GZFDzpE1xFmRA9vyGZFDzpEzwFmRA9v2GZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/CZkEP78HzD3+HkAIAAGZED2/EZkUPOkTHAGZED2/UZkUPOkTXEWZED2/MZkUPOkTPAWZED2/cZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb+JmQQ/v4fMPf6eAAgAAZkQPb8JmRQ86RMcAZkQPb9JmRQ86RNcRZkQPb8pmRQ86RM8BZkQPb9pmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v0mZBD+/R8w9/l7ACAABmRA9vx2ZFDzpExwBmRA9v12ZFDzpE1xFmRA9vz2ZFDzpEzwFmRA9v32ZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/6ZkEP7/nzD3+/oAIAAGZED2/GZkUPOkTHAGZED2/WZkUPOkTXEWZED2/OZkUPOkTPAWZED2/eZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb/JmQQ/v8fMPf7fQAgAAZkQPb8NmRQ86RMcAZkQPb9NmRQ86RNcRZkQPb8tmRQ86RM8BZkQPb9tmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v2mZBD+/Z8w9/n8ACAABmRA9vxWZFDzpExwBmRA9v1WZFDzpE1xFmRA9vzWZFDzpEzwFmRA9v3WZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/qZkEP7+nzD3+v8AIAAGZFD2/EZkUPOkTHAGZFD2/UZkUPOkTXEWZFD2/MZkUPOkTPAWZFD2/cZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkUPb+JmRQ/v4fNED3+n4AIAAGZED2/AZkUPOkTHAGZED2/QZkUPOkTXEWZED2/IZkUPOkTPAWZED2/YZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb8JmQQ/vwfMPf4cQAwAAZkQPb8RmRQ86RMcAZkQPb9RmRQ86RNcRZkQPb8xmRQ86RM8BZkQPb9xmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v4mZBD+/h8w9/pwADAABmRA9vwmZFDzpExwBmRA9v0mZFDzpE1xFmRA9vymZFDzpEzwFmRA9v2mZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/SZkEP79HzD3+XMAMAAGZED2/HZkUPOkTHAGZED2/XZkUPOkTXEWZED2/PZkUPOkTPAWZED2/fZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb/pmQQ/v+fMPf78gAwAAZkQPb8ZmRQ86RMcAZkQPb9ZmRQ86RNcRZkQPb85mRQ86RM8BZkQPb95mRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v8mZBD+/x8w9/t1ADAABmRA9vw2ZFDzpExwBmRA9v02ZFDzpE1xFmRA9vy2ZFDzpEzwFmRA9v22ZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/aZkEP79nzD3+fQAMAAGZED2/FZkUPOkTHAGZED2/VZkUPOkTXEWZED2/NZkUPOkTPAWZED2/dZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb+pmQQ/v6fMPf69wAwAAZkUPb8RmRQ86RMcAZkUPb9RmRQ86RNcRZkUPb8xmRQ86RM8BZkUPb9xmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmRQ9v4mZFD+/h80QPf6dgAwAAZkQPb8BmRQ86RMcAZkQPb9BmRQ86RNcRZkQPb8hmRQ86RM8BZkQPb9hmRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9vwmZBD+/B8w9/h5ADAABmRA9vxGZFDzpExwBmRA9v1GZFDzpE1xFmRA9vzGZFDzpEzwFmRA9v3GZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/iZkEP7+HzD3+ngAMAAGZED2/CZkUPOkTHAGZED2/SZkUPOkTXEWZED2/KZkUPOkTPAWZED2/aZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb9JmQQ/v0fMPf5ewAwAAZkQPb8dmRQ86RMcAZkQPb9dmRQ86RNcRZkQPb89mRQ86RM8BZkQPb99mRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v+mZBD+/58w9/v6ADAABmRA9vxmZFDzpExwBmRA9v1mZFDzpE1xFmRA9vzmZFDzpEzwFmRA9v3mZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZBD2/yZkEP7/HzD3+30AMAAGZED2/DZkUPOkTHAGZED2/TZkUPOkTXEWZED2/LZkUPOkTPAWZED2/bZkUPOkTfEGZFD+/LZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ/vyGZFD2/ZZkQPOkTZEGZFD3DJTmZFD+/LZkEPb9pmQQ/v2fMPf5/AAwAAZkQPb8VmRQ86RMcAZkQPb9VmRQ86RNcRZkQPb81mRQ86RM8BZkQPb91mRQ86RN8QZkUP78tmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD+/IZkUPb9lmRA86RNkQZkUPcMlOZkUP78tmQQ9v6mZBD+/p8w9/r/ADAABmRQ9vxGZFDzpExwBmRQ9v1GZFDzpE1xFmRQ9vzGZFDzpEzwFmRQ9v3GZFDzpE3xBmRQ/vy2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUP78hmRQ9v2WZEDzpE2RBmRQ9wyU5mRQ/vy2ZFD2/iZkUP7+HzRA9/p+ADAADD"
+        r#".base64 "SMfAAQAAAEiJhwAEAADD"
 .p2align 6"#,
     )
 }
@@ -2410,11 +2408,11 @@ call {vg_aes_gcm_seal_aesni}
 /// The CPU features `vg_aes_gcm_seal_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -2425,7 +2423,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -2530,11 +2528,11 @@ call {vg_aes_ctr32_aesni}
 /// The CPU features `vg_aes_gcm_open_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -2545,7 +2543,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feature
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -2700,11 +2698,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -2717,7 +2715,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Feat
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
 jb 20f
@@ -2760,7 +2758,7 @@ jmp 212f
 26:
 21:
 .base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_aesni}
+call {vg_aes_gcm_open_aesni}
 .base64 "hcA="
 je 214f
 jmp 215f
@@ -2776,18 +2774,18 @@ jmp 217f
 215:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_aesni = sym super::gcm::vg_aes_gcm_open_prepared_aesni,
+        vg_aes_gcm_open_aesni = sym super::gcm::vg_aes_gcm_open_aesni,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -2796,7 +2794,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -2970,11 +2968,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -2983,7 +2981,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -3158,11 +3156,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -3175,7 +3173,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -4366,11 +4364,11 @@ call {vg_aes_gcm_seal_aesni_pclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -4381,7 +4379,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -4486,11 +4484,11 @@ call {vg_aes_ctr32_aesni}
 /// The CPU features `vg_aes_gcm_open_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -4501,7 +4499,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -4656,11 +4654,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -4673,7 +4671,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cp
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
 jb 20f
@@ -4716,7 +4714,7 @@ jmp 212f
 26:
 21:
 .base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_aesni_pclmul}
+call {vg_aes_gcm_open_aesni_pclmul}
 .base64 "hcA="
 je 214f
 jmp 215f
@@ -4732,18 +4730,18 @@ jmp 217f
 215:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_prepared_aesni_pclmul,
+        vg_aes_gcm_open_aesni_pclmul = sym super::gcm::vg_aes_gcm_open_aesni_pclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -4752,7 +4750,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -4926,11 +4924,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -4939,7 +4937,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES: verified_gar
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -5114,11 +5112,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -5131,7 +5129,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -6352,9 +6350,7 @@ call {vg_aes_gcm_seal_aesni_pclmul_avx}
 /// The CPU features `vg_aes_gcm_seal_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_seal_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
+/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -6364,142 +6360,12 @@ pub const VG_AES_GCM_SEAL_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_seal_prepared_aesni_pclmul_avx as vg_aes_gcm_seal_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_open_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_open_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_open_prepared_aesni_pclmul_avx as vg_aes_gcm_open_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_open_to_prepared_aesni_pclmul_avx as vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx as vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx as vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx as vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx;
-
-/// The CPU features `vg_aes_gcm_seal_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
-
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
 jne 20f
@@ -6744,10 +6610,10 @@ jmp 255f
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+/// The CPU features `vg_aes_gcm_open_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -6757,12 +6623,12 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_c
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -7046,10 +6912,10 @@ jmp 25f
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+/// The CPU features `vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -7061,12 +6927,12 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbag
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 20f
@@ -7135,10 +7001,10 @@ jmp 219f
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+/// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -7146,12 +7012,12 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -7322,10 +7188,10 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+/// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -7333,12 +7199,12 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -7510,10 +7376,10 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+/// The CPU features `vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -7525,12 +7391,12 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_ga
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
 jae 20f
@@ -7878,6 +7744,2294 @@ call {vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx}
 23:
 .base64 "SI2kJPAAAADD"
 .p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_seal_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 25f
+24:
+25:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 212f
+211:
+212:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 215f
+214:
+215:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8PNBD28u80EPb34wTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+vNED28HZkEP7+hmQQ/v+PNED29HEGZBDzjc6GZBDzjc+PNED29HIGZBDzjc6GZBDzjc+PNED29HMGZBDzjc6GZBDzjc+PNED29HQGZBDzjc6GZBDzjc+PNED29HUGZBDzjc6GZBDzjc+PNED29HYGZBDzjc6GZBDzjc+PNED29HcGZBDzjc6GZBDzjc+PNED2+HgAAAAGZBDzjc6GZBDzjc+PNED2+HkAAAAGZBDzjc6GZBDzjc+EiD/go="
+je 216f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 218f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 219f
+218:
+219:
+jmp 217f
+216:
+217:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 220f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
+je 222f
+224:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SPfBDwAAAA=="
+je 225f
+.base64 "SPfBDAAAAA=="
+je 227f
+.base64 "SPfBCAAAAA=="
+je 229f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 230f
+229:
+230:
+.base64 "SPfBBAAAAA=="
+je 231f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 232f
+231:
+232:
+.base64 "SPfBAwAAAA=="
+je 233f
+235:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 235b
+jmp 234f
+233:
+234:
+jmp 228f
+227:
+236:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 236b
+228:
+jmp 226f
+225:
+226:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 221f
+220:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+221:
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
+jne 237f
+.base64 "SYuPuAAAAEiD+RE="
+jae 239f
+.base64 "uAEAAAA="
+jmp 240f
+239:
+240:
+jmp 238f
+237:
+238:
+.base64 "SIXA"
+je 241f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 243f
+.base64 "SIP5BQ=="
+je 245f
+.base64 "SIP5EA=="
+je 247f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+249:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 249b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 248f
+247:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+248:
+jmp 246f
+245:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+246:
+jmp 244f
+243:
+244:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 250f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 251f
+250:
+251:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADzQQ9vLvNBD29+MEyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfrzRA9vB2ZBD+/oZkEP7/jzRA9vRxBmQQ843OhmQQ843PjzRA9vRyBmQQ843OhmQQ843PjzRA9vRzBmQQ843OhmQQ843PjzRA9vR0BmQQ843OhmQQ843PjzRA9vR1BmQQ843OhmQQ843PjzRA9vR2BmQQ843OhmQQ843PjzRA9vR3BmQQ843OhmQQ843PjzRA9vh4AAAABmQQ843OhmQQ843PjzRA9vh5AAAABmQQ843OhmQQ843PhIg/4K"
+je 252f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 254f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 255f
+254:
+255:
+jmp 253f
+252:
+253:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 256f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
+je 258f
+260:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 260b
+jmp 259f
+258:
+259:
+.base64 "SPfBDwAAAA=="
+je 261f
+.base64 "SPfBDAAAAA=="
+je 263f
+.base64 "SPfBCAAAAA=="
+je 265f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 266f
+265:
+266:
+.base64 "SPfBBAAAAA=="
+je 267f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 268f
+267:
+268:
+.base64 "SPfBAwAAAA=="
+je 269f
+271:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 271b
+jmp 270f
+269:
+270:
+jmp 264f
+263:
+272:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 272b
+264:
+jmp 262f
+261:
+262:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 257f
+256:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+257:
+jmp 242f
+241:
+.base64 "SIP9DA=="
+je 273f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 275f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 276f
+275:
+276:
+.base64 "SInpSIXJ"
+je 277f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+279:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 279b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 278f
+277:
+278:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 274f
+273:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+274:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 280f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 281f
+280:
+281:
+.base64 "SInpSIXJ"
+je 282f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+284:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 284b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 283f
+282:
+283:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 285f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 286f
+285:
+286:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8PNBD28u80EPb34wTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+vNED28HZkEP7+hmQQ/v+PNED29HEGZBDzjc6GZBDzjc+PNED29HIGZBDzjc6GZBDzjc+PNED29HMGZBDzjc6GZBDzjc+PNED29HQGZBDzjc6GZBDzjc+PNED29HUGZBDzjc6GZBDzjc+PNED29HYGZBDzjc6GZBDzjc+PNED29HcGZBDzjc6GZBDzjc+PNED2+HgAAAAGZBDzjc6GZBDzjc+PNED2+HkAAAAGZBDzjc6GZBDzjc+EiD/go="
+je 287f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 289f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 290f
+289:
+290:
+jmp 288f
+287:
+288:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABJi4fQAAAASIXA"
+je 291f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
+je 293f
+295:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 295b
+jmp 294f
+293:
+294:
+.base64 "SPfBDwAAAA=="
+je 296f
+.base64 "SPfBDAAAAA=="
+je 298f
+.base64 "SPfBCAAAAA=="
+je 2100f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 2101f
+2100:
+2101:
+.base64 "SPfBBAAAAA=="
+je 2102f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 2103f
+2102:
+2103:
+.base64 "SPfBAwAAAA=="
+je 2104f
+2106:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2106b
+jmp 2105f
+2104:
+2105:
+jmp 299f
+298:
+2107:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2107b
+299:
+jmp 297f
+296:
+297:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 292f
+291:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+292:
+242:
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+jmp 21b
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+jb 22f
+.base64 "SIP7EQ=="
+jb 24f
+jmp 25f
+24:
+.base64 "uQEAAAA="
+25:
+jmp 23f
+22:
+23:
+.base64 "SIXJ"
+je 26f
+.base64 "SIP9DA=="
+je 28f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 210f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 211f
+210:
+211:
+.base64 "SInpSIXJ"
+je 212f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+214:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 214b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 213f
+212:
+213:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 29f
+28:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+29:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 215f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 216f
+215:
+216:
+.base64 "SInpSIXJ"
+je 217f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 218f
+217:
+218:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 220f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 221f
+220:
+221:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 222f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 223f
+222:
+223:
+.base64 "SInpSIXJ"
+je 224f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+226:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 226b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 225f
+224:
+225:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 227f
+.base64 "QboAAAAA"
+229:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 229b
+jmp 228f
+227:
+.base64 "SIsGTItWCEiJB0yJVwg="
+228:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 230f
+.base64 "QboAAAAA"
+232:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 232b
+jmp 231f
+230:
+.base64 "SIsGTItWCEiJB0yJVwg="
+231:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 233f
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 235f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 236f
+235:
+236:
+.base64 "SIXt"
+je 237f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+239:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 239b
+jmp 238f
+237:
+238:
+jmp 234f
+233:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 240f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+jmp 241f
+240:
+241:
+234:
+.base64 "SYuH2AAAAA=="
+jmp 27f
+26:
+.base64 "uAAAAAA="
+27:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+jb 242f
+.base64 "SIP7EQ=="
+jb 244f
+jmp 245f
+244:
+.base64 "uQEAAAA="
+245:
+jmp 243f
+242:
+243:
+.base64 "SIXJ"
+je 246f
+.base64 "uAAAAABIg/0M"
+jne 248f
+.base64 "SYuPuAAAAEiD+RE="
+jae 250f
+.base64 "uAEAAAA="
+jmp 251f
+250:
+251:
+jmp 249f
+248:
+249:
+.base64 "SIXA"
+je 252f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 254f
+.base64 "SIP5BQ=="
+je 256f
+.base64 "SIP5EA=="
+je 258f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+260:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 260b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 259f
+258:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+259:
+jmp 257f
+256:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+257:
+jmp 255f
+254:
+255:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 261f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 262f
+261:
+262:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAABJi4fQAAAASIXA"
+je 263f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAAA="
+265:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 265b
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+jmp 264f
+263:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+264:
+.base64 "80EPby7zQQ9vfjBMie9Ji7ewAAAASYnyTQHSTQHSTQHSTQHSSQH680QPbwdmQQ/v6GZBD+/480QPb0cQZkEPONzoZkEPONz480QPb0cgZkEPONzoZkEPONz480QPb0cwZkEPONzoZkEPONz480QPb0dAZkEPONzoZkEPONz480QPb0dQZkEPONzoZkEPONz480QPb0dgZkEPONzoZkEPONz480QPb0dwZkEPONzoZkEPONz480QPb4eAAAAAZkEPONzoZkEPONz480QPb4eQAAAAZkEPONzoZkEPONz4SIP+Cg=="
+je 266f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 268f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 269f
+268:
+269:
+jmp 267f
+266:
+267:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABBi3YMD86DxgEPzkGJdgxJi4fQAAAASIXA"
+je 270f
+.base64 "80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6f1dwxfh3"
+jmp 271f
+270:
+.base64 "80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+Hc="
+271:
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 272f
+.base64 "QboAAAAA"
+274:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 274b
+jmp 273f
+272:
+.base64 "SIsGTItWCEiJB0yJVwg="
+273:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 275f
+.base64 "QboAAAAA"
+277:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 277b
+jmp 276f
+275:
+.base64 "SIsGTItWCEiJB0yJVwg="
+276:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 278f
+.base64 "SYuP0AAAAEiFyQ=="
+je 280f
+.base64 "SYu/yAAAAEyJ/kiBxhAEAABBugAAAAA="
+282:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 282b
+jmp 281f
+280:
+281:
+jmp 279f
+278:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 283f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+jmp 284f
+283:
+284:
+279:
+.base64 "SYuH2AAAAA=="
+jmp 253f
+252:
+.base64 "SIP9DA=="
+je 285f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 287f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 288f
+287:
+288:
+.base64 "SInpSIXJ"
+je 289f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+291:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 291b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 290f
+289:
+290:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 286f
+285:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+286:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 292f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 293f
+292:
+293:
+.base64 "SInpSIXJ"
+je 294f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+296:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 296b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 295f
+294:
+295:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 297f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 298f
+297:
+298:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 299f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 2100f
+299:
+2100:
+.base64 "SInpSIXJ"
+je 2101f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 2102f
+2101:
+2102:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_aesni}
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 2104f
+.base64 "QboAAAAA"
+2106:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2106b
+jmp 2105f
+2104:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2105:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 2107f
+.base64 "QboAAAAA"
+2109:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2109b
+jmp 2108f
+2107:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2108:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 2110f
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 2112f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 2113f
+2112:
+2113:
+.base64 "SIXt"
+je 2114f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2116:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2116b
+jmp 2115f
+2114:
+2115:
+jmp 2111f
+2110:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 2117f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+jmp 2118f
+2117:
+2118:
+2111:
+.base64 "SYuH2AAAAA=="
+253:
+jmp 247f
+246:
+.base64 "uAAAAAA="
+247:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 22f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 24f
+26:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 26b
+jmp 25f
+24:
+25:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 23f
+22:
+.base64 "SIP5IA=="
+jb 27f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 28f
+27:
+.base64 "SIP5EA=="
+jb 29f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 210f
+29:
+.base64 "SIP5CA=="
+jb 211f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 212f
+211:
+.base64 "SIP5BA=="
+jb 213f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 214f
+213:
+.base64 "QboAAAAASTnK"
+je 215f
+217:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 217b
+jmp 216f
+215:
+216:
+214:
+212:
+210:
+28:
+23:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_aesni_pclmul_avx}
+.base64 "hcA="
+je 218f
+jmp 219f
+218:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 220f
+222:
+.base64 "QogEF0mDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+219:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+21:
+.base64 "ww=="
+20:
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 223f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 225f
+227:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 227b
+jmp 226f
+225:
+226:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 224f
+223:
+.base64 "SIP5IA=="
+jb 228f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 229f
+228:
+.base64 "SIP5EA=="
+jb 230f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 231f
+230:
+.base64 "SIP5CA=="
+jb 232f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 233f
+232:
+.base64 "SIP5BA=="
+jb 234f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 235f
+234:
+.base64 "QboAAAAASTnK"
+je 236f
+238:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 238b
+jmp 237f
+236:
+237:
+235:
+233:
+231:
+229:
+224:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared16_aesni_pclmul_avx}
+.base64 "hcA="
+je 239f
+jmp 240f
+239:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 241f
+243:
+.base64 "QogEF0mDwgFJOco="
+jne 243b
+jmp 242f
+241:
+242:
+240:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+jmp 21b
+.p2align 6"#,
+        vg_aes_gcm_open_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_aesni_pclmul_avx,
+        vg_aes_gcm_open_prepared16_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 22f
+.base64 "SYuHwAAAAEiFwA=="
+je 24f
+jmp 25f
+24:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
+jmp 214f
+213:
+.base64 "SInp"
+214:
+jmp 212f
+211:
+.base64 "uQAAAAA="
+212:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 215f
+.base64 "uRAAAABIKdlIOc0="
+jb 217f
+jmp 218f
+217:
+.base64 "SInp"
+218:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+219:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 220f
+jmp 221f
+220:
+.base64 "SInp"
+221:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+222:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 222b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 223f
+jmp 224f
+223:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+224:
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+233:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 233b
+.base64 "SQHMSCnN"
+jmp 230f
+229:
+230:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 234f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 236f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+238:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 238b
+jmp 237f
+236:
+237:
+jmp 228f
+227:
+228:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 239f
+.base64 "SIXb"
+je 241f
+.base64 "uRAAAABIKdlIOc0="
+jb 243f
+jmp 244f
+243:
+.base64 "SInp"
+244:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+245:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 245b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 246f
+jmp 247f
+246:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+247:
+jmp 242f
+241:
+242:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 248f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 249f
+248:
+249:
+.base64 "SInpSIXJ"
+je 250f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+252:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 252b
+jmp 251f
+250:
+251:
+jmp 240f
+239:
+240:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+270:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 270b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 271f
+jmp 272f
+271:
+.base64 "SInp"
+272:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 274f
+jmp 275f
+274:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+275:
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+284:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 284b
+.base64 "SQHMSCnN"
+jmp 281f
+280:
+281:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 285f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 286f
+285:
+286:
+.base64 "SIXt"
+je 287f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+289:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 289b
+jmp 288f
+287:
+288:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 290f
+.base64 "SIXb"
+je 292f
+.base64 "uRAAAABIKdlIOc0="
+jb 294f
+jmp 295f
+294:
+.base64 "SInp"
+295:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+296:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 296b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 297f
+jmp 298f
+297:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+298:
+jmp 293f
+292:
+293:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 299f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 2100f
+299:
+2100:
+.base64 "SInpSIXJ"
+je 2101f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 291f
+290:
+291:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 22f
+.base64 "SYuHwAAAAEiFwA=="
+je 24f
+jmp 25f
+24:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
+jmp 214f
+213:
+.base64 "SInp"
+214:
+jmp 212f
+211:
+.base64 "uQAAAAA="
+212:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 215f
+.base64 "uRAAAABIKdlIOc0="
+jb 217f
+jmp 218f
+217:
+.base64 "SInp"
+218:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 220f
+jmp 221f
+220:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+221:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 222f
+jmp 223f
+222:
+.base64 "SInp"
+223:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+224:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+.base64 "SQHMSCnN"
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 234f
+jmp 235f
+234:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+235:
+jmp 230f
+229:
+230:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 236f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 237f
+236:
+237:
+.base64 "SInpSIXJ"
+je 238f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+240:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 240b
+jmp 239f
+238:
+239:
+jmp 228f
+227:
+228:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 241f
+.base64 "SIXb"
+je 243f
+.base64 "uRAAAABIKdlIOc0="
+jb 245f
+jmp 246f
+245:
+.base64 "SInp"
+246:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+247:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 247b
+.base64 "SQHMSCnN"
+jmp 244f
+243:
+244:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 248f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 249f
+248:
+249:
+.base64 "SIXt"
+je 250f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+252:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 252b
+jmp 251f
+250:
+251:
+jmp 242f
+241:
+242:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+270:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 270b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 271f
+jmp 272f
+271:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+272:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 273f
+jmp 274f
+273:
+.base64 "SInp"
+274:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+275:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 275b
+.base64 "SQHMSCnN"
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+284:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 284b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 285f
+jmp 286f
+285:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+286:
+jmp 281f
+280:
+281:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 287f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 288f
+287:
+288:
+.base64 "SInpSIXJ"
+je 289f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+291:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 291b
+jmp 290f
+289:
+290:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 292f
+.base64 "SIXb"
+je 294f
+.base64 "uRAAAABIKdlIOc0="
+jb 296f
+jmp 297f
+296:
+.base64 "SInp"
+297:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+298:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 298b
+.base64 "SQHMSCnN"
+jmp 295f
+294:
+295:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 299f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+jmp 2100f
+299:
+2100:
+.base64 "SIXt"
+je 2101f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2103:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 293f
+292:
+293:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_aesni_pclmul_avx,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx::vg_aes_gcm_decrypt_blocks_prepared16_aesni_pclmul_avx,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AVX);
+
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `pclmulqdq`, `ssse3` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg9gAEAAA=="
+jb 22f
+.base64 "TItcJDBJi0MoSD0ADAAA"
+jb 24f
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 26f
+.base64 "TYtTOE2LUgg="
+jmp 27f
+26:
+27:
+.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQAMAAA="
+jmp 25f
+24:
+25:
+jb 28f
+call {vg_aes_gcm_stream_init_pclmul}
+.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
+call {vg_aes_gcm_stream_aad_pclmul}
+.base64 "TItcJDBJi0MoSIXA"
+je 210f
+.base64 "SYtLGEmJyEmD4A9NhcA="
+je 212f
+.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
+call {vg_aes_gcm_stream_aad_pclmul}
+jmp 213f
+212:
+213:
+.base64 "TItcJDBJi0NASIXA"
+je 214f
+216:
+.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
+call {vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx}
+.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+jne 216b
+jmp 215f
+214:
+215:
+jmp 211f
+210:
+211:
+.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
+call {vg_aes_gcm_stream_finish_aesni_pclmul}
+jmp 29f
+28:
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 217f
+.base64 "TYtTOE2LUgg="
+jmp 218f
+217:
+218:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+oABAAA="
+jb 219f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 221f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+jmp 222f
+221:
+222:
+.base64 "SYlDeEmJi4AAAABNidNJg/kA"
+je 223f
+225:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 226f
+228:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 229f
+231:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 231b
+jmp 230f
+229:
+230:
+.base64 "STnK"
+je 232f
+.base64 "SIP5EA=="
+jb 234f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 235f
+234:
+236:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 236b
+235:
+jmp 233f
+232:
+233:
+.base64 "SAHPSYPpAQ=="
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_aesni_pclmul_avx}
+.base64 "WFhYWFg="
+jmp 220f
+219:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 237f
+239:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 240f
+242:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 242b
+jmp 241f
+240:
+241:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 243f
+245:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "STnK"
+je 246f
+.base64 "SIP5EA=="
+jb 248f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 249f
+248:
+250:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 250b
+249:
+jmp 247f
+246:
+247:
+.base64 "SAHPSYPpAQ=="
+jne 239b
+jmp 238f
+237:
+238:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_aesni_pclmul_avx}
+.base64 "WFhY"
+220:
+29:
+jmp 23f
+22:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 251f
+253:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 254f
+256:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 256b
+jmp 255f
+254:
+255:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 257f
+259:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 259b
+jmp 258f
+257:
+258:
+.base64 "STnK"
+je 260f
+.base64 "SIP5EA=="
+jb 262f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 263f
+262:
+264:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 264b
+263:
+jmp 261f
+260:
+261:
+.base64 "SAHPSYPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_aesni_pclmul_avx}
+.base64 "WFhY"
+23:
+.base64 "SI2kJPAAAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
+jae 265f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
+jmp 266f
+265:
+266:
+.base64 "TYXb"
+je 267f
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD2AAQAA"
+jb 269f
+.base64 "TItcJDBJi0MoSD0ADAAA"
+jb 271f
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 273f
+.base64 "TYtTOE2LUgg="
+jmp 274f
+273:
+274:
+.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQAMAAA="
+jmp 272f
+271:
+272:
+jb 275f
+.base64 "UEiNpCT49f//SYngSYPACEmJmIAAAABJiaiIAAAATYmgkAAAAE2JqJgAAABNibCgAAAATYm4qAAAAE2Jx0mJzkmJ/UmJ9EiJ1UiD/Qw="
+je 277f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 279f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 280f
+279:
+280:
+.base64 "SInpSIXJ"
+je 281f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+283:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 283b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 282f
+281:
+282:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_pclmul}
+jmp 278f
+277:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+278:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGFBIjaQk+PX//0mJ4UmDwQhJiZmAAAAASYmpiAAAAE2JoZAAAABNiamYAAAATYmxoAAAAE2JuagAAABNic9JifZJif1JicxMicVIidNIg+MPSIXt"
+je 284f
+.base64 "SIXb"
+je 286f
+.base64 "uRAAAABIKdlIOc0="
+jb 288f
+jmp 289f
+288:
+.base64 "SInp"
+289:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+290:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 290b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 291f
+jmp 292f
+291:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+292:
+jmp 287f
+286:
+287:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 293f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 294f
+293:
+294:
+.base64 "SInpSIXJ"
+je 295f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+297:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 297b
+jmp 296f
+295:
+296:
+jmp 285f
+284:
+285:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJi0MoSIXA"
+je 298f
+.base64 "SYtLGEmJyEmD4A9NhcA="
+je 2100f
+.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVhQSI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
+je 2102f
+.base64 "SIXb"
+je 2104f
+.base64 "uRAAAABIKdlIOc0="
+jb 2106f
+jmp 2107f
+2106:
+.base64 "SInp"
+2107:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+2108:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2108b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 2109f
+jmp 2110f
+2109:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+2110:
+jmp 2105f
+2104:
+2105:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 2111f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 2112f
+2111:
+2112:
+.base64 "SInpSIXJ"
+je 2113f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+2115:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2115b
+jmp 2114f
+2113:
+2114:
+jmp 2103f
+2102:
+2103:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABY"
+jmp 2101f
+2100:
+2101:
+.base64 "TItcJDBJi0NASIXA"
+je 2116f
+2118:
+.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
+call {vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx}
+.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+jne 2118b
+jmp 2117f
+2116:
+2117:
+jmp 299f
+298:
+299:
+.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMFBIjaQk8PX//0iJ4EiDwBBIiUQkCEiLRCQISImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHSYnWSYn9SYm3sAAAAEmJj7gAAABNiYfAAAAATYmPyAAAAEmLn8AAAABJi4e4AAAASIXb"
+je 2119f
+jmp 2120f
+2119:
+.base64 "SInD"
+2120:
+.base64 "SIPjD0iF2w=="
+je 2121f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+2123:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2123b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_pclmul}
+jmp 2122f
+2121:
+2122:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABY"
+jmp 276f
+275:
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 2124f
+.base64 "TYtTOE2LUgg="
+jmp 2125f
+2124:
+2125:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+oABAAA="
+jb 2126f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 2128f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+jmp 2129f
+2128:
+2129:
+.base64 "SYlDeEmJi4AAAABNidNJg/kA"
+je 2130f
+2132:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2133f
+2135:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2135b
+jmp 2134f
+2133:
+2134:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2136f
+2138:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2138b
+jmp 2137f
+2136:
+2137:
+.base64 "STnK"
+je 2139f
+.base64 "SIP5EA=="
+jb 2141f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2142f
+2141:
+2143:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2143b
+2142:
+jmp 2140f
+2139:
+2140:
+.base64 "SAHPSYPpAQ=="
+jne 2132b
+jmp 2131f
+2130:
+2131:
+.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx}
+.base64 "WFhYWFg="
+jmp 2127f
+2126:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 2144f
+2146:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2147f
+2149:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2149b
+jmp 2148f
+2147:
+2148:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2150f
+2152:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2152b
+jmp 2151f
+2150:
+2151:
+.base64 "STnK"
+je 2153f
+.base64 "SIP5EA=="
+jb 2155f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2156f
+2155:
+2157:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2157b
+2156:
+jmp 2154f
+2153:
+2154:
+.base64 "SAHPSYPpAQ=="
+jne 2146b
+jmp 2145f
+2144:
+2145:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+.base64 "WFhY"
+2127:
+276:
+jmp 270f
+269:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 2158f
+2160:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2161f
+2163:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2163b
+jmp 2162f
+2161:
+2162:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2164f
+2166:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2166b
+jmp 2165f
+2164:
+2165:
+.base64 "STnK"
+je 2167f
+.base64 "SIP5EA=="
+jb 2169f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2170f
+2169:
+2171:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2171b
+2170:
+jmp 2168f
+2167:
+2168:
+.base64 "SAHPSYPpAQ=="
+jne 2160b
+jmp 2159f
+2158:
+2159:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+.base64 "WFhY"
+270:
+jmp 268f
+267:
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
+je 2172f
+.base64 "SYtKGEiFyQ=="
+je 2174f
+.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
+2176:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2176b
+jmp 2175f
+2174:
+2175:
+jmp 2173f
+2172:
+2173:
+.base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx}
+.base64 "WFhYWFg="
+268:
+.base64 "SI2kJPAAAAA="
+jmp 21b
+.p2align 6"#,
+        vg_aes_gcm_stream_init_pclmul = sym super::gcm::vg_aes_gcm_stream_init_pclmul,
+        vg_aes_gcm_stream_aad_pclmul = sym super::gcm::vg_aes_gcm_stream_aad_pclmul,
+        vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_aesni_pclmul_avx,
+        vg_aes_gcm_stream_finish_aesni_pclmul = sym super::gcm::vg_aes_gcm_stream_finish_aesni_pclmul,
+        vg_aes_gcm_seal_split_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_aesni_pclmul_avx::vg_aes_gcm_seal_split_aesni_pclmul_avx,
+        vg_aes_gcm_seal_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_aesni_pclmul_avx,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
@@ -8882,11 +11036,11 @@ call {vg_aes_gcm_seal_aesni_vpclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -8897,7 +11051,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -9002,11 +11156,11 @@ call {vg_aes_ctr32_aesni}
 /// The CPU features `vg_aes_gcm_open_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -9017,7 +11171,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -9172,11 +11326,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -9189,7 +11343,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 20f
@@ -9238,7 +11392,7 @@ jmp 214f
 26:
 21:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_aesni_vpclmul}
+call {vg_aes_gcm_open_aesni_vpclmul}
 .base64 "hcA="
 je 216f
 jmp 217f
@@ -9254,18 +11408,18 @@ jmp 219f
 217:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_aesni_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared_aesni_vpclmul,
+        vg_aes_gcm_open_aesni_vpclmul = sym super::gcm::vg_aes_gcm_open_aesni_vpclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -9274,7 +11428,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_ga
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -9448,11 +11602,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -9461,7 +11615,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES: verified_ga
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -9636,11 +11790,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_aesni_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -9653,7 +11807,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES: verified_garba
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_aesni_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -10844,11 +12998,11 @@ call {vg_aes_gcm_seal_pclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -10859,7 +13013,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -10964,11 +13118,11 @@ call {vg_aes_ctr32}
 /// The CPU features `vg_aes_gcm_open_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -10979,7 +13133,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -11134,11 +13288,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -11151,7 +13305,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Fea
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
 jb 20f
@@ -11194,7 +13348,7 @@ jmp 212f
 26:
 21:
 .base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_pclmul}
+call {vg_aes_gcm_open_pclmul}
 .base64 "hcA="
 je 214f
 jmp 215f
@@ -11210,18 +13364,18 @@ jmp 217f
 215:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_pclmul = sym super::gcm::vg_aes_gcm_open_prepared_pclmul,
+        vg_aes_gcm_open_pclmul = sym super::gcm::vg_aes_gcm_open_pclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -11230,7 +13384,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -11404,11 +13558,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -11417,7 +13571,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES: verified_garbage_c
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -11592,11 +13746,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -11609,7 +13763,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES: verified_garbage_cpu:
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -12773,11 +14927,11 @@ call {vg_aes_gcm_seal}
     )
 }
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -12787,7 +14941,7 @@ call {vg_aes_gcm_seal}
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -12889,11 +15043,11 @@ call {vg_aes_ctr32}
     )
 }
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -12903,7 +15057,7 @@ call {vg_aes_ctr32}
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -13055,11 +15209,11 @@ jmp 25f
     )
 }
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -13071,7 +15225,7 @@ jmp 25f
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+SA="
 jb 20f
@@ -13114,7 +15268,7 @@ jmp 212f
 26:
 21:
 .base64 "SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared}
+call {vg_aes_gcm_open}
 .base64 "hcA="
 je 214f
 jmp 215f
@@ -13130,15 +15284,15 @@ jmp 217f
 215:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared = sym super::gcm::vg_aes_gcm_open_prepared,
+        vg_aes_gcm_open = sym super::gcm::vg_aes_gcm_open,
     )
 }
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -13146,7 +15300,7 @@ jmp 217f
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -13317,11 +15471,11 @@ jmp 21f
     )
 }
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -13329,7 +15483,7 @@ jmp 21f
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -13501,11 +15655,11 @@ jmp 21f
     )
 }
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -13517,7 +15671,7 @@ jmp 21f
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -14714,11 +16868,11 @@ call {vg_aes_gcm_seal_vaes}
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -14729,7 +16883,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -14834,11 +16988,11 @@ call {vg_aes_ctr32_vaes}
 /// The CPU features `vg_aes_gcm_open_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -14849,7 +17003,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -15004,11 +17158,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -15021,7 +17175,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 20f
@@ -15070,7 +17224,7 @@ jmp 214f
 26:
 21:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes}
+call {vg_aes_gcm_open_vaes}
 .base64 "hcA="
 je 216f
 jmp 217f
@@ -15086,18 +17240,18 @@ jmp 219f
 217:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_vaes = sym super::gcm::vg_aes_gcm_open_prepared_vaes,
+        vg_aes_gcm_open_vaes = sym super::gcm::vg_aes_gcm_open_vaes,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -15106,7 +17260,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -15280,11 +17434,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -15293,7 +17447,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -15468,11 +17622,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -15485,7 +17639,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `ssse3` and `vaes` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -16682,11 +18836,11 @@ call {vg_aes_gcm_seal_vaes_pclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -16697,7 +18851,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -16802,11 +18956,11 @@ call {vg_aes_ctr32_vaes}
 /// The CPU features `vg_aes_gcm_open_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -16817,7 +18971,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::F
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -16972,11 +19126,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -16989,7 +19143,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 20f
@@ -17038,7 +19192,7 @@ jmp 214f
 26:
 21:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_pclmul}
+call {vg_aes_gcm_open_vaes_pclmul}
 .base64 "hcA="
 je 216f
 jmp 217f
@@ -17054,18 +19208,18 @@ jmp 219f
 217:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_vaes_pclmul = sym super::gcm::vg_aes_gcm_open_prepared_vaes_pclmul,
+        vg_aes_gcm_open_vaes_pclmul = sym super::gcm::vg_aes_gcm_open_vaes_pclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -17074,7 +19228,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garb
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -17248,11 +19402,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -17261,7 +19415,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES: verified_garb
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -17436,11 +19590,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -17453,7 +19607,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES: verified_garbage
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `avx`, `avx2`, `vaes`, `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_pclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_pclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -18650,9 +20804,7 @@ call {vg_aes_gcm_seal_vaes_vpclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared16_vaes_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_seal_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
+/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -18662,142 +20814,12 @@ pub const VG_AES_GCM_SEAL_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_seal_prepared_vaes_vpclmul as vg_aes_gcm_seal_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_open_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_open_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_open_prepared_vaes_vpclmul as vg_aes_gcm_open_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_open_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_open_to_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `len` bytes.
-/// * `dst` must be valid for reads and writes of `dst_len` bytes.
-/// * `tag` must be valid for reads of `tag_len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `dst_len` must equal `len`.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_open_to_prepared_vaes_vpclmul as vg_aes_gcm_open_to_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul as vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul as vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16` (or `vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
-///
-/// The machine code of this function is that of `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
-/// * `dst` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
-#[allow(unused_imports)]
-pub use self::vg_aes_gcm_seal_gather_prepared_vaes_vpclmul as vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul;
-
-/// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `nonce` must be valid for reads of `nonce_len` bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -18899,10 +20921,10 @@ call {vg_aes_ctr32_vaes}
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+/// The CPU features `vg_aes_gcm_open_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -18912,12 +20934,12 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -19201,10 +21223,10 @@ jmp 25f
     )
 }
 
-/// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+/// The CPU features `vg_aes_gcm_open_to_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -19216,12 +21238,12 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cp
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * `dst_len` must equal `len`.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SItEJBBIPQAEAAA="
 jae 20f
@@ -19313,10 +21335,10 @@ jmp 21b
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+/// The CPU features `vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -19324,12 +21346,12 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -19500,10 +21522,10 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+/// The CPU features `vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -19511,12 +21533,12 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_gar
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -19688,10 +21710,10 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+/// The CPU features `vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED16_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare16`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 through 511). The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPrepared16Contract`.
 ///
 /// # Safety
 ///
@@ -19703,12 +21725,12 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbag
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10, 12 or 14.
 /// * The slices `src` lists must be `len` bytes long in all.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`).
 /// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
 jae 20f
@@ -20056,6 +22078,2149 @@ call {vg_aes_gcm_seal_split_prepared16_vaes_vpclmul}
 23:
 .base64 "SI2kJPAAAADD"
 .p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_seal_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul,
+        vg_aes_gcm_seal_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_seal_prepared16_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `data` and `tag` must not overlap each other, `ctx`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
+je 22f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 24f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 25f
+24:
+25:
+.base64 "SInpSIXJ"
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 23f
+22:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+23:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 29f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 210f
+29:
+210:
+.base64 "SInpSIXJ"
+je 211f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+213:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 213b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 212f
+211:
+212:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 214f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 215f
+214:
+215:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 216f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 218f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+220:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 220b
+jmp 219f
+218:
+219:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 221f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 222f
+221:
+222:
+.base64 "SInpSIXJ"
+je 223f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 224f
+223:
+224:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
+je 226f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 228f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 229f
+228:
+229:
+.base64 "SInpSIXJ"
+je 230f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+232:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 232b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 231f
+230:
+231:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 227f
+226:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+227:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 233f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 234f
+233:
+234:
+.base64 "SInpSIXJ"
+je 235f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+237:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 237b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 236f
+235:
+236:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 238f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 239f
+238:
+239:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 240f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 241f
+240:
+241:
+.base64 "SIXt"
+je 242f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+244:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 244b
+jmp 243f
+242:
+243:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 245f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 246f
+245:
+246:
+.base64 "SInpSIXJ"
+je 247f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+249:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 249b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 248f
+247:
+248:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `data` must not overlap `ctx`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+jb 22f
+.base64 "SIP7EQ=="
+jb 24f
+jmp 25f
+24:
+.base64 "uQEAAAA="
+25:
+jmp 23f
+22:
+23:
+.base64 "SIXJ"
+je 26f
+.base64 "SIP9DA=="
+je 28f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 210f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 211f
+210:
+211:
+.base64 "SInpSIXJ"
+je 212f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+214:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 214b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 213f
+212:
+213:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 29f
+28:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+29:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 215f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 216f
+215:
+216:
+.base64 "SInpSIXJ"
+je 217f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 218f
+217:
+218:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 220f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 221f
+220:
+221:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 222f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 223f
+222:
+223:
+.base64 "SInpSIXJ"
+je 224f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+226:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 226b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 225f
+224:
+225:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_vaes}
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 227f
+.base64 "QboAAAAA"
+229:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 229b
+jmp 228f
+227:
+.base64 "SIsGTItWCEiJB0yJVwg="
+228:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 230f
+.base64 "QboAAAAA"
+232:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 232b
+jmp 231f
+230:
+.base64 "SIsGTItWCEiJB0yJVwg="
+231:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 233f
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 235f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 236f
+235:
+236:
+.base64 "SIXt"
+je 237f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+239:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 239b
+jmp 238f
+237:
+238:
+jmp 234f
+233:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 240f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+jmp 241f
+240:
+241:
+234:
+.base64 "SYuH2AAAAA=="
+jmp 27f
+26:
+.base64 "uAAAAAA="
+27:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+jb 242f
+.base64 "SIP7EQ=="
+jb 244f
+jmp 245f
+244:
+.base64 "uQEAAAA="
+245:
+jmp 243f
+242:
+243:
+.base64 "SIXJ"
+je 246f
+.base64 "uAAAAABIg/0M"
+jne 248f
+.base64 "SYuPuAAAAEiD+RE="
+jae 250f
+.base64 "uAEAAAA="
+jmp 251f
+250:
+251:
+jmp 249f
+248:
+249:
+.base64 "SIXA"
+je 252f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 254f
+.base64 "SIP5BQ=="
+je 256f
+.base64 "SIP5EA=="
+je 258f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+260:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 260b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 259f
+258:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+259:
+jmp 257f
+256:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+257:
+jmp 255f
+254:
+255:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 261f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 262f
+261:
+262:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAABJi4fQAAAASIXA"
+je 263f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAAA="
+265:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 265b
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+jmp 264f
+263:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+264:
+.base64 "80EPby7zQQ9vfjBMie9Ji7ewAAAASYnyTQHSTQHSTQHSTQHSSQH680QPbwdmQQ/v6GZBD+/480QPb0cQZkEPONzoZkEPONz480QPb0cgZkEPONzoZkEPONz480QPb0cwZkEPONzoZkEPONz480QPb0dAZkEPONzoZkEPONz480QPb0dQZkEPONzoZkEPONz480QPb0dgZkEPONzoZkEPONz480QPb0dwZkEPONzoZkEPONz480QPb4eAAAAAZkEPONzoZkEPONz480QPb4eQAAAAZkEPONzoZkEPONz4SIP+Cg=="
+je 266f
+.base64 "80QPb4egAAAAZkEPONzoZkEPONz480QPb4ewAAAAZkEPONzoZkEPONz4SIP+DA=="
+je 268f
+.base64 "80QPb4fAAAAAZkEPONzoZkEPONz480QPb4fQAAAAZkEPONzoZkEPONz4"
+jmp 269f
+268:
+269:
+jmp 267f
+266:
+267:
+.base64 "80UPbwJmQQ843ehmQQ843fjzQQ9/rwAEAADzQQ9/vxAEAABBi3YMD86DxgEPzkGJdgxJi4fQAAAASIXA"
+je 270f
+.base64 "80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6f1dwxfh3"
+jmp 271f
+270:
+.base64 "80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+Hc="
+271:
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 272f
+.base64 "QboAAAAA"
+274:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 274b
+jmp 273f
+272:
+.base64 "SIsGTItWCEiJB0yJVwg="
+273:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 275f
+.base64 "QboAAAAA"
+277:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 277b
+jmp 276f
+275:
+.base64 "SIsGTItWCEiJB0yJVwg="
+276:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 278f
+.base64 "SYuP0AAAAEiFyQ=="
+je 280f
+.base64 "SYu/yAAAAEyJ/kiBxhAEAABBugAAAAA="
+282:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 282b
+jmp 281f
+280:
+281:
+jmp 279f
+278:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 283f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+jmp 284f
+283:
+284:
+279:
+.base64 "SYuH2AAAAA=="
+jmp 253f
+252:
+.base64 "SIP9DA=="
+je 285f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 287f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 288f
+287:
+288:
+.base64 "SInpSIXJ"
+je 289f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+291:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 291b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 290f
+289:
+290:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 286f
+285:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+286:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 292f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 293f
+292:
+293:
+.base64 "SInpSIXJ"
+je 294f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+296:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 296b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 295f
+294:
+295:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 297f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 298f
+297:
+298:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 299f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2100f
+299:
+2100:
+.base64 "SInpSIXJ"
+je 2101f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2102f
+2101:
+2102:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_vaes}
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 2104f
+.base64 "QboAAAAA"
+2106:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2106b
+jmp 2105f
+2104:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2105:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 2107f
+.base64 "QboAAAAA"
+2109:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2109b
+jmp 2108f
+2107:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2108:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 2110f
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 2112f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 2113f
+2112:
+2113:
+.base64 "SIXt"
+je 2114f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2116:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2116b
+jmp 2115f
+2114:
+2115:
+jmp 2111f
+2110:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 2117f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+jmp 2118f
+2117:
+2118:
+2111:
+.base64 "SYuH2AAAAA=="
+253:
+jmp 247f
+246:
+.base64 "uAAAAAA="
+247:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `len` bytes.
+/// * `dst` must be valid for reads and writes of `dst_len` bytes.
+/// * `tag` must be valid for reads of `tag_len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `dst_len` must equal `len`.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 22f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 24f
+26:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 26b
+jmp 25f
+24:
+25:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 23f
+22:
+.base64 "SIP5IA=="
+jb 27f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 28f
+27:
+.base64 "SIP5EA=="
+jb 29f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 210f
+29:
+.base64 "SIP5CA=="
+jb 211f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 212f
+211:
+.base64 "SIP5BA=="
+jb 213f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 214f
+213:
+.base64 "QboAAAAASTnK"
+je 215f
+217:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 217b
+jmp 216f
+215:
+216:
+214:
+212:
+210:
+28:
+23:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_vaes_vpclmul}
+.base64 "hcA="
+je 218f
+jmp 219f
+218:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 220f
+222:
+.base64 "QogEF0mDwgFJOco="
+jne 222b
+jmp 221f
+220:
+221:
+219:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+21:
+.base64 "ww=="
+20:
+.base64 "SItEJBBIPQAEAAA="
+jae 223f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 225f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 227f
+229:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 229b
+jmp 228f
+227:
+228:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 226f
+225:
+.base64 "SIP5IA=="
+jb 230f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 231f
+230:
+.base64 "SIP5EA=="
+jb 232f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 233f
+232:
+.base64 "SIP5CA=="
+jb 234f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 235f
+234:
+.base64 "SIP5BA=="
+jb 236f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 237f
+236:
+.base64 "QboAAAAASTnK"
+je 238f
+240:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 240b
+jmp 239f
+238:
+239:
+237:
+235:
+233:
+231:
+226:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared16_vaes_vpclmul}
+.base64 "hcA="
+je 241f
+jmp 242f
+241:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 243f
+245:
+.base64 "QogEF0mDwgFJOco="
+jne 245b
+jmp 244f
+243:
+244:
+242:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+224:
+jmp 21b
+223:
+.base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
+call {vg_aes_gcm_open_split_prepared16_vaes_vpclmul}
+.base64 "hcA="
+je 246f
+jmp 247f
+246:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 248f
+250:
+.base64 "QogEF0mDwgFJOco="
+jne 250b
+jmp 249f
+248:
+249:
+247:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
+jmp 224b
+.p2align 6"#,
+        vg_aes_gcm_open_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_vaes_vpclmul,
+        vg_aes_gcm_open_prepared16_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared16_vaes_vpclmul,
+        vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 22f
+.base64 "SYuHwAAAAEiFwA=="
+je 24f
+jmp 25f
+24:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
+jmp 214f
+213:
+.base64 "SInp"
+214:
+jmp 212f
+211:
+.base64 "uQAAAAA="
+212:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 215f
+.base64 "uRAAAABIKdlIOc0="
+jb 217f
+jmp 218f
+217:
+.base64 "SInp"
+218:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+219:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 220f
+jmp 221f
+220:
+.base64 "SInp"
+221:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+222:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 222b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 223f
+jmp 224f
+223:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+224:
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+233:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 233b
+.base64 "SQHMSCnN"
+jmp 230f
+229:
+230:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 234f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 236f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+238:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 238b
+jmp 237f
+236:
+237:
+jmp 228f
+227:
+228:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 239f
+.base64 "SIXb"
+je 241f
+.base64 "uRAAAABIKdlIOc0="
+jb 243f
+jmp 244f
+243:
+.base64 "SInp"
+244:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+245:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 245b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 246f
+jmp 247f
+246:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+247:
+jmp 242f
+241:
+242:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 248f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 249f
+248:
+249:
+.base64 "SInpSIXJ"
+je 250f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+252:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 252b
+jmp 251f
+250:
+251:
+jmp 240f
+239:
+240:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+270:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 270b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 271f
+jmp 272f
+271:
+.base64 "SInp"
+272:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 274f
+jmp 275f
+274:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+275:
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+284:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 284b
+.base64 "SQHMSCnN"
+jmp 281f
+280:
+281:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 285f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 286f
+285:
+286:
+.base64 "SIXt"
+je 287f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+289:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 289b
+jmp 288f
+287:
+288:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 290f
+.base64 "SIXb"
+je 292f
+.base64 "uRAAAABIKdlIOc0="
+jb 294f
+jmp 295f
+294:
+.base64 "SInp"
+295:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+296:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 296b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 297f
+jmp 298f
+297:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+298:
+jmp 293f
+292:
+293:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 299f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2100f
+299:
+2100:
+.base64 "SInpSIXJ"
+je 2101f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 291f
+290:
+291:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_encrypt_blocks_prepared16_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 22f
+.base64 "SYuHwAAAAEiFwA=="
+je 24f
+jmp 25f
+24:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
+jmp 214f
+213:
+.base64 "SInp"
+214:
+jmp 212f
+211:
+.base64 "uQAAAAA="
+212:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 215f
+.base64 "uRAAAABIKdlIOc0="
+jb 217f
+jmp 218f
+217:
+.base64 "SInp"
+218:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 220f
+jmp 221f
+220:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+221:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 222f
+jmp 223f
+222:
+.base64 "SInp"
+223:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+224:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+.base64 "SQHMSCnN"
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 234f
+jmp 235f
+234:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+235:
+jmp 230f
+229:
+230:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 236f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 237f
+236:
+237:
+.base64 "SInpSIXJ"
+je 238f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+240:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 240b
+jmp 239f
+238:
+239:
+jmp 228f
+227:
+228:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 241f
+.base64 "SIXb"
+je 243f
+.base64 "uRAAAABIKdlIOc0="
+jb 245f
+jmp 246f
+245:
+.base64 "SInp"
+246:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+247:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 247b
+.base64 "SQHMSCnN"
+jmp 244f
+243:
+244:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 248f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 249f
+248:
+249:
+.base64 "SIXt"
+je 250f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+252:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 252b
+jmp 251f
+250:
+251:
+jmp 242f
+241:
+242:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+270:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 270b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 271f
+jmp 272f
+271:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+272:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 273f
+jmp 274f
+273:
+.base64 "SInp"
+274:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+275:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 275b
+.base64 "SQHMSCnN"
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+284:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 284b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 285f
+jmp 286f
+285:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+286:
+jmp 281f
+280:
+281:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 287f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 288f
+287:
+288:
+.base64 "SInpSIXJ"
+je 289f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+291:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 291b
+jmp 290f
+289:
+290:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 292f
+.base64 "SIXb"
+je 294f
+.base64 "uRAAAABIKdlIOc0="
+jb 296f
+jmp 297f
+296:
+.base64 "SInp"
+297:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+298:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 298b
+.base64 "SQHMSCnN"
+jmp 295f
+294:
+295:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 299f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 2100f
+299:
+2100:
+.base64 "SIXt"
+je 2101f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2103:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 293f
+292:
+293:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_vaes_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul::vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `nonce` must be valid for reads of `nonce_len` bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
+/// * `dst` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The slices `src` lists must be `len` bytes long in all.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `dst` and `tag` must not overlap each other, `ctx`, `nonce`, `aad`, `src`, the slices `src` lists or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg9AAQAAA=="
+jb 22f
+.base64 "TItcJDBJi0MoSD0AQAAA"
+jb 24f
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 26f
+.base64 "TYtTOE2LUgg="
+jmp 27f
+26:
+27:
+.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQBAAAA="
+jmp 25f
+24:
+25:
+jb 28f
+call {vg_aes_gcm_stream_init_vpclmul}
+.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
+call {vg_aes_gcm_stream_aad_vpclmul}
+.base64 "TItcJDBJi0MoSIXA"
+je 210f
+.base64 "SYtLGEmJyEmD4A9NhcA="
+je 212f
+.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
+call {vg_aes_gcm_stream_aad_vpclmul}
+jmp 213f
+212:
+213:
+.base64 "TItcJDBJi0NASIXA"
+je 214f
+216:
+.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
+call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul}
+.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+jne 216b
+jmp 215f
+214:
+215:
+jmp 211f
+210:
+211:
+.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
+call {vg_aes_gcm_stream_finish_vaes_vpclmul}
+jmp 29f
+28:
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 217f
+.base64 "TYtTOE2LUgg="
+jmp 218f
+217:
+218:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+gAEAAA="
+jb 219f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 221f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+jmp 222f
+221:
+222:
+.base64 "SYlDeEmJi4AAAABNidNJg/kA"
+je 223f
+225:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 226f
+228:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 229f
+231:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 231b
+jmp 230f
+229:
+230:
+.base64 "STnK"
+je 232f
+.base64 "SIP5EA=="
+jb 234f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 235f
+234:
+236:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 236b
+235:
+jmp 233f
+232:
+233:
+.base64 "SAHPSYPpAQ=="
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_vaes_vpclmul}
+.base64 "WFhYWFg="
+jmp 220f
+219:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 237f
+239:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 240f
+242:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 242b
+jmp 241f
+240:
+241:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 243f
+245:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "STnK"
+je 246f
+.base64 "SIP5EA=="
+jb 248f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 249f
+248:
+250:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 250b
+249:
+jmp 247f
+246:
+247:
+.base64 "SAHPSYPpAQ=="
+jne 239b
+jmp 238f
+237:
+238:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_vaes_vpclmul}
+.base64 "WFhY"
+220:
+29:
+jmp 23f
+22:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 251f
+253:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 254f
+256:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 256b
+jmp 255f
+254:
+255:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 257f
+259:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 259b
+jmp 258f
+257:
+258:
+.base64 "STnK"
+je 260f
+.base64 "SIP5EA=="
+jb 262f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 263f
+262:
+264:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 264b
+263:
+jmp 261f
+260:
+261:
+.base64 "SAHPSYPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_vaes_vpclmul}
+.base64 "WFhY"
+23:
+.base64 "SI2kJPAAAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEmJy0mD6wxJg/kRTQ9D2UiLRCQQSIPoAUiD+AJMD0PY"
+jae 265f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIwegISYH6AAEAAEkPQ8NJCcM="
+jmp 266f
+265:
+266:
+.base64 "TYXb"
+je 267f
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD0ABAAA"
+jb 269f
+.base64 "TItcJDBJi0MoSD0AQAAA"
+jb 271f
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 273f
+.base64 "TYtTOE2LUgg="
+jmp 274f
+273:
+274:
+.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQBAAAA="
+jmp 272f
+271:
+272:
+jb 275f
+.base64 "UEiNpCT49f//SYngSYPACEmJmIAAAABJiaiIAAAATYmgkAAAAE2JqJgAAABNibCgAAAATYm4qAAAAE2Jx0mJzkmJ/UmJ9EiJ1UiD/Qw="
+je 277f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 279f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 280f
+279:
+280:
+.base64 "SInpSIXJ"
+je 281f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+283:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 283b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 282f
+281:
+282:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 278f
+277:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+278:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYSYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGFBIjaQk+PX//0mJ4UmDwQhJiZmAAAAASYmpiAAAAE2JoZAAAABNiamYAAAATYmxoAAAAE2JuagAAABNic9JifZJif1JicxMicVIidNIg+MPSIXt"
+je 284f
+.base64 "SIXb"
+je 286f
+.base64 "uRAAAABIKdlIOc0="
+jb 288f
+jmp 289f
+288:
+.base64 "SInp"
+289:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+290:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 290b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 291f
+jmp 292f
+291:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+292:
+jmp 287f
+286:
+287:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 293f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 294f
+293:
+294:
+.base64 "SInpSIXJ"
+je 295f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+297:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 297b
+jmp 296f
+295:
+296:
+jmp 285f
+284:
+285:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABYTItcJDBJi0MoSIXA"
+je 298f
+.base64 "SYtLGEmJyEmD4A9NhcA="
+je 2100f
+.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVhQSI2kJPj1//9JieFJg8EISYmZgAAAAEmJqYgAAABNiaGQAAAATYmpmAAAAE2JsaAAAABNibmoAAAATYnPSYn2SYn9SYnMTInFSInTSIPjD0iF7Q=="
+je 2102f
+.base64 "SIXb"
+je 2104f
+.base64 "uRAAAABIKdlIOc0="
+jb 2106f
+jmp 2107f
+2106:
+.base64 "SInp"
+2107:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+2108:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2108b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 2109f
+jmp 2110f
+2109:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+2110:
+jmp 2105f
+2104:
+2105:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 2111f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2112f
+2111:
+2112:
+.base64 "SInpSIXJ"
+je 2113f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+2115:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2115b
+jmp 2114f
+2113:
+2114:
+jmp 2103f
+2102:
+2103:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAABY"
+jmp 2101f
+2100:
+2101:
+.base64 "TItcJDBJi0NASIXA"
+je 2116f
+2118:
+.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
+call {vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul}
+.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+jne 2118b
+jmp 2117f
+2116:
+2117:
+jmp 299f
+298:
+299:
+.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMFBIjaQk8PX//0iJ4EiDwBBIiUQkCEiLRCQISImYgAAAAEiJqIgAAABMiaCQAAAATImomAAAAEyJsKAAAABMibioAAAASYnHSYnWSYn9SYm3sAAAAEmJj7gAAABNiYfAAAAATYmPyAAAAEmLn8AAAABJi4e4AAAASIXb"
+je 2119f
+jmp 2120f
+2119:
+.base64 "SInD"
+2120:
+.base64 "SIPjD0iF2w=="
+je 2121f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+2123:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2123b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2122f
+2121:
+2122:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJB0mLRhhJiUcITInvSYu3sAAAAEyJ8kyJ+UiDwQBBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SYu/yAAAAEmLB0mLVwhIiQdIiVcISYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBAKAABY"
+jmp 276f
+275:
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 2124f
+.base64 "TYtTOE2LUgg="
+jmp 2125f
+2124:
+2125:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+gAEAAA="
+jb 2126f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 2128f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+jmp 2129f
+2128:
+2129:
+.base64 "SYlDeEmJi4AAAABNidNJg/kA"
+je 2130f
+2132:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2133f
+2135:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2135b
+jmp 2134f
+2133:
+2134:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2136f
+2138:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2138b
+jmp 2137f
+2136:
+2137:
+.base64 "STnK"
+je 2139f
+.base64 "SIP5EA=="
+jb 2141f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2142f
+2141:
+2143:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2143b
+2142:
+jmp 2140f
+2139:
+2140:
+.base64 "SAHPSYPpAQ=="
+jne 2132b
+jmp 2131f
+2130:
+2131:
+.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_prepared16_vaes_vpclmul}
+.base64 "WFhYWFg="
+jmp 2127f
+2126:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 2144f
+2146:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2147f
+2149:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2149b
+jmp 2148f
+2147:
+2148:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2150f
+2152:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2152b
+jmp 2151f
+2150:
+2151:
+.base64 "STnK"
+je 2153f
+.base64 "SIP5EA=="
+jb 2155f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2156f
+2155:
+2157:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2157b
+2156:
+jmp 2154f
+2153:
+2154:
+.base64 "SAHPSYPpAQ=="
+jne 2146b
+jmp 2145f
+2144:
+2145:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+.base64 "WFhY"
+2127:
+276:
+jmp 270f
+269:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 2158f
+2160:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2161f
+2163:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2163b
+jmp 2162f
+2161:
+2162:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2164f
+2166:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2166b
+jmp 2165f
+2164:
+2165:
+.base64 "STnK"
+je 2167f
+.base64 "SIP5EA=="
+jb 2169f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2170f
+2169:
+2171:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2171b
+2170:
+jmp 2168f
+2167:
+2168:
+.base64 "SAHPSYPpAQ=="
+jne 2160b
+jmp 2159f
+2158:
+2159:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+.base64 "WFhY"
+270:
+jmp 268f
+267:
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
+je 2172f
+.base64 "SYtKGEiFyQ=="
+je 2174f
+.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
+2176:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2176b
+jmp 2175f
+2174:
+2175:
+jmp 2173f
+2172:
+2173:
+.base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_prepared16_vaes_vpclmul}
+.base64 "WFhYWFg="
+268:
+.base64 "SI2kJPAAAAA="
+jmp 21b
+.p2align 6"#,
+        vg_aes_gcm_stream_init_vpclmul = sym super::gcm::vg_aes_gcm_stream_init_vpclmul,
+        vg_aes_gcm_stream_aad_vpclmul = sym super::gcm::vg_aes_gcm_stream_aad_vpclmul,
+        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul,
+        vg_aes_gcm_stream_finish_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul,
+        vg_aes_gcm_seal_split_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul::vg_aes_gcm_seal_split_vaes_vpclmul,
+        vg_aes_gcm_seal_vaes_vpclmul = sym super::gcm::vg_aes_gcm_seal_vaes_vpclmul,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
@@ -21381,11 +25546,11 @@ call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
 /// The CPU features `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -21396,17 +25561,22 @@ pub const VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
+        r#".base64 "SIuHAAQAAEiD+AE="
 jne 20f
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
+jne 22f
 .base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
-jae 22f
-.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
 jae 24f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
+jae 26f
 .base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
-jb 26f
+jb 28f
 .base64 "uAEAAAA="
+jmp 29f
+28:
+29:
 jmp 27f
 26:
 27:
@@ -21416,331 +25586,567 @@ jmp 25f
 jmp 23f
 22:
 23:
-jmp 21f
-20:
-21:
 .base64 "SIXA"
-je 28f
+je 210f
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEmLj7gAAABIg8EPSMHpBEmJjxABAABJi5fQAAAASIPCD0jB6gRJiZcYAQAASInISAHQSIPAAUmJwEmDwANJwegCScHgAk2JhyABAABJKcBNiYcoAQAA"
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDE4304wAFi831IQ8BExON1OMkBYvN1SEPJRGLxbUjv0mLRfkh/Vwhi0X5If1cJYtF+SH9XCmLRfkh/Vwti0X5If1cMYtF+SH9XDWLRfkh/Vw5i0X5If1cPSYu/KAEAAEjB5wRMAf9IgccAAgAASYu36AAAAEmLj7gAAABBugAAAABJichJwegGScHgBkmD+AA="
-je 210f
-212:
-.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
-213:
-.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
-je 214f
-.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
-je 216f
-.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wTYn7SYHDAAYAAMRjTTjFAcRjXTjLAWJTPUhDwURiUX5IfwPE4304wAFi831IQ8BExON1OMkBYvN1SEPJREmLhyABAABIg/gF"
+jb 212f
+.base64 "YlJ9SFojYtF+SG87YlNFSETEAGJTRUhE1BFiU0VIRMwBYlNFSETcEGJRNUjvy2JzPUhE2RBiUX1IcMBOYlM9SCXLlmJzNUhE2RBiUX1IcMlOYlM1SCXTlmJRfkh/UwFIg/gJ"
+jb 214f
+.base64 "YlJ9SFpjBGLRfkhvO2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MCYtF+SG97AWJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MDSIP4EQ=="
+jb 216f
+.base64 "YlJ9SFpjDGLRfkhvO2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MEYtF+SG97AWJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MFYtF+SG97AmJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MGYtF+SG97A2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MH"
 jmp 217f
 216:
 217:
 jmp 215f
 214:
 215:
-.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
-jne 213b
-.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+jmp 213f
+212:
+213:
+.base64 "YvFtSO/SYtF+SH9XCGLRfkh/Vwli0X5If1cKYtF+SH9XC2LRfkh/Vwxi0X5If1cNYtF+SH9XDmLRfkh/Vw9Ji78oAQAASMHnBEwB/0iBxwACAABJi7foAAAASYuPuAAAAEG6AAAAAEmJyEnB6AZJweAGSYP4AA=="
 je 218f
 220:
-.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
 jne 220b
 jmp 219f
 218:
 219:
-.base64 "SPfBDwAAAA=="
-je 221f
-.base64 "SPfBDAAAAA=="
-je 223f
-.base64 "SPfBCAAAAA=="
-je 225f
-.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 226f
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
+221:
+.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
+je 222f
+.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
+je 224f
+.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+jmp 225f
+224:
 225:
-226:
-.base64 "SPfBBAAAAA=="
-je 227f
-.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 228f
-227:
+jmp 223f
+222:
+223:
+.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
+jne 221b
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+je 226f
 228:
-.base64 "SPfBAwAAAA=="
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SPfBDwAAAA=="
 je 229f
-231:
+.base64 "SPfBDAAAAA=="
+je 231f
+.base64 "SPfBCAAAAA=="
+je 233f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 234f
+233:
+234:
+.base64 "SPfBBAAAAA=="
+je 235f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 236f
+235:
+236:
+.base64 "SPfBAwAAAA=="
+je 237f
+239:
 .base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 231b
+jne 239b
+jmp 238f
+237:
+238:
+jmp 232f
+231:
+240:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 240b
+232:
 jmp 230f
 229:
 230:
-jmp 224f
-223:
-232:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 232b
-224:
-jmp 222f
-221:
-222:
-.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQHrSYPDQGJRPUjvwGJRNUjvyWJRLUjv0g=="
-233:
-.base64 "YlF+SG9jAmJTHUhD5E5i8X5Ib3oCYvJFSAD4YlNFSETcAGJRPUjvw2JTRUhE3BFiUS1I79NiU0VIRNwBYtNFSET8EGJzJUglz5ZIg8JASYPrQEmD6QE="
-jne 233b
+.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQH7SYHDQAUAAGJRPUjvwGJRNUjvyWJRLUjv0g=="
+241:
+.base64 "YlF+SG9jAmLxfkhvegJi8kVIAPhiU0VIRNwAYlE9SO/DYlNFSETcEWJRLUjv02JTRUhE3AFi00VIRPwQYnMlSCXPlkiDwkBJg+tASYPpAQ=="
+jne 241b
 .base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
-jmp 29f
-28:
-.base64 "uAAAAABIg/0M"
-jne 234f
-.base64 "SYuPuAAAAEiD+RE="
-jae 236f
-.base64 "SYuP0AAAAEiB+QABAAA="
-jb 238f
-.base64 "uAEAAAA="
-jmp 239f
-238:
-239:
-jmp 237f
-236:
-237:
-jmp 235f
-234:
-235:
-.base64 "SIXA"
-je 240f
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+jmp 211f
+210:
+.base64 "SIP9DA=="
 je 242f
-.base64 "SIP5BQ=="
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 244f
-.base64 "SIP5EA=="
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 245f
+244:
+245:
+.base64 "SInpSIXJ"
 je 246f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 248:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 248b
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 247f
 246:
-.base64 "SYu36AAAAPMPbz4="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
 247:
-jmp 245f
-244:
-.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
-245:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
 jmp 243f
 242:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 243:
-.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
 je 249f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 250f
 249:
 250:
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADEwXpvLsTBem9+MMTjVTjvAUyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfpicn1IWi9i0VVI7+1icn1IWm8BYtJVSNztYnJ9SFpvAmLSVUjc7WJyfUhabwNi0lVI3O1icn1IWm8EYtJVSNztYnJ9SFpvBWLSVUjc7WJyfUhabwZi0lVI3O1icn1IWm8HYtJVSNztYnJ9SFpvCGLSVUjc7WJyfUhabwli0lVI3O1Ig/4K"
+.base64 "SInpSIXJ"
 je 251f
-.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
-je 253f
-.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
-jmp 254f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 253:
-254:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 253b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 252f
 251:
 252:
-.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
-je 255f
-.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
-je 257f
-259:
-.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
-jne 259b
-jmp 258f
-257:
-258:
-.base64 "SPfBDwAAAA=="
-je 260f
-.base64 "SPfBDAAAAA=="
-je 262f
-.base64 "SPfBCAAAAA=="
-je 264f
-.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 265f
-264:
-265:
-.base64 "SPfBBAAAAA=="
-je 266f
-.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 267f
-266:
-267:
-.base64 "SPfBAwAAAA=="
-je 268f
-270:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 270b
-jmp 269f
-268:
-269:
-jmp 263f
-262:
-271:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 271b
-263:
-jmp 261f
-260:
-261:
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
-jmp 256f
-255:
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
-256:
-jmp 241f
-240:
-.base64 "SIP9DA=="
-je 272f
-.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 274f
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 275f
-274:
-275:
-.base64 "SInpSIXJ"
-je 276f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-278:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 278b
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 277f
-276:
-277:
-.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
-call {vg_ghash_vpclmul}
-jmp 273f
-272:
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
-273:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
-je 279f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 280f
-279:
-280:
-.base64 "SInpSIXJ"
-je 281f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-283:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 283b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 282f
-281:
-282:
 .base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
-je 284f
+je 254f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512}
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
-jmp 285f
-284:
-285:
+jmp 255f
+254:
+255:
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8MTBem8uxMF6b34wxONVOO8BTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+mJyfUhaL2LRVUjv7WJyfUhabwFi0lVI3O1icn1IWm8CYtJVSNztYnJ9SFpvA2LSVUjc7WJyfUhabwRi0lVI3O1icn1IWm8FYtJVSNztYnJ9SFpvBmLSVUjc7WJyfUhabwdi0lVI3O1icn1IWm8IYtJVSNztYnJ9SFpvCWLSVUjc7UiD/go="
-je 286f
+je 256f
 .base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
-je 288f
+je 258f
 .base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
-jmp 289f
-288:
-289:
-jmp 287f
-286:
-287:
+jmp 259f
+258:
+259:
+jmp 257f
+256:
+257:
 .base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
-je 290f
+je 260f
 .base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
-je 292f
-294:
+je 262f
+264:
 .base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
-jne 294b
-jmp 293f
-292:
-293:
+jne 264b
+jmp 263f
+262:
+263:
 .base64 "SPfBDwAAAA=="
-je 295f
+je 265f
 .base64 "SPfBDAAAAA=="
-je 297f
+je 267f
 .base64 "SPfBCAAAAA=="
-je 299f
+je 269f
 .base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
-jmp 2100f
-299:
-2100:
+jmp 270f
+269:
+270:
 .base64 "SPfBBAAAAA=="
-je 2101f
+je 271f
 .base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
-jmp 2102f
-2101:
-2102:
+jmp 272f
+271:
+272:
 .base64 "SPfBAwAAAA=="
-je 2103f
-2105:
+je 273f
+275:
 .base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2105b
-jmp 2104f
-2103:
-2104:
-jmp 298f
+jne 275b
+jmp 274f
+273:
+274:
+jmp 268f
+267:
+276:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 276b
+268:
+jmp 266f
+265:
+266:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 261f
+260:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+261:
+211:
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic24AAAAAEiD/Qw="
+jne 277f
+.base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
+jae 279f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
+jae 281f
+.base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
+jb 283f
+.base64 "uAEAAAA="
+jmp 284f
+283:
+284:
+jmp 282f
+281:
+282:
+jmp 280f
+279:
+280:
+jmp 278f
+277:
+278:
+.base64 "SIXA"
+je 285f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEmLj7gAAABIg8EPSMHpBEmJjxABAABJi5fQAAAASIPCD0jB6gRJiZcYAQAASInISAHQSIPAAUmJwEmDwANJwegCScHgAk2JhyABAABJKcBNiYcoAQAA"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDE4304wAFi831IQ8BExON1OMkBYvN1SEPJRGLxbUjv0mLRfkh/Vwhi0X5If1cJYtF+SH9XCmLRfkh/Vwti0X5If1cMYtF+SH9XDWLRfkh/Vw5i0X5If1cPSYu/KAEAAEjB5wRMAf9IgccAAgAASYu36AAAAEmLj7gAAABBugAAAABJichJwegGScHgBkmD+AA="
+je 287f
+289:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 289b
+jmp 288f
+287:
+288:
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
+290:
+.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
+je 291f
+.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
+je 293f
+.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+jmp 294f
+293:
+294:
+jmp 292f
+291:
+292:
+.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
+jne 290b
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+je 295f
 297:
-2106:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
-jne 2106b
-298:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 297b
 jmp 296f
 295:
 296:
+.base64 "SPfBDwAAAA=="
+je 298f
+.base64 "SPfBDAAAAA=="
+je 2100f
+.base64 "SPfBCAAAAA=="
+je 2102f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 2103f
+2102:
+2103:
+.base64 "SPfBBAAAAA=="
+je 2104f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 2105f
+2104:
+2105:
+.base64 "SPfBAwAAAA=="
+je 2106f
+2108:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2108b
+jmp 2107f
+2106:
+2107:
+jmp 2101f
+2100:
+2109:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2109b
+2101:
+jmp 299f
+298:
+299:
+.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQHrSYPDQGJRPUjvwGJRNUjvyWJRLUjv0g=="
+2110:
+.base64 "YlF+SG9jAmJTHUhD5E5i8X5Ib3oCYvJFSAD4YlNFSETcAGJRPUjvw2JTRUhE3BFiUS1I79NiU0VIRNwBYtNFSET8EGJzJUglz5ZIg8JASYPrQEmD6QE="
+jne 2110b
+.base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+jmp 286f
+285:
+.base64 "uAAAAABIg/0M"
+jne 2111f
+.base64 "SYuPuAAAAEiD+RE="
+jae 2113f
+.base64 "SYuP0AAAAEiB+QABAAA="
+jb 2115f
+.base64 "uAEAAAA="
+jmp 2116f
+2115:
+2116:
+jmp 2114f
+2113:
+2114:
+jmp 2112f
+2111:
+2112:
+.base64 "SIXA"
+je 2117f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 2119f
+.base64 "SIP5BQ=="
+je 2121f
+.base64 "SIP5EA=="
+je 2123f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+2125:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2125b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 2124f
+2123:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+2124:
+jmp 2122f
+2121:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+2122:
+jmp 2120f
+2119:
+2120:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 2126f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 2127f
+2126:
+2127:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAADEwXpvLsTBem9+MMTjVTjvAUyJ70mLt7AAAABJifJNAdJNAdJNAdJNAdJJAfpicn1IWi9i0VVI7+1icn1IWm8BYtJVSNztYnJ9SFpvAmLSVUjc7WJyfUhabwNi0lVI3O1icn1IWm8EYtJVSNztYnJ9SFpvBWLSVUjc7WJyfUhabwZi0lVI3O1icn1IWm8HYtJVSNztYnJ9SFpvCGLSVUjc7WJyfUhabwli0lVI3O1Ig/4K"
+je 2128f
+.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
+je 2130f
+.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
+jmp 2131f
+2130:
+2131:
+jmp 2129f
+2128:
+2129:
+.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
+je 2132f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
+je 2134f
+2136:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 2136b
+jmp 2135f
+2134:
+2135:
+.base64 "SPfBDwAAAA=="
+je 2137f
+.base64 "SPfBDAAAAA=="
+je 2139f
+.base64 "SPfBCAAAAA=="
+je 2141f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 2142f
+2141:
+2142:
+.base64 "SPfBBAAAAA=="
+je 2143f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 2144f
+2143:
+2144:
+.base64 "SPfBAwAAAA=="
+je 2145f
+2147:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2147b
+jmp 2146f
+2145:
+2146:
+jmp 2140f
+2139:
+2148:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2148b
+2140:
+jmp 2138f
+2137:
+2138:
 .base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
-jmp 291f
-290:
+jmp 2133f
+2132:
 .base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
-291:
-241:
-29:
-.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAAww=="
+2133:
+jmp 2118f
+2117:
+.base64 "SIP9DA=="
+je 2149f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 2151f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2152f
+2151:
+2152:
+.base64 "SInpSIXJ"
+je 2153f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2155:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2155b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2154f
+2153:
+2154:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 2150f
+2149:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+2150:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 2156f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2157f
+2156:
+2157:
+.base64 "SInpSIXJ"
+je 2158f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2160:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2160b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2159f
+2158:
+2159:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 2161f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 2162f
+2161:
+2162:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8MTBem8uxMF6b34wxONVOO8BTInvSYu3sAAAAEmJ8k0B0k0B0k0B0k0B0kkB+mJyfUhaL2LRVUjv7WJyfUhabwFi0lVI3O1icn1IWm8CYtJVSNztYnJ9SFpvA2LSVUjc7WJyfUhabwRi0lVI3O1icn1IWm8FYtJVSNztYnJ9SFpvBmLSVUjc7WJyfUhabwdi0lVI3O1icn1IWm8IYtJVSNztYnJ9SFpvCWLSVUjc7UiD/go="
+je 2163f
+.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
+je 2165f
+.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
+jmp 2166f
+2165:
+2166:
+jmp 2164f
+2163:
+2164:
+.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0mLh9AAAABIhcA="
+je 2167f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAABJichJwegEScHgBEmD+AA="
+je 2169f
+2171:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWxKF6fyQXSYPCEE05wg=="
+jne 2171b
+jmp 2170f
+2169:
+2170:
+.base64 "SPfBDwAAAA=="
+je 2172f
+.base64 "SPfBDAAAAA=="
+je 2174f
+.base64 "SPfBCAAAAA=="
+je 2176f
+.base64 "SosEFkozBBJKiQQWSokEF0mDwgg="
+jmp 2177f
+2176:
+2177:
+.base64 "SPfBBAAAAA=="
+je 2178f
+.base64 "QosEFkIzBBJCiQQWQokEF0mDwgQ="
+jmp 2179f
+2178:
+2179:
+.base64 "SPfBAwAAAA=="
+je 2180f
+2182:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2182b
+jmp 2181f
+2180:
+2181:
+jmp 2175f
+2174:
+2183:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZCiAQXSYPCAUk5yg=="
+jne 2183b
+2175:
+jmp 2173f
+2172:
+2173:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6fxfF+Hc="
+jmp 2168f
+2167:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/F8X4dw=="
+2168:
+2118:
+286:
+.base64 "SIt8JBhJiwdJi1cISIkHSIlXCEmLn4AAAABJi6+IAAAATYunkAAAAE2Lr5gAAABNi7egAAAATYu/qAAAAEiNpCQoCgAA"
+jmp 21b
 .p2align 6"#,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -21748,11 +26154,11 @@ jmp 291f
 /// The CPU features `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -21763,30 +26169,35 @@ pub const VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbag
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
-jb 20f
-.base64 "SIP7EQ=="
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 22f
+.base64 "SIP7EQ=="
+jb 24f
+jmp 25f
+24:
+.base64 "uQEAAAA="
+25:
 jmp 23f
 22:
-.base64 "uQEAAAA="
 23:
-jmp 21f
-20:
-21:
 .base64 "SIXJ"
-je 24f
+je 26f
 .base64 "uAAAAABIg/0M"
-jne 26f
+jne 28f
 .base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
-jae 28f
-.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
 jae 210f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
+jae 212f
 .base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
-jb 212f
+jb 214f
 .base64 "uAEAAAA="
+jmp 215f
+214:
+215:
 jmp 213f
 212:
 213:
@@ -21796,419 +26207,743 @@ jmp 211f
 jmp 29f
 28:
 29:
-jmp 27f
-26:
-27:
 .base64 "SIXA"
-je 214f
+je 216f
 .base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEmLj7gAAABIg8EPSMHpBEmJjxABAABJi5fQAAAASIPCD0jB6gRJiZcYAQAASInISAHQSIPAAUmJwEmDwANJwegCScHgAk2JhyABAABJKcBNiYcoAQAA"
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vAA=="
 lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDE4304wAFi831IQ8BExON1OMkBYvN1SEPJRGLxbUjv0mLRfkh/Vwhi0X5If1cJYtF+SH9XCmLRfkh/Vwti0X5If1cMYtF+SH9XDWLRfkh/Vw5i0X5If1cPSYu/KAEAAEjB5wRMAf9IgccAAgAASYu36AAAAEmLj7gAAABBugAAAABJichJwegGScHgBkmD+AA="
-je 216f
-218:
-.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 218b
-jmp 217f
-216:
-217:
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
-219:
-.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
-je 220f
-.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
-je 222f
-.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+.base64 "8w9vSBDzQQ9vvfAAAABmDzgA+A=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wTYn7SYHDAAYAAMRjTTjFAcRjXTjLAWJTPUhDwURiUX5IfwPE4304wAFi831IQ8BExON1OMkBYvN1SEPJREmLhyABAABIg/gF"
+jb 218f
+.base64 "YlJ9SFojYtF+SG87YlNFSETEAGJTRUhE1BFiU0VIRMwBYlNFSETcEGJRNUjvy2JzPUhE2RBiUX1IcMBOYlM9SCXLlmJzNUhE2RBiUX1IcMlOYlM1SCXTlmJRfkh/UwFIg/gJ"
+jb 220f
+.base64 "YlJ9SFpjBGLRfkhvO2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MCYtF+SG97AWJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MDSIP4EQ=="
+jb 222f
+.base64 "YlJ9SFpjDGLRfkhvO2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MEYtF+SG97AWJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MFYtF+SG97AmJTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MGYtF+SG97A2JTRUhExABiU0VIRNQRYlNFSETMAWJTRUhE3BBiUTVI78ticz1IRNkQYlF9SHDATmJTPUgly5ZiczVIRNkQYlF9SHDJTmJTNUgl05ZiUX5If1MH"
 jmp 223f
 222:
 223:
 jmp 221f
 220:
 221:
-.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
-jne 219b
-.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABJi4/QAAAAQboAAAAASYnIScHoBknB4AZJg/hA"
-jb 224f
-je 226f
-.base64 "SIH5wAAAAA=="
-jae 228f
-230:
-.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 230b
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
-229:
-jmp 227f
+jmp 219f
+218:
+219:
+.base64 "YvFtSO/SYtF+SH9XCGLRfkh/Vwli0X5If1cKYtF+SH9XC2LRfkh/Vwxi0X5If1cNYtF+SH9XDmLRfkh/Vw9Ji78oAQAASMHnBEwB/0iBxwACAABJi7foAAAASYuPuAAAAEG6AAAAAEmJyEnB6AZJweAGSYP4AA=="
+je 224f
 226:
-235:
 .base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 235b
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
-227:
+jne 226b
 jmp 225f
 224:
-.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
 225:
-.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQHrSYPDQGJRPUjvwGJRNUjvyWJRLUjv0g=="
-236:
-.base64 "YlF+SG9jAmJTHUhD5E5i8X5Ib3oCYvJFSAD4YlNFSETcAGJRPUjvw2JTRUhE3BFiUS1I79NiU0VIRNwBYtNFSET8EGJzJUglz5ZIg8JASYPrQEmD6QE="
-jne 236b
-.base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+HdJi5/gAAAASIt0JBi4AAAAAEmJhwABAABJiYcIAQAATIn/SIHHAAEAAEiJ2UiD+RA="
-je 237f
-.base64 "QboAAAAA"
-239:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 239b
-jmp 238f
-237:
-.base64 "SIsGTItWCEiJB0yJVwg="
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
+227:
+.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
+je 228f
+.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
+je 230f
+.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+jmp 231f
+230:
+231:
+jmp 229f
+228:
+229:
+.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
+jne 227b
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABJi4/QAAAAQboAAAAASYnIScHoBknB4AZJg/hA"
+jb 232f
+je 234f
+.base64 "SIH5wAAAAA=="
+jae 236f
 238:
-.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
-je 240f
-.base64 "QboAAAAA"
-242:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 242b
-jmp 241f
-240:
-.base64 "SIsGTItWCEiJB0yJVwg="
-241:
-.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
-je 243f
-.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 238b
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+237:
+jmp 235f
+234:
+243:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 243b
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+235:
+jmp 233f
+232:
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+233:
+.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQH7SYHDQAUAAGJRPUjvwGJRNUjvyWJRLUjv0g=="
+244:
+.base64 "YlF+SG9jAmLxfkhvegJi8kVIAPhiU0VIRNwAYlE9SO/DYlNFSETcEWJRLUjv02JTRUhE3AFi00VIRPwQYnMlSCXPlkiDwkBJg+tASYPpAQ=="
+jne 244b
+.base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+HdJi5/gAAAASIt0JBi4AAAAAEmJhwABAABJiYcIAQAATIn/SIHHAAEAAEiJ2UiD+RA="
 je 245f
+.base64 "QboAAAAA"
 247:
-.base64 "xKF6byQWxKFZ7yQSxKF6fyQWSYPCEE05wg=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 247b
 jmp 246f
 245:
+.base64 "SIsGTItWCEiJB0yJVwg="
 246:
-.base64 "SPfBDwAAAA=="
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
 je 248f
-.base64 "SPfBDAAAAA=="
-je 250f
-.base64 "SPfBCAAAAA=="
-je 252f
-.base64 "SosEFkozBBJKiQQWSYPCCA=="
-jmp 253f
-252:
-253:
-.base64 "SPfBBAAAAA=="
-je 254f
-.base64 "QosEFkIzBBJCiQQWSYPCBA=="
-jmp 255f
-254:
-255:
-.base64 "SPfBAwAAAA=="
-je 256f
-258:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
-jne 258b
-jmp 257f
-256:
-257:
-jmp 251f
+.base64 "QboAAAAA"
 250:
-259:
-.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
-jne 259b
-251:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 250b
 jmp 249f
 248:
+.base64 "SIsGTItWCEiJB0yJVwg="
 249:
-jmp 244f
-243:
-244:
-.base64 "SYuH2AAAAA=="
-jmp 215f
-214:
-.base64 "uAAAAABIg/0M"
-jne 260f
-.base64 "SYuPuAAAAEiD+RE="
-jae 262f
-.base64 "SYuP0AAAAEiB+QABAAA="
-jb 264f
-.base64 "uAEAAAA="
-jmp 265f
-264:
-265:
-jmp 263f
-262:
-263:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 251f
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+je 253f
+255:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWSYPCEE05wg=="
+jne 255b
+jmp 254f
+253:
+254:
+.base64 "SPfBDwAAAA=="
+je 256f
+.base64 "SPfBDAAAAA=="
+je 258f
+.base64 "SPfBCAAAAA=="
+je 260f
+.base64 "SosEFkozBBJKiQQWSYPCCA=="
 jmp 261f
 260:
 261:
-.base64 "SIXA"
-je 266f
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+.base64 "SPfBBAAAAA=="
+je 262f
+.base64 "QosEFkIzBBJCiQQWSYPCBA=="
+jmp 263f
+262:
+263:
+.base64 "SPfBAwAAAA=="
+je 264f
+266:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
+jne 266b
+jmp 265f
+264:
+265:
+jmp 259f
+258:
+267:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
+jne 267b
+259:
+jmp 257f
+256:
+257:
+jmp 252f
+251:
+252:
+.base64 "SYuH2AAAAA=="
+jmp 217f
+216:
+.base64 "SIP9DA=="
 je 268f
-.base64 "SIP5BQ=="
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 270f
-.base64 "SIP5EA=="
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 271f
+270:
+271:
+.base64 "SInpSIXJ"
 je 272f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 274:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 274b
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 273f
 272:
-.base64 "SYu36AAAAPMPbz4="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
 273:
-jmp 271f
-270:
-.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
-271:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
 jmp 269f
 268:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
 269:
-.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
 je 275f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 276f
 275:
 276:
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAABJi4fQAAAASIXA"
+.base64 "SInpSIXJ"
 je 277f
-.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAAA="
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
 279:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 279b
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 278f
 277:
-.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
 278:
-.base64 "xMF6by7EwXpvfjDE41U47wFMie9Ji7ewAAAASYnyTQHSTQHSTQHSTQHSSQH6YnJ9SFovYtFVSO/tYnJ9SFpvAWLSVUjc7WJyfUhabwJi0lVI3O1icn1IWm8DYtJVSNztYnJ9SFpvBGLSVUjc7WJyfUhabwVi0lVI3O1icn1IWm8GYtJVSNztYnJ9SFpvB2LSVUjc7WJyfUhabwhi0lVI3O1icn1IWm8JYtJVSNztSIP+Cg=="
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
 je 280f
-.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
-je 282f
-.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
-jmp 283f
-282:
-283:
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
 jmp 281f
 280:
 281:
-.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0GLdgwPzoPGAQ/OQYl2DEmLh9AAAABIhcA="
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 282f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 283f
+282:
+283:
+.base64 "SInpSIXJ"
 je 284f
-.base64 "80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6f1dwxfh3"
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+286:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 286b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 285f
 284:
-.base64 "80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+Hc="
 285:
-.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
-je 286f
-.base64 "QboAAAAA"
-288:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 288b
-jmp 287f
-286:
-.base64 "SIsGTItWCEiJB0yJVwg="
-287:
-.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
-je 289f
-.base64 "QboAAAAA"
-291:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 291b
-jmp 290f
-289:
-.base64 "SIsGTItWCEiJB0yJVwg="
-290:
-.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
-je 292f
-.base64 "SYuP0AAAAEiFyQ=="
-je 294f
-.base64 "SYu/yAAAAEyJ/kiBxhAEAABBugAAAAA="
-296:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 296b
-jmp 295f
-294:
-295:
-jmp 293f
-292:
-.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
-je 297f
-.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
-call {vg_aes_ctr32_vaes}
-jmp 298f
-297:
-298:
-293:
-.base64 "SYuH2AAAAA=="
-jmp 267f
-266:
-.base64 "SIP9DA=="
-je 299f
-.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 2101f
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2102f
-2101:
-2102:
-.base64 "SInpSIXJ"
-je 2103f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-2105:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2105b
-.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2104f
-2103:
-2104:
-.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
-call {vg_ghash_vpclmul}
-jmp 2100f
-299:
-.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
-2100:
-.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
-je 2106f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2107f
-2106:
-2107:
-.base64 "SInpSIXJ"
-je 2108f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-2110:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2110b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2109f
-2108:
-2109:
-.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
-je 2111f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
-jmp 2112f
-2111:
-2112:
-.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
-je 2113f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2114f
-2113:
-2114:
-.base64 "SInpSIXJ"
-je 2115f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
-2117:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2117b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 2116f
-2115:
-2116:
 .base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
 call {vg_ghash_vpclmul}
 .base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
 call {vg_aes_ctr32_vaes}
 .base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
-je 2118f
+je 287f
 .base64 "QboAAAAA"
-2120:
+289:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2120b
-jmp 2119f
-2118:
+jne 289b
+jmp 288f
+287:
 .base64 "SIsGTItWCEiJB0yJVwg="
-2119:
+288:
 .base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
-je 2121f
+je 290f
 .base64 "QboAAAAA"
-2123:
+292:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2123b
-jmp 2122f
-2121:
+jne 292b
+jmp 291f
+290:
 .base64 "SIsGTItWCEiJB0yJVwg="
-2122:
+291:
 .base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
-je 2124f
+je 293f
 .base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
-je 2126f
+je 295f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
 call {vg_aes_ctr32_vaes}
-jmp 2127f
-2126:
-2127:
+jmp 296f
+295:
+296:
 .base64 "SIXt"
-je 2128f
+je 297f
 .base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
 call {vg_aes_ctr32_vaes}
 .base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
-2130:
+299:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 2130b
-jmp 2129f
-2128:
-2129:
-jmp 2125f
-2124:
+jne 299b
+jmp 298f
+297:
+298:
+jmp 294f
+293:
 .base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
-je 2131f
+je 2100f
 .base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
 call {vg_aes_ctr32_vaes}
-jmp 2132f
-2131:
-2132:
-2125:
+jmp 2101f
+2100:
+2101:
+294:
 .base64 "SYuH2AAAAA=="
-267:
-215:
-jmp 25f
-24:
+217:
+jmp 27f
+26:
 .base64 "uAAAAAA="
-25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
-228:
+27:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+21:
+.base64 "ww=="
+236:
 .base64 "SIn4TCn4SMHoBEiD4AM="
-je 231f
+je 239f
 .base64 "SYnAScHgBEwpx0wpxkmJyU0BwUyJwUjHwP////9I0+DE4fuSyGLxf8lvJmLxfkhvN2Lx3Ujr5mLxfkh/J0G6QAAAAE2JyEnB6AZJweAG"
-233:
+241:
 .base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 233b
+jne 241b
 .base64 "TInJuAEAAABI0+BIg+gBxOH7kshisX/JbyQWYrF+SH8kFw=="
-jmp 232f
-231:
-234:
+jmp 240f
+239:
+242:
 .base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
-jne 234b
+jne 242b
 .base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
-232:
-jmp 229b
+240:
+jmp 237b
+20:
+.base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
+jb 2102f
+.base64 "SIP7EQ=="
+jb 2104f
+jmp 2105f
+2104:
+.base64 "uQEAAAA="
+2105:
+jmp 2103f
+2102:
+2103:
+.base64 "SIXJ"
+je 2106f
+.base64 "uAAAAABIg/0M"
+jne 2108f
+.base64 "SYuPuAAAAEkLj9AAAABIgfkAAgAA"
+jae 2110f
+.base64 "SYuPuAAAAEiDwQ9IwekESYuX0AAAAEiDwg9IweoESAHRSIP5IA=="
+jae 2112f
+.base64 "SYuX0AAAAEiJ0UjB4QRIAdFJA4+4AAAASIP5EQ=="
+jb 2114f
+.base64 "uAEAAAA="
+jmp 2115f
+2114:
+2115:
+jmp 2113f
+2112:
+2113:
+jmp 2111f
+2110:
+2111:
+jmp 2109f
+2108:
+2109:
+.base64 "SIXA"
+je 2116f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEmLj7gAAABIg8EPSMHpBEmJjxABAABJi5fQAAAASIPCD0jB6gRJiZcYAQAASInISAHQSIPAAUmJwEmDwANJwegCScHgAk2JhyABAABJKcBNiYcoAQAA"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDE4304wAFi831IQ8BExON1OMkBYvN1SEPJRGLxbUjv0mLRfkh/Vwhi0X5If1cJYtF+SH9XCmLRfkh/Vwti0X5If1cMYtF+SH9XDWLRfkh/Vw5i0X5If1cPSYu/KAEAAEjB5wRMAf9IgccAAgAASYu36AAAAEmLj7gAAABBugAAAABJichJwegGScHgBkmD+AA="
+je 2118f
+2120:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 2120b
+jmp 2119f
+2118:
+2119:
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQXTInvSYu3sAAAAEyJ8kyJ8U2J+EmBwAAEAADF+m8RxOJpANBIuAEAAAAAAAAAxGH5bvjFem8yxGIJAPDEQQn+78RDDTj1AUi4AgAAAAAAAADEYflu+MRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJwsRBDf7vYlMNSEP1RMRBBf7/YlMFSEP/RE2LjxgBAABJg8EEScHpAg=="
+2121:
+.base64 "YvINSADYYlENSP73YnJ9SFovYtFlSO/dYnJ9SFpvAWLSZUjc3WJyfUhabwJi0mVI3N1icn1IWm8DYtJlSNzdYnJ9SFpvBGLSZUjc3WJyfUhabwVi0mVI3N1icn1IWm8GYtJlSNzdYnJ9SFpvB2LSZUjc3WJyfUhabwhi0mVI3N1icn1IWm8JYtJlSNzdSIP+Cg=="
+je 2122f
+.base64 "YnJ9SFpvCmLSZUjc3WJyfUhabwti0mVI3N1Ig/4M"
+je 2124f
+.base64 "YnJ9SFpvDGLSZUjc3WJyfUhabw1i0mVI3N0="
+jmp 2125f
+2124:
+2125:
+jmp 2123f
+2122:
+2123:
+.base64 "YlJ9SFoqYtJlSN3dYvF+SH8aSIPCQEmD6QE="
+jne 2121b
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABJi4/QAAAAQboAAAAASYnIScHoBknB4AZJg/hA"
+jb 2126f
+je 2128f
+.base64 "SIH5wAAAAA=="
+jae 2130f
+2132:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 2132b
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+2131:
+jmp 2129f
+2128:
+2137:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 2137b
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+2129:
+jmp 2127f
+2126:
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+2127:
+.base64 "SYu/IAEAAEjB5wRMAf9IgcfwAQAASYuHuAAAAEjB4ANID8hIiQdJi4fQAAAASMHgA0gPyEiJRwhMifpIgcKAAQAATYuPIAEAAEnB6QJNictJweMGTQHrSYPDQGJRPUjvwGJRNUjvyWJRLUjv0g=="
+2138:
+.base64 "YlF+SG9jAmJTHUhD5E5i8X5Ib3oCYvJFSAD4YlNFSETcAGJRPUjvw2JTRUhE3BFiUS1I79NiU0VIRNwBYtNFSET8EGJzJUglz5ZIg8JASYPrQEmD6QE="
+jne 2138b
+.base64 "YnM9SETZEGJRfUhwwE5iUz1IJcuWYnM1SETZEGJRfUhwyU5iUzVIJdOWYlMtSEPaDsRBLe/TxEN9OdMBxMEp79PE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+HdJi5/gAAAASIt0JBi4AAAAAEmJhwABAABJiYcIAQAATIn/SIHHAAEAAEiJ2UiD+RA="
+je 2139f
+.base64 "QboAAAAA"
+2141:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2141b
+jmp 2140f
+2139:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2140:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 2142f
+.base64 "QboAAAAA"
+2144:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2144b
+jmp 2143f
+2142:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2143:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 2145f
+.base64 "SYu/KAEAAEkDvxABAABIwecETAH/SIHHAAIAAEmLt8gAAABMifpIgcIQBAAASYuP0AAAAEG6AAAAAEmJyEnB6ARJweAESYP4AA=="
+je 2147f
+2149:
+.base64 "xKF6byQWxKFZ7yQSxKF6fyQWSYPCEE05wg=="
+jne 2149b
+jmp 2148f
+2147:
+2148:
+.base64 "SPfBDwAAAA=="
+je 2150f
+.base64 "SPfBDAAAAA=="
+je 2152f
+.base64 "SPfBCAAAAA=="
+je 2154f
+.base64 "SosEFkozBBJKiQQWSYPCCA=="
+jmp 2155f
+2154:
+2155:
+.base64 "SPfBBAAAAA=="
+je 2156f
+.base64 "QosEFkIzBBJCiQQWSYPCBA=="
+jmp 2157f
+2156:
+2157:
+.base64 "SPfBAwAAAA=="
+je 2158f
+2160:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
+jne 2160b
+jmp 2159f
+2158:
+2159:
+jmp 2153f
+2152:
+2161:
+.base64 "Qg+2BBZGD7YMEkwxyEKIBBZJg8IBSTnK"
+jne 2161b
+2153:
+jmp 2151f
+2150:
+2151:
+jmp 2146f
+2145:
+2146:
+.base64 "SYuH2AAAAA=="
+jmp 2117f
+2116:
+.base64 "uAAAAABIg/0M"
+jne 2162f
+.base64 "SYuPuAAAAEiD+RE="
+jae 2164f
+.base64 "SYuP0AAAAEiB+QABAAA="
+jb 2166f
+.base64 "uAEAAAA="
+jmp 2167f
+2166:
+2167:
+jmp 2165f
+2164:
+2165:
+jmp 2163f
+2162:
+2163:
+.base64 "SIXA"
+je 2168f
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DEGLBkGLTgRBi1YIQYt2DA/Og8YBD85BiUYwQYlONEGJVjhBiXY8uAAAAABJiUYQSYlGGEmLj7gAAABIhck="
+je 2170f
+.base64 "SIP5BQ=="
+je 2172f
+.base64 "SIP5EA=="
+je 2174f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BJi7foAAAAQboAAAAA"
+2176:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2176b
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vf2BmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+jmp 2175f
+2174:
+.base64 "SYu36AAAAPMPbz4="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+2175:
+jmp 2173f
+2172:
+.base64 "SYu36AAAAIsGRA+2VgRJweIgTAHQZkgPbvg="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBBmDzgA+PNBD2+dEAEAAGZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79BmDzgA0PNBD39WEA=="
+2173:
+jmp 2171f
+2170:
+2171:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 2177f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 2178f
+2177:
+2178:
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vnRABAADzQQ9vtQABAABJi4fQAAAASIXA"
+je 2179f
+.base64 "Zg/v//NBD3+/AAIAAEyJ/0iBxwACAABJi7fIAAAATIn6SIHCEAQAAEmLj9AAAABBugAAAAA="
+2181:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2181b
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+jmp 2180f
+2179:
+.base64 "SYuHuAAAAEjB4ANID8hJiYcQAgAASYuHwAAAAEjB4ANID8hJiYcYAgAA"
+2180:
+.base64 "xMF6by7EwXpvfjDE41U47wFMie9Ji7ewAAAASYnyTQHSTQHSTQHSTQHSSQH6YnJ9SFovYtFVSO/tYnJ9SFpvAWLSVUjc7WJyfUhabwJi0lVI3O1icn1IWm8DYtJVSNztYnJ9SFpvBGLSVUjc7WJyfUhabwVi0lVI3O1icn1IWm8GYtJVSNztYnJ9SFpvB2LSVUjc7WJyfUhabwhi0lVI3O1icn1IWm8JYtJVSNztSIP+Cg=="
+je 2182f
+.base64 "YnJ9SFpvCmLSVUjc7WJyfUhabwti0lVI3O1Ig/4M"
+je 2184f
+.base64 "YnJ9SFpvDGLSVUjc7WJyfUhabw1i0lVI3O0="
+jmp 2185f
+2184:
+2185:
+jmp 2183f
+2182:
+2183:
+.base64 "YlJ9SFoqYtJVSN3tYtF+SH9vEMX4d0GLdgwPzoPGAQ/OQYl2DEmLh9AAAABIhcA="
+je 2186f
+.base64 "80UPb2YQZkQPOADg80EPb78AAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTeAGZFD+/DZkQPb99mRA86RN4RZkUP79NmRA9v32ZEDzpE3gFmRQ/vy2ZED2/fZkQPOkTeEGZFD+/L80EPb78QAgAAZg84APhmRA9v32ZEDzpE2wBmRQ/vw2ZED2/fZkQPOkTbEWZFD+/TZkQPb99mRA86RNsBZkUP78tmRA9v32ZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v0mZBD+/QxOJpANDEwXpvnwAEAADF6e/TxMF6f1dwxfh3"
+jmp 2187f
+2186:
+.base64 "80UPb2YQZkQPOADg80EPb78QAgAAZg84APhmQQ/v/GZFD+/AZkUP78lmRQ/v0mZED2/fZkQPOkTbAGZFD+/DZkQPb99mRA86RNsRZkUP79NmRA9v32ZEDzpE2wFmRQ/vy2ZED2/fZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/SZkEP79DE4mkA0MTBem+fAAQAAMXp79PEwXp/V3DF+Hc="
+2187:
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 2188f
+.base64 "QboAAAAA"
+2190:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2190b
+jmp 2189f
+2188:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2189:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 2191f
+.base64 "QboAAAAA"
+2193:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2193b
+jmp 2192f
+2191:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2192:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 2194f
+.base64 "SYuP0AAAAEiFyQ=="
+je 2196f
+.base64 "SYu/yAAAAEyJ/kiBxhAEAABBugAAAAA="
+2198:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2198b
+jmp 2197f
+2196:
+2197:
+jmp 2195f
+2194:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 2199f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+jmp 2200f
+2199:
+2200:
+2195:
+.base64 "SYuH2AAAAA=="
+jmp 2169f
+2168:
+.base64 "SIP9DA=="
+je 2201f
+.base64 "uAAAAABJiQZJiUYISYmv2AAAALsAAAAATIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 2203f
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2204f
+2203:
+2204:
+.base64 "SInpSIXJ"
+je 2205f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2207:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2207b
+.base64 "TInvSIHH8AAAAEyJ9kiDxgBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2206f
+2205:
+2206:
+.base64 "uwAAAABJi6/YAAAASInYSAHASAHASAHASA/ISYlHYEiJ6EgBwEgBwEgBwEgPyEmJR2hMie9IgcfwAAAATIn2SIPGAEyJ+kiDwmC5AQAAAE2J+EmBwAACAAA="
+call {vg_ghash_vpclmul}
+jmp 2202f
+2201:
+.base64 "QYsEJEGLTCQEQYtUJAi+AAAAAUGJBkGJTgRBiVYIQYl2DA=="
+2202:
+.base64 "QYsGQYtOBEGLVghBi3YMD86DxgEPzkGJRjBBiU40QYlWOEGJdjy4AAAAAEmJRhBJiUYYTYun6AAAAEmLr7gAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 2208f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2209f
+2208:
+2209:
+.base64 "SInpSIXJ"
+je 2210f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2212:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2212b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2211f
+2210:
+2211:
+.base64 "SYuH0AAAAEmJh8AAAABIwegESIXA"
+je 2213f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEkDh8gAAABJiYfIAAAA"
+jmp 2214f
+2213:
+2214:
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4kiJ6UjB6QRIiehIg+UPSCnoSQHESIXJ"
+je 2215f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2216f
+2215:
+2216:
+.base64 "SInpSIXJ"
+je 2217f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMieZBugAAAAA="
+2219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2219b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2218f
+2217:
+2218:
+.base64 "SYufuAAAAEmLr8AAAABIidhIAcBIAcBIAcBID8hJiUdgSInoSAHASAHASAHASA/ISYlHaEyJ70iBx/AAAABMifZIg8YQTIn6SIPCYLkBAAAATYn4SYHAAAIAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtGEEmJR3BJi0YYSYlHeEyJ70mLt7AAAABMifJMiflIg8FwQbgBAAAATYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_vaes}
+.base64 "SYuf4AAAAEiLdCQYuAAAAABJiYcAAQAASYmHCAEAAEyJ/0iBxwABAABIidlIg/kQ"
+je 2220f
+.base64 "QboAAAAA"
+2222:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2222b
+jmp 2221f
+2220:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2221:
+.base64 "uAAAAABJiYfwAAAASYmH+AAAAEyJ/0iBx/AAAABMif5Ig8ZwSInZSIP5EA=="
+je 2223f
+.base64 "QboAAAAA"
+2225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2225b
+jmp 2224f
+2223:
+.base64 "SIsGTItWCEiJB0yJVwg="
+2224:
+.base64 "SYuH8AAAAEkzhwABAABJi5f4AAAASTOXCAEAAEgJ0EiD+AG4AAAAAIPQAEmJh9gAAABIhcA="
+je 2226f
+.base64 "TYunyAAAAEmLr9AAAAC7AAAAAEyJ4UmJ6EnB6ARIiehIg+UPSCnoSQHETYXA"
+je 2228f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 2229f
+2228:
+2229:
+.base64 "SIXt"
+je 2230f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2232:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2232b
+jmp 2231f
+2230:
+2231:
+jmp 2227f
+2226:
+.base64 "SYuHwAAAAEiJwUiD4Q9IKchJi4/IAAAASCnBSMHoBEmJwEiFwA=="
+je 2233f
+.base64 "TInvSYu3sAAAAEyJ8k2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+jmp 2234f
+2233:
+2234:
+2227:
+.base64 "SYuH2AAAAA=="
+2169:
+2117:
+jmp 2107f
+2106:
+.base64 "uAAAAAA="
+2107:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAAA="
+jmp 21b
+2130:
+.base64 "SIn4TCn4SMHoBEiD4AM="
+je 2133f
+.base64 "SYnAScHgBEwpx0wpxkmJyU0BwUyJwUjHwP////9I0+DE4fuSyGLxf8lvJmLxfkhvN2Lx3Ujr5mLxfkh/J0G6QAAAAE2JyEnB6AZJweAG"
+2135:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 2135b
+.base64 "TInJuAEAAABI0+BIg+gBxOH7kshisX/JbyQWYrF+SH8kFw=="
+jmp 2134f
+2133:
+2136:
+.base64 "YrF+SG8kFmKxfkh/JBdJg8JATTnC"
+jne 2136b
+.base64 "uAEAAABI0+BIg+gBxOH7kshisX/JbyQWxOH7kshisX9JfyQX"
+2134:
+jmp 2131b
 .p2align 6"#,
-        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -22216,11 +26951,11 @@ jmp 229b
 /// The CPU features `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -22233,10 +26968,10 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_gar
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2776 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SItEJBBIPQAEAAA="
-jae 20f
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
 .base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 22f
 .base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
@@ -22284,7 +27019,7 @@ jmp 216f
 28:
 23:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_open_vaes_vpclmul_avx512}
 .base64 "hcA="
 je 218f
 jmp 219f
@@ -22302,24 +27037,92 @@ jmp 221f
 21:
 .base64 "ww=="
 20:
+.base64 "SItEJBBIPQAEAAA="
+jae 223f
+.base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
+jb 225f
+.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+jb 227f
+229:
+.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+jae 229b
+jmp 228f
+227:
+228:
+.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+jmp 226f
+225:
+.base64 "SIP5IA=="
+jb 230f
+.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+jmp 231f
+230:
+.base64 "SIP5EA=="
+jb 232f
+.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+jmp 233f
+232:
+.base64 "SIP5CA=="
+jb 234f
+.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+jmp 235f
+234:
+.base64 "SIP5BA=="
+jb 236f
+.base64 "iwZEi0QO/IkHRIlED/w="
+jmp 237f
+236:
+.base64 "QboAAAAASTnK"
+je 238f
+240:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 240b
+jmp 239f
+238:
+239:
+237:
+235:
+233:
+231:
+226:
+.base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
+call {vg_aes_gcm_open_prepared_vaes_vpclmul_avx512}
+.base64 "hcA="
+je 241f
+jmp 242f
+241:
+.base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
+je 243f
+245:
+.base64 "QogEF0mDwgFJOco="
+jne 245b
+jmp 244f
+243:
+244:
+242:
+.base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBWw=="
+224:
+jmp 21b
+223:
 .base64 "SI2kJMD1//9Ii4QkSAoAAEiJRCQISIuEJFAKAABIiUQkEEiLhCRYCgAASIlEJBhIi4QkYAoAAEiJRCQgSIuEJGgKAABIiUQkKEiLhCRwCgAASIlEJDBIieBIg8BASIlEJDhXVlJRQVBBUVBQUFBQSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQYSItEJGBIiUQkIEiLRCRoSIlEJChIi4QkkAAAAEiJRCQw"
 call {vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512}
 .base64 "hcA="
-je 223f
-jmp 224f
-223:
+je 246f
+jmp 247f
+246:
 .base64 "SIt8JHBIi0wkaLgAAAAAQboAAAAASTnK"
-je 225f
-227:
+je 248f
+250:
 .base64 "QogEF0mDwgFJOco="
-jne 227b
-jmp 226f
-225:
-226:
-224:
+jne 250b
+jmp 249f
+248:
+249:
+247:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0iNpCRACgAA"
-jmp 21b
+jmp 224b
 .p2align 6"#,
+        vg_aes_gcm_open_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_vaes_vpclmul_avx512,
         vg_aes_gcm_open_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_open_split_prepared_vaes_vpclmul_avx512,
     )
@@ -22328,11 +27131,11 @@ jmp 21b
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -22341,315 +27144,125 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verif
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
-je 20f
-.base64 "SYuHwAAAAEiFwA=="
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 22f
-jmp 23f
-22:
-.base64 "SYufuAAAAEiD4w9Ihds="
+.base64 "SYuHwAAAAEiFwA=="
 je 24f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
-26:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 26b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
 jmp 25f
 24:
-25:
-23:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
-jb 27f
-.base64 "SYmv2AAAAEiF2w=="
-je 29f
-.base64 "uRAAAABIKdlIOc0="
-jb 211f
-jmp 212f
-211:
-.base64 "SInp"
-212:
-jmp 210f
-29:
-.base64 "uQAAAAA="
-210:
-.base64 "SYmP0AAAAEiJzUiF2w=="
-je 213f
-.base64 "uRAAAABIKdlIOc0="
-jb 215f
-jmp 216f
-215:
-.base64 "SInp"
-216:
-.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
-217:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 217b
-.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
-jb 218f
-jmp 219f
-218:
-.base64 "SInp"
-219:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-220:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 220b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 221f
-jmp 222f
-221:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
 call {vg_ghash_vpclmul}
-222:
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
 jmp 214f
 213:
+.base64 "SInp"
 214:
-.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
-je 223f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
-jmp 224f
-223:
-224:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
-jmp 28f
-27:
-28:
-.base64 "SIXt"
-je 225f
-.base64 "SIXb"
-je 227f
-.base64 "uRAAAABIKdlIOc0="
-jb 229f
-jmp 230f
-229:
-.base64 "SInp"
-230:
-.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
-231:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 231b
-.base64 "SQHMSCnN"
-jmp 228f
-227:
-228:
-.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
-je 232f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
-call {vg_aes_ctr32_vaes}
-jmp 233f
-232:
-233:
-.base64 "SIXt"
-je 234f
-.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
-236:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 236b
-jmp 235f
-234:
-235:
-jmp 226f
-225:
-226:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
-je 237f
-.base64 "SIXb"
-je 239f
-.base64 "uRAAAABIKdlIOc0="
-jb 241f
-jmp 242f
-241:
-.base64 "SInp"
-242:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 244f
-jmp 245f
-244:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-245:
-jmp 240f
-239:
-240:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
-je 246f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 247f
-246:
-247:
-.base64 "SInpSIXJ"
-je 248f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
-250:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 250b
-jmp 249f
-248:
-249:
-jmp 238f
-237:
-238:
-jmp 21f
-20:
-21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
-.p2align 6"#,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
-
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads of 1024 bytes.
-/// * `state` must be valid for reads and writes of 80 bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
-/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
-je 20f
-.base64 "SYuHwAAAAEiFwA=="
-je 22f
-jmp 23f
-22:
-.base64 "SYufuAAAAEiD4w9Ihds="
-je 24f
-.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
-26:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 26b
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
-jmp 25f
-24:
-25:
-23:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
-jb 27f
-.base64 "SYmv2AAAAEiF2w=="
-je 29f
-.base64 "uRAAAABIKdlIOc0="
-jb 211f
 jmp 212f
 211:
-.base64 "SInp"
-212:
-jmp 210f
-29:
 .base64 "uQAAAAA="
-210:
+212:
 .base64 "SYmP0AAAAEiJzUiF2w=="
-je 213f
+je 215f
 .base64 "uRAAAABIKdlIOc0="
-jb 215f
-jmp 216f
-215:
-.base64 "SInp"
-216:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+jb 217f
+jmp 218f
 217:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 217b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 218f
-jmp 219f
+.base64 "SInp"
 218:
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
 219:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 219b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
 jb 220f
 jmp 221f
 220:
 .base64 "SInp"
 221:
-.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
 222:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 222b
-.base64 "SQHMSCnN"
-jmp 214f
-213:
-214:
-.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+.base64 "SQHMSCnNSAHLSIP7EA=="
 je 223f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
-call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
-.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 224f
 223:
-224:
-.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
-jmp 28f
-27:
-28:
-.base64 "SIXt"
-je 225f
-.base64 "SIXb"
-je 227f
-.base64 "uRAAAABIKdlIOc0="
-jb 229f
-jmp 230f
-229:
-.base64 "SInp"
-230:
-.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
-231:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 231b
-.base64 "SQHMSCnNSAHLSIP7EA=="
-je 232f
-jmp 233f
-232:
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
 call {vg_ghash_vpclmul}
+224:
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
 233:
-jmp 228f
-227:
-228:
-.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 233b
+.base64 "SQHMSCnN"
+jmp 230f
+229:
+230:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
 je 234f
-.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
-call {vg_ghash_vpclmul}
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
 jmp 235f
 234:
 235:
-.base64 "SInpSIXJ"
+.base64 "SIXt"
 je 236f
-.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
 238:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
 jne 238b
 jmp 237f
 236:
 237:
-jmp 226f
-225:
-226:
+jmp 228f
+227:
+228:
 .base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
 je 239f
 .base64 "SIXb"
@@ -22660,54 +27273,583 @@ jmp 244f
 243:
 .base64 "SInp"
 244:
-.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
 245:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 245b
-.base64 "SQHMSCnN"
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 246f
+jmp 247f
+246:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+247:
 jmp 242f
 241:
 242:
-.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
-je 246f
-.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
-call {vg_aes_ctr32_vaes}
-jmp 247f
-246:
-247:
-.base64 "SIXt"
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
 je 248f
-.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
-250:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 250b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
 jmp 249f
 248:
 249:
+.base64 "SInpSIXJ"
+je 250f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+252:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 252b
+jmp 251f
+250:
+251:
 jmp 240f
 239:
 240:
-jmp 21f
-20:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
 21:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+270:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 270b
+.base64 "SQHMSCnNTYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 271f
+jmp 272f
+271:
+.base64 "SInp"
+272:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 274f
+jmp 275f
+274:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+275:
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+284:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 284b
+.base64 "SQHMSCnN"
+jmp 281f
+280:
+281:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 285f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 286f
+285:
+286:
+.base64 "SIXt"
+je 287f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+289:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 289b
+jmp 288f
+287:
+288:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 290f
+.base64 "SIXb"
+je 292f
+.base64 "uRAAAABIKdlIOc0="
+jb 294f
+jmp 295f
+294:
+.base64 "SInp"
+295:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+296:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 296b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 297f
+jmp 298f
+297:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+298:
+jmp 293f
+292:
+293:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 299f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 2100f
+299:
+2100:
+.base64 "SInpSIXJ"
+je 2101f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 291f
+290:
+291:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
+
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads of 1088 bytes.
+/// * `state` must be valid for reads and writes of 80 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `*ctx` must have the prepared format written by `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`).
+/// * `state` and `data` must not overlap each other, `ctx` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 22f
+.base64 "SYuHwAAAAEiFwA=="
+je 24f
+jmp 25f
+24:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 26f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+28:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 28b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 27f
+26:
+27:
+25:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 29f
+.base64 "SYmv2AAAAEiF2w=="
+je 211f
+.base64 "uRAAAABIKdlIOc0="
+jb 213f
+jmp 214f
+213:
+.base64 "SInp"
+214:
+jmp 212f
+211:
+.base64 "uQAAAAA="
+212:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 215f
+.base64 "uRAAAABIKdlIOc0="
+jb 217f
+jmp 218f
+217:
+.base64 "SInp"
+218:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 220f
+jmp 221f
+220:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+221:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 222f
+jmp 223f
+222:
+.base64 "SInp"
+223:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+224:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 224b
+.base64 "SQHMSCnN"
+jmp 216f
+215:
+216:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 225f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 226f
+225:
+226:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 210f
+29:
+210:
+.base64 "SIXt"
+je 227f
+.base64 "SIXb"
+je 229f
+.base64 "uRAAAABIKdlIOc0="
+jb 231f
+jmp 232f
+231:
+.base64 "SInp"
+232:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 234f
+jmp 235f
+234:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+235:
+jmp 230f
+229:
+230:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 236f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 237f
+236:
+237:
+.base64 "SInpSIXJ"
+je 238f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+240:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 240b
+jmp 239f
+238:
+239:
+jmp 228f
+227:
+228:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 241f
+.base64 "SIXb"
+je 243f
+.base64 "uRAAAABIKdlIOc0="
+jb 245f
+jmp 246f
+245:
+.base64 "SInp"
+246:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+247:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 247b
+.base64 "SQHMSCnN"
+jmp 244f
+243:
+244:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 248f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 249f
+248:
+249:
+.base64 "SIXt"
+je 250f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+252:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 252b
+jmp 251f
+250:
+251:
+jmp 242f
+241:
+242:
+jmp 23f
+22:
+23:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
+je 253f
+.base64 "SYuHwAAAAEiFwA=="
+je 255f
+jmp 256f
+255:
+.base64 "SYufuAAAAEiD4w9Ihds="
+je 257f
+.base64 "uAAAAABJiUdgSYlHaEyJ/0iDx2BMifZIg8YgSInZQboAAAAA"
+259:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 259b
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 258f
+257:
+258:
+256:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kAAQAASDnN"
+jb 260f
+.base64 "SYmv2AAAAEiF2w=="
+je 262f
+.base64 "uRAAAABIKdlIOc0="
+jb 264f
+jmp 265f
+264:
+.base64 "SInp"
+265:
+jmp 263f
+262:
+.base64 "uQAAAAA="
+263:
+.base64 "SYmP0AAAAEiJzUiF2w=="
+je 266f
+.base64 "uRAAAABIKdlIOc0="
+jb 268f
+jmp 269f
+268:
+.base64 "SInp"
+269:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+270:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 270b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 271f
+jmp 272f
+271:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+272:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD7kQAAAASCnZSDnN"
+jb 273f
+jmp 274f
+273:
+.base64 "SInp"
+274:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+275:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 275b
+.base64 "SQHMSCnN"
+jmp 267f
+266:
+267:
+.base64 "SYuH0AAAAEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAABJi4/YAAAASCnBSYmP0AAAAEmLh9AAAABIwegESIXA"
+je 276f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
+call {vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512}
+.base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
+jmp 277f
+276:
+277:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjDw=="
+jmp 261f
+260:
+261:
+.base64 "SIXt"
+je 278f
+.base64 "SIXb"
+je 280f
+.base64 "uRAAAABIKdlIOc0="
+jb 282f
+jmp 283f
+282:
+.base64 "SInp"
+283:
+.base64 "TIn3SAHfSIPHIEyJ5kG6AAAAAA=="
+284:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 284b
+.base64 "SQHMSCnNSAHLSIP7EA=="
+je 285f
+jmp 286f
+285:
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+286:
+jmp 281f
+280:
+281:
+.base64 "TIniSInpSMHpBEiJ6EiD5Q9IKehJAcRIhck="
+je 287f
+.base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
+call {vg_ghash_vpclmul}
+jmp 288f
+287:
+288:
+.base64 "SInpSIXJ"
+je 289f
+.base64 "TIn3SIPHIEyJ5kG6AAAAAA=="
+291:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 291b
+jmp 290f
+289:
+290:
+jmp 279f
+278:
+279:
+.base64 "TYunyAAAAEmLr9AAAABJi5/AAAAASIPjD0iF7Q=="
+je 292f
+.base64 "SIXb"
+je 294f
+.base64 "uRAAAABIKdlIOc0="
+jb 296f
+jmp 297f
+296:
+.base64 "SInp"
+297:
+.base64 "TInnTIn2SAHeSIPGQEG6AAAAAA=="
+298:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 298b
+.base64 "SQHMSCnN"
+jmp 295f
+294:
+295:
+.base64 "TInhSYnoScHoBEiJ6EiD5Q9IKehJAcRNhcA="
+je 299f
+.base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+jmp 2100f
+299:
+2100:
+.base64 "SIXt"
+je 2101f
+.base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
+2103:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2103b
+jmp 2102f
+2101:
+2102:
+jmp 293f
+292:
+293:
+jmp 254f
+253:
+254:
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAAA="
+jmp 21b
+.p2align 6"#,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_vaes_vpclmul_avx512,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512::vg_aes_gcm_decrypt_blocks_prepared_vaes_vpclmul_avx512,
     )
 }
 
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512BW);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -22720,235 +27862,433 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES: verified
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `vaes`, `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx512f` and `avx512bw` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQgSD0AAQAA"
-jb 20f
-.base64 "SYnLSYPrDEmD+RFND0PZSItEJBBIg+gBSIP4AkwPQ9g="
-jae 22f
-.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIDQABAABIwegISYH6AAEAAEkPQ8NJCcM="
-jmp 23f
-22:
-23:
-.base64 "TYXb"
-jmp 21f
-20:
-21:
-je 24f
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD3wAgAA"
-jb 26f
+        r#".base64 "SIuHAAQAAEiD+AE="
+jne 20f
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg98AIAAA=="
+jb 22f
 .base64 "TItcJDBJi0MoSD0AAwAA"
-jb 28f
+jb 24f
 .base64 "TItcJDBBugAAAABJi0NASIXA"
-je 210f
+je 26f
 .base64 "TYtTOE2LUgg="
-jmp 211f
-210:
-211:
+jmp 27f
+26:
+27:
 .base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQADAAA="
-jmp 29f
-28:
-29:
-jb 212f
+jmp 25f
+24:
+25:
+jb 28f
 call {vg_aes_gcm_stream_init_vpclmul}
 .base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
 call {vg_aes_gcm_stream_aad_vpclmul}
 .base64 "TItcJDBJi0MoSIXA"
-je 214f
+je 210f
 .base64 "SYtLGEmJyEmD4A9NhcA="
-je 216f
+je 212f
 .base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
 call {vg_aes_gcm_stream_aad_vpclmul}
-jmp 217f
-216:
-217:
+jmp 213f
+212:
+213:
 .base64 "TItcJDBJi0NASIXA"
-je 218f
-220:
+je 214f
+216:
 .base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
-call {vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512}
+call {vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512}
 .base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
-jne 220b
-jmp 219f
-218:
-219:
+jne 216b
 jmp 215f
 214:
 215:
+jmp 211f
+210:
+211:
 .base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
 call {vg_aes_gcm_stream_finish_vaes_vpclmul}
-jmp 213f
-212:
+jmp 29f
+28:
 .base64 "TItcJDBBugAAAABJi0NASIXA"
-je 221f
+je 217f
 .base64 "TYtTOE2LUgg="
+jmp 218f
+217:
+218:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+vACAAA="
+jb 219f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 221f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
 jmp 222f
 221:
 222:
-.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+vACAAA="
-jb 223f
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
-je 225f
-.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
-jmp 226f
-225:
-226:
 .base64 "SYlDeEmJi4AAAABNidNJg/kA"
-je 227f
-229:
+je 223f
+225:
 .base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 230f
-232:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 232b
-jmp 231f
-230:
-231:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 233f
-235:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 235b
-jmp 234f
-233:
-234:
-.base64 "STnK"
-je 236f
-.base64 "SIP5EA=="
-jb 238f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 239f
-238:
-240:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 240b
-239:
-jmp 237f
-236:
-237:
-.base64 "SAHPSYPpAQ=="
-jne 229b
-jmp 228f
-227:
+je 226f
 228:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 229f
+231:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 231b
+jmp 230f
+229:
+230:
+.base64 "STnK"
+je 232f
+.base64 "SIP5EA=="
+jb 234f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 235f
+234:
+236:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 236b
+235:
+jmp 233f
+232:
+233:
+.base64 "SAHPSYPpAQ=="
+jne 225b
+jmp 224f
+223:
+224:
+.base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
+call {vg_aes_gcm_seal_split_vaes_vpclmul_avx512}
+.base64 "WFhYWFg="
+jmp 220f
+219:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 237f
+239:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 240f
+242:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 242b
+jmp 241f
+240:
+241:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 243f
+245:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "STnK"
+je 246f
+.base64 "SIP5EA=="
+jb 248f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 249f
+248:
+250:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 250b
+249:
+jmp 247f
+246:
+247:
+.base64 "SAHPSYPpAQ=="
+jne 239b
+jmp 238f
+237:
+238:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
+.base64 "WFhY"
+220:
+29:
+jmp 23f
+22:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 251f
+253:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 254f
+256:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 256b
+jmp 255f
+254:
+255:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 257f
+259:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 259b
+jmp 258f
+257:
+258:
+.base64 "STnK"
+je 260f
+.base64 "SIP5EA=="
+jb 262f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 263f
+262:
+264:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 264b
+263:
+jmp 261f
+260:
+261:
+.base64 "SAHPSYPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_vaes_vpclmul_avx512}
+.base64 "WFhY"
+23:
+.base64 "SI2kJPAAAAA="
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEiLRCQgSD0AAQAA"
+jb 265f
+.base64 "SYnLSYPrDEmD+RFND0PZSItEJBBIg+gBSIP4AkwPQ9g="
+jae 267f
+.base64 "TItUJAhNi1IITInQSMHoBEjB4ARIg8AQSDtEJCBJD0PDSQnDSItEJCBIDQABAABIwegISYH6AAEAAEkPQ8NJCcM="
+jmp 268f
+267:
+268:
+.base64 "TYXb"
+jmp 266f
+265:
+266:
+je 269f
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCE2JQxBNiUsYTYlLUE2JUzhJiUNASItEJBhMi1QkIEyLRCQoSYlDIE2JUyhNiUMwuAAAAABJiUNISYlDWEmJQ2BIidZIicpMidlIg8FoTItcJDBJi0MoSD3wAgAA"
+jb 271f
+.base64 "TItcJDBJi0MoSD0AAwAA"
+jb 273f
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 275f
+.base64 "TYtTOE2LUgg="
+jmp 276f
+275:
+276:
+.base64 "SYtDKEjB6ARIweAESTnCSYtDKEG6AAAAAEkPQ8JIPQADAAA="
+jmp 274f
+273:
+274:
+jb 277f
+call {vg_aes_gcm_stream_init_vpclmul}
+.base64 "TItcJDBJiztMid5Ig8ZougAAAABJi0sQTYtDGA=="
+call {vg_aes_gcm_stream_aad_vpclmul}
+.base64 "TItcJDBJi0MoSIXA"
+je 279f
+.base64 "SYtLGEmJyEmD4A9NhcA="
+je 281f
+.base64 "uBAAAABMKcBJicBJiztIichMAcBJiUNQTIneSIPGaEiJykyJ2UiDwVg="
+call {vg_aes_gcm_stream_aad_vpclmul}
+jmp 282f
+281:
+282:
+.base64 "TItcJDBJi0NASIXA"
+je 283f
+285:
+.base64 "TItcJDBNi1M4TYsKSYtCCE2LUyBJi0tISQHKSYs7SYtzCEyJ2kiDwmhJi0tQTYtDSFBBUlA="
+call {vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512}
+.base64 "WFhYTItcJDBNi1M4SYtCCEmLS0hIAcFJg8IQSYtDQEiD6AFJiUtITYlTOEmJQ0BIhcA="
+jne 285b
+jmp 284f
+283:
+284:
+jmp 280f
+279:
+280:
+.base64 "TItcJDBJiztJi3MITInaSIPCaEmLSxhNi0MoTYtLMA=="
+call {vg_aes_gcm_stream_finish_vaes_vpclmul}
+jmp 278f
+277:
+.base64 "TItcJDBBugAAAABJi0NASIXA"
+je 286f
+.base64 "TYtTOE2LUgg="
+jmp 287f
+286:
+287:
+.base64 "SYtDKEjB6ARIweAEQbgAAAAASTnCTQ9C0EmB+vACAAA="
+jb 288f
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LUzhMidC5AAAAAE2FyQ=="
+je 290f
+.base64 "SYsCSYtKCEmD6QFJg8IQSAHP"
+jmp 291f
+290:
+291:
+.base64 "SYlDeEmJi4AAAABNidNJg/kA"
+je 292f
+294:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 295f
+297:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 297b
+jmp 296f
+295:
+296:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 298f
+2100:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2100b
+jmp 299f
+298:
+299:
+.base64 "STnK"
+je 2101f
+.base64 "SIP5EA=="
+jb 2103f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2104f
+2103:
+2105:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2105b
+2104:
+jmp 2102f
+2101:
+2102:
+.base64 "SAHPSYPpAQ=="
+jne 294b
+jmp 293f
+292:
+293:
 .base64 "TItcJDBJi1NoSYtLcE2LQxBNi0sYSYtDME2LUyhJi7uAAAAASYtzeE2LWyBQQVJBU1dWTItcJFhJiztJi3MI"
 call {vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512}
 .base64 "WFhYWFg="
-jmp 224f
-223:
+jmp 289f
+288:
 .base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 241f
-243:
+je 2106f
+2108:
 .base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 244f
-246:
+je 2109f
+2111:
 .base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 246b
-jmp 245f
-244:
-245:
+jne 2111b
+jmp 2110f
+2109:
+2110:
 .base64 "SYnIScHoBEnB4ARNOcI="
-je 247f
-249:
+je 2112f
+2114:
 .base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 249b
-jmp 248f
-247:
-248:
+jne 2114b
+jmp 2113f
+2112:
+2113:
 .base64 "STnK"
-je 250f
+je 2115f
 .base64 "SIP5EA=="
-jb 252f
+jb 2117f
 .base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 253f
-252:
-254:
+jmp 2118f
+2117:
+2119:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 254b
-253:
-jmp 251f
-250:
-251:
+jne 2119b
+2118:
+jmp 2116f
+2115:
+2116:
 .base64 "SAHPSYPpAQ=="
-jne 243b
-jmp 242f
-241:
-242:
+jne 2108b
+jmp 2107f
+2106:
+2107:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
 call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
 .base64 "WFhY"
-224:
-213:
-jmp 27f
-26:
-.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
-je 255f
-257:
-.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
-je 258f
-260:
-.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SYnIScHoBEnB4ARNOcI="
-je 261f
-263:
-.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
-jne 263b
-jmp 262f
-261:
-262:
-.base64 "STnK"
-je 264f
-.base64 "SIP5EA=="
-jb 266f
-.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
-jmp 267f
-266:
-268:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 268b
-267:
-jmp 265f
-264:
-265:
-.base64 "SAHPSYPpAQ=="
-jne 257b
-jmp 256f
-255:
-256:
-.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
-.base64 "WFhY"
-27:
-jmp 25f
-24:
-.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
-je 269f
-.base64 "SYtKGEiFyQ=="
-je 271f
-.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
-273:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 273b
+289:
+278:
 jmp 272f
 271:
+.base64 "SYlzaEmJU3BNi0tASYt7IE2LWzhJg/kA"
+je 2120f
+2122:
+.base64 "SYszSYtLCEmDwxBBugAAAABJichJwegGScHgBkmD+AA="
+je 2123f
+2125:
+.base64 "80IPbwQW80IPb0wWEPNCD29UFiDzQg9vXBYw80IPfwQX80IPf0wXEPNCD39UFyDzQg9/XBcwSYPCQE05wg=="
+jne 2125b
+jmp 2124f
+2123:
+2124:
+.base64 "SYnIScHoBEnB4ARNOcI="
+je 2126f
+2128:
+.base64 "80IPbwQW80IPfwQXSYPCEE05wg=="
+jne 2128b
+jmp 2127f
+2126:
+2127:
+.base64 "STnK"
+je 2129f
+.base64 "SIP5EA=="
+jb 2131f
+.base64 "SYnKSYPqEPNCD28EFvNCD38EFw=="
+jmp 2132f
+2131:
+2133:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2133b
+2132:
+jmp 2130f
+2129:
+2130:
+.base64 "SAHPSYPpAQ=="
+jne 2122b
+jmp 2121f
+2120:
+2121:
+.base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
+call {vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512}
+.base64 "WFhY"
 272:
 jmp 270f
 269:
-270:
+.base64 "TItcJDBMi1QkCEiLRCQQSYk7SYlzCEiD+AE="
+je 2134f
+.base64 "SYtKGEiFyQ=="
+je 2136f
+.base64 "SYtyEEiLfCQYSQN6CEG6AAAAAA=="
+2138:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2138b
+jmp 2137f
+2136:
+2137:
+jmp 2135f
+2134:
+2135:
 .base64 "uQwAAABMi1QkCEmLMkmLeghIi0QkKEyLVCQgTItcJBhQQVJBU1dWTItcJFhJiztJi3MI"
 call {vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512}
 .base64 "WFhYWFg="
-25:
-.base64 "SI2kJPAAAADD"
+270:
+.base64 "SI2kJPAAAAA="
+jmp 21b
 .p2align 6"#,
         vg_aes_gcm_stream_init_vpclmul = sym super::gcm::vg_aes_gcm_stream_init_vpclmul,
         vg_aes_gcm_stream_aad_vpclmul = sym super::gcm::vg_aes_gcm_stream_aad_vpclmul,
-        vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_vaes_vpclmul_avx512,
         vg_aes_gcm_stream_finish_vaes_vpclmul = sym super::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul,
+        vg_aes_gcm_seal_split_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_vaes_vpclmul_avx512,
+        vg_aes_gcm_seal_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_vaes_vpclmul_avx512,
+        vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512::vg_aes_gcm_stream_encrypt_to_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512 = sym super::aes::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512::vg_aes_gcm_seal_split_prepared_vaes_vpclmul_avx512,
         vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512 = sym super::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
     )
@@ -23950,11 +29290,11 @@ call {vg_aes_gcm_seal_vpclmul}
 /// The CPU features `vg_aes_gcm_seal_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
+/// `vg_aes_gcm_seal` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -23965,7 +29305,7 @@ pub const VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2624 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJNj1//9Ii4QkMAoAAEiJRCQISIuEJDgKAABIiUQkEEiLhCRACgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEiJmIAAAABIiaiIAAAATImgkAAAAEyJqJgAAABMibCgAAAATIm4qAAAAEmJx02J/kmDxhBJif1JibewAAAATYmH6AAAAE2Jj7gAAABIi0QkCEmJh8gAAABIi0QkEEmJh9AAAABJidRIic1Ig/0M"
 je 20f
@@ -24070,11 +29410,11 @@ call {vg_aes_ctr32}
 /// The CPU features `vg_aes_gcm_open_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
+/// `vg_aes_gcm_open` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
@@ -24085,7 +29425,7 @@ pub const VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 2632 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJND1//9Ii4QkOAoAAEiJRCQISIuEJEAKAABIiUQkEEiLhCRICgAASIlEJBhIi4QkUAoAAEiJRCQgSIngSIPAMEiJRCQoSItEJChIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdNif5Jg8YQSYn9SYm3sAAAAE2Jh+gAAABNiY+4AAAASItEJAhJiYfIAAAASItEJBBJiYfQAAAASYnUSInNSItcJCBJiZ/gAAAAuQAAAABIg/sE"
 jb 20f
@@ -24240,11 +29580,11 @@ jmp 25f
 /// The CPU features `vg_aes_gcm_open_to_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_open_to` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
+/// `vg_aes_gcm_open_to` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `len` bytes.
@@ -24257,7 +29597,7 @@ pub const VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Fe
 /// * None of `ctx`, `nonce`, `aad`, `src`, `dst` and `tag` may overlap the return address on the stack or the 2728 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
+pub unsafe extern "sysv64" fn vg_aes_gcm_open_to_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "V1ZSUUFQQVFQUFBQUEiLdCRgSIt8JHBIi0wkaEiD+UA="
 jb 20f
@@ -24306,7 +29646,7 @@ jmp 214f
 26:
 21:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared_vpclmul}
+call {vg_aes_gcm_open_vpclmul}
 .base64 "hcA="
 je 216f
 jmp 217f
@@ -24322,18 +29662,18 @@ jmp 219f
 217:
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW8M="
 .p2align 6"#,
-        vg_aes_gcm_open_prepared_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared_vpclmul,
+        vg_aes_gcm_open_vpclmul = sym super::gcm::vg_aes_gcm_open_vpclmul,
     )
 }
 
 /// The CPU features `vg_aes_gcm_stream_encrypt_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_encrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
+/// `vg_aes_gcm_stream_encrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -24342,7 +29682,7 @@ pub const VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_encrypt_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -24516,11 +29856,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_stream_decrypt_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_stream_decrypt` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
+/// `vg_aes_gcm_stream_decrypt` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `rounds` must be 10, 12 or 14.
@@ -24529,7 +29869,7 @@ pub const VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES: verified_garbage_
 /// * None of `ctx`, `state` and `data` may overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_stream_decrypt_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJOj1//9Ii4QkIAoAAEiJRCQISIngSIPAGEiJRCQQSItEJBBIiZiAAAAASImoiAAAAEyJoJAAAABMiaiYAAAATImwoAAAAEyJuKgAAABJicdJidZJif1JibewAAAASYmPuAAAAE2Jh8AAAABNiY/IAAAASItsJAhJia/QAAAATYnMTInDSIPjD0iF7Q=="
 je 20f
@@ -24704,11 +30044,11 @@ jmp 21f
 /// The CPU features `vg_aes_gcm_seal_gather_prepared_vpclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
 
-/// `vg_aes_gcm_seal_gather` with a 1024-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers. The powers remain secret; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
+/// `vg_aes_gcm_seal_gather` with a 1088-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the 48 prepared powers if they are present. The powers remain secret; whether they are absent may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
 /// # Safety
 ///
-/// * `ctx` must be valid for reads of 1024 bytes.
+/// * `ctx` must be valid for reads of 1088 bytes.
 /// * `nonce` must be valid for reads of `nonce_len` bytes.
 /// * `aad` must be valid for reads of `aad_len` bytes.
 /// * `src` must be valid for reads of `2 * size_of::<usize>() * src_count` bytes, and each slice it lists for reads of its length in bytes.
@@ -24721,7 +30061,7 @@ pub const VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES: verified_garbage_cpu
 /// * None of `ctx`, `nonce`, `aad`, `src`, the slices `src` lists, `dst` and `tag` may overlap the return address on the stack or the 5128 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3` and `vpclmulqdq` target features.
 #[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vpclmul(ctx: *const [u64; 128], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub unsafe extern "sysv64" fn vg_aes_gcm_seal_gather_prepared_vpclmul(ctx: *const [u64; 136], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJBD///9Ii4Qk+AAAAEiJRCQISIuEJAABAABIiUQkEEiLhCQIAQAASIlEJBhIi4QkEAEAAEiJRCQgSIuEJBgBAABIiUQkKEiJ4EiDwDhIiUQkMEyLXCQwTItUJAhIi0QkEEmJO0mJcwhNiUMQTYlLGE2JS1BNiVM4SYlDQEiLRCQYTItUJCBMi0QkKEmJQyBNiVMoTYlDMLgAAAAASYlDSEmJQ1hJiUNgSInWSInKTInZSIPBaEyLXCQwSYtDKEg97///fw=="
 jb 20f
@@ -25147,115 +30487,6 @@ jmp 21f
 20:
 21:
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
-.p2align 6"#,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
-}
-
-/// Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes and, at byte `256 + 32*k`, for `k` from 0 to 23, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedPowersRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1024 bytes.
-/// * `ctx` must not overlap the return address on the stack or the 328 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 128]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJMD+//9IieZIg8YISIuH8AAAAEiLl/gAAABJifBNiaAgAQAATYmoKAEAAE2JsDABAABJiYAAAQAASYmQCAEAAEiJhxABAABIiZcYAQAASMfAAAAAAEmJgBABAABJiYAYAQAASIn+SIHGEAEAAEiLBkiJRvBIi0YISIlG+EiJ90yLH0kPy0yLZwhJD8xNAeRNEdtIGcBJvQAAAAAAAADCSSHFTTHrSIPgAUkxxE2J3k0x5kyJJkyJXghIg8bwTInHSIHHAAEAAEyJwkiBwhABAABIx8EBAAAA"
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlGMEiLRghIiUY4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxjBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIsGSIlG8EiLRghIiUb4SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCEiDxvBMicdIgccAAQAATInCSIHCEAEAAEjHwQEAAAA="
-call {vg_ghash}
-.base64 "SIn3TIsfSQ/LTItnCEkPzE0B5E0R20gZwEm9AAAAAAAAAMJJIcVNMetIg+ABSTHETYneTTHmTIkmTIleCE2LoCABAABNi6goAQAATYuwMAEAAEG7AAAAAEyJXCQITIlcJBBMiVwkGEyJXCQgTIlcJChMiVwkMEyJXCQ4TIlcJEBMiVwkSEyJXCRQTIlcJFhMiVwkYEyJXCRoTIlcJHBMiVwkeEyJnCSAAAAATImcJIgAAABMiZwkkAAAAEyJnCSYAAAATImcJKAAAABMiZwkqAAAAEyJnCSwAAAATImcJLgAAABMiZwkwAAAAEyJnCTIAAAATImcJNAAAABMiZwk2AAAAEyJnCTgAAAATImcJOgAAABMiZwk8AAAAEyJnCT4AAAATImcJAABAABMiZwkCAEAAEyJnCQQAQAATImcJBgBAABMiZwkIAEAAEyJnCQoAQAATImcJDABAABMiZwkOAEAAEiNpCRAAQAAww=="
 .p2align 6"#,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )

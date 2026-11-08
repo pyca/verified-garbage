@@ -65,6 +65,10 @@ pub mod aes_ctr;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
+pub mod aes_ecb;
+
+#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
+#[rustfmt::skip]
 pub mod aes_gcm_siv;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]

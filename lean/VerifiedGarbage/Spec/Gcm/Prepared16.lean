@@ -5,25 +5,23 @@ public import VerifiedGarbage.Spec.Gcm.Prepared
 /-!
 # AES-GCM with sixteen prepared GHASH powers
 
-**Trusted.** The 1024-byte prepared key context of `Spec/Gcm/Prepared.lean`,
-for implementations that read only its first sixteen powers: the first 256
-bytes are the existing key context (`KeyRepr`), and bytes 256 through 511
+**Trusted.** A 1024-byte key context for implementations that read only
+sixteen prepared powers (`preparedPower`, `Spec/Gcm/Prepared.lean`): the first
+256 bytes are the existing key context (`KeyRepr`), and bytes 256 through 511
 hold the first 8 pairs of `PreparedPowersRepr`, pair `k` being
 `preparedPower(H^(2k+2))` then `preparedPower(H^(2k+1))`, each stored
 little-endian. Bytes 512 through 1023 are not read, and
 `vg_aes_gcm_prepare16` does not write them. This is a storage convention, not
 a change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
-A context `vg_aes_gcm_prepare` wrote (`PreparedPowersRepr`) satisfies
-`PreparedPowers16Repr` too (its 24 pairs begin with these 8), so these APIs
-also take it; a context `vg_aes_gcm_prepare16` wrote must never be passed to a `*_prepared` or
-`*_precomputed` API, which may read all 48 powers. The signatures are those of
-the `*_prepared` APIs (a 1024-byte context), and these APIs have the existing
-GCM postconditions, memory bounds, disjointness and secrecy guarantees; only
-the precondition on the powers is weaker, so they have distinct names. The
-APIs that read only the first 256 bytes (stream initialization, AAD, finish
-and verify) remain usable. Existing specifications and contracts are
-unchanged.
+A context `vg_aes_gcm_prepare16` wrote must never be passed to a `*_prepared`
+or `*_precomputed` API, which may read all 48 powers. The signatures are those
+of the `*_precomputed` APIs (a 1024-byte context), and these APIs have the
+existing GCM postconditions, memory bounds, disjointness and secrecy
+guarantees; only the precondition on the powers differs, so they have distinct
+names. The APIs that read only the first 256 bytes (stream initialization,
+AAD, finish and verify) remain usable. Existing specifications and contracts
+are unchanged.
 -/
 
 @[expose] public section
@@ -42,24 +40,28 @@ def PreparedPowers16Repr (m : Mem) (p : Addr) : Prop :=
 
 /-! ## The key context -/
 
+/-- A 1024-byte context, whose first 256 bytes are a key context. -/
+def prepare16Sig : Sig where
+  params := [("ctx", .array true .u64 128)]
+
 /-- Keeps the first 256 bytes, and writes the first 16 prepared powers of the
 hash subkey in its bytes 240–255 (`ctxH`). With those bytes a key context
 (`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is a 16-power
 prepared key context of the same key (`KeyRepr` and `PreparedPowers16Repr`). -/
-def prepare16Post (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
+def prepare16Post (pb : Nat) : prepare16Sig.Post pb := fun ctx m m' _ =>
   Aes.bytesAt m' ctx 256 = Aes.bytesAt m ctx 256 ∧ PreparedPowers16Repr m' ctx
 
 /-- No precondition: the powers are those of whatever hash subkey the
 context holds. -/
 def prepare16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  prepareSig.contract A (post := prepare16Post A.ptrBits) (writeArgs := true) (stack := stack)
+  prepare16Sig.contract A (post := prepare16Post A.ptrBits) (writeArgs := true) (stack := stack)
 
 /-- Prepares the first 16 powers of a key context in place on any target,
 without the key. -/
 def prepare16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_prepare16"
-  sig := prepareSig
+  sig := prepare16Sig
   writeArgs := true
   contracts := some fun A stack => prepare16Contract A stack
   summary := "Makes the 1024-byte `*ctx`, whose first 256 bytes are a key context of \
@@ -75,13 +77,13 @@ def prepare16Api : Api where
 
 /-- Prepared-context validity, in addition to each API's existing safety requirements. -/
 def prepared16Safety : String :=
-  "`*ctx` must have the prepared format written by `vg_aes_gcm_prepare16` or \
-  `vg_aes_gcm_prepare` (not the format of `vg_aes_gcm_init_precomputed`)."
+  "`*ctx` must have the format written by `vg_aes_gcm_prepare16` (not that of \
+  `vg_aes_gcm_prepare` or `vg_aes_gcm_init_precomputed`)."
 
 /-- Common documentation for the 16-power prepared APIs. -/
 def prepared16Summary (name contract : String) : String :=
-  "`" ++ name ++ "` with a 1024-byte context from `vg_aes_gcm_prepare16` (or " ++
-  "`vg_aes_gcm_prepare`). Computes the same result, using the AES key schedule and hash " ++
+  "`" ++ name ++ "` with a 1024-byte context from `vg_aes_gcm_prepare16`. " ++
+  "Computes the same result, using the AES key schedule and hash " ++
   "subkey in its first 256 bytes, and may read the first 16 prepared powers (bytes 256 " ++
   "through 511). The powers remain secret; all other memory, aliasing and constant-time " ++
   "requirements are unchanged. Contract: `VG.Spec.Gcm." ++ contract ++ "`."
@@ -89,31 +91,31 @@ def prepared16Summary (name contract : String) : String :=
 /-! ## Preconditions -/
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def sealPrepared16Pre (pb : Nat) : Curry (sealPreparedSig.words pb) (Mem → Prop) :=
+def sealPrepared16Pre (pb : Nat) : Curry (sealPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def openPrepared16Pre (pb : Nat) : Curry (openPreparedSig.words pb) (Mem → Prop) :=
+def openPrepared16Pre (pb : Nat) : Curry (openPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _data _len _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def streamCryptPrepared16Pre (pb : Nat) : Curry (streamCryptPreparedSig.words pb) (Mem → Prop) :=
+def streamCryptPrepared16Pre (pb : Nat) : Curry (streamCryptPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _state _aadLen _textLen _data _len m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def sealGatherPrepared16Pre (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (Mem → Prop) :=
+def sealGatherPrepared16Pre (pb : Nat) : Curry (sealGatherPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen src srcCount _dst len _tag m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       gatheredLen pb m src srcCount.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
 
 /-- The existing round-count and length requirements, plus 16 prepared powers. -/
-def openToPrepared16Pre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → Prop) :=
+def openToPrepared16Pre (pb : Nat) : Curry (openToPrecomputedSig.words pb) (Mem → Prop) :=
   fun ctx rounds _nonce _nonceLen _aad _aadLen _src len _dst dstLen _tag _tagLen m =>
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       dstLen.toNat = len.toNat ∧ PreparedPowers16Repr m ctx
@@ -122,7 +124,7 @@ def openToPrepared16Pre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem →
 
 /-- The unchanged `sealContract` postcondition with 16 prepared powers. -/
 def sealPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealPreparedSig.contract A (pre := sealPrepared16Pre A.ptrBits)
+  sealPrecomputedSig.contract A (pre := sealPrepared16Pre A.ptrBits)
     (post := sealPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -130,7 +132,7 @@ def sealPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
 def sealPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_seal_prepared16"
-  sig := sealPreparedSig
+  sig := sealPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => sealPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_seal" "sealPrepared16Contract"
@@ -138,7 +140,7 @@ def sealPrepared16Api : Api where
 
 /-- The unchanged `openContract` postcondition with 16 prepared powers. -/
 def openPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openPreparedSig.contract A (pre := openPrepared16Pre A.ptrBits)
+  openPrecomputedSig.contract A (pre := openPrepared16Pre A.ptrBits)
     (post := openPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openLeak A.ptrBits))
 
@@ -146,7 +148,7 @@ def openPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M
 def openPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_open_prepared16"
-  sig := openPreparedSig
+  sig := openPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => openPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_open" "openPrepared16Contract"
@@ -154,7 +156,7 @@ def openPrepared16Api : Api where
 
 /-- The unchanged `streamEncryptContract` postcondition with 16 prepared powers. -/
 def streamEncryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPreparedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
     (post := streamEncryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -162,7 +164,7 @@ def streamEncryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
 def streamEncryptPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_stream_encrypt_prepared16"
-  sig := streamCryptPreparedSig
+  sig := streamCryptPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => streamEncryptPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_stream_encrypt" "streamEncryptPrepared16Contract"
@@ -170,7 +172,7 @@ def streamEncryptPrepared16Api : Api where
 
 /-- The unchanged `streamDecryptContract` postcondition with 16 prepared powers. -/
 def streamDecryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  streamCryptPreparedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
+  streamCryptPrecomputedSig.contract A (pre := streamCryptPrepared16Pre A.ptrBits)
     (post := streamDecryptPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -178,7 +180,7 @@ def streamDecryptPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : C
 def streamDecryptPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_stream_decrypt_prepared16"
-  sig := streamCryptPreparedSig
+  sig := streamCryptPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => streamDecryptPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_stream_decrypt" "streamDecryptPrepared16Contract"
@@ -186,7 +188,7 @@ def streamDecryptPrepared16Api : Api where
 
 /-- The unchanged `sealGatherContract` postcondition with 16 prepared powers. -/
 def sealGatherPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  sealGatherPreparedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
+  sealGatherPrecomputedSig.contract A (pre := sealGatherPrepared16Pre A.ptrBits)
     (post := sealGatherPost A.ptrBits)
     (writeArgs := true) (stack := stack)
 
@@ -194,7 +196,7 @@ def sealGatherPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
 def sealGatherPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_seal_gather_prepared16"
-  sig := sealGatherPreparedSig
+  sig := sealGatherPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => sealGatherPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_seal_gather" "sealGatherPrepared16Contract"
@@ -203,7 +205,7 @@ def sealGatherPrepared16Api : Api where
 
 /-- The unchanged `openToContract` postcondition with 16 prepared powers. -/
 def openToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  openToPreparedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
+  openToPrecomputedSig.contract A (pre := openToPrepared16Pre A.ptrBits)
     (post := openToPost A.ptrBits)
     (writeArgs := true) (stack := stack) (leak := some (openToLeak A.ptrBits))
 
@@ -211,7 +213,7 @@ def openToPrepared16Contract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract
 def openToPrepared16Api : Api where
   module := "gcm"
   name := "vg_aes_gcm_open_to_prepared16"
-  sig := openToPreparedSig
+  sig := openToPrecomputedSig
   writeArgs := true
   contracts := some fun A stack => openToPrepared16Contract A stack
   summary := prepared16Summary "vg_aes_gcm_open_to" "openToPrepared16Contract"
