@@ -155,8 +155,8 @@ b 232f
 231:
 232:
 .base64 "AABu6AgAjugAAHb4CACW+OAADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
-        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -329,19 +329,11 @@ b 238f
 237:
 238:
 .base64 "eMsjf+AADuimAwh8iADu6ZAADuqYAC7qoABO6qgAbuqwAI7quACu6sAAzurIAO7q0AAO69gALuuAAM7pYA8hOCAAgE4=""#,
-        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
-        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32.rs"]
-pub(crate) mod vg_aes_ctr32;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch.rs"]
-pub(crate) mod vg_aes_expand_key_scratch;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]
