@@ -332,25 +332,18 @@ macro_rules! ml_dsa {
             /// This key, prepared for many verifications: see
             #[doc = concat!("[`", stringify!($PreparedVerifyingKey), "`].")]
             pub fn prepare(self) -> $PreparedVerifyingKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
-                {
-                    let mut prepared = $crate::align::CacheAligned([0u8; $prepared_pk]);
-                    // The verified contract accepts arbitrary initial scratch bytes.
-                    let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
-                    // SAFETY: `self.bytes`, `prepared` and `work` are valid
-                    // for reads (and, for the last two, writes) of their
-                    // sizes; they are distinct Rust objects, so they do not
-                    // overlap each other or the stack, or wrap around the end
-                    // of the address space. `prepare_verify` writes the
-                    // prepared key of `self.bytes` to `prepared`
-                    // (`VG.Spec.MlDsa.preparePublicKeyContract`).
-                    unsafe { $prepare_verify(&self.bytes, &mut prepared.0, work.0.as_mut_ptr()) };
-                    $PreparedVerifyingKey { prepared, key: self }
-                }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little"))))]
-                {
-                    $PreparedVerifyingKey { key: self }
-                }
+                let mut prepared = $crate::align::CacheAligned([0u8; $prepared_pk]);
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
+                // SAFETY: `self.bytes`, `prepared` and `work` are valid
+                // for reads (and, for the last two, writes) of their
+                // sizes; they are distinct Rust objects, so they do not
+                // overlap each other or the stack, or wrap around the end
+                // of the address space. `prepare_verify` writes the
+                // prepared key of `self.bytes` to `prepared`
+                // (`VG.Spec.MlDsa.preparePublicKeyContract`).
+                unsafe { $prepare_verify(&self.bytes, &mut prepared.0, work.0.as_mut_ptr()) };
+                $PreparedVerifyingKey { prepared, key: self }
             }
         }
 
@@ -358,13 +351,12 @@ macro_rules! ml_dsa {
             "An ", $name, " public key prepared for many verifications ([`",
             stringify!($VerifyingKey), "::prepare`]), which may make each faster than \
             [`", stringify!($VerifyingKey), "::verify`]'s: for a key that verifies a stream of \
-            signatures. It is immutable, so threads can share it. On AArch64, 32-bit ARM, x86-64, x86, RISC-V and PPC64LE it holds ",
+            signatures. It is immutable, so threads can share it. It holds ",
             stringify!($prepared_pk), " more bytes than the key."
         )]
         pub struct $PreparedVerifyingKey {
             // The prepared key of `key.bytes`, which `prepare_verify` wrote
             // (`VG.Spec.MlDsa.PreparedPublicKey`), never changed since.
-            #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
             prepared: $crate::align::CacheAligned<[u8; $prepared_pk]>,
             key: $VerifyingKey,
         }
@@ -383,31 +375,24 @@ macro_rules! ml_dsa {
 
             #[doc = concat!("What [`", stringify!($VerifyingKey), "::verify`] says of the key it was prepared from.")]
             pub fn verify(&self, msg: &[u8], ctx: &[u8], sig: &[u8; $sig]) -> Result<(), InvalidSignature> {
-                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
-                {
-                    // The verified contracts accept arbitrary initial scratch bytes.
-                    let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
-                    let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
-                    // SAFETY: `self.prepared`, `sig`, `scratch` and
-                    // `self.key.tr` are valid for reads (and, for `scratch`,
-                    // writes) of their sizes, and `msg` and `ctx` for reads of
-                    // their lengths; they are distinct Rust objects, so they
-                    // do not overlap each other or the stack, or wrap around
-                    // the end of the address space. `self.prepared` is the
-                    // prepared key of `self.key.bytes`, and `self.key.tr` is
-                    // H(self.key.bytes, 64), from its constructors.
-                    // The dispatcher calls only an implementation the CPU has
-                    // the features of.
-                    let r = unsafe {
-                        $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.key.tr)
-                    };
-                    // 2 is a context longer than 255 bytes.
-                    if r == 1 { Ok(()) } else { Err(InvalidSignature) }
-                }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little"))))]
-                {
-                    self.key.verify(msg, ctx, sig)
-                }
+                // The verified contracts accept arbitrary initial scratch bytes.
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<MessageScratch>::uninit());
+                let (m, m_len, c, c_len) = (msg.as_ptr(), msg.len(), ctx.as_ptr(), ctx.len());
+                // SAFETY: `self.prepared`, `sig`, `scratch` and
+                // `self.key.tr` are valid for reads (and, for `scratch`,
+                // writes) of their sizes, and `msg` and `ctx` for reads of
+                // their lengths; they are distinct Rust objects, so they
+                // do not overlap each other or the stack, or wrap around
+                // the end of the address space. `self.prepared` is the
+                // prepared key of `self.key.bytes`, and `self.key.tr` is
+                // H(self.key.bytes, 64), from its constructors.
+                // The dispatcher calls only an implementation the CPU has
+                // the features of.
+                let r = unsafe {
+                    $verify_message_prepared(&self.prepared.0, m, m_len, c, c_len, sig, scratch.0.as_mut_ptr(), &self.key.tr)
+                };
+                // 2 is a context longer than 255 bytes.
+                if r == 1 { Ok(()) } else { Err(InvalidSignature) }
             }
         }
 
@@ -415,28 +400,21 @@ macro_rules! ml_dsa {
             /// This key, prepared for many signatures: see
             #[doc = concat!("[`", stringify!($PreparedSigningKey), "`].")]
             pub fn prepare(self) -> $PreparedSigningKey {
-                #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
-                {
-                    let mut prepared = $crate::align::CacheAligned([0u8; $prepared_sk]);
-                    // The verified contract accepts arbitrary initial scratch bytes.
-                    let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
-                    // SAFETY: `self.sk`, `prepared` and `work` are valid for
-                    // reads (and, for the last two, writes) of their sizes;
-                    // they are distinct Rust objects, so they do not overlap
-                    // each other or the stack, or wrap around the end of the
-                    // address space. `prepare_sign` writes the prepared key of
-                    // `self.sk` to `prepared`
-                    // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
-                    unsafe { $prepare_sign(&self.sk, &mut prepared.0, work.0.as_mut_ptr()) };
-                    // SAFETY: the entire working space is writable, including
-                    // bytes the preparation may not have initialized.
-                    unsafe { $crate::zeroize::zeroize_raw(work.0.as_mut_ptr().cast(), core::mem::size_of_val(&work.0)) };
-                    $PreparedSigningKey { prepared, key: self }
-                }
-                #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little"))))]
-                {
-                    $PreparedSigningKey { key: self }
-                }
+                let mut prepared = $crate::align::CacheAligned([0u8; $prepared_sk]);
+                // The verified contract accepts arbitrary initial scratch bytes.
+                let mut work = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; 128]>::uninit());
+                // SAFETY: `self.sk`, `prepared` and `work` are valid for
+                // reads (and, for the last two, writes) of their sizes;
+                // they are distinct Rust objects, so they do not overlap
+                // each other or the stack, or wrap around the end of the
+                // address space. `prepare_sign` writes the prepared key of
+                // `self.sk` to `prepared`
+                // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
+                unsafe { $prepare_sign(&self.sk, &mut prepared.0, work.0.as_mut_ptr()) };
+                // SAFETY: the entire working space is writable, including
+                // bytes the preparation may not have initialized.
+                unsafe { $crate::zeroize::zeroize_raw(work.0.as_mut_ptr().cast(), core::mem::size_of_val(&work.0)) };
+                $PreparedSigningKey { prepared, key: self }
             }
         }
 
@@ -445,12 +423,11 @@ macro_rules! ml_dsa {
             stringify!($SigningKey), "::prepare`]), which may make each faster than \
             [`", stringify!($SigningKey), "::sign`]'s: for a key that signs a stream of \
             messages. It is immutable, so threads can share it, and is destroyed when it is \
-            dropped. On AArch64, 32-bit ARM, x86-64, x86, RISC-V and PPC64LE it holds ", stringify!($prepared_sk), " more bytes than the key."
+            dropped. It holds ", stringify!($prepared_sk), " more bytes than the key."
         )]
         pub struct $PreparedSigningKey {
             // The prepared key of `key.sk`, which `prepare_sign` wrote
             // (`VG.Spec.MlDsa.PreparedSecretKey`), never changed since.
-            #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
             prepared: $crate::align::CacheAligned<[u8; $prepared_sk]>,
             key: $SigningKey,
         }
@@ -461,7 +438,6 @@ macro_rules! ml_dsa {
             }
         }
 
-        #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
         impl Drop for $PreparedSigningKey {
             fn drop(&mut self) {
                 zeroize(&mut self.prepared.0);
@@ -488,12 +464,6 @@ macro_rules! ml_dsa {
                 self.sign_with(msg, ctx, &[0; 32])
             }
 
-            #[cfg(not(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little"))))]
-            fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
-                self.key.sign_with(msg, ctx, rnd)
-            }
-
-            #[cfg(any(target_arch = "aarch64", target_arch = "arm", target_arch = "x86_64", target_arch = "riscv64", target_arch = "x86", all(target_arch = "powerpc64", target_endian = "little")))]
             fn sign_with(&self, msg: &[u8], ctx: &[u8], rnd: &[u8; 32]) -> Result<[u8; $sig], MlDsaError> {
                 let mut sig = [0u8; $sig];
                 // The verified contracts accept arbitrary initial scratch bytes.
