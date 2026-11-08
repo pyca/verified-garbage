@@ -7,6 +7,10 @@ public import VerifiedGarbage.Spec.Cbc.Contract
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 import VerifiedGarbage.Proof.AesCbc.PPC64LE.Body
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
+import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
+meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
+public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
@@ -48,105 +52,105 @@ theorem cbcDec_chain (s₀ : State) {i : Nat} (hi : i < N s₀) :
     chainK (cbcMode false) s₀ (i + 1) = blkOf s₀ i := by
   simp only [chainK, cbcMode_chain, cts, Bool.false_eq_true, ite_false, take_succ_blkOf s₀ hi, next_snoc]
 
+section
+open VG.Proof.Aes.PPC64LE.Crypto (aesState result schedule batchFacts breg_mem load_state)
+open VG.Impl.Aes.PPC64LE.Crypto (breg batchRegs)
+
 theorem decGroup_ok : GroupOk (cbcMode false) decGroup := by
   intro s₀ hp k hk s h
   have hR := h.regs hp
   have hW := h.wrs hp
-  refine WP.seq (saveSlots_wp hp (m := 8) (by decide) hk h fun s₁ g₁ rd₁ wr₁ f₁ e₀ e₁ =>
-    callArgs8_wp fun s₂ r3₂ r4₂ r5₂ r6₂ r7₂ o₂ mem₂ rd₂ wr₂ => ?_)
-  have g₂ (r : Reg) (hr : r ∈ preserved) : s₂.gpr r = s.gpr r := by
-    obtain ⟨h3, h4, h5, h6, h7, h9, -⟩ := preserved_ne hr
-    rw [o₂ r (by simp [argRegs5, h3, h4, h5, h6, h7]), g₁ r h9]
-  have pre := hp.callPre8 hk (by rw [r3₂, g₁ _ (by decide), h.r14]) (by rw [r4₂, g₁ _ (by decide), h.r15])
-    (by rw [r5₂, g₁ _ (by decide), h.r17]) r6₂ (by rw [r7₂, g₁ _ (by decide), h.r19])
-    (by rw [rd₂, rd₁, h.rd]) (by rw [wr₂, wr₁, h.wr])
-  refine WP.seq (WP.mono (blk_call8 Proof.Aes.PPC64LE.decryptBlocks_framed decryptBlocks_noFrames pre)
-    fun s₃ c => ?_)
-  have g₃ (r : Reg) (hr : r ∈ preserved) : s₃.gpr r = s.gpr r := by rw [c.saved r hr, g₂ r hr]
-  have hR₃ : s₃.rd ++ s₃.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [c.rd, c.wr, rd₂, wr₂, rd₁, wr₁, hR]
-  have hW₃ : s₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [c.wr, wr₂, wr₁, hW]
-  rw [fixSlots, List.append_assoc]
-  refine fixes_wp hp 8 (by decide) hk (by rw [g₃ _ (by decide), h.r17]) (by rw [g₃ _ (by decide), h.r19])
-    hR₃ hW₃ fun s₄ g₄ rd₄ wr₄ f₄ e₄ => ?_
-  have hR₄ : s₄.rd ++ s₄.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by rw [rd₄, wr₄, hR₃]
-  have hW₄ : s₄.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [wr₄, hW₃]
-  have g₄' (r : Reg) (hr : r ∈ preserved) : s₄.gpr r = s.gpr r := by
-    obtain ⟨-, -, -, -, -, h9, h10⟩ := preserved_ne hr
-    rw [g₄ r h9 h10, g₃ r hr]
+  have facts := batchFacts ⟨8, by decide⟩
+  rw [decGroup]
+  simp only [List.append_assoc]
+  refine WP.seq (saveSlots_wp hp (m := 8) (by decide) hk h fun s₁ g₁ rd₁ wr₁ f₁ e₀ e₁ => ?_)
+  refine read8_wp hp hk (by rw [g₁ _ (by decide), h.r14]) (by rw [g₁ _ (by decide), h.r15])
+    (by rw [g₁ _ (by decide), h.r17]) (by rw [rd₁, wr₁, hR]) fun u hu => wp_nil ?_
+  refine WP.seq (WP.mono (Proof.Aes.PPC64LE.Crypto.aes_ok true (batchRegs 8) facts.1 facts.2.1 facts.2.2.1
+    hu.inp) fun v ⟨hv, hl⟩ => ?_)
+  have gv (r : Reg) (hr : r ∈ preserved) : v.gpr r = s.gpr r := by
+    obtain ⟨-, -, -, -, -, -, h9, h10, -⟩ := pres_ne hr
+    rw [hl.keep.gpr (by simp [h9, h10]), hu.g r hr, g₁ r h9]
+  have h0 : v.gpr .r0 = 0 := (hl.keep.gpr (by decide)).trans hu.inp.zero
+  have hm := (hl.v _ (by simp [facts.2.2.1])).trans hu.inp.mask
+  have rwv : v.rd ++ v.wr = s.rd ++ s.wr := by rw [hl.keep.2.1, hl.keep.2.2, hu.rd, hu.wr, rd₁, wr₁]
+  have mv : v.mem = s₁.mem := by rw [hl.mem, hu.mem]
+  rw [WP.block_append_iff]
+  refine WP.mono (xorSlots_ok s₀ v (by rw [gv _ (by decide), h.r19]) h0 hm fun j hj => by
+    rw [rwv, hR]; exact in_rw (by simp) (cSl16 s₀ hj)) fun x hx => ?_
+  have r6x : x.gpr .r6 = blk s₀ k := by
+    rw [hx.loc.keep.gpr (by decide), hl.keep.gpr (by decide), hu.r6]
+  rw [WP.block_append_iff]
+  refine WP.mono (stores_ok x r6x ((hx.loc.keep.gpr (by decide)).trans h0)
+    ((hx.loc.v _ (by simp [facts.2.2.1])).trans hm) fun j hj => ?_) fun y hy => ?_
+  · rw [hx.loc.keep.2.2, hl.keep.2.2, hu.wr, wr₁, hW, blk_add]
+    exact in_rw (by simp) (cBlk16 hp (by omega))
+  have gy (r : Reg) (hr : r ∈ preserved) : y.gpr r = s.gpr r := by
+    obtain ⟨-, -, -, h6, h7, -⟩ := pres_ne hr
+    rw [hy.keep.gpr (by simpa using h6), hx.loc.keep.gpr (by simpa using h7), gv r hr]
+  have rwy : y.rd ++ y.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := by
+    rw [hy.keep.2.1, hy.keep.2.2, hx.loc.keep.2.1, hx.loc.keep.2.2, rwv, hR]
+  have wy : y.wr = [ivR s₀, dataR s₀, scrR s₀] := by
+    rw [hy.keep.2.2, hx.loc.keep.2.2, hl.keep.2.2, hu.wr, wr₁, hW]
   refine copy_wp (P := Iv s₀) (Q := sl s₀ 8) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by rw [g₄' _ (by decide), h.r16, ofNat_zero_add]) (by rw [g₄' _ (by decide), h.r16])
-    (by rw [g₄' _ (by decide), h.r19]) (by rw [g₄' _ (by decide), h.r19, sl8])
-    (by rw [hR₄]; exact in_rw (by simp) (cSl s₀ (by decide)))
-    (by rw [hR₄]; exact in_rw (by simp) (cSl8 s₀ (by decide)))
-    (by rw [hW₄]; exact in_rw (by simp) cIv0) (by rw [hW₄]; exact in_rw (by simp) cIv8)
-    fun s₅ g₅ mem₅ rd₅ wr₅ => advance8_regs (s := s₅) hk
-      (by rw [g₅ _ (by decide), g₄' _ (by decide), h.r17]) (by rw [g₅ _ (by decide), g₄' _ (by decide), h.r18])
-      fun s₆ r17₆ r18₆ keep₆ mem₆ rd₆ wr₆ => ?_
-  have g (r : Reg) (hr : r ∈ preserved) (h17 : r ≠ .r17) (h18 : r ≠ .r18) : s₆.gpr r = s.gpr r := by
-    rw [keep₆ r h17 h18, g₅ r (preserved_ne hr).2.2.2.2.2.1, g₄' r hr]
+    (by decide) (by decide) (by rw [gy _ (by decide), h.r16, ofNat_zero_add]) (by rw [gy _ (by decide), h.r16])
+    (by rw [gy _ (by decide), h.r19]) (by rw [gy _ (by decide), h.r19, sl8])
+    (by rw [rwy]; exact in_rw (by simp) (cSl s₀ (by decide)))
+    (by rw [rwy]; exact in_rw (by simp) (cSl8 s₀ (by decide)))
+    (by rw [wy]; exact in_rw (by simp) cIv0) (by rw [wy]; exact in_rw (by simp) cIv8)
+    fun z gz mz rdz wrz => advance8_regs (s := z) hk
+      (by rw [gz _ (by decide), gy _ (by decide), h.r17]) (by rw [gz _ (by decide), gy _ (by decide), h.r18])
+      fun w r17 r18 keep mw rdw wrw => ?_
+  have g (r : Reg) (hr : r ∈ preserved) (h17 : r ≠ .r17) (h18 : r ≠ .r18) : w.gpr r = s.gpr r := by
+    rw [keep r h17 h18, gz r (pres_ne hr).2.2.2.2.2.2.1, gy r hr]
   have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
     (UPre.big_of h.frame).trans (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
-  -- The slots after the call.
-  have slot (j : Nat) (hj : j ≤ 8) : bytesAt s₃.mem (sl s₀ j) 16 = chainK (cbcMode false) s₀ (k + j) := by
-    rw [bytesAt_frame c.frame (one_disj (hp.dSB hj (by omega))) (by decide), mem₂]
+  have hw : schedule (R s₀) u = wK s₀ := by
+    rw [Proof.Aes.PPC64LE.Crypto.schedule, hu.r3, hu.mem, UPre.sched_bytes hp big₁]
+  have slot (j : Nat) (hj : j ≤ 8) : bytesAt s₁.mem (sl s₀ j) 16 = chainK (cbcMode false) s₀ (k + j) := by
     rcases Nat.eq_zero_or_pos j with rfl | hj0
     · exact e₀
     · obtain ⟨i, rfl⟩ : ∃ i, j = i + 1 := ⟨j - 1, by omega⟩
       rw [e₁ i (by omega), ← Nat.add_assoc, cbcDec_chain s₀ (by omega)]
-  -- The blocks after the call.
-  have dec (j : Nat) (hj : j < 8) : bytesAt s₃.mem (blk s₀ (k + j)) 16 =
-      Spec.Cbc.aesInvWith (R s₀) (wK s₀) (blkOf s₀ (k + j)) := by
-    have := c.out j hj
-    rw [blk_add] at this
-    rw [this, ← aesInvWith_state, mem₂, UPre.sched_bytes hp big₁,
-      bytesAt_frame f₁ (one_disj (hp.dBG (by omega))) (by decide), h.blockAt (by omega) (by omega)]
-  refine group_step cbcDec_steps hp hk h ?_ ?_ ?_ r17₆ r18₆ ?_ (fun r hr hv => ?_) ?_ ?_ ?_ (fun j hj => ?_) ?_
+  have mx : x.mem = s₁.mem := by rw [hx.loc.mem, mv]
+  refine group_step cbcDec_steps hp hk h ?_ ?_ ?_ r17 r18 ?_ (fun r hr hv => ?_) ?_ ?_ ?_ (fun j hj => ?_) ?_
   · rw [g .r14 (by decide) (by decide) (by decide), h.r14]
   · rw [g .r15 (by decide) (by decide) (by decide), h.r15]
   · rw [g .r16 (by decide) (by decide) (by decide), h.r16]
   · rw [g .r19 (by decide) (by decide) (by decide), h.r19]
   · exact g r hr (fun e => hv (by simp [e])) (fun e => hv (by simp [e]))
-  · rw [rd₆, rd₅, rd₄, c.rd, rd₂, rd₁]
-  · rw [wr₆, wr₅, wr₄, c.wr, wr₂, wr₁]
-  · rw [mem₆, mem₅]
+  · rw [rdw, rdz, hy.keep.2.1, hx.loc.keep.2.1, hl.keep.2.1, hu.rd, rd₁]
+  · rw [wrw, wrz, hy.keep.2.2, hx.loc.keep.2.2, hl.keep.2.2, hu.wr, wr₁]
+  · rw [mw, mz]
     refine (f₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S s₀, 2064⟩, by simp, slR_sub s₀⟩).trans ?_
-    refine (by rw [← mem₂]; exact (c.frame.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩) :
-      Frame [⟨blk s₀ k, 128⟩, ivR s₀, ⟨S s₀, 2064⟩] s₁.mem s₃.mem).trans ?_
-    refine (f₄.sub fun r hr => by
+    refine (mx ▸ hy.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩).trans ?_
     exact (copyMem_frame _ _ _).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨ivR s₀, by simp, fun _ h => h⟩
-  · rw [mem₆, mem₅, copyMem_other _ (hp.blk_iv (by omega)), e₄ j hj, dec j hj, slot j (by omega)]
-  · rw [mem₆, mem₅, copyMem_bytes _ (hp.dIS (by decide)),
-      bytesAt_frame f₄ (one_disj (hp.dSB (by decide) (by omega))) (by decide), slot 8 (by decide)]
+  · have hi : k + j < N s₀ := by omega
+    rw [mw, mz, copyMem_other _ (hp.blk_iv hi), ← blk_add, AesCbc.bytesAt_toList,
+      hy.processed.stateAt (j := j) hj (Nat.le_refl _), hx.val j hj, ite_eq_left hj, st_xor,
+      hv _ (breg_mem hj), hu.val j hj, hw, mv, load_state, load_state, ← AesCbc.bytesAt_toList,
+      slot j (by omega), ← h.blockAt (by omega) hi, ← bytesAt_frame f₁ (one_disj (hp.dBG hi)) (by decide),
+      AesCbc.aesInvWith_state]
+    simp only [result, ite_true]
+  · rw [mw, mz, copyMem_bytes _ (hp.dIS (by decide)),
+      bytesAt_frame hy.frame (one_disj (hp.dSB (j := 8) (m := 8) (by decide) hk)) (by decide), mx,
+      slot 8 (by decide)]
 
-/-- The code before the call of a group leaves the call's arguments. -/
-theorem decA8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s₀) {s : State}
-    (h : LInv (cbcMode false) s₀ k s) :
-    WP isa (.block (saveSlots 8 ++ callArgs8)) s fun s₂ =>
-      CallPre8 s₂ (W s₀) (blk s₀ k) (S s₀) (R s₀) ∧ ∀ r ∈ preserved, s₂.gpr r = s.gpr r :=
-  saveSlots_wp hp (m := 8) (by decide) hk h fun s₁ g₁ rd₁ wr₁ _ _ _ =>
-    callArgs8_wp fun s₂ r3₂ r4₂ r5₂ r6₂ r7₂ o₂ _ rd₂ wr₂ =>
-      ⟨hp.callPre8 hk (by rw [r3₂, g₁ _ (by decide), h.r14]) (by rw [r4₂, g₁ _ (by decide), h.r15])
-        (by rw [r5₂, g₁ _ (by decide), h.r17]) r6₂ (by rw [r7₂, g₁ _ (by decide), h.r19])
-        (by rw [rd₂, rd₁, h.rd]) (by rw [wr₂, wr₁, h.wr]), fun r hr => by
-          obtain ⟨h3, h4, h5, h6, h7, h9, -⟩ := preserved_ne hr
-          rw [o₂ r (by simp [argRegs5, h3, h4, h5, h6, h7]), g₁ r h9]⟩
+end
 
-theorem decGroupPre_taint : ∃ h, (taint.check (Taint.ofRegs vars)
-    (.block (saveSlots 8 ++ callArgs8)) h).isSome = true := ⟨_, by taint_decide⟩
+theorem decGroup_taint : ∃ h, (vectorTaint.check (Taint.ofRegs vars) decGroup h).isSome = true :=
+  ⟨_, by taint_decide⟩
 
-theorem decGroupPost_taint : ∃ h, (taint.check (Taint.ofRegs [.r16, .r17, .r18, .r19])
-    (.block (fixSlots ++ copy .r16 0 .r19 (slot 8) ++ advance8)) h).isSome = true := ⟨_, by taint_decide⟩
-
-theorem decGroup_ct : GroupCt (cbcMode false) decGroup :=
-  fun hp hp' hq k => group_ct (D := fun s₀ k => blk s₀ k) (Sc := S) (fun hq k => pub_blk hq k)
-    (fun hq => pub_S hq) Proof.Aes.PPC64LE.decryptBlocks_correct Proof.Aes.PPC64LE.decryptBlocks_framed
-    Proof.Aes.PPC64LE.decryptBlocks_ct decryptBlocks_noFrames decGroupPre_taint decGroupPost_taint
-    (@fun _ hp _ hk _ h => decA8_wp hp hk h) hp hp' hq k
+theorem decGroup_ct : GroupCt (cbcMode false) decGroup := by
+  intro s₀ s₀' _ _ hq k
+  obtain ⟨_, ht⟩ := decGroup_taint
+  exact RelCT.taint (A := vectorTaint) (Taint.ofRegs vars)
+    (fun _ _ h => ⟨by rw [h.2.1.2, h.2.2.2, pub_sp hq],
+      fun r h' => LInv.agree hq h.2.1.1 h.2.2.1 r (Taint.mem_ofRegs.mp h')⟩) ht
 
 theorem encrypt_correct (s : State) (hs : (cbcPPC64LE true).pre s) :
     ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (cbcPPC64LE true).post s s' := by
