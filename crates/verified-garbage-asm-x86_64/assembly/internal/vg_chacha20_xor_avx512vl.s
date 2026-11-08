@@ -5,7 +5,7 @@
 // gives.
 
 vg_chacha20_xor_avx512vl:
-	cmp rdx, 513
+	cmp rdx, 385
 	jb 20f
 	movabs rax, 0
 	mov QWORD PTR [rcx+256], rax
@@ -9229,8 +9229,6 @@ vg_chacha20_xor_avx512vl:
 274:
 	test rdx, rdx
 	je 282f
-	cmp rdx, 65
-	jb 284f
 	vmovdqu ymm8, YMMWORD PTR [r9+128]
 	vmovdqu ymm9, YMMWORD PTR [r9+160]
 	vmovdqu ymm12, YMMWORD PTR [r9+224]
@@ -9562,38 +9560,30 @@ vg_chacha20_xor_avx512vl:
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
-	je 286f
-288:
+	je 284f
+286:
 	mov r8, QWORD PTR [rsi+rcx*1]
 	xor r8, QWORD PTR [r9+rcx*1]
 	mov QWORD PTR [r10+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
-	jne 288b
-	jmp 287f
-286:
-287:
+	jne 286b
+	jmp 285f
+284:
+285:
 	cmp rcx, rdx
-	je 289f
-291:
+	je 287f
+289:
 	movzx eax, BYTE PTR [rsi+rcx*1]
 	movzx r8d, BYTE PTR [r9+rcx*1]
 	xor rax, r8
 	mov BYTE PTR [r10+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
-	jne 291b
-	jmp 290f
-289:
-290:
-	jmp 285f
-284:
-	vzeroupper
-	mov r8, r11
-	add r8, rsi
-	call {vg_chacha20_xor}
-	mov r9, rsi
-285:
+	jne 289b
+	jmp 288f
+287:
+288:
 	jmp 283f
 282:
 283:
