@@ -53,7 +53,7 @@ theorem sealMP_mx : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.AesGcm
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_mx, Fast.fastAad_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
+  simp only [e, d, Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_mx, Fast.fastAad_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -62,7 +62,7 @@ theorem sealMP_spSafe : (Impl.AesGcm.X86_64.Short.«seal» (v.withBlk B) Impl.Ae
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
+  simp only [e, d, Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -71,7 +71,7 @@ theorem sealMP_xdepth :
       (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.sealLong (v.withBlk B)))).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, cond_xdepth, sealShortP_xdepth, finish_xdepth, finishK_xdepth, finishPK_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState,
+  simp only [Impl.AesGcm.X86_64.Short.«seal», Impl.AesGcm.X86_64.Short.sealLong, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, cond_xdepth, sealShortP_xdepth, finish_xdepth, finishK_xdepth, finishPK_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
@@ -81,7 +81,7 @@ theorem openMP_mx : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.AesGcm
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagP_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
+  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagP_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -90,7 +90,7 @@ theorem openMP_spSafe : (Impl.AesGcm.X86_64.Short.«open» (v.withBlk B) Impl.Ae
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagP_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
+  simp only [e, d, Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagP_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -100,7 +100,7 @@ theorem openMP_xdepth :
   have e := B.encXd
   have d := B.decXd
   simp only [Impl.AesGcm.X86_64.Short.«open», Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.tailK, Fast.fastCond_xdepth,
-    Fast.fastAad_xdepth, FastOpen.tagP_xdepth, cond_xdepth, openShortP_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState,
+    Fast.fastAad_xdepth, FastOpen.tagP_xdepth, cond_xdepth, openShortP_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte,
     Bool.false_eq_true]
@@ -111,7 +111,7 @@ theorem sealFinP_mx : (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_mx, Fast.fastAad_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
+  simp only [e, d, Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_mx, Fast.fastAad_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -120,7 +120,7 @@ theorem sealFinP_spSafe : (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
+  simp only [e, d, Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -128,7 +128,7 @@ theorem sealFinP_xdepth : (Impl.AesGcm.X86_64.SealFin.«seal» (v.withBlk B)
       (Impl.AesGcm.X86_64.FastSeal.sel (v.withBlk B) (Impl.AesGcm.X86_64.SealFin.mid (v.withBlk B)) Impl.AesGcm.X86_64.Short.finKsA true)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, SealFin.finishA_xdepth, finishPA_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState,
+  simp only [Impl.AesGcm.X86_64.SealFin.«seal», Impl.AesGcm.X86_64.SealFin.mid, Impl.AesGcm.X86_64.FastSeal.sel, Impl.AesGcm.X86_64.FastSeal.run, Fast.fastCond_xdepth, Fast.fastAad_xdepth, SealFin.finishA_xdepth, finishPA_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
@@ -138,7 +138,7 @@ theorem openFinP_mx : (Impl.AesGcm.X86_64.FastOpen.openFin
     (fun i => !loadsMxcsr i) = true := by
   have e := B.encMx
   have d := B.decMx
-  simp only [e, d, Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagPA_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.allInstrs,
+  simp only [e, d, Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_mx, Fast.fastAad_mx, FastOpen.tagPA_mx, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.allInstrs,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.mxcsr, v.key.mxcsr, v.gh.mxcsr, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -147,7 +147,7 @@ theorem openFinP_spSafe : (Impl.AesGcm.X86_64.FastOpen.openFin
     (fun i => !X86_64.isa.writesSp i) = true := by
   have e := B.encSp
   have d := B.decSp
-  simp only [e, d, Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagPA_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, Code.all,
+  simp only [e, d, Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Fast.fastCond_spSafe, Fast.fastAad_spSafe, FastOpen.tagPA_spSafe, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, Code.all,
     GcmImpl.withBlk, GcmImpl.callees, v.ctr.spSafe, v.key.spSafe, v.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 
@@ -155,7 +155,7 @@ theorem openFinP_xdepth : (Impl.AesGcm.X86_64.FastOpen.openFin
       (Impl.AesGcm.X86_64.FastOpen.sel (v.withBlk B) (Impl.AesGcm.X86_64.Short.openLong (v.withBlk B)) Impl.AesGcm.X86_64.Short.finKsA true)).x86_64Depth ≤ 24 := by
   have e := B.encXd
   have d := B.decXd
-  simp only [Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.tailK, Fast.fastCond_xdepth, Fast.fastAad_xdepth, FastOpen.tagPA_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, minLen, j012, initState,
+  simp only [Impl.AesGcm.X86_64.FastOpen.openFin, Impl.AesGcm.X86_64.Short.openLong, Impl.AesGcm.X86_64.FastOpen.sel, Impl.AesGcm.X86_64.FastOpen.run, Impl.AesGcm.X86_64.FastOpen.tailK, Fast.fastCond_xdepth, Fast.fastAad_xdepth, FastOpen.tagPA_xdepth, init, streamInit, streamAad, streamEncrypt, streamDecrypt, streamFinish, streamVerify, «seal», «open», openBody, ghash1, absorbHead, absorbWhole, absorbTail, absorb, absorbPad, padTail, flush, lens, cryptHead, cryptWhole, cryptTail, cryptTailG, crypt, cryptAl, tag, j0hash, j0, firstFlush, streamText, streamLoad, streamSmall, streamHead, headPart, partWith, streamNext, streamBlocks, finTag, oneAad, oneBlocks, oneTag, oneCrypt, oneCryptG, oneCryptBlk, ↓reduceIte, Bool.false_eq_true, oneUndo, tagLenOk, recv, Impl.AesGcm.X86_64.cmp, tagOut, copyTag, copyLoop, xorLoop, xorLoopG, minLen, j012, initState,
     Code.x86_64Depth, X86_64.Instr.frameBytes, List.length_cons, List.length_nil, GcmImpl.withBlk, GcmImpl.callees,
     v.ctr.noStack, v.key.noStack, v.gh.noStack, Nat.max_le, ↓reduceIte, Bool.false_eq_true]
   omega
