@@ -101,13 +101,16 @@ def passData : Prog isa :=
   (.seq (.block SealFused.tailSetup) (absorb 16)))
 
 /-- `open` once the tag length is allowed, in one pass: the nonce's length
-back in `r25`, the data decrypted to the destination while its tag is
-computed into `W + 112`, and compared with the received one (`r3`). -/
+back in `r25`, the additional data hashed, the received tag copied to `W`
+(before the destination, which may be where it is, is written), the data
+decrypted to the destination while its tag is computed into `W + 112`, and
+the two compared (`r3`). -/
 def openPass : Prog isa :=
   .seq (.block [mov .r25 .r18])
   (.seq oneAad
+  (.seq recv
   (.seq (.ite (.zero .d .r23) (oneTag 112) (.seq passData (finTag 112)))
-  (.seq recv (cmp 112))))
+    (cmp 112))))
 
 /-- `vg_aes_gcm_open_split`. -/
 def openSplit : Prog isa :=

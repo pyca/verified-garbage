@@ -190,6 +190,10 @@ theorem partArgs_ok {s : State} {D : Addr} (he : Env V sp s) (h26 : s.gpr .r26 =
   crun [h23, h27, hand, hsub, h26]
   exact ⟨fun r a b c d e => by simp [a, b, c, d, e], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
 
+/-- What the data's pass and its tag write. -/
+abbrev passFrame (V : Reg → BitVec 64) (D : Addr) : List Region :=
+  [⟨D, (V .r23).toNat⟩, ⟨V .r30, 80⟩, ⟨V .r31 + BitVec.ofNat 64 96, 32⟩, ⟨V .r31 + BitVec.ofNat 64 448, 2112⟩]
+
 /-- After the data's pass and its tag, from `s₀`: the destination holds the
 data decrypted, and `W + 112` the tag of the data, the ciphertext. -/
 structure PassOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (a : List Byte) (D : Addr) (s₀ s : State) : Prop where
@@ -203,7 +207,7 @@ structure PassOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (a : List Byte) 
       (Spec.Gcm.blocks (Proof.Gcm.padded a (bytesAt s₀.mem (V .r27) (V .r23).toNat))))
       [Spec.Gcm.ofBytes (Proof.Gcm.lensBlock a.length (bytesAt s₀.mem (V .r27) (V .r23).toNat).length)] ^^^
       ctxCiph s₀.mem (V .r29) R (blockAt s₀.mem (V .r30)))
-  frame : Frame [⟨D, (V .r23).toNat⟩, ⟨V .r30, 80⟩, ⟨V .r31, 2560⟩] s₀.mem s.mem
+  frame : Frame (passFrame V D) s₀.mem s.mem
 
 theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw] {R : Nat} {D : Addr}
     {a : List Byte} {s : State} (L : Lay (V .r29) (V .r30) (V .r31)) (h : WholeIn V sp R D s)
@@ -377,32 +381,32 @@ theorem pass_ok [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.Fol
     rw [bytesAt_frame fg.frame dT (by omega),
       bytesAt_frame ab.frame (data_absFrame (.inr rfl) hdst.ok) (by omega), k₄.mem]
   -- what was written
-  let T : List Region := [⟨D, (V .r23).toNat⟩, ⟨V .r30, 80⟩, ⟨V .r31, 2560⟩]
+  let T : List Region := passFrame V D
   have F₁ : Frame T s.mem s₁.mem := hw.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
     · exact ⟨⟨D, (V .r23).toNat⟩, by simp [T], Region.sub_prefix hle⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], fun _ h => h⟩
   have F₃ : Frame T s₂.mem s₃.mem := o.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨D, (V .r23).toNat⟩, by simp [T], Offset.sub_base _ (by omega)⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   have F₅ : Frame T s₄.mem s₅.mem := ab.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Lay.stSub (by decide)⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   have F₆ : Frame T s₅.mem s₆.mem := fg.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨⟨V .r30, 80⟩, by simp [T], Region.sub_prefix (by decide)⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
-    · exact ⟨⟨V .r31, 2560⟩, by simp [T], Lay.wSub (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Region.sub_prefix (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 96, 32⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
+    · exact ⟨⟨V .r31 + BitVec.ofNat 64 448, 2112⟩, by simp [T], Offset.sub _ (by decide) (by decide)⟩
   rw [k₂.mem] at F₃
   rw [k₄.mem] at F₅
   refine ⟨fg.env, rd₆'.trans rd₅, wr₆'.trans wr₅, ?_, hf, F₁.trans (F₃.trans (F₅.trans F₆))⟩
