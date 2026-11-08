@@ -22,8 +22,7 @@
 /// `H(ek)` itself so that `encaps` can: on AArch64, its paired instances hash
 /// it in Keccak lanes the matrix sampling leaves idle, almost for free.
 /// Each operation wipes what it writes of `scratch` itself, in verified
-/// code: its contract states that each byte of `scratch` is unchanged or
-/// zero on return.
+/// code.
 macro_rules! ml_kem {
     (
         name: $name:literal,
