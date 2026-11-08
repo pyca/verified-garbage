@@ -237,6 +237,17 @@ def sOnes : State := { sVec with vpr := fun r => if r = .v0 then -1 else 1 }
   some 0xffffffffffffffffffffffff00000000
 #guard (exec (.vop (.add true .v3 .v0 .v1)) sOnes).map (·.vpr .v3) ==
   some 0xffffffffffffffff0000000000000000
+-- VRLW rotates each word left by the low five bits of the same word of VB
+-- (Book I §6.9.5.1's RTL, worked by hand): words 1, 4, 32 (that is, 0) and
+-- 0xffffffe4 (4).
+def sRot : State := { sVec with vpr := fun r =>
+  if r = .v0 then 0x800000011234567800000001f0000000
+  else 0x00000001000000040000002000000000 + 0xffffffe4 }
+#guard (exec (.vop (.rlw .v3 .v0 .v1)) sRot).map (·.vpr .v3) ==
+  some 0x0000000323456781000000010000000f
+#guard Instr.asm (.vop (.rlw .v19 .v0 .v17)) == ["vrlw %v19, %v0, %v17"]
+-- The same word as LLVM 18's `llvm-mc -triple=powerpc64le -show-encoding`.
+#guard Instr.encode (.vop (.rlw .v19 .v0 .v17)) == some [0x12608884]
 -- Both 64x64 polynomial products contribute; the highest possible bit is 126.
 def sPoly : State := { sVec with vpr := fun r =>
   if r = .v0 then 0x80000000000000000000000000000001
