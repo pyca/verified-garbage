@@ -12,9 +12,9 @@ import VerifiedGarbage.Proof.Framework.AArch64.Depth
 # AES-CBC on AArch64, zeroing the scratch it writes
 
 Each implementation of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt` that
-writes its `scratch` buffer (all but the encryption with the Cryptographic
-Extension, `Encrypt.code`, and the decryption with SHA-3's `eor3`,
-`Decrypt.code`) is called by `callWipe`, as the internal function
+writes its `scratch` buffer (all but the ones with the Cryptographic
+Extension: the encryption, `Encrypt.code`, and the decryptions in seven
+independent states, `Decrypt.code` with SHA-3's `eor3` and `Decrypt.codeAes`) is called by `callWipe`, as the internal function
 `vg_aes_cbc_{en,de}crypt_unwiped<suffix>`, which then zeroes the whole of
 `scratch` with `vg_zeroize`. Each implementation meets its contract and
 leaves each byte of `scratch` unchanged or zero (`*_scrubbed`, the stronger
@@ -119,5 +119,13 @@ theorem decryptSha3_scrubbed :
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verified)
     Proof.AesCbc.AArch64.Decrypt.written args_length
+
+/-- The decryption with the Cryptographic Extension, in seven independent
+states, writes nothing in `scratch`. -/
+theorem decryptAes_scrubbed :
+    Verified target Impl.AesCbc.AArch64.Decrypt.codeAes
+      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
+  Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes)
+    Proof.AesCbc.AArch64.Decrypt.writtenAes args_length
 
 end VG.Proof.AesCbc.AArch64.Wiped

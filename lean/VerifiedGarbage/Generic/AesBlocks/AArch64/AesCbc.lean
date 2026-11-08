@@ -28,7 +28,10 @@ def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact :=
       code := Wiped.encrypt v
       stack := 32
       verified := Wiped.encrypt_verified v
-      features := v.features }]) ++ [
+      features := v.features }]) ++
+  -- With the Cryptographic Extension, decryption is `Decrypt.codeAes`
+  -- (`Artifacts/AesCbc/AArch64.lean`), which writes no `scratch`.
+  if v.free then [] else [
   Spec.Cbc.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Wiped.decrypt v
