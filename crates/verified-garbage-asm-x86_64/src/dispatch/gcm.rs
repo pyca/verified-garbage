@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_VAES_FEATURES`); `vg_aes_gcm_stream_finish_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES`); `vg_aes_gcm_stream_finish_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_finish_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES`); `vg_aes_gcm_stream_finish_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -32,21 +32,6 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_stream_finish_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_finish_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_finish_vaes;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_finish_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES)
         {
@@ -56,11 +41,6 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_finish_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_finish_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_PCLMUL_FEATURES)
@@ -92,7 +72,7 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES`); `vg_aes_gcm_stream_verify_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES`); `vg_aes_gcm_stream_verify_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_verify_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES`); `vg_aes_gcm_stream_verify_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -118,21 +98,6 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_stream_verify_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_verify_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_verify_vaes;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_verify_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_PCLMUL_FEATURES)
         {
@@ -142,11 +107,6 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_verify_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_verify_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_PCLMUL_FEATURES)
@@ -230,7 +190,7 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 
 /// `vg_aes_gcm_seal` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES`); `vg_aes_gcm_seal_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -263,16 +223,6 @@ pub unsafe fn vg_aes_gcm_seal_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -283,20 +233,10 @@ pub unsafe fn vg_aes_gcm_seal_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_seal_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_PREPARED_PCLMUL_FEATURES)
@@ -326,7 +266,7 @@ pub unsafe fn vg_aes_gcm_seal_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES`); `vg_aes_gcm_open_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -359,16 +299,6 @@ pub unsafe fn vg_aes_gcm_open_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -379,20 +309,10 @@ pub unsafe fn vg_aes_gcm_open_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
         {
             return crate::gcm::vg_aes_gcm_open_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_open_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_PREPARED_PCLMUL_FEATURES)
@@ -422,7 +342,7 @@ pub unsafe fn vg_aes_gcm_open_prepared_auto(_dit: verified_garbage_cpu::Dit<'_>,
 
 /// `vg_aes_gcm_open_to` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_to_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_to_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_open_to_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_open_to_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_open_to_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_open_to_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -457,16 +377,6 @@ pub unsafe fn vg_aes_gcm_open_to_prepared_auto(_dit: verified_garbage_cpu::Dit<'
         {
             return crate::gcm::vg_aes_gcm_open_to_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_to_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_to_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -477,20 +387,10 @@ pub unsafe fn vg_aes_gcm_open_to_prepared_auto(_dit: verified_garbage_cpu::Dit<'
         {
             return crate::gcm::vg_aes_gcm_open_to_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_to_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_open_to_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_open_to_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_TO_PREPARED_PCLMUL_FEATURES)
@@ -520,7 +420,7 @@ pub unsafe fn vg_aes_gcm_open_to_prepared_auto(_dit: verified_garbage_cpu::Dit<'
 
 /// `vg_aes_gcm_stream_encrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamEncryptPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_encrypt_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_encrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_encrypt_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -551,16 +451,6 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(_dit: verified_garbage_cpu
         {
             return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -571,20 +461,10 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(_dit: verified_garbage_cpu
         {
             return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_encrypt_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_PREPARED_PCLMUL_FEATURES)
@@ -614,7 +494,7 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_prepared_auto(_dit: verified_garbage_cpu
 
 /// `vg_aes_gcm_stream_decrypt` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.streamDecryptPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_decrypt_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_stream_decrypt_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_stream_decrypt_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -645,16 +525,6 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(_dit: verified_garbage_cpu
         {
             return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -665,20 +535,10 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(_dit: verified_garbage_cpu
         {
             return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_stream_decrypt_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_PREPARED_PCLMUL_FEATURES)
@@ -708,7 +568,7 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_prepared_auto(_dit: verified_garbage_cpu
 
 /// `vg_aes_gcm_seal_gather` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealGatherPreparedContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_gather_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul_avx512` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_AVX512_FEATURES`); `vg_aes_gcm_seal_gather_prepared_vaes_vpclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_VPCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul_avx` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_FEATURES`); `vg_aes_gcm_seal_gather_prepared_aesni` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES`); `vg_aes_gcm_seal_gather_prepared_pclmul` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES`); or else `vg_aes_gcm_seal_gather_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -743,16 +603,6 @@ pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(_dit: verified_garbage_cpu::D
         {
             return crate::gcm::vg_aes_gcm_seal_gather_prepared_vaes_vpclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_PCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_gather_prepared_vaes_pclmul;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_gather_prepared_aesni_vpclmul;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_PCLMUL_AVX_FEATURES)
         {
@@ -763,20 +613,10 @@ pub unsafe fn vg_aes_gcm_seal_gather_prepared_auto(_dit: verified_garbage_cpu::D
         {
             return crate::gcm::vg_aes_gcm_seal_gather_prepared_aesni_pclmul;
         }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VAES_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_gather_prepared_vaes;
-        }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_AESNI_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_seal_gather_prepared_aesni;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES) }
-            || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_VPCLMUL_FEATURES)
-        {
-            return crate::gcm::vg_aes_gcm_seal_gather_prepared_vpclmul;
         }
         if const { verified_garbage_cpu::target_contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES) }
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_GATHER_PREPARED_PCLMUL_FEATURES)
