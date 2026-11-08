@@ -53,5 +53,7 @@ theorem p192_ok : CfgOk p192 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ h => nomatch h
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

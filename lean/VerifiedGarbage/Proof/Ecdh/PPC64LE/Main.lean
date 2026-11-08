@@ -303,7 +303,7 @@ theorem exchange_eq' (c : Cfg) : Impl.Ecdh.PPC64LE.Cfg.exchange c =
       (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n)) (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n))
       (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r12)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
-      (.seq (c.qMul PX PY) (.seq (pow c.powP c.SP) (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
+      (.seq (c.qMul PX PY) (.seq c.invP (Impl.Ecdh.PPC64LE.Cfg.middle c)))))))) :=
   rfl
 
 /-- `vg_ecdh_<curve>` computes the specification's shared secret and restores
@@ -383,7 +383,6 @@ theorem exchange_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State
     (by rw [r₄ (by simp)]; exact S₂.rz)
     (fun _ => by rw [e₄ (by decide) (by decide) (by decide), e₃ (by decide) (by decide) (by decide), S₂.k, hkv])
     (fun t ht => by rw [t₄ (j := 0) (by decide) t ht, S₂.t₀ t ht, hkv])
-    (fun t ht => by rw [t₄ (j := 1) (by decide) t ht, S₂.t₁ t ht])
     (peerPt_onCurve hc _ _ _)
     (peerPt_rep hC _ _ _ px py |> fun h => by
       show Rep c.C (toM c.C.p (2 ^ (64 * c.n)) (sv c base s₄ PX))

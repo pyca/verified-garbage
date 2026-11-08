@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.LadderP
+public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Chain
 public import VerifiedGarbage.Spec.Weierstrass
 public import VerifiedGarbage.Spec.Ecdsa
 public import VerifiedGarbage.Impl.Weierstrass.Layout.Mul
@@ -171,6 +172,20 @@ def ladderCfg : LadderCfg where
 def powP : PowCfg := ⟨c.MP', c.sl ACC, c.sl PT, c.sl RZ, c.sl ONEP, bitsAt c.n 1, 64 * c.n⟩
 def powN : PowCfg := ⟨c.MN', c.sl ACC, c.sl PT, c.sl KM, c.sl ONEN, bitsAt c.n 2, 64 * c.n⟩
 
+/-- `Z^(p-2)` by the sliding windows of `p - 2` (`Impl/Weierstrass/Chain.lean`),
+into `ACC`, its table of odd powers in the nine slots from `DX` (the ladder's,
+free after it). -/
+def chainP : Impl.Weierstrass.ChainCfg := .ofExp c.MP' (c.sl ACC) (c.sl RZ) (c.sl DX) (c.C.p - 2)
+
+/-- `[ACC] = [RZ]^(p-2)`. -/
+def invP : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainP c.SP
+
+/-- `k^(n-2)`, likewise: into `ACC`, its table from `DX`. -/
+def chainN : Impl.Weierstrass.ChainCfg := .ofExp c.MN' (c.sl ACC) (c.sl KM) (c.sl DX) (c.C.n - 2)
+
+/-- `[ACC] = [KM]^(n-2)`. -/
+def invN : Prog isa := Impl.Weierstrass.PPC64LE.ChainCfg.pow c.chainN c.SN
+
 /-- The callee-saved registers the function writes, and where they are saved
 (`lr` is saved after them, at byte 16). -/
 def saved : List (Reg × Nat) := [(.r14, 0), (.r31, 8)]
@@ -278,9 +293,9 @@ def signWith (generator : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq generator <|
-  .seq (pow c.powP c.SP) <|
+  .seq c.invP <|
   .seq c.middle <|
-  .seq (pow c.powN c.SN) c.scalar
+  .seq c.invN c.scalar
 
 /-! ## `vg_<curve>_mul`
 

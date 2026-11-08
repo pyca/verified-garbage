@@ -53,5 +53,7 @@ theorem brainpoolp384r1_ok : CfgOk brainpoolp384r1 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ h => nomatch h
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE

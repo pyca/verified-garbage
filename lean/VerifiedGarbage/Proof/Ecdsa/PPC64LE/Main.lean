@@ -278,8 +278,8 @@ theorem stage₄ (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List Regi
 theorem sign_eq (c : Cfg) : c.sign = .seq (.block (c.setupWith Args.sign))
     (.seq (bits (c.sl K) (bitsAt c.n 0) (8 * c.n))
     (.seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) (.seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n))
-    (.seq (c.qMul GX GY) (.seq (pow c.powP c.SP) (.seq c.middle
-      (.seq (pow c.powN c.SN) c.scalar))))))) := rfl
+    (.seq (c.qMul GX GY) (.seq c.invP (.seq c.middle
+      (.seq c.invN c.scalar))))))) := rfl
 
 /-- `vg_ecdsa_<curve>_sign` computes the specification's signature, restores
 the callee-saved registers and `lr`, and changes only the working space and

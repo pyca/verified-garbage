@@ -240,6 +240,93 @@ theorem powLayN (hc : CfgOk c) : PowLayP c.powN c.n where
   tmp4 := sl_al c _
   one4 := sl_al c _
 
+/-- The chain's table, the nine slots from `DX`, below the functions' own working space. -/
+theorem tbl_below_own (h7 : c.n < 10) : c.sl DX + 9 * (8 * c.n) ≤ own c.n := by
+  have := sl_below_own c h7 (i := 25) (by decide)
+  rw [sl_eq] at this ⊢; simp only [DX]; omega_arith
+
+/-- The chain of `p - 2`: `ACC`, `RZ` and the nine slots from `DX`. -/
+theorem chainLayP (hc : CfgOk c) : ChainLay c.chainP c.n where
+  n := rfl
+  acc := sl_below_own c hc.n10 (by decide)
+  base := sl_below_own c hc.n10 (by decide)
+  tbl := tbl_below_own hc.n10
+  acc4 := sl_al c _
+  base4 := sl_al c _
+  tbl4 := sl_al c _
+  acc_base := sl_apart c (by decide)
+  acc_tbl := by show c.sl ACC + 8 * c.n ≤ c.sl DX ∨ c.sl DX + 9 * (8 * c.n) ≤ c.sl ACC
+                rw [sl_eq, sl_eq]; simp only [DX, ACC]; omega_arith
+  base_tbl := by show c.sl RZ + 8 * c.n ≤ c.sl DX ∨ c.sl DX + 9 * (8 * c.n) ≤ c.sl RZ
+                 rw [sl_eq, sl_eq]; simp only [DX, RZ]; omega_arith
+  fit := by have := hc.n10; rw [own_eq]; omega_arith
+
+/-- The chain of `n - 2`: `ACC`, `KM` and the nine slots from `DX`. -/
+theorem chainLayN (hc : CfgOk c) : ChainLay c.chainN c.n where
+  n := rfl
+  acc := sl_below_own c hc.n10 (by decide)
+  base := sl_below_own c hc.n10 (by decide)
+  tbl := tbl_below_own hc.n10
+  acc4 := sl_al c _
+  base4 := sl_al c _
+  tbl4 := sl_al c _
+  acc_base := sl_apart c (by decide)
+  acc_tbl := by show c.sl ACC + 8 * c.n ≤ c.sl DX ∨ c.sl DX + 9 * (8 * c.n) ≤ c.sl ACC
+                rw [sl_eq, sl_eq]; simp only [DX, ACC]; omega_arith
+  base_tbl := by show c.sl KM + 8 * c.n ≤ c.sl DX ∨ c.sl DX + 9 * (8 * c.n) ≤ c.sl KM
+                 rw [sl_eq, sl_eq]; simp only [DX, KM]; omega_arith
+  fit := by have := hc.n10; rw [own_eq]; omega_arith
+
+theorem chainWN_eq : chainW c.chainN c.n = [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)] :=
+  rfl
+
+theorem chainWP_eq : chainW c.chainP c.n = [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)] :=
+  rfl
+
+/-- A slot but `ACC` and the table's, `DX` to `T2`, is apart from what the chain writes. -/
+theorem apart_chainW (h7 : c.n < 10) {i : Nat} (hi : i < 45) (hr : i ≠ ACC) (ht : i < DX ∨ T2 < i) :
+    ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+      c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact sl_apart c hr
+  · dsimp only; rw [sl_eq, sl_eq]; simp only [DX, T2] at ht ⊢
+    rcases ht with ht | ht
+    · left; have := Nat.mul_le_mul_left (8 * c.n) (show i + 1 ≤ 17 by omega)
+      rw [Nat.mul_succ] at this; omega_arith
+    · right; have := Nat.mul_le_mul_left (8 * c.n) (show 26 ≤ i by omega); omega_arith
+  · exact Or.inl (sl_below_own c h7 hi)
+
+theorem fixedOk_chainW (h7 : c.n < 10) :
+    FixedOk c [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)] := by
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl
+  · exact Or.inr (by rw [sl_eq, sl_eq]; simp only [ACC]; omega_arith)
+  · exact Or.inr (by rw [sl_eq, sl_eq]; simp only [DX]; omega_arith)
+  · exact fixedOk_own h7 _ (List.mem_singleton_self _)
+
+theorem chainW_le (h7 : c.n < 10) : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+    w.1 + w.2 ≤ size := by
+  have h1 := sl_le c h7 (i := ACC) (by decide)
+  have h2 := tbl_below_own h7
+  have h3 := own_eq c.n
+  have hsz : size = 8192 := rfl
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
+
+theorem tbl_apart_chainW (h7 : c.n < 10) (j t : Nat) :
+    ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
+      bitsAt c.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt c.n j + t := by
+  have h1 := sl_below_bits c h7 (i := ACC) (by decide) j t
+  have h2 := tbl_below_own h7
+  have h3 := own_below_bits c h7 j
+  intro w hw
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+  rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
+
 theorem modP (hc : CfgOk c) : ModOk c.n c.C.p := by
   have h := hc.fp; rw [hc.fpk, hc.fpm] at h; exact h
 

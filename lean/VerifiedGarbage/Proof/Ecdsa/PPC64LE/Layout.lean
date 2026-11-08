@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Bits
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Weierstrass.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.MontCall
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Chain
 
 /-!
 # ECDSA on PPC64LE: the curve, the arguments and the working space
@@ -70,6 +71,10 @@ structure CfgOk (c : Cfg) : Prop where
   fnm : c.SN.m = c.C.n
   /-- `vg_<curve>_mul`, if the curve has it, has no frames, as calls need. -/
   mulNf : ∀ C, c.mul = some C → c.mulFn.noFrames = true
+  /-- The sliding windows of `p - 2` are its (`chainCheck`). -/
+  chainP : ChainOk c.chainP (c.C.p - 2)
+  /-- And those of `n - 2`. -/
+  chainN : ChainOk c.chainN (c.C.n - 2)
 
 /-- The registers `setupWith` writes. -/
 abbrev setupClob : List Reg := [.r0, .r3, .r4, .r8, .r9, .r11, .r14]

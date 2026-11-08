@@ -140,7 +140,7 @@ def exchange : Prog isa :=
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq (.block (peerAt c .r12)) <|
   .seq (validate c) <|
-  .seq (c.qMul PX PY) <| .seq (pow c.powP c.SP) (middle c)
+  .seq (c.qMul PX PY) <| .seq c.invP (middle c)
 
 end Cfg
 

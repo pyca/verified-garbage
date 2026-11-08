@@ -54,5 +54,7 @@ theorem p224_ok : CfgOk p224 where
   fnk := rfl
   fnm := rfl
   mulNf := fun _ _ => Impl.Ecdsa.PPC64LE.mulP224_noFrames
+  chainP := .of_check (by decide +kernel)
+  chainN := .of_check (by decide +kernel)
 
 end VG.Proof.Ecdsa.PPC64LE
