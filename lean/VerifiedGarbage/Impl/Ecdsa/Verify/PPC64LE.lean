@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ecdh.PPC64LE
+public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.Joint
 
 /-!
 # ECDSA signature verification on PPC64LE
@@ -135,11 +136,34 @@ def scalarAt (i : Nat) : Prog isa :=
   | some _ => .block (copy c.n (c.sl K) (c.sl i))
   | none => bits (c.sl i) (bitsAt c.n 0) (8 * c.n)
 
-/-- `[u]G + [v]Q`, into `R`. -/
-def points : Prog isa :=
+/-- `[u]G + [v]Q`, into `R`, by two ladders and the complete addition. -/
+def ladders : Prog isa :=
   .seq (scalarAt c U) <| .seq c.gen <|
   .seq (.block (save c)) <| .seq (scalarAt c V) <|
   .seq (c.qMul Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY) (sum c)
+
+/-- Where the bits of `v` are: past those of `u` and the two powers'. -/
+def bitsV : Nat := bitsAt c.n 3
+
+/-- `G + Q`, in slots the steps before have finished with. -/
+def GQX : Nat := K
+def GQY : Nat := D
+def GQZ : Nat := E
+
+/-- The joint multiplication's slots: the ladder's, the key's point, `G + Q`,
+`O` (as zero and one hold it) and the bits of `v`. -/
+def jointCfg : Point.JointCfg :=
+  ⟨c.ladderCfg, c.pt Impl.Ecdh.PPC64LE.PX Impl.Ecdh.PPC64LE.PY ONEP, c.pt GQX GQY GQZ, c.pt ZERO ONEP ZERO, bitsV c, c.mont 1⟩
+
+/-- `[u]G + [v]Q`, into `R`, by one chain of doublings (`Point.JointCfg.joint`),
+from the tables of the bits of `u` and `v`. -/
+def joint : Prog isa :=
+  .seq (bits (c.sl U) (bitsAt c.n 0) (8 * c.n)) <| .seq (bits (c.sl V) (bitsV c) (8 * c.n))
+    ((jointCfg c).joint c.SP)
+
+/-- `[u]G + [v]Q`, into `R`: jointly where the point functions take the
+curve's coordinates (at most six words), else by the two ladders. -/
+def points : Prog isa := if c.n ≤ 6 then joint c else ladders c
 
 /-- Everything after the checks of the key. -/
 def back : Prog isa :=

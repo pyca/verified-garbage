@@ -1050,24 +1050,39 @@ vg_ecdsa_p192_verify:
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 29b
-	ld %r4, 256(%r3)
-	std %r4, 3576(%r3)
-	ld %r4, 264(%r3)
-	std %r4, 3584(%r3)
-	ld %r4, 272(%r3)
-	std %r4, 3592(%r3)
-	ld %r4, 280(%r3)
-	std %r4, 3600(%r3)
-	ld %r4, 288(%r3)
-	std %r4, 3608(%r3)
-	ld %r4, 296(%r3)
-	std %r4, 3616(%r3)
-	ld %r4, 184(%r3)
-	std %r4, 3624(%r3)
-	ld %r4, 192(%r3)
-	std %r4, 3632(%r3)
-	ld %r4, 200(%r3)
-	std %r4, 3640(%r3)
+	li %r31, 24
+210:
+	addi %r31, %r31, -1
+	add %r4, %r3, %r31
+	lbz %r4, 904(%r4)
+	rldicr %r5, %r31, 3, 60
+	add %r5, %r3, %r5
+	li %r7, 1
+	and %r6, %r4, %r7
+	stb %r6, 4672(%r5)
+	rldicl %r6, %r4, 63, 1
+	and %r6, %r6, %r7
+	stb %r6, 4673(%r5)
+	rldicl %r6, %r4, 62, 2
+	and %r6, %r6, %r7
+	stb %r6, 4674(%r5)
+	rldicl %r6, %r4, 61, 3
+	and %r6, %r6, %r7
+	stb %r6, 4675(%r5)
+	rldicl %r6, %r4, 60, 4
+	and %r6, %r6, %r7
+	stb %r6, 4676(%r5)
+	rldicl %r6, %r4, 59, 5
+	and %r6, %r6, %r7
+	stb %r6, 4677(%r5)
+	rldicl %r6, %r4, 58, 6
+	and %r6, %r6, %r7
+	stb %r6, 4678(%r5)
+	rldicl %r6, %r4, 57, 7
+	and %r6, %r6, %r7
+	stb %r6, 4679(%r5)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 210b
 	ld %r4, 208(%r3)
 	std %r4, 3648(%r3)
 	ld %r4, 216(%r3)
@@ -1080,125 +1095,61 @@ vg_ecdsa_p192_verify:
 	std %r4, 3680(%r3)
 	ld %r4, 248(%r3)
 	std %r4, 3688(%r3)
-	li %r31, 192
-210:
-	addi %r31, %r31, -1
-	ld %r4, 400(%r3)
+	ld %r4, 256(%r3)
 	std %r4, 3504(%r3)
-	ld %r4, 408(%r3)
+	ld %r4, 264(%r3)
 	std %r4, 3512(%r3)
-	ld %r4, 416(%r3)
+	ld %r4, 272(%r3)
 	std %r4, 3520(%r3)
-	ld %r4, 424(%r3)
+	ld %r4, 280(%r3)
 	std %r4, 3528(%r3)
-	ld %r4, 432(%r3)
+	ld %r4, 288(%r3)
 	std %r4, 3536(%r3)
-	ld %r4, 440(%r3)
+	ld %r4, 296(%r3)
 	std %r4, 3544(%r3)
-	ld %r4, 448(%r3)
+	ld %r4, 184(%r3)
 	std %r4, 3552(%r3)
-	ld %r4, 456(%r3)
+	ld %r4, 192(%r3)
 	std %r4, 3560(%r3)
-	ld %r4, 464(%r3)
+	ld %r4, 200(%r3)
 	std %r4, 3568(%r3)
-	bl {vg_p192_point_double}
-	ld %r4, 3432(%r3)
-	std %r4, 3504(%r3)
-	ld %r4, 3440(%r3)
-	std %r4, 3512(%r3)
-	ld %r4, 3448(%r3)
-	std %r4, 3520(%r3)
-	ld %r4, 3456(%r3)
-	std %r4, 3528(%r3)
-	ld %r4, 3464(%r3)
-	std %r4, 3536(%r3)
-	ld %r4, 3472(%r3)
-	std %r4, 3544(%r3)
-	ld %r4, 3480(%r3)
-	std %r4, 3552(%r3)
-	ld %r4, 3488(%r3)
-	std %r4, 3560(%r3)
-	ld %r4, 3496(%r3)
-	std %r4, 3568(%r3)
+	ld %r4, 976(%r3)
+	std %r4, 3576(%r3)
+	ld %r4, 984(%r3)
+	std %r4, 3584(%r3)
+	ld %r4, 992(%r3)
+	std %r4, 3592(%r3)
+	ld %r4, 1096(%r3)
+	std %r4, 3600(%r3)
+	ld %r4, 1104(%r3)
+	std %r4, 3608(%r3)
+	ld %r4, 1112(%r3)
+	std %r4, 3616(%r3)
+	ld %r4, 184(%r3)
+	std %r4, 3624(%r3)
+	ld %r4, 192(%r3)
+	std %r4, 3632(%r3)
+	ld %r4, 200(%r3)
+	std %r4, 3640(%r3)
 	bl {vg_p192_point_add}
-	add %r4, %r3, %r31
-	lbz %r4, 4096(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
-	ld %r4, 3504(%r3)
-	ld %r5, 3432(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 400(%r3)
-	ld %r4, 3512(%r3)
-	ld %r5, 3440(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 408(%r3)
-	ld %r4, 3520(%r3)
-	ld %r5, 3448(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 416(%r3)
-	ld %r4, 3528(%r3)
-	ld %r5, 3456(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 424(%r3)
-	ld %r4, 3536(%r3)
-	ld %r5, 3464(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 432(%r3)
-	ld %r4, 3544(%r3)
-	ld %r5, 3472(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 440(%r3)
-	ld %r4, 3552(%r3)
-	ld %r5, 3480(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 448(%r3)
-	ld %r4, 3560(%r3)
-	ld %r5, 3488(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 456(%r3)
-	ld %r4, 3568(%r3)
-	ld %r5, 3496(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 464(%r3)
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 210b
-	ld %r4, 400(%r3)
-	std %r4, 1048(%r3)
-	ld %r4, 408(%r3)
-	std %r4, 1056(%r3)
-	ld %r4, 416(%r3)
-	std %r4, 1064(%r3)
-	ld %r4, 424(%r3)
-	std %r4, 1072(%r3)
-	ld %r4, 432(%r3)
-	std %r4, 1080(%r3)
-	ld %r4, 440(%r3)
-	std %r4, 1088(%r3)
-	ld %r4, 448(%r3)
-	std %r4, 952(%r3)
-	ld %r4, 456(%r3)
-	std %r4, 960(%r3)
-	ld %r4, 464(%r3)
-	std %r4, 968(%r3)
+	ld %r4, 3432(%r3)
+	std %r4, 808(%r3)
+	ld %r4, 3440(%r3)
+	std %r4, 816(%r3)
+	ld %r4, 3448(%r3)
+	std %r4, 824(%r3)
+	ld %r4, 3456(%r3)
+	std %r4, 832(%r3)
+	ld %r4, 3464(%r3)
+	std %r4, 840(%r3)
+	ld %r4, 3472(%r3)
+	std %r4, 848(%r3)
+	ld %r4, 3480(%r3)
+	std %r4, 856(%r3)
+	ld %r4, 3488(%r3)
+	std %r4, 864(%r3)
+	ld %r4, 3496(%r3)
+	std %r4, 872(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 400(%r3)
@@ -1253,71 +1204,8 @@ vg_ecdsa_p192_verify:
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 468(%r3)
-	li %r31, 24
-211:
-	addi %r31, %r31, -1
-	add %r4, %r3, %r31
-	lbz %r4, 904(%r4)
-	rldicr %r5, %r31, 3, 60
-	add %r5, %r3, %r5
-	li %r7, 1
-	and %r6, %r4, %r7
-	stb %r6, 4096(%r5)
-	rldicl %r6, %r4, 63, 1
-	and %r6, %r6, %r7
-	stb %r6, 4097(%r5)
-	rldicl %r6, %r4, 62, 2
-	and %r6, %r6, %r7
-	stb %r6, 4098(%r5)
-	rldicl %r6, %r4, 61, 3
-	and %r6, %r6, %r7
-	stb %r6, 4099(%r5)
-	rldicl %r6, %r4, 60, 4
-	and %r6, %r6, %r7
-	stb %r6, 4100(%r5)
-	rldicl %r6, %r4, 59, 5
-	and %r6, %r6, %r7
-	stb %r6, 4101(%r5)
-	rldicl %r6, %r4, 58, 6
-	and %r6, %r6, %r7
-	stb %r6, 4102(%r5)
-	rldicl %r6, %r4, 57, 7
-	and %r6, %r6, %r7
-	stb %r6, 4103(%r5)
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 211b
-	ld %r4, 976(%r3)
-	std %r4, 3576(%r3)
-	ld %r4, 984(%r3)
-	std %r4, 3584(%r3)
-	ld %r4, 992(%r3)
-	std %r4, 3592(%r3)
-	ld %r4, 1096(%r3)
-	std %r4, 3600(%r3)
-	ld %r4, 1104(%r3)
-	std %r4, 3608(%r3)
-	ld %r4, 1112(%r3)
-	std %r4, 3616(%r3)
-	ld %r4, 184(%r3)
-	std %r4, 3624(%r3)
-	ld %r4, 192(%r3)
-	std %r4, 3632(%r3)
-	ld %r4, 200(%r3)
-	std %r4, 3640(%r3)
-	ld %r4, 208(%r3)
-	std %r4, 3648(%r3)
-	ld %r4, 216(%r3)
-	std %r4, 3656(%r3)
-	ld %r4, 224(%r3)
-	std %r4, 3664(%r3)
-	ld %r4, 232(%r3)
-	std %r4, 3672(%r3)
-	ld %r4, 240(%r3)
-	std %r4, 3680(%r3)
-	ld %r4, 248(%r3)
-	std %r4, 3688(%r3)
 	li %r31, 192
-212:
+211:
 	addi %r31, %r31, -1
 	ld %r4, 400(%r3)
 	std %r4, 3504(%r3)
@@ -1356,245 +1244,197 @@ vg_ecdsa_p192_verify:
 	std %r4, 3560(%r3)
 	ld %r4, 3496(%r3)
 	std %r4, 3568(%r3)
-	bl {vg_p192_point_add}
 	add %r4, %r3, %r31
 	lbz %r4, 4096(%r4)
 	li %r5, 0
 	subf %r10, %r4, %r5
-	ld %r4, 3504(%r3)
-	ld %r5, 3432(%r3)
+	ld %r4, 136(%r3)
+	ld %r5, 256(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
+	std %r4, 544(%r3)
+	ld %r4, 144(%r3)
+	ld %r5, 264(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 552(%r3)
+	ld %r4, 152(%r3)
+	ld %r5, 272(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 560(%r3)
+	ld %r4, 184(%r3)
+	ld %r5, 280(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 568(%r3)
+	ld %r4, 192(%r3)
+	ld %r5, 288(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 576(%r3)
+	ld %r4, 200(%r3)
+	ld %r5, 296(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 584(%r3)
+	ld %r4, 136(%r3)
+	ld %r5, 184(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 592(%r3)
+	ld %r4, 144(%r3)
+	ld %r5, 192(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 600(%r3)
+	ld %r4, 152(%r3)
+	ld %r5, 200(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 976(%r3)
+	ld %r5, 808(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 472(%r3)
+	ld %r4, 984(%r3)
+	ld %r5, 816(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 480(%r3)
+	ld %r4, 992(%r3)
+	ld %r5, 824(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 488(%r3)
+	ld %r4, 1096(%r3)
+	ld %r5, 832(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 496(%r3)
+	ld %r4, 1104(%r3)
+	ld %r5, 840(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 504(%r3)
+	ld %r4, 1112(%r3)
+	ld %r5, 848(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 512(%r3)
+	ld %r4, 184(%r3)
+	ld %r5, 856(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 520(%r3)
+	ld %r4, 192(%r3)
+	ld %r5, 864(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 528(%r3)
+	ld %r4, 200(%r3)
+	ld %r5, 872(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 536(%r3)
+	add %r4, %r3, %r31
+	lbz %r4, 4672(%r4)
+	li %r5, 0
+	subf %r10, %r4, %r5
+	ld %r4, 544(%r3)
+	ld %r5, 472(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3576(%r3)
+	ld %r4, 552(%r3)
+	ld %r5, 480(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3584(%r3)
+	ld %r4, 560(%r3)
+	ld %r5, 488(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3592(%r3)
+	ld %r4, 568(%r3)
+	ld %r5, 496(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3600(%r3)
+	ld %r4, 576(%r3)
+	ld %r5, 504(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3608(%r3)
+	ld %r4, 584(%r3)
+	ld %r5, 512(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3616(%r3)
+	ld %r4, 592(%r3)
+	ld %r5, 520(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3624(%r3)
+	ld %r4, 600(%r3)
+	ld %r5, 528(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3632(%r3)
+	ld %r4, 608(%r3)
+	ld %r5, 536(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3640(%r3)
+	bl {vg_p192_point_add}
+	ld %r4, 3432(%r3)
 	std %r4, 400(%r3)
-	ld %r4, 3512(%r3)
-	ld %r5, 3440(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3440(%r3)
 	std %r4, 408(%r3)
-	ld %r4, 3520(%r3)
-	ld %r5, 3448(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3448(%r3)
 	std %r4, 416(%r3)
-	ld %r4, 3528(%r3)
-	ld %r5, 3456(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3456(%r3)
 	std %r4, 424(%r3)
-	ld %r4, 3536(%r3)
-	ld %r5, 3464(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3464(%r3)
 	std %r4, 432(%r3)
-	ld %r4, 3544(%r3)
-	ld %r5, 3472(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3472(%r3)
 	std %r4, 440(%r3)
-	ld %r4, 3552(%r3)
-	ld %r5, 3480(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3480(%r3)
 	std %r4, 448(%r3)
-	ld %r4, 3560(%r3)
-	ld %r5, 3488(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3488(%r3)
 	std %r4, 456(%r3)
-	ld %r4, 3568(%r3)
-	ld %r5, 3496(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 3496(%r3)
 	std %r4, 464(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 212b
-	li %r4, 616
-	li %r5, 1048
-	li %r6, 400
-	bl {vg_p192_mul_mod_p}
-	li %r4, 640
-	li %r5, 1072
-	li %r6, 424
-	bl {vg_p192_mul_mod_p}
-	li %r4, 664
-	li %r5, 952
-	li %r6, 448
-	bl {vg_p192_mul_mod_p}
-	li %r4, 688
-	li %r5, 1048
-	li %r6, 1072
-	bl {vg_p192_add_mod_p}
-	li %r4, 712
-	li %r5, 400
-	li %r6, 424
-	bl {vg_p192_add_mod_p}
-	li %r4, 688
-	li %r5, 688
-	li %r6, 712
-	bl {vg_p192_mul_mod_p}
-	li %r4, 712
-	li %r5, 616
-	li %r6, 640
-	bl {vg_p192_add_mod_p}
-	li %r4, 688
-	li %r5, 688
-	li %r6, 712
-	bl {vg_p192_sub_mod_p}
-	li %r4, 712
-	li %r5, 1048
-	li %r6, 952
-	bl {vg_p192_add_mod_p}
-	li %r4, 736
-	li %r5, 400
-	li %r6, 448
-	bl {vg_p192_add_mod_p}
-	li %r4, 712
-	li %r5, 712
-	li %r6, 736
-	bl {vg_p192_mul_mod_p}
-	li %r4, 736
-	li %r5, 616
-	li %r6, 664
-	bl {vg_p192_add_mod_p}
-	li %r4, 712
-	li %r5, 712
-	li %r6, 736
-	bl {vg_p192_sub_mod_p}
-	li %r4, 736
-	li %r5, 1072
-	li %r6, 952
-	bl {vg_p192_add_mod_p}
-	li %r4, 472
-	li %r5, 424
-	li %r6, 448
-	bl {vg_p192_add_mod_p}
-	li %r4, 736
-	li %r5, 736
-	li %r6, 472
-	bl {vg_p192_mul_mod_p}
-	li %r4, 472
-	li %r5, 640
-	li %r6, 664
-	bl {vg_p192_add_mod_p}
-	li %r4, 736
-	li %r5, 736
-	li %r6, 472
-	bl {vg_p192_sub_mod_p}
-	li %r4, 520
-	li %r5, 208
-	li %r6, 712
-	bl {vg_p192_mul_mod_p}
-	li %r4, 472
-	li %r5, 232
-	li %r6, 664
-	bl {vg_p192_mul_mod_p}
-	li %r4, 520
-	li %r5, 472
-	li %r6, 520
-	bl {vg_p192_add_mod_p}
-	li %r4, 472
-	li %r5, 640
-	li %r6, 520
-	bl {vg_p192_sub_mod_p}
-	li %r4, 520
-	li %r5, 640
-	li %r6, 520
-	bl {vg_p192_add_mod_p}
-	li %r4, 496
-	li %r5, 472
-	li %r6, 520
-	bl {vg_p192_mul_mod_p}
-	li %r4, 640
-	li %r5, 616
-	li %r6, 616
-	bl {vg_p192_add_mod_p}
-	li %r4, 640
-	li %r5, 640
-	li %r6, 616
-	bl {vg_p192_add_mod_p}
-	li %r4, 664
-	li %r5, 208
-	li %r6, 664
-	bl {vg_p192_mul_mod_p}
-	li %r4, 712
-	li %r5, 232
-	li %r6, 712
-	bl {vg_p192_mul_mod_p}
-	li %r4, 640
-	li %r5, 640
-	li %r6, 664
-	bl {vg_p192_add_mod_p}
-	li %r4, 664
-	li %r5, 616
-	li %r6, 664
-	bl {vg_p192_sub_mod_p}
-	li %r4, 664
-	li %r5, 208
-	li %r6, 664
-	bl {vg_p192_mul_mod_p}
-	li %r4, 712
-	li %r5, 712
-	li %r6, 664
-	bl {vg_p192_add_mod_p}
-	li %r4, 616
-	li %r5, 640
-	li %r6, 712
-	bl {vg_p192_mul_mod_p}
-	li %r4, 496
-	li %r5, 496
-	li %r6, 616
-	bl {vg_p192_add_mod_p}
-	li %r4, 616
-	li %r5, 736
-	li %r6, 712
-	bl {vg_p192_mul_mod_p}
-	li %r4, 472
-	li %r5, 688
-	li %r6, 472
-	bl {vg_p192_mul_mod_p}
-	li %r4, 472
-	li %r5, 472
-	li %r6, 616
-	bl {vg_p192_sub_mod_p}
-	li %r4, 616
-	li %r5, 688
-	li %r6, 640
-	bl {vg_p192_mul_mod_p}
-	li %r4, 520
-	li %r5, 736
-	li %r6, 520
-	bl {vg_p192_mul_mod_p}
-	li %r4, 520
-	li %r5, 520
-	li %r6, 616
-	bl {vg_p192_add_mod_p}
-	ld %r4, 472(%r3)
-	std %r4, 400(%r3)
-	ld %r4, 480(%r3)
-	std %r4, 408(%r3)
-	ld %r4, 488(%r3)
-	std %r4, 416(%r3)
-	ld %r4, 496(%r3)
-	std %r4, 424(%r3)
-	ld %r4, 504(%r3)
-	std %r4, 432(%r3)
-	ld %r4, 512(%r3)
-	std %r4, 440(%r3)
-	ld %r4, 520(%r3)
-	std %r4, 448(%r3)
-	ld %r4, 528(%r3)
-	std %r4, 456(%r3)
-	ld %r4, 536(%r3)
-	std %r4, 464(%r3)
+	bne %cr0, 211b
 	ld %r4, 184(%r3)
 	std %r4, 760(%r3)
 	ld %r4, 192(%r3)
@@ -1602,7 +1442,7 @@ vg_ecdsa_p192_verify:
 	ld %r4, 200(%r3)
 	std %r4, 776(%r3)
 	li %r31, 192
-213:
+212:
 	addi %r31, %r31, -1
 	li %r4, 760
 	li %r5, 760
@@ -1635,7 +1475,7 @@ vg_ecdsa_p192_verify:
 	xor %r4, %r4, %r5
 	std %r4, 776(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 213b
+	bne %cr0, 212b
 	li %r4, 880
 	li %r5, 400
 	li %r6, 760

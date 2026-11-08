@@ -83,8 +83,7 @@ theorem verify_ok (hc : CfgOk c) (h3 : 3 ≤ c.n) (hC : Law c.C) {s₀ : State}
   refine points_ok hc h3 hC hM hPc hQ fun s₃ hP => ?_
   refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, sp, lr, frame, xo, hxo, hx, ret⟩ =>
     ⟨⟨saved, sp, lr, frame⟩, ?_⟩
-  obtain ⟨X1, Y1, Z1, X2, Y2, Z2, q1, q2, hsum⟩ := hP.pt
-  have hR := Rep.add hC (hC.onCurve_mul hc.onG _) (hC.onCurve_mul hPc _) q1 q2 hsum.symm
+  have hR := hP.pt
   -- The arguments as the specification reads them.
   have hlen : (Spec.Ecdsa.bytesAt s₀.mem (s₀.gpr .r3) (1 + 2 * c.C.len)).length = 2 * c.C.len + 1 := by
     rw [length_bytesAt]; omega
