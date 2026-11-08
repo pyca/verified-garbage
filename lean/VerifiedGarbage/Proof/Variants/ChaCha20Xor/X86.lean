@@ -13,7 +13,8 @@ def sse2 : Proof.ChaCha20.X86.XorImpl := .sse2
 def ssse3 : Proof.ChaCha20.X86.XorImpl := .ssse3
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [ssse3, sse2]
 
 end VG.Proof.Variants.ChaCha20Xor.X86

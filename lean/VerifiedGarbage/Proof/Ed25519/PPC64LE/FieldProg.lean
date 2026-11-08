@@ -214,14 +214,18 @@ theorem fieldOp_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) :
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) hc)
       fun t ⟨hr, hf, hv⟩ => ?_
     exact field_finish o (hr.mono (by decide)) (frame_o hf) (Proof.X25519.toFe_sub hv)
 
@@ -267,14 +271,18 @@ theorem fieldOpW_ok {b : Addr} {s : State} (hc : Ctx b s) (op : FieldOp) (hi : o
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (add_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_add hv)
   | sub o a c =>
     have ho := slot_range o
     have ha := slot_range a
     have hb := slot_range c
-    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (slot_sep o a) (slot_sep o c) hc)
+    have := slot_al o; have := slot_al a; have := slot_al c
+    refine WP.mono (sub_ok (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+      (by omega_arith) (by omega_arith) hc)
       fun t ⟨hr, hf, hv⟩ => ⟨hr, frame_o hf, ?_⟩
     rw [field_update o (frame_o hf)]; exact congrArg _ (Proof.X25519.toFe_sub hv)
 

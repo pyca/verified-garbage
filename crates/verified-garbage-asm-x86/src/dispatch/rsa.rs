@@ -2,6 +2,37 @@
 //! The dispatchers of the verified `rsa` functions for `x86`
 //! (`crate::rsa`, `VG.Rust.dispatcher`).
 
+/// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.2's deterministic method. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or the method fails. It finds the factors of a valid two-prime key whenever `K (p + q − 1) ≤ n` for `a = K φ(n)` (Appendix C.2's step 1): with the least private exponent, whenever the smaller prime exceeds `e²`, and in practice for every key whose primes are not tiny.
+///
+/// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
+///
+/// It runs `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `p` must be valid for reads and writes of `p_len` bytes.
+/// * `q` must be valid for reads and writes of `q_len` bytes.
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `p_len` and `q_len` must be `n_len`.
+/// * `e_len` must be in 1..=8.
+/// * `d_len` must be in 1..=`n_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `p`, `q` and `scratch` must not overlap each other, `n`, `e` or `d` (distinct Rust objects never do).
+/// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_recover_primes_det_auto(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa::vg_rsa_recover_primes_det(p, p_len, q, q_len, n, n_len, e, e_len, d, d_len, scratch, scratch_len) }
+}
+
 /// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
 ///
 /// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
@@ -93,35 +124,4 @@ pub unsafe fn vg_rsa_crt_values_auto(_dit: verified_garbage_cpu::Dit<'_>, dp: *m
 pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
-}
-
-/// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.2's deterministic method. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or the method fails. It finds the factors of a valid two-prime key whenever `K (p + q − 1) ≤ n` for `a = K φ(n)` (Appendix C.2's step 1): with the least private exponent, whenever the smaller prime exceeds `e²`, and in practice for every key whose primes are not tiny.
-///
-/// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
-///
-/// It runs `vg_rsa_recover_primes_det`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `p` must be valid for reads and writes of `p_len` bytes.
-/// * `q` must be valid for reads and writes of `q_len` bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `p_len` and `q_len` must be `n_len`.
-/// * `e_len` must be in 1..=8.
-/// * `d_len` must be in 1..=`n_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `p`, `q` and `scratch` must not overlap each other, `n`, `e` or `d` (distinct Rust objects never do).
-/// * None of `p`, `q`, `n`, `e`, `d` and `scratch` may overlap the arguments on the stack, overlap the return address on the stack or the 96 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_rsa_recover_primes_det_auto(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa::vg_rsa_recover_primes_det(p, p_len, q, q_len, n, n_len, e, e_len, d, d_len, scratch, scratch_len) }
 }

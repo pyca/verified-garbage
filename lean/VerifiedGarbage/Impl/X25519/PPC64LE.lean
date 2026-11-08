@@ -21,38 +21,35 @@ result is reduced fully. A limb is stored with `stw`, which keeps the low
 lives in the working space, at a constant offset from its base, which stays
 in `r6` (`out` stays in `r3`):
 
-* `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
-  inversion's result and the final reduction's temporary, 32 bytes each
-  (`X1`, …);
+* `x1, x2, z2, x3, z3`, the ladder's temporaries, the inversion's result
+  and the final reduction's temporary, 32 bytes each (`X1`, …);
 * the 8 words of a product (`ACC`, 64 bytes) and the bits of the scalar
   (`BITS`, byte `t` is bit `t` of the clamped scalar).
 
-The arithmetic (registers `r4`, `r5`, `r7`–`r11`; `r10` = 38 in the 32-bit
-operations):
+The arithmetic (registers `r4`, `r5`, `r7`–`r11`):
 
 * `pass`: the limbs of a number from eight sums `c_k` (below `2⁶⁴` less a
   carry), limb `k` being `c_k` plus the carry from limb `k - 1`, modulo
   `2³²`, and the carry out in `r8`;
-* `tail`: the carry out (`2²⁵⁶ ≡ 38`) folded into limb 0 as `38` times itself
-  and carried again (`pass` of the limbs themselves); what that carries out is
-  0 or 1, and if it is 1 the limbs are small, so `38` more in limb 0 stays
-  below `2³²`;
 * `mul`: the eight words of the product by columns (product scanning: the
   terms `a_i b_j` of column `k = i + j` added into a three-word accumulator,
   `r8`–`r10` in turn, whose low word is stored when the column ends), then
   `L + 38 H` for its halves `L` and `H` in four words `r8`–`r11` and a top
   word `t < 40` (`r7`), folded in as `38 t` twice (`foldTop`: the first
   carries out 0 or 1, and if 1 the words are small);
-* `add`, `sub`: the limbs of `a + b` and of `a + 4p - b` (every limb of `4p`
-  is at least `2³² - 1`, so no limb is negative; `r4` holds `2³³`), then
-  `tail`;
+* `add`: the four words of `a + b` with the carry chain (`addc`, `adde`),
+  and its carry `t ≤ 1` folded in as `38 t` twice (`foldTop`);
+* `sub`: the four words of `a - b` modulo `2²⁵⁶` with the borrow chain
+  (`subc`, `sube`: CA is set if there is no borrow), and 38 subtracted if it
+  borrowed (`borrowFold`, by a mask from CA), twice: the second does not
+  borrow;
 * `cswap`: with the mask `-swap` (in `r11`), as RFC 7748 §5 describes;
 * `freeze`: the full reduction of the result: bit 255 folded in as 19
   (`x < 2²⁵⁵ + 19`), then `x + 19 - 2²⁵⁵` selected with a mask if it is not
   negative.
 
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the constant element `A24`), over the bits of the scalar
+multiplication by the word `121665`, `mulA24`), over the bits of the scalar
 from 254 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is ref10's addition chain (254 squarings and 11
 multiplications), its runs of squarings counted by `r12`.
@@ -84,7 +81,7 @@ def BB : Nat := 320
 def E : Nat := 352
 def DA : Nat := 384
 def CB : Nat := 416
-def A24 : Nat := 448
+-- 448 to 480 is unused.
 def R : Nat := 480
 def Y : Nat := 512
 def ACC : Nat := 544
@@ -105,33 +102,15 @@ def pass (rb : Reg) (o : Nat) (src : Nat → List Instr) : List Instr :=
 /-- Limb `k` of `[o]`, into `r7`. -/
 def ldSrc (o k : Nat) : List Instr := [.load .w .r7 .r6 (o + 4 * k)]
 
-/-- The carry out of `[o]`, in `r8`, folded in as 38 times itself, twice. -/
-def tail (o : Nat) : List Instr :=
-  [.mul .r8 .r8 .r10] ++ pass .r6 o (ldSrc o) ++
-    [.mul .r8 .r8 .r10, .load .w .r7 .r6 o, .add .r7 .r7 .r8, .store .w .r7 .r6 o]
-
 /-- 38 in `r10` and no carry in `r8`. -/
 def prologue : List Instr := [.li .r10 38, .li .r8 0]
 
-/-! ## Field arithmetic -/
+/-! ## Field arithmetic
 
+Limb `k` of `[a] + [b]`, a source for `pass` (Ed25519's scalar arithmetic
+on PPC64LE uses it). -/
 def addSrc (a b k : Nat) : List Instr :=
   [.load .w .r7 .r6 (a + 4 * k), .load .w .r5 .r6 (b + 4 * k), .add .r7 .r7 .r5]
-
-/-- `[o] = [a] + [b]`. -/
-def add (o a b : Nat) : List Instr := prologue ++ pass .r6 o (addSrc a b) ++ tail o
-
-/-- Limb `k` of `4p` is `2³³` added `subHi k` times, less `subLo k`. -/
-def subHi (k : Nat) : List Instr := if k = 7 then [.add .r7 .r7 .r4] else [.add .r7 .r7 .r4, .add .r7 .r7 .r4]
-def subLo (k : Nat) : Nat := if k = 0 then 76 else 4
-
-def subSrc (a b k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (a + 4 * k)] ++ subHi k ++
-    [.subi .r7 .r7 (subLo k), .load .w .r5 .r6 (b + 4 * k), .sub .r7 .r7 .r5]
-
-/-- `[o] = [a] - [b]`, as `[a] + 4p - [b]`. -/
-def sub (o a b : Nat) : List Instr :=
-  prologue ++ [.li .r4 1, .lsl .r4 .r4 33] ++ pass .r6 o (subSrc a b) ++ tail o
 
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
@@ -215,6 +194,53 @@ def reduce38 (acc o : Nat) : List Instr :=
     (List.range 4).flatMap (redHi acc) ++ foldTop ++ foldTop ++
     (List.range 4).map fun k => .store .d (wreg k) .r6 (o + 8 * k)
 
+/-- Word `k` of `[a] + [b]` into `wreg k`, with the carry chain. -/
+def addW (a b k : Nat) : List Instr :=
+  [.load .d (wreg k) .r6 (a + 8 * k), .load .d .r4 .r6 (b + 8 * k),
+    if k = 0 then .addc (wreg k) (wreg k) .r4 else .adde (wreg k) (wreg k) .r4]
+
+/-- The four words of `r8`–`r11` stored at `o`. -/
+def stores4 (o : Nat) : List Instr := (List.range 4).map fun k => .store .d (wreg k) .r6 (o + 8 * k)
+
+/-- `[o] = [a] + [b]` (`o` may be `a` or `b`): the four words of the sum and
+its carry `t ≤ 1` (in `r7`), folded in as `38 t` twice. -/
+def add (o a b : Nat) : List Instr :=
+  (List.range 4).flatMap (addW a b) ++ [.li .r7 0, .addze .r7 .r7, .li .r5 38] ++ foldTop ++
+    foldTop ++ stores4 o
+
+/-- Word `k` of `[a] - [b]` into `wreg k`, with the borrow chain (CA set if
+there is no borrow). -/
+def subW (a b k : Nat) : List Instr :=
+  [.load .d (wreg k) .r6 (a + 8 * k), .load .d .r4 .r6 (b + 8 * k),
+    if k = 0 then .subc (wreg k) (wreg k) .r4 else .sube (wreg k) (wreg k) .r4]
+
+/-- `r8`–`r11` less 38 if the last subtraction borrowed (`2²⁵⁶ ≡ 38`; 38 in
+`r5`): the mask `CA - 1` into `r7`, `38` masked into `r4`, then the borrow
+chain against `r7 = 0`. -/
+def borrowFold : List Instr :=
+  [.sube .r7 .r7 .r7, .logic .and .r4 .r7 .r5, .li .r7 0, .subc .r8 .r8 .r4, .sube .r9 .r9 .r7,
+    .sube .r10 .r10 .r7, .sube .r11 .r11 .r7]
+
+/-- `[o] = [a] - [b]` (`o` may be `a` or `b`): the four words of the
+difference modulo `2²⁵⁶`, less 38 if it borrowed, twice (the second does not
+borrow). -/
+def sub (o a b : Nat) : List Instr :=
+  (List.range 4).flatMap (subW a b) ++ [.li .r5 38] ++ borrowFold ++ borrowFold ++ stores4 o
+
+/-- `121665 = 2¹⁶ + 0xdb41` (`a24`) into `r5`. -/
+def a24Const : List Instr := [.lis .r5 1, .ori .r5 .r5 0xdb41]
+
+/-- `[o] = 121665 · [a]` (`a24 · [a]`; `o` may be `a`): the words of the
+product, each `mulld` plus the previous `mulhdu` by the carry chain, and its
+top word `t < 2¹⁷` (in `r7`), folded in as `38 t` twice. -/
+def mulA24 (o a : Nat) : List Instr :=
+  a24Const ++
+  [.load .d .r8 .r6 a, .mulhu .r7 .r8 .r5, .mul .r8 .r8 .r5,
+    .load .d .r9 .r6 (a + 8), .mulhu .r4 .r9 .r5, .mul .r9 .r9 .r5, .addc .r9 .r9 .r7,
+    .load .d .r10 .r6 (a + 16), .mulhu .r7 .r10 .r5, .mul .r10 .r10 .r5, .adde .r10 .r10 .r4,
+    .load .d .r11 .r6 (a + 24), .mulhu .r4 .r11 .r5, .mul .r11 .r11 .r5, .adde .r11 .r11 .r7,
+    .addze .r7 .r4, .li .r5 38] ++ foldTop ++ foldTop ++ stores4 o
+
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
 def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
@@ -249,7 +275,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
@@ -321,11 +347,10 @@ def decodeStep (k : Nat) : List Instr :=
   [.load .w .r7 .r5 (4 * k)] ++ (if k = 7 then low31 else []) ++
     [.store .w .r7 .r6 (X1 + 4 * k), .store .w .r7 .r6 (X3 + 4 * k)]
 
-/-- `x2 = 1`, `z2 = 0`, `z3 = 1` and `A24 = 121665 = 2¹⁶ + 0xdb41`. -/
+/-- `x2 = 1`, `z2 = 0` and `z3 = 1`. -/
 def consts : List Instr :=
-  [.li .r7 1, .li .r8 0, .lis .r5 1, .ori .r5 .r5 0xdb41, .store .w .r7 .r6 X2,
-    .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3, .store .w .r5 .r6 A24] ++
-  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7 ++ storeN .r8 (A24 + 4) 7
+  [.li .r7 1, .li .r8 0, .store .w .r7 .r6 X2, .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3] ++
+  storeN .r8 (X2 + 4) 7 ++ storeN .r8 (Z2 + 4) 7 ++ storeN .r8 (Z3 + 4) 7
 
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 8).flatMap decodeStep ++ consts

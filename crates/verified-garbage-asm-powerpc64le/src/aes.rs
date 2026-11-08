@@ -22,9 +22,9 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key(key: *const u8, key_len: usize
 20:
 .base64 "AAAD6QAABfkIAGM4CAClOPj/hDgAACQo"
 bne %cr0, 20b
-.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDg="
+.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDgAACuB"
 21:
-.base64 "AAArgQAALCg="
+.base64 "AAAsKA=="
 beq %cr0, 22f
 .base64 "8P8MOAAAICg="
 beq %cr0, 24f
@@ -156,12 +156,12 @@ b 21f
 pub(crate) mod vg_aes_ctr32;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_to.rs"]
-pub(crate) mod vg_aes_ctr32_to;
-
-#[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]
 pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_encrypt_blocks.rs"]

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Zeroize.zeroizeContract`. Constant time: only `p` and `len` may affect timing, not the bytes wiped.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_zeroize_avx` if the CPU supports its features (`VG_ZEROIZE_AVX_FEATURES`); or else `vg_zeroize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_zeroize_avx` if the CPU supports its features (`VG_ZEROIZE_AVX_FEATURES`); or else `vg_zeroize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

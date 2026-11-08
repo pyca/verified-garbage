@@ -2,28 +2,64 @@
 //! The dispatchers of the tables of functions for `arm`
 //! (`crate::fn_tables`, `VG.Rust.tableDispatcher`).
 
-/// The table of functions `VG_HASH_MD5` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hash_md5_auto() -> &'static crate::fn_tables::Hash {
-    &crate::fn_tables::VG_HASH_MD5
-}
-
 /// The table of functions `VG_HMAC_MD5` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
 #[inline]
 pub fn vg_hmac_md5_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_MD5
 }
 
-/// The table of functions `VG_HASH_SHA1` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
-    &crate::fn_tables::VG_HASH_SHA1
-}
-
 /// The table of functions `VG_HMAC_SHA1` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
 #[inline]
 pub fn vg_hmac_sha1_auto() -> &'static crate::fn_tables::Hmac {
     &crate::fn_tables::VG_HMAC_SHA1
+}
+
+/// The table of functions `VG_HMAC_SHA224` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA224
+}
+
+/// The table of functions `VG_HMAC_SHA256` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA256
+}
+
+/// The table of functions `VG_HMAC_SHA384` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA384
+}
+
+/// The table of functions `VG_HMAC_SHA512` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA512
+}
+
+/// The table of functions `VG_HMAC_SHA512_224` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA512_224
+}
+
+/// The table of functions `VG_HMAC_SHA512_256` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
+    &crate::fn_tables::VG_HMAC_SHA512_256
+}
+
+/// The table of functions `VG_HASH_MD5` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hash_md5_auto() -> &'static crate::fn_tables::Hash {
+    &crate::fn_tables::VG_HASH_MD5
+}
+
+/// The table of functions `VG_HASH_SHA1` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+#[inline]
+pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
+    &crate::fn_tables::VG_HASH_SHA1
 }
 
 /// The table of functions `VG_HASH_SHA224` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
@@ -50,28 +86,16 @@ pub fn vg_hash_sha512_auto() -> &'static crate::fn_tables::Hash {
     &crate::fn_tables::VG_HASH_SHA512
 }
 
-/// The table of functions `VG_HMAC_SHA224` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+/// The table of functions `VG_HASH_SHA512_224` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
 #[inline]
-pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA224
+pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
+    &crate::fn_tables::VG_HASH_SHA512_224
 }
 
-/// The table of functions `VG_HMAC_SHA256` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
+/// The table of functions `VG_HASH_SHA512_256` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
 #[inline]
-pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA256
-}
-
-/// The table of functions `VG_HMAC_SHA384` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA384
-}
-
-/// The table of functions `VG_HMAC_SHA512` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA512
+pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
+    &crate::fn_tables::VG_HASH_SHA512_256
 }
 
 /// The table of functions `VG_MD_HASH_MD5` of the interface `MdHash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
@@ -108,30 +132,6 @@ pub fn vg_md_hash_sha384_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha512_auto() -> &'static crate::fn_tables::MdHash {
     &crate::fn_tables::VG_MD_HASH_SHA512
-}
-
-/// The table of functions `VG_HASH_SHA512_224` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
-    &crate::fn_tables::VG_HASH_SHA512_224
-}
-
-/// The table of functions `VG_HASH_SHA512_256` of the interface `Hash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
-    &crate::fn_tables::VG_HASH_SHA512_256
-}
-
-/// The table of functions `VG_HMAC_SHA512_224` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA512_224
-}
-
-/// The table of functions `VG_HMAC_SHA512_256` of the interface `Hmac`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).
-#[inline]
-pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
-    &crate::fn_tables::VG_HMAC_SHA512_256
 }
 
 /// The table of functions `VG_MD_HASH_SHA512_224` of the interface `MdHash`, the only one with its data on this target, which needs no CPU feature (`VG.Rust.tableDispatcher`).

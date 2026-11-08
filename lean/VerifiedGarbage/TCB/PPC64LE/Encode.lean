@@ -123,6 +123,29 @@ def VOp.encode : VOp → Option Nat
   | .sldoi dr n m sh => if sh < 16 then some (va 44 dr.ctorIdx n.ctorIdx m.ctorIdx sh) else none
   -- "vrlw" (VX, 132).
   | .rlw dr n m => some (vx 132 dr.ctorIdx n.ctorIdx m.ctorIdx)
+  -- "vadduhm" (VX, 64), "vsubuhm", "vsubuwm" (VX, 1088, 1152), "vminuh",
+  -- "vminuw" (VX, 578, 642).
+  | .addh dr n m => some (vx 64 dr.ctorIdx n.ctorIdx m.ctorIdx)
+  | .sub w dr n m => some (vx (if w then 1152 else 1088) dr.ctorIdx n.ctorIdx m.ctorIdx)
+  | .minu w dr n m => some (vx (if w then 642 else 578) dr.ctorIdx n.ctorIdx m.ctorIdx)
+  -- "vmuleuh", "vmulouh", "vmuleuw", "vmulouw" (VX, 584, 72, 648, 136),
+  -- "vmuluwm" (VX, 137), "vmladduhm" (VA, 34).
+  | .mulu odd w dr n m =>
+    some (vx ((if odd then 72 else 584) + (if w then 64 else 0)) dr.ctorIdx n.ctorIdx m.ctorIdx)
+  | .muluwm dr n m => some (vx 137 dr.ctorIdx n.ctorIdx m.ctorIdx)
+  | .mladduhm dr n m c => some (va 34 dr.ctorIdx n.ctorIdx m.ctorIdx c.ctorIdx)
+  -- "vslh", "vsrh" (VX, 324, 580).
+  | .shifth r dr n m => some (vx (if r then 580 else 324) dr.ctorIdx n.ctorIdx m.ctorIdx)
+  -- "vsplth", "vspltw" (VX, 588, 652): `UIM` in the `VRA` field (bits 13–15
+  -- / 14–15, the rest reserved and zero), `VRB` the source.
+  | .splat w dr n uim =>
+    if uim < (if w then 4 else 8) then some (vx (if w then 652 else 588) dr.ctorIdx uim n.ctorIdx)
+    else none
+  -- "vspltish", "vspltisw" (VX, 844, 908): `SIM` in the `VRA` field, five
+  -- bits two's complement; `VRB` reserved, zero.
+  | .splatImm w dr sim =>
+    if -16 ≤ sim ∧ sim < 16 then some (vx (if w then 908 else 844) dr.ctorIdx (sim % 32).toNat 0)
+    else none
 
 open Enc in
 /-- The words of an instruction, in order: one for each instruction
