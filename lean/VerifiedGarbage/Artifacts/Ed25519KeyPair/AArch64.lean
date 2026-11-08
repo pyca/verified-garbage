@@ -12,7 +12,7 @@ import Mathlib.Tactic.NormNum.Prime
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
-public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
+public import VerifiedGarbage.Proof.Variants.Sha512Compress.AArch64
 
 /-! # Ed25519 key-pair derivation from the seed on AArch64, for each SHA-512 implementation -/
 
@@ -22,10 +22,8 @@ namespace VG.Artifacts.Ed25519KeyPair.AArch64
 
 /-- Key-pair derivation with the one-shot SHA-512 digest of `h`'s compression function,
 calling `vg_ed25519_public_key_expanded`. -/
-def artifactsFor (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
-  match h.sha512 with
-  | none => []
-  | some v => [
+def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
+  [
   Spec.Ed25519.keyPairApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ v.suffix)
@@ -36,6 +34,6 @@ def artifactsFor (h : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
     features := v.features }]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.AArch64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed25519KeyPair.AArch64

@@ -16,7 +16,7 @@ import Mathlib.Tactic.Positivity.Finset
 import VerifiedGarbage.Proof.Ed25519.X86_64.VerifyLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
 
 /-! # Ed25519 (RFC 8032) on x86-64, over SHA-512 -/
 
@@ -85,10 +85,8 @@ each field multiplication of the Ed25519 functions, best first: with
 AVX512_IFMA (`_ifma`), verification with its windows, and signing with its
 comb; BMI2's and ADX's (`_adx`, whose comb also selects its entries with
 AVX2); and the baseline's. -/
-def artifactsFor (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
-  match v.sha512 with
-  | none => []
-  | some c => [verifyWith c Impl.X25519.X86_64.adx
+def artifactsFor (c : Proof.Sha512.X86_64.Compress) : List Artifact :=
+  [verifyWith c Impl.X25519.X86_64.adx
         Impl.Ed25519.X86_64.Ifma.windows "_ifma"
         ["avx", "avx2", "bmi2", "adx", "avx512ifma", "avx512vl"]
         Proof.Ed25519.X86_64.VerifyCode.ifma_eq,
@@ -104,6 +102,6 @@ def artifactsFor (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
         Proof.Ed25519.X86_64.VerifyCode.baseline_eq
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha512Compress.X86_64.variants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.Ed25519.X86_64

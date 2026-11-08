@@ -342,7 +342,7 @@ theorem sha512_anyOK : Any.AnyOK (coreH 64) := anyOK 64 (Or.inr (Or.inr (Or.inr 
 
 /-- SHA-512 with its compression function. -/
 def sha512 (v : Compress) : MdHash :=
-  { MdHash.of (H := hash v Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512)
+  MdHash.of (H := hash v Spec.Hmac.sha512I 64 Spec.Sha512.init512Api.name H0_512)
     (ok v rfl (fun m => (List.take_of_length_le (Nat.le_of_eq (Hmac.Generic.Common.finalHash_length _ m))).symm) rfl rfl rfl (Or.inr (Or.inr (Or.inr rfl))) rfl (Or.inr (Or.inl rfl))) sha512_coreOK ⟨Spec.Mgf1.sha512, by simp [mdHashes], fun _ => rfl, rfl⟩ rfl rfl
     sha512_satI sha512_satF sha512_satT sha512_satP (by decide)
     sha512_anyOK sha512_satA (by decide) Proof.Hmac.sha512_local
@@ -357,8 +357,7 @@ def sha512 (v : Compress) : MdHash :=
       unfold Spec.Hmac.Instance.finalizeContract Spec.Hmac.finalizeContract
       exact AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
     (by decide) sha512_satPF
-    v.suffix v.features (stream v) with
-    sha512 := some v }
+    v.suffix v.features (stream v)
 
 /-! ## SHA-512/224 -/
 
