@@ -26,7 +26,7 @@ theorem sdepth_of_noFrames {c : Prog isa} (h : c.noFrames = true) : sdepth c = 0
 /-- A call of `name`, whose code is `body`, then of `vg_zeroize` on the
 2048 bytes of `scratch`. -/
 def wiped (name : String) (body : Prog isa) : Prog isa :=
-  Impl.CallWipe.RISCV64.callWipe .a4 2048 name body "vg_zeroize" Impl.Zeroize.RISCV64.zeroize
+  Impl.CallWipe.RISCV64.callWipe 32 .a4 2048 name body "vg_zeroize" Impl.Zeroize.RISCV64.zeroize
 
 /-- `vg_aes_ecb_encrypt`. -/
 def encrypt : Prog isa := wiped "vg_aes_encrypt_blocks" Impl.Aes.RISCV64.encryptBlocks

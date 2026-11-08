@@ -10,7 +10,9 @@ public import VerifiedGarbage.Impl.MlKem1024.RISCV64.Top
 
 Each function of ML-KEM-768 and ML-KEM-1024 taking `scratch` calls its code
 (`Impl.MlKem.RISCV64.keygen`, …) as the internal function named for it,
-then `vg_zeroize` on all of `scratch` (`callWipe`): 32768 bytes for
+then `vg_zeroize` on all of `scratch` (`callWipe`, in a frame of 64 bytes,
+so that the code's stack pointer is the caller's modulo a 64-byte cache
+line): 32768 bytes for
 ML-KEM-768 and 49152 for ML-KEM-1024, with no proven smaller bound on what
 the code writes there.
 -/
@@ -24,7 +26,7 @@ open VG.RISCV64 VG.Impl.CallWipe.RISCV64
 /-- A call of the code `body` of the function `fn`, then of `vg_zeroize` on
 the first `n` bytes of the buffer whose address is in `r`. -/
 def wiped (r : Reg) (n : Nat) (fn : String) (body : Prog isa) : Prog isa :=
-  callWipe r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.RISCV64.zeroize
+  callWipe 64 r n (fn ++ "_body") body "vg_zeroize" Impl.Zeroize.RISCV64.zeroize
 
 /-- `vg_mlkem768_keygen`. -/
 def keyGen : Prog isa := wiped .a3 32768 "vg_mlkem768_keygen" Impl.MlKem.RISCV64.keygen

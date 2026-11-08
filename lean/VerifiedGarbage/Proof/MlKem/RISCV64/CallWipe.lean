@@ -29,7 +29,7 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 Each of ML-KEM-768's and ML-KEM-1024's functions taking `scratch` is
 `callWipe` (`Impl/CallWipe/RISCV64.lean`) of its code, which zeroes all of
 `scratch` with `vg_zeroize` once that code returns, and is verified against
-the same contract with 32 more bytes of stack (`Verified.callWipe`).
+the same contract with 64 more bytes of stack (`Verified.callWipe`).
 -/
 
 @[expose] public section
@@ -80,8 +80,8 @@ theorem pw_disj {l : List (Region × Bool)} (h : l.Pairwise (fun a b => (a.2 || 
 /-- `vg_mlkem768_keygen`. -/
 theorem keyGen_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.keyGenContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem.keyGenContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 32768 "vg_mlkem768_keygen" body) (Spec.MlKem.keyGenContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem.keyGenContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 32768 "vg_mlkem768_keygen" body) (Spec.MlKem.keyGenContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -125,8 +125,8 @@ theorem keyGen_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem768_encaps_h`. -/
 theorem encapsH_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsHContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem.encapsHContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a5 32768 "vg_mlkem768_encaps_h" body) (Spec.MlKem.encapsHContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem.encapsHContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a5 32768 "vg_mlkem768_encaps_h" body) (Spec.MlKem.encapsHContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -177,8 +177,8 @@ theorem encapsH_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem768_encaps`. -/
 theorem encaps_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.encapsContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem.encapsContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a4 32768 "vg_mlkem768_encaps" body) (Spec.MlKem.encapsContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem.encapsContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a4 32768 "vg_mlkem768_encaps" body) (Spec.MlKem.encapsContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -221,8 +221,8 @@ theorem encaps_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem768_decaps`. -/
 theorem decaps_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem.decapsContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem.decapsContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 32768 "vg_mlkem768_decaps" body) (Spec.MlKem.decapsContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem.decapsContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 32768 "vg_mlkem768_decaps" body) (Spec.MlKem.decapsContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -263,8 +263,8 @@ theorem decaps_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem1024_keygen`. -/
 theorem keyGen1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.keyGenContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem1024.keyGenContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 49152 "vg_mlkem1024_keygen" body) (Spec.MlKem1024.keyGenContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem1024.keyGenContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 49152 "vg_mlkem1024_keygen" body) (Spec.MlKem1024.keyGenContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -308,8 +308,8 @@ theorem keyGen1024_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem1024_encaps_h`. -/
 theorem encapsH1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsHContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem1024.encapsHContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a5 49152 "vg_mlkem1024_encaps_h" body) (Spec.MlKem1024.encapsHContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem1024.encapsHContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a5 49152 "vg_mlkem1024_encaps_h" body) (Spec.MlKem1024.encapsHContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -360,8 +360,8 @@ theorem encapsH1024_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem1024_encaps`. -/
 theorem encaps1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.encapsContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem1024.encapsContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a4 49152 "vg_mlkem1024_encaps" body) (Spec.MlKem1024.encapsContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem1024.encapsContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a4 49152 "vg_mlkem1024_encaps" body) (Spec.MlKem1024.encapsContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -404,8 +404,8 @@ theorem encaps1024_wipe {body : Prog isa} {st : Nat}
 /-- `vg_mlkem1024_decaps`. -/
 theorem decaps1024_wipe {body : Prog isa} {st : Nat}
     (h : Verified target body (Spec.MlKem1024.decapsContract abi st)) (hd : sdepth body ≤ st)
-    (hsat : ∃ s, (Spec.MlKem1024.decapsContract abi (st + 32)).pre s) :
-    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 49152 "vg_mlkem1024_decaps" body) (Spec.MlKem1024.decapsContract abi (st + 32)) :=
+    (hsat : ∃ s, (Spec.MlKem1024.decapsContract abi (st + 64)).pre s) :
+    Verified target (Impl.MlKem.RISCV64.Wipe.wiped .a3 49152 "vg_mlkem1024_decaps" body) (Spec.MlKem1024.decapsContract abi (st + 64)) :=
   Verified.callWipe (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) h Proof.Zeroize.RISCV64.verified (Nat.le_of_ble_eq_true rfl) (by decide) rfl rfl
     (by decide) (by decide) hd zeroize_sdepth (Nat.zero_le _)
     (by
@@ -454,7 +454,7 @@ theorem encapsH1024_sdepth : sdepth Impl.MlKem1024.RISCV64.encapsH1024 ≤ 1168 
 theorem encaps1024_sdepth : sdepth Impl.MlKem1024.RISCV64.encaps1024 ≤ 1168 := by lit_decide
 theorem decaps1024_sdepth : sdepth Impl.MlKem1024.RISCV64.decaps1024 ≤ 1168 := by lit_decide
 
-/-! ## The states satisfying the preconditions, with the frame's 32 more bytes of stack -/
+/-! ## The states satisfying the preconditions, with the frame's 64 more bytes of stack -/
 
 /-- A state satisfying a precondition built with `Sig.contract`, after
 `sig_apply_check`. -/
@@ -468,68 +468,68 @@ macro "wipe_sat " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic
        | trivial
        | decide +kernel))
 
-theorem keyGen_sat : ∃ s, (Spec.MlKem.keyGenContract abi 1200).pre s := by
+theorem keyGen_sat : ∃ s, (Spec.MlKem.keyGenContract abi 1232).pre s := by
   refine ⟨Proof.MlKem.RISCV64.KeyGen.satState, ?_⟩
   wipe_sat [Spec.MlKem.keyGenContract, Spec.MlKem.keyGenSig, RISCV64.abi, RISCV64.argRegs]
 
-theorem encaps_sat : ∃ s, (Spec.MlKem.encapsContract abi 1200).pre s := by
+theorem encaps_sat : ∃ s, (Spec.MlKem.encapsContract abi 1232).pre s := by
   refine ⟨Proof.MlKem.RISCV64.Encaps.satState, ?_⟩
   wipe_sat [Spec.MlKem.encapsContract, Spec.MlKem.encapsSig, RISCV64.abi, RISCV64.argRegs]
 
-theorem encapsH_sat : ∃ s, (Spec.MlKem.encapsHContract abi 1200).pre s := by
+theorem encapsH_sat : ∃ s, (Spec.MlKem.encapsHContract abi 1232).pre s := by
   refine ⟨Proof.MlKem.RISCV64.Encaps.satStateH 1184 1088 32768, ?_⟩
   wipe_sat [Spec.MlKem.encapsHContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
     RISCV64.argRegs]
 
-theorem decaps_sat : ∃ s, (Spec.MlKem.decapsContract abi 1200).pre s := by
+theorem decaps_sat : ∃ s, (Spec.MlKem.decapsContract abi 1232).pre s := by
   refine ⟨Proof.MlKem.RISCV64.Decaps.satState, ?_⟩
   wipe_sat [Spec.MlKem.decapsContract, Spec.MlKem.decapsSig, RISCV64.abi, RISCV64.argRegs]
 
-theorem keyGen1024_sat : ∃ s, (Spec.MlKem1024.keyGenContract abi 1200).pre s := by
+theorem keyGen1024_sat : ∃ s, (Spec.MlKem1024.keyGenContract abi 1232).pre s := by
   refine ⟨Proof.MlKem1024.RISCV64.KeyGen.satState, ?_⟩
   wipe_sat [Spec.MlKem1024.keyGenContract, Spec.MlKem1024.keyGenSig, RISCV64.abi, RISCV64.argRegs]
 
-theorem encaps1024_sat : ∃ s, (Spec.MlKem1024.encapsContract abi 1200).pre s := by
+theorem encaps1024_sat : ∃ s, (Spec.MlKem1024.encapsContract abi 1232).pre s := by
   refine ⟨Proof.MlKem1024.RISCV64.Encaps.satState, ?_⟩
   wipe_sat [Spec.MlKem1024.encapsContract, Spec.MlKem1024.encapsSig, RISCV64.abi, RISCV64.argRegs]
 
-theorem encapsH1024_sat : ∃ s, (Spec.MlKem1024.encapsHContract abi 1200).pre s := by
+theorem encapsH1024_sat : ∃ s, (Spec.MlKem1024.encapsHContract abi 1232).pre s := by
   refine ⟨Proof.MlKem.RISCV64.Encaps.satStateH 1568 1568 49152, ?_⟩
   wipe_sat [Spec.MlKem1024.encapsHContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, RISCV64.abi,
     RISCV64.argRegs]
 
-theorem decaps1024_sat : ∃ s, (Spec.MlKem1024.decapsContract abi 1200).pre s := by
+theorem decaps1024_sat : ∃ s, (Spec.MlKem1024.decapsContract abi 1232).pre s := by
   refine ⟨Proof.MlKem1024.RISCV64.Decaps.satState, ?_⟩
   wipe_sat [Spec.MlKem1024.decapsContract, Spec.MlKem1024.decapsSig, RISCV64.abi, RISCV64.argRegs]
 
-/-! ## The functions, with 1200 bytes of stack -/
+/-! ## The functions, with 1232 bytes of stack -/
 
-theorem keyGen_verified : Verified target Impl.MlKem.RISCV64.Wipe.keyGen (Spec.MlKem.keyGenContract abi 1200) :=
+theorem keyGen_verified : Verified target Impl.MlKem.RISCV64.Wipe.keyGen (Spec.MlKem.keyGenContract abi 1232) :=
   keyGen_wipe Proof.MlKem.RISCV64.KeyGen.verified keyGen_sdepth keyGen_sat
 
-theorem encapsH_verified : Verified target Impl.MlKem.RISCV64.Wipe.encapsH (Spec.MlKem.encapsHContract abi 1200) :=
+theorem encapsH_verified : Verified target Impl.MlKem.RISCV64.Wipe.encapsH (Spec.MlKem.encapsHContract abi 1232) :=
   encapsH_wipe Proof.MlKem.RISCV64.Encaps.verifiedH encapsH_sdepth encapsH_sat
 
-theorem encaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.encaps (Spec.MlKem.encapsContract abi 1200) :=
+theorem encaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.encaps (Spec.MlKem.encapsContract abi 1232) :=
   encaps_wipe Proof.MlKem.RISCV64.Encaps.verified encaps_sdepth encaps_sat
 
-theorem decaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.decaps (Spec.MlKem.decapsContract abi 1200) :=
+theorem decaps_verified : Verified target Impl.MlKem.RISCV64.Wipe.decaps (Spec.MlKem.decapsContract abi 1232) :=
   decaps_wipe Proof.MlKem.RISCV64.Decaps.verified decaps_sdepth decaps_sat
 
 theorem keyGen1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 1200) :=
+    Verified target Impl.MlKem.RISCV64.Wipe.keyGen1024 (Spec.MlKem1024.keyGenContract abi 1232) :=
   keyGen1024_wipe Proof.MlKem1024.RISCV64.KeyGen.verified keyGen1024_sdepth keyGen1024_sat
 
 theorem encapsH1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 1200) :=
+    Verified target Impl.MlKem.RISCV64.Wipe.encapsH1024 (Spec.MlKem1024.encapsHContract abi 1232) :=
   encapsH1024_wipe Proof.MlKem1024.RISCV64.Encaps.verifiedH encapsH1024_sdepth encapsH1024_sat
 
 theorem encaps1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 1200) :=
+    Verified target Impl.MlKem.RISCV64.Wipe.encaps1024 (Spec.MlKem1024.encapsContract abi 1232) :=
   encaps1024_wipe Proof.MlKem1024.RISCV64.Encaps.verified encaps1024_sdepth encaps1024_sat
 
 theorem decaps1024_verified :
-    Verified target Impl.MlKem.RISCV64.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 1200) :=
+    Verified target Impl.MlKem.RISCV64.Wipe.decaps1024 (Spec.MlKem1024.decapsContract abi 1232) :=
   decaps1024_wipe Proof.MlKem1024.RISCV64.Decaps.verified decaps1024_sdepth decaps1024_sat
 
 end VG.Proof.MlKem.RISCV64.Wipe

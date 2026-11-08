@@ -24,19 +24,19 @@ namespace VG.Artifacts.MlKem.RISCV64
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.keyGen
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.encaps
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.encapsH
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.decaps
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.checkEk

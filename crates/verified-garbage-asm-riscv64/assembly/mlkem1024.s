@@ -42,7 +42,7 @@ vg_mlkem1024_check_ek:
 vg_mlkem1024_keygen:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a3, 8(t0)
@@ -55,14 +55,14 @@ vg_mlkem1024_keygen:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem1024_encaps:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a4, 8(t0)
@@ -75,14 +75,14 @@ vg_mlkem1024_encaps:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem1024_encaps_h:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a5, 8(t0)
@@ -95,14 +95,14 @@ vg_mlkem1024_encaps_h:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem1024_decaps:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a3, 8(t0)
@@ -115,6 +115,6 @@ vg_mlkem1024_decaps:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop

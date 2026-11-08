@@ -7,7 +7,7 @@
 vg_mlkem768_keygen:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a3, 8(t0)
@@ -20,14 +20,14 @@ vg_mlkem768_keygen:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem768_encaps:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a4, 8(t0)
@@ -40,14 +40,14 @@ vg_mlkem768_encaps:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem768_encaps_h:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a5, 8(t0)
@@ -60,14 +60,14 @@ vg_mlkem768_encaps_h:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 
 vg_mlkem768_decaps:
 	.option push
 	.option arch, +m, +c
-	addi sp, sp, -32
+	addi sp, sp, -64
 	addi t0, sp, 0
 	sd ra, 0(t0)
 	sd a3, 8(t0)
@@ -80,7 +80,7 @@ vg_mlkem768_decaps:
 	addi t0, sp, 0
 	ld a0, 16(t0)
 	ld ra, 0(t0)
-	addi sp, sp, 32
+	addi sp, sp, 64
 	ret
 	.option pop
 

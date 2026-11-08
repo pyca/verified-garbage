@@ -21,14 +21,15 @@ import VerifiedGarbage.Proof.Framework.Sig
 `Verified.callWipe`: a function verified against `sig.contract` with `stack`
 bytes of stack, whose arguments are all in registers, one of them (in
 `argRegs[i]`) a writable array of `k` elements `e`, is verified against the
-same contract with `stack + 32` bytes when called by `callWipe`, which then
+same contract with `stack + fs` bytes when called by `callWipe` with a
+frame of `fs` bytes (`FrameOk fs`), which then
 zeroes the first `n ≤ k * e.size` bytes of the array with a function verified
 against `Spec.Zeroize.zeroizeContract`, and returns the first function's
 result; `Verified.callWipe'` adds to the postcondition that those bytes are
 zero on return. The same theorem as AArch64's
 (`Proof/Framework/AArch64/CallWipe.lean`), with the same hypotheses.
 
-The frame (`allocd 32`) holds the return address, at `sp`, the array's
+The frame (`allocd fs`) holds the return address, at `sp`, the array's
 address, at `sp + 8`, and the first function's result, at `sp + 16`, each an
 aligned doubleword (the contracts keep `sp` 16-byte aligned). Each callee
 runs from the state after its call with the permissions of its own contract:
@@ -54,110 +55,121 @@ open VG.Impl.CallWipe.RISCV64
 
 /-! ## The frame -/
 
+/-- The frame's sizes: a multiple of 16 (the ABI's alignment of `sp`), at
+least 32 bytes (the three saved doublewords), and below 2048 (one `addi`). -/
+abbrev FrameOk (fs : Nat) : Prop := 32 ≤ fs ∧ fs < 2048 ∧ fs % 16 = 0
+
+theorem FrameOk.alloc {fs : Nat} (h : FrameOk fs) : 0 < fs ∧ fs < 2048 ∧ fs % 16 = 0 :=
+  ⟨by omega, h.2.1, h.2.2⟩
+
+variable {fs : Nat}
+
 /-- The address `off` bytes into the frame of `s`'s caller. -/
-abbrev slot (s : State) (off : Nat) : Addr := s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 off
+abbrev slot (fs : Nat) (s : State) (off : Nat) : Addr := s.sp - BitVec.ofNat 64 fs + BitVec.ofNat 64 off
 
 /-- A slot as `t0 + off`, with `t0` the frame's base. -/
 theorem slot_t0 (s : State) (off : Nat) :
-    s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 0 + BitVec.ofNat 64 off = slot s off := by
+    s.sp - BitVec.ofNat 64 fs + BitVec.ofNat 64 0 + BitVec.ofNat 64 off = slot fs s off := by
   rw [BitVec.add_zero]
 
 /-- The frame's slots are aligned doublewords. -/
-theorem slot_aligned {s : State} (hal : s.sp.toNat % 16 = 0) (hsp : 32 ≤ s.sp.toNat) {off : Nat}
-    (ho : off % 8 = 0) (h : off + 8 ≤ 32) : (slot s off).toNat % 8 = 0 := by
+theorem slot_aligned (hfs : FrameOk fs) {s : State} (hal : s.sp.toNat % 16 = 0) (hsp : fs ≤ s.sp.toNat)
+    {off : Nat} (ho : off % 8 = 0) (h : off + 8 ≤ 32) : (slot fs s off).toNat % 8 = 0 := by
   have := s.sp.isLt
   rw [slot, BitVec.toNat_add, toNat_sub_ofNat' hsp, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (a := off) (by omega_using [h]), Nat.mod_eq_of_lt (a := s.sp.toNat - 32 + off) (by omega_using [hsp, h, this])]
-  omega_using [hal, ho, hsp]
+    Nat.mod_eq_of_lt (a := off) (by omega_using [h]),
+    Nat.mod_eq_of_lt (a := s.sp.toNat - fs + off) (by omega_using [hsp, h, this, hfs.1])]
+  omega_using [hal, ho, hsp, hfs.2.2]
 
 /-- The frame's slot at `off < 32` is in its region. -/
-theorem slot_in (s : State) {off : Nat} (h : off + 8 ≤ 32) :
-    InRegions (⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr) (slot s off) 8 :=
-  ⟨_, List.mem_cons_self .., Offset.contains_base _ h (by omega_using [h])⟩
+theorem slot_in (hfs : FrameOk fs) (s : State) {off : Nat} (h : off + 8 ≤ 32) :
+    InRegions (⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr) (slot fs s off) 8 :=
+  ⟨_, List.mem_cons_self .., Offset.contains_base _ (by omega_using [h, hfs.1]) (by omega_using [h])⟩
 
 /-- So is it among all the regions. -/
-theorem slot_in' (s : State) (rd : List Region) {off : Nat} (h : off + 8 ≤ 32) :
-    InRegions (rd ++ ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr) (slot s off) 8 :=
-  ⟨_, List.mem_append_right _ (List.mem_cons_self ..), Offset.contains_base _ h (by omega_using [h])⟩
+theorem slot_in' (hfs : FrameOk fs) (s : State) (rd : List Region) {off : Nat} (h : off + 8 ≤ 32) :
+    InRegions (rd ++ ⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr) (slot fs s off) 8 :=
+  ⟨_, List.mem_append_right _ (List.mem_cons_self ..),
+    Offset.contains_base _ (by omega_using [h, hfs.1]) (by omega_using [h])⟩
 
 /-- The frame's slot at `off` holds the 8 bytes there. -/
-theorem slot_contains (s : State) {off : Nat} (h : off + 8 ≤ 32) :
-    (below s.sp 32).Contains (slot s off) 8 :=
-  Offset.contains_base _ h (by omega_using [h])
+theorem slot_contains (hfs : FrameOk fs) (s : State) {off : Nat} (h : off + 8 ≤ 32) :
+    (below s.sp fs).Contains (slot fs s off) 8 :=
+  Offset.contains_base _ (by omega_using [h, hfs.1]) (by omega_using [h])
 
 /-- The frame's slots are separate. -/
 theorem slot_sep (s : State) {a b : Nat} (h : a + 8 ≤ b ∨ b + 8 ≤ a) (ha : a + 8 ≤ 32)
-    (hb : b + 8 ≤ 32) : Mem.Sep (slot s a) 8 (slot s b) 8 :=
+    (hb : b + 8 ≤ 32) : Mem.Sep (slot fs s a) 8 (slot fs s b) 8 :=
   Offset.sep _ h (by omega_using [ha]) (by omega_using [hb])
 
 /-- The state after `addi t0, sp, 0` in the frame: `t0` its base. -/
-def cwT0 (s : State) : State := (allocd 32 s).write .t0 (s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 0)
+def cwT0 (fs : Nat) (s : State) : State := (allocd fs s).write .t0 (s.sp - BitVec.ofNat 64 fs + BitVec.ofNat 64 0)
 
-theorem cwT0_t0 (s : State) (off : Nat) : (cwT0 s).gpr .t0 + BitVec.ofNat 64 off = slot s off := by
+theorem cwT0_t0 (s : State) (off : Nat) : (cwT0 fs s).gpr .t0 + BitVec.ofNat 64 off = slot fs s off := by
   rw [cwT0, RegUpd.gpr_write_self, slot_t0]
 
-theorem cwT0_gpr (s : State) {q : Reg} (h : q ≠ .t0) : (cwT0 s).gpr q = s.gpr q :=
+theorem cwT0_gpr (s : State) {q : Reg} (h : q ≠ .t0) : (cwT0 fs s).gpr q = s.gpr q :=
   RegUpd.gpr_write_of_ne _ _ h
 
-@[simp] theorem cwT0_sp (s : State) : (cwT0 s).sp = s.sp - BitVec.ofNat 64 32 := rfl
-@[simp] theorem cwT0_rd (s : State) : (cwT0 s).rd = s.rd := rfl
-@[simp] theorem cwT0_wr (s : State) : (cwT0 s).wr = ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr := rfl
-@[simp] theorem cwT0_mem (s : State) : (cwT0 s).mem = s.mem := rfl
+@[simp] theorem cwT0_sp (s : State) : (cwT0 fs s).sp = s.sp - BitVec.ofNat 64 fs := rfl
+@[simp] theorem cwT0_rd (s : State) : (cwT0 fs s).rd = s.rd := rfl
+@[simp] theorem cwT0_wr (s : State) : (cwT0 fs s).wr = ⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr := rfl
+@[simp] theorem cwT0_mem (s : State) : (cwT0 fs s).mem = s.mem := rfl
 
 /-- The state after the frame's allocation and `saveArg r`: `t0` the frame's
 base, the return address at `sp`, the address in `r` at `sp + 8`. -/
-def cwSave (r : Reg) (s : State) : State :=
-  { cwT0 s with mem := (s.mem.writeW (slot s 0) (s.gpr .ra)).writeW (slot s 8) (s.gpr r) }
+def cwSave (fs : Nat) (r : Reg) (s : State) : State :=
+  { cwT0 fs s with mem := (s.mem.writeW (slot fs s 0) (s.gpr .ra)).writeW (slot fs s 8) (s.gpr r) }
 
-@[simp] theorem cwSave_sp (r : Reg) (s : State) : (cwSave r s).sp = s.sp - BitVec.ofNat 64 32 := rfl
-@[simp] theorem cwSave_rd (r : Reg) (s : State) : (cwSave r s).rd = s.rd := rfl
+@[simp] theorem cwSave_sp (r : Reg) (s : State) : (cwSave fs r s).sp = s.sp - BitVec.ofNat 64 fs := rfl
+@[simp] theorem cwSave_rd (r : Reg) (s : State) : (cwSave fs r s).rd = s.rd := rfl
 @[simp] theorem cwSave_wr (r : Reg) (s : State) :
-    (cwSave r s).wr = ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr := rfl
+    (cwSave fs r s).wr = ⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr := rfl
 
-theorem cwSave_gpr (r : Reg) (s : State) {q : Reg} (h : q ≠ .t0) : (cwSave r s).gpr q = s.gpr q :=
+theorem cwSave_gpr (r : Reg) (s : State) {q : Reg} (h : q ≠ .t0) : (cwSave fs r s).gpr q = s.gpr q :=
   cwT0_gpr s h
 
 /-- The state after `sd ra, 0(t0)`. -/
-def cwS1 (s : State) : State := { cwT0 s with mem := s.mem.writeW (slot s 0) (s.gpr .ra) }
+def cwS1 (fs : Nat) (s : State) : State := { cwT0 fs s with mem := s.mem.writeW (slot fs s 0) (s.gpr .ra) }
 
-theorem saveArg_run {r : Reg} (hr : r ≠ .t0) {s : State} (hal : s.sp.toNat % 16 = 0)
-    (hsp : 32 ≤ s.sp.toNat) :
-    execBlock isa (saveArg r) (allocd 32 s) =
-      some (cwSave r s, [.addr (slot s 0), .addr (slot s 8)]) := by
-  have e₀ : exec (.addSp .t0 0) (allocd 32 s) = some (cwT0 s) := exec_addSp (by decide)
-  have e₁ : exec (.store .d .ra .t0 0) (cwT0 s) = some (cwS1 s) := by
-    rw [exec_store_d (by decide) (by rw [cwT0_t0]; exact slot_aligned hal hsp (by decide) (by decide))
-      (by rw [cwT0_t0]; exact slot_in s (by decide)), cwT0_t0, cwT0_gpr s (by decide), cwT0_mem]
+theorem saveArg_run (hfs : FrameOk fs) {r : Reg} (hr : r ≠ .t0) {s : State} (hal : s.sp.toNat % 16 = 0)
+    (hsp : fs ≤ s.sp.toNat) :
+    execBlock isa (saveArg r) (allocd fs s) =
+      some (cwSave fs r s, [.addr (slot fs s 0), .addr (slot fs s 8)]) := by
+  have e₀ : exec (.addSp .t0 0) (allocd fs s) = some (cwT0 fs s) := exec_addSp (by decide)
+  have e₁ : exec (.store .d .ra .t0 0) (cwT0 fs s) = some (cwS1 fs s) := by
+    rw [exec_store_d (by decide) (by rw [cwT0_t0]; exact slot_aligned hfs hal hsp (by decide) (by decide))
+      (by rw [cwT0_t0]; exact slot_in hfs s (by decide)), cwT0_t0, cwT0_gpr s (by decide), cwT0_mem]
     rfl
-  have e₂ : exec (.store .d r .t0 8) (cwS1 s) = some (cwSave r s) := by
-    have ht : (cwS1 s).gpr .t0 + BitVec.ofNat 64 8 = slot s 8 := cwT0_t0 s 8
-    rw [exec_store_d (by decide) (by rw [ht]; exact slot_aligned hal hsp (by decide) (by decide))
-      (by rw [ht]; exact slot_in s (by decide)), ht]
-    show some { cwS1 s with mem := (cwS1 s).mem.writeW (slot s 8) ((cwT0 s).gpr r) } = _
+  have e₂ : exec (.store .d r .t0 8) (cwS1 fs s) = some (cwSave fs r s) := by
+    have ht : (cwS1 fs s).gpr .t0 + BitVec.ofNat 64 8 = slot fs s 8 := cwT0_t0 s 8
+    rw [exec_store_d (by decide) (by rw [ht]; exact slot_aligned hfs hal hsp (by decide) (by decide))
+      (by rw [ht]; exact slot_in hfs s (by decide)), ht]
+    show some { cwS1 fs s with mem := (cwS1 fs s).mem.writeW (slot fs s 8) ((cwT0 fs s).gpr r) } = _
     rw [cwT0_gpr s hr]
     rfl
   simp only [saveArg, execBlock, isa, e₀, e₁, e₂, Option.map_some, addrs, List.map_cons,
     List.map_nil, List.nil_append, List.cons_append]
-  rw [cwT0_t0, show (cwS1 s).gpr .t0 + BitVec.ofNat 64 8 = slot s 8 from cwT0_t0 s 8]
+  rw [cwT0_t0, show (cwS1 fs s).gpr .t0 + BitVec.ofNat 64 8 = slot fs s 8 from cwT0_t0 s 8]
 
-theorem cwSave_read0 (r : Reg) (s : State) : (cwSave r s).mem.readW (slot s 0) 64 = s.gpr .ra := by
-  show ((s.mem.writeW (slot s 0) (s.gpr .ra)).writeW (slot s 8) (s.gpr r)).readW (slot s 0) 64 = _
+theorem cwSave_read0 (r : Reg) (s : State) : (cwSave fs r s).mem.readW (slot fs s 0) 64 = s.gpr .ra := by
+  show ((s.mem.writeW (slot fs s 0) (s.gpr .ra)).writeW (slot fs s 8) (s.gpr r)).readW (slot fs s 0) 64 = _
   rw [Mem.readW_writeW_sep (slot_sep s (a := 0) (b := 8) (.inl (by decide)) (by decide) (by decide))
     (by decide), Mem.readW_writeW_self64]
 
-theorem cwSave_read8 (r : Reg) (s : State) : (cwSave r s).mem.readW (slot s 8) 64 = s.gpr r := by
-  show ((s.mem.writeW (slot s 0) (s.gpr .ra)).writeW (slot s 8) (s.gpr r)).readW (slot s 8) 64 = _
+theorem cwSave_read8 (r : Reg) (s : State) : (cwSave fs r s).mem.readW (slot fs s 8) 64 = s.gpr r := by
+  show ((s.mem.writeW (slot fs s 0) (s.gpr .ra)).writeW (slot fs s 8) (s.gpr r)).readW (slot fs s 8) 64 = _
   rw [Mem.readW_writeW_self64]
 
-/-- The save writes only the frame, the 32 bytes below `sp`. -/
-theorem cwSave_frame (r : Reg) (s : State) : Frame [below s.sp 32] s.mem (cwSave r s).mem :=
-  Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (slot_contains s (by decide)))
-    (List.mem_singleton_self _) _ (slot_contains s (by decide))
+/-- The save writes only the frame, the `fs` bytes below `sp`. -/
+theorem cwSave_frame (hfs : FrameOk fs) (r : Reg) (s : State) : Frame [below s.sp fs] s.mem (cwSave fs r s).mem :=
+  Frame.writeW (Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (slot_contains hfs s (by decide)))
+    (List.mem_singleton_self _) _ (slot_contains hfs s (by decide))
 
-/-- `sp - 32` is 16-byte aligned. -/
-theorem sub32_aligned {sp : Addr} (hal : sp.toNat % 16 = 0) (hsp : 32 ≤ sp.toNat) :
-    (sp - BitVec.ofNat 64 32).toNat % 16 = 0 := by
-  rw [toNat_sub_ofNat' hsp]; omega_using [hal, hsp]
+/-- `sp - fs` is 16-byte aligned. -/
+theorem subFs_aligned (hfs : FrameOk fs) {sp : Addr} (hal : sp.toNat % 16 = 0) (hsp : fs ≤ sp.toNat) :
+    (sp - BitVec.ofNat 64 fs).toNat % 16 = 0 := by
+  rw [toNat_sub_ofNat' hsp]; omega_using [hal, hsp, hfs.2.2]
 
 /-! ## The caller's contract -/
 
@@ -188,31 +200,31 @@ theorem post_regs' (hk : (sig.words abi.ptrBits).length ≤ 8) {s s' : State} :
 
 /-- What the caller's contract gives of the stack. -/
 theorem cw_sp (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    s.sp.toNat % 16 = 0 ∧ stack + 32 ≤ s.sp.toNat := by
+    (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    s.sp.toNat % 16 = 0 ∧ stack + fs ≤ s.sp.toNat := by
   rw [pre_regs' hk hl] at hs
   exact ⟨hs.1.1, by rcases hs.1.2 with h | h <;> omega_using [h]⟩
 
-theorem cw_below (s : State) : below s.sp (stack + 32) ∈ stackBelow s.sp (stack + 32) := by
-  rw [stackBelow_pos _ (by omega_using [])]; exact List.mem_singleton_self _
+theorem cw_below (hfs : FrameOk fs) (s : State) : below s.sp (stack + fs) ∈ stackBelow s.sp (stack + fs) := by
+  rw [stackBelow_pos _ (by omega_using [hfs.1])]; exact List.mem_singleton_self _
 
 /-- The buffers lie apart from the stack below `sp` that the caller's
 contract reserves. -/
-theorem cw_out (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ (a n : Nat), n ≤ a → a ≤ stack + 32 →
+theorem cw_out (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ (a n : Nat), n ≤ a → a ≤ stack + fs →
       b.1.Disjoint ⟨s.sp - BitVec.ofNat 64 a, n⟩ := by
   rw [pre_regs' hk hl] at hs
   obtain ⟨-, -, -, -, hres, -, -, -⟩ := hs
   intro b hb a n hn ha
-  exact (Region.Disjoint.symm (hres _ (cw_below s) b hb)).sub_right
+  exact (Region.Disjoint.symm (hres _ (cw_below hfs s) b hb)).sub_right
     (Offset.sub_below _ ha (by omega_using [hn, ha]))
 
 /-- So do the writable regions. -/
-theorem cw_outW (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {s : State}
-    (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    ∀ x ∈ s.wr, ∀ (a n : Nat), n ≤ a → a ≤ stack + 32 → x.Disjoint ⟨s.sp - BitVec.ofNat 64 a, n⟩ := by
-  have hout := cw_out hk hl hs
+theorem cw_outW (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {s : State}
+    (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    ∀ x ∈ s.wr, ∀ (a n : Nat), n ≤ a → a ≤ stack + fs → x.Disjoint ⟨s.sp - BitVec.ofNat 64 a, n⟩ := by
+  have hout := cw_out hfs hk hl hs
   rw [pre_regs' hk hl] at hs
   intro x hx a n hn ha
   rw [hs.2.2.1] at hx
@@ -221,19 +233,19 @@ theorem cw_outW (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists si
 
 /-- The state the first function runs from, with the permissions of its
 contract: after the call. -/
-def cwEntry (r : Reg) (s : State) : State := (cwSave r s).callEntry.withRegions s.rd s.wr
+def cwEntry (fs : Nat) (r : Reg) (s : State) : State := (cwSave fs r s).callEntry.withRegions s.rd s.wr
 
-theorem cwEntry_gpr (r : Reg) (s : State) {q : Reg} (h : q ∉ linkRegs) : (cwEntry r s).gpr q = s.gpr q := by
+theorem cwEntry_gpr (r : Reg) (s : State) {q : Reg} (h : q ∉ linkRegs) : (cwEntry fs r s).gpr q = s.gpr q := by
   rw [cwEntry, State.withRegions_gpr, State.callEntry_gpr _ h, cwSave_gpr r s (fun h' => h (by subst h'; decide))]
 
-@[simp] theorem cwEntry_sp (r : Reg) (s : State) : (cwEntry r s).sp = s.sp - BitVec.ofNat 64 32 := rfl
-@[simp] theorem cwEntry_mem (r : Reg) (s : State) : (cwEntry r s).mem = (cwSave r s).mem := rfl
-@[simp] theorem cwEntry_rd (r : Reg) (s : State) : (cwEntry r s).rd = s.rd := rfl
-@[simp] theorem cwEntry_wr (r : Reg) (s : State) : (cwEntry r s).wr = s.wr := rfl
+@[simp] theorem cwEntry_sp (r : Reg) (s : State) : (cwEntry fs r s).sp = s.sp - BitVec.ofNat 64 fs := rfl
+@[simp] theorem cwEntry_mem (r : Reg) (s : State) : (cwEntry fs r s).mem = (cwSave fs r s).mem := rfl
+@[simp] theorem cwEntry_rd (r : Reg) (s : State) : (cwEntry fs r s).rd = s.rd := rfl
+@[simp] theorem cwEntry_wr (r : Reg) (s : State) : (cwEntry fs r s).wr = s.wr := rfl
 
 theorem argRegs_not_link : ∀ q ∈ argRegs, q ∉ linkRegs := by decide
 
-theorem regArgs_cwEntry (r : Reg) (s : State) : regArgs sig (cwEntry r s) = regArgs sig s :=
+theorem regArgs_cwEntry (r : Reg) (s : State) : regArgs sig (cwEntry fs r s) = regArgs sig s :=
   List.map_congr_left fun q hq => cwEntry_gpr r s (argRegs_not_link q (List.mem_of_mem_take hq))
 
 theorem regArgs_getD' (g : Reg → BitVec 64) {L i : Nat} (hL : L ≤ 8) (hi : i < L) :
@@ -243,58 +255,58 @@ theorem regArgs_getD' (g : Reg → BitVec 64) {L i : Nat} (hL : L ≤ 8) (hi : i
     List.getElem?_eq_getElem hi8, Option.map_some, Option.getD_some]
 
 /-- The entry's memory is the caller's in the buffers. -/
-theorem cw_agree (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    (r : Reg) {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ x, b.1.Contains x 1 → (cwEntry r s).mem x = s.mem x :=
-  fun b hb x hx => cwSave_frame r s x fun R hR hc => by
+theorem cw_agree (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (r : Reg) {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    ∀ b ∈ Sig.bufs sig.params (regArgs sig s), ∀ x, b.1.Contains x 1 → (cwEntry fs r s).mem x = s.mem x :=
+  fun b hb x hx => cwSave_frame hfs r s x fun R hR hc => by
     simp only [List.mem_singleton] at hR; subst hR
-    exact cw_out hk hl hs b hb (a := 32) (n := 32) (by decide) (by omega_using []) x hx hc
+    exact cw_out hfs hk hl hs b hb (a := fs) (n := fs) (Nat.le_refl _) (by omega_using []) x hx hc
 
 /-- The caller's precondition gives the first function's at its entry. -/
-theorem cw_bodyPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+theorem cw_bodyPre (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
     {r : Reg} (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    (sig.contract abi pre post wa stack leak).pre (cwEntry r s) := by
+    {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    (sig.contract abi pre post wa stack leak).pre (cwEntry fs r s) := by
   obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
-  have hag := cw_agree hk hl r hs
+  have hag := cw_agree hfs hk hl r hs
   rw [pre_regs' hk hl] at hs
   obtain ⟨-, hrd, hwr, hpw, hres, hnw, hpr, halb⟩ := hs
   refine (pre_regs' hk hl).mpr ?_
   rw [regArgs_cwEntry, cwEntry_sp, cwEntry_rd, cwEntry_wr]
-  refine ⟨⟨sub32_aligned hal (by omega_using [hsb]), .inr ?_⟩, hrd, hwr, hpw, ?_, hnw, ?_, halb⟩
+  refine ⟨⟨subFs_aligned hfs hal (by omega_using [hsb]), .inr ?_⟩, hrd, hwr, hpw, ?_, hnw, ?_, halb⟩
   · rw [toNat_sub_ofNat' (by omega_using [hsb])]; omega_using [hsb]
   · intro x hx a ha
     rcases Nat.eq_zero_or_pos stack with h0 | h0
     · subst h0; simp [stackBelow] at hx
     · rw [stackBelow_pos _ h0, List.mem_singleton] at hx; subst hx
-      exact (hres _ (cw_below s) a ha).sub_left (below_below _ 32 stack)
+      exact (hres _ (cw_below hfs s) a ha).sub_left (below_below _ fs stack)
   · exact hpre _ _ _ (regArgs_length sig s hk) (fun b hb x hx => (hag b hb x hx).symm) hpr
 
 /-- What the run of the first function leaves, from the caller's state `s`. -/
-def AfterBody (sig : Sig) (post : sig.Post abi.ptrBits) (r : Reg) (stack : Nat) (s c : State) : Prop :=
-  c.rd = s.rd ∧ c.wr = ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr ∧ c.sp = s.sp - BitVec.ofNat 64 32 ∧
+def AfterBody (sig : Sig) (post : sig.Post abi.ptrBits) (fs : Nat) (r : Reg) (stack : Nat) (s c : State) : Prop :=
+  c.rd = s.rd ∧ c.wr = ⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr ∧ c.sp = s.sp - BitVec.ofNat 64 fs ∧
   (∀ q ∈ preserved, c.gpr q = s.gpr q) ∧
-  c.mem.readW (slot s 0) 64 = s.gpr .ra ∧ c.mem.readW (slot s 8) 64 = s.gpr r ∧
-  Frame (s.wr ++ [below s.sp (stack + 32)]) s.mem c.mem ∧
+  c.mem.readW (slot fs s 0) 64 = s.gpr .ra ∧ c.mem.readW (slot fs s 8) 64 = s.gpr r ∧
+  Frame (s.wr ++ [below s.sp (stack + fs)]) s.mem c.mem ∧
   Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem c.mem ((c.gpr .a0).setWidth _)
 
 /-- The frame lies apart from the writable regions and from the stack below it. -/
-theorem cw_frameApart (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) {d : Nat} (hd : d ≤ stack) :
-    ∀ x ∈ s.wr ++ [below (s.sp - BitVec.ofNat 64 32) d], (below s.sp 32).Disjoint x := by
+theorem cw_frameApart (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) {d : Nat} (hd : d ≤ stack) :
+    ∀ x ∈ s.wr ++ [below (s.sp - BitVec.ofNat 64 fs) d], (below s.sp fs).Disjoint x := by
   have hsb := (cw_sp hk hl hs).2
   intro x hx
   rcases List.mem_append.mp hx with hx | hx
-  · exact (cw_outW hk hl hs x hx (a := 32) (n := 32) (by decide) (by omega_using [])).symm
+  · exact (cw_outW hfs hk hl hs x hx (a := fs) (n := fs) (Nat.le_refl _) (by omega_using [])).symm
   · simp only [List.mem_singleton] at hx; subst hx
     exact Offset.base_disjoint_below _ (by omega_using [hd, hsb])
 
 theorem preserved_ne_t0 : ∀ q ∈ preserved, q ≠ .t0 := by decide
 
 /-- The call of the first function. -/
-theorem cw_body_wp {name : String} {body : Prog isa}
+theorem cw_body_wp {name : String} {body : Prog isa} (hfs : FrameOk fs)
     (h : Verified target body (sig.contract abi pre post wa stack leak))
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) {r : Reg}
     (hd : sdepth body ≤ stack)
@@ -305,22 +317,22 @@ theorem cw_body_wp {name : String} {body : Prog isa}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s) :
-    WP isa (.call name body) (cwSave r s) (AfterBody sig post r stack s) := by
+    {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s) :
+    WP isa (.call name body) (cwSave fs r s) (AfterBody sig post fs r stack s) := by
   have hsb := (cw_sp hk hl hs).2
-  have hag := cw_agree hk hl r hs
-  have hap := cw_frameApart hk hl hs hd
+  have hag := cw_agree hfs hk hl r hs
+  have hap := cw_frameApart hfs hk hl hs hd
   refine WP.callAny (k := sig.contract abi pre post wa stack leak) h.1 (rd := s.rd) (wr := s.wr)
-    (cw_bodyPre hk hl hpre hs)
+    (cw_bodyPre hfs hk hl hpre hs)
     (Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx))
     (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx) ?_ (by omega_using [hd, hsb])
   intro c hrd hwr hsp hfr hcs hq
   rw [cwSave_sp] at hfr hsp
   refine ⟨hrd, hwr, hsp, fun q hq' => (hcs q hq').trans (cwSave_gpr r s (preserved_ne_t0 q hq')), ?_, ?_, ?_, ?_⟩
-  · rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwSave_read0]
-  · rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwSave_read8]
+  · rw [hfr.readW (slot_contains hfs s (by decide)) hap (by decide), cwSave_read0]
+  · rw [hfr.readW (slot_contains hfs s (by decide)) hap (by decide), cwSave_read8]
   · -- Memory changes only within the writable buffers and the stack below `sp`.
-    refine Frame.trans (Frame.sub (cwSave_frame r s) fun x hx => ?_) (Frame.sub hfr fun x hx => ?_)
+    refine Frame.trans (Frame.sub (cwSave_frame hfs r s) fun x hx => ?_) (Frame.sub hfr fun x hx => ?_)
     · simp only [List.mem_singleton] at hx; subst hx
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
         Offset.sub_below _ (by omega_using []) (by omega_using [])⟩
@@ -328,11 +340,11 @@ theorem cw_body_wp {name : String} {body : Prog isa}
       · exact ⟨x, List.mem_append_left _ hx, fun _ h => h⟩
       · simp only [List.mem_singleton] at hx; subst hx
         exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), fun y hy =>
-          below_sub (sp := s.sp) (a := sdepth body + 32) (b := stack + 32)
-            (by omega_using [hd]) (by omega_using [hd, hsb]) y (below_below _ 32 _ y hy)⟩
+          below_sub (sp := s.sp) (a := sdepth body + fs) (b := stack + fs)
+            (by omega_using [hd]) (by omega_using [hd, hsb]) y (below_below _ fs _ y hy)⟩
   · -- The postcondition, which reads the memory on entry only within the buffers.
     rw [post_regs' hk] at hq
-    rw [show (cwSave r s).callEntry.withRegions s.rd s.wr = cwEntry r s from rfl, regArgs_cwEntry,
+    rw [show (cwSave fs r s).callEntry.withRegions s.rd s.wr = cwEntry fs r s from rfl, regArgs_cwEntry,
       cwEntry_mem, State.withRegions_mem, State.withRegions_gpr] at hq
     exact hpost _ _ _ _ _ (regArgs_length sig s hk) (fun b hb x hx => hag b hb x hx) hq
 
@@ -470,7 +482,7 @@ theorem zeroArgs_run (n : Nat) (hn : n < 2 ^ 31 - 2048) {c : State}
 /-- What the caller's contract gives of the array: its region is within the
 writable ones, and does not wrap. -/
 theorem cw_array (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {r : Reg} {e : Elem} {k : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    {r : Reg} {e : Elem} {k : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s)) :
     (⟨s.gpr r, k * e.size⟩ : Region) ∈ s.wr ∧ (s.gpr r).toNat + k * e.size ≤ 2 ^ 64 := by
   rw [pre_regs' hk hl] at hs
@@ -522,33 +534,33 @@ section
 variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits}
   {wa : Bool} {stack : Nat} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {r : Reg}
 
-theorem cwZero_a0' {s c : State} (hc : AfterBody sig post r stack s c) (n : Nat) :
+theorem cwZero_a0' {s c : State} (hc : AfterBody sig post fs r stack s c) (n : Nat) :
     (cwZero n c).gpr .a0 = s.gpr r := by
   rw [cwZero_a0, hc.2.2.1]; exact hc.2.2.2.2.2.1
 
 /-- The zeroize function's entry state. -/
-theorem cwZeroEntry {s c : State} (hc : AfterBody sig post r stack s c) {n : Nat} (hn : n < 2 ^ 31 - 2048)
+theorem cwZeroEntry {s c : State} (hc : AfterBody sig post fs r stack s c) {n : Nat} (hn : n < 2 ^ 31 - 2048)
     (R : Region) :
     ((cwZero n c).callEntry.withRegions [] [R]).gpr .a0 = s.gpr r ∧
       (((cwZero n c).callEntry.withRegions [] [R]).gpr .a1).toNat = n ∧
-      ((cwZero n c).callEntry.withRegions [] [R]).sp = s.sp - BitVec.ofNat 64 32 := by
+      ((cwZero n c).callEntry.withRegions [] [R]).sp = s.sp - BitVec.ofNat 64 fs := by
   rw [State.withRegions_gpr, State.callEntry_gpr _ (by decide), State.callEntry_gpr _ (by decide),
     cwZero_a0' hc, cwZero_a1 hn]
   exact ⟨rfl, rfl, hc.2.2.1⟩
 
 /-- The zeroize function's precondition, at its entry. -/
-theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {e : Elem} {k n zst : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+theorem cw_zeroPre (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n zst : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
-    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hzs : zst ≤ stack) (hc : AfterBody sig post r stack s c) :
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hzs : zst ≤ stack) (hc : AfterBody sig post fs r stack s c) :
     (Spec.Zeroize.zeroizeContract abi zst).pre
       ((cwZero n c).callEntry.withRegions [] [⟨s.gpr r, n⟩]) := by
   obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
-  have hA := cw_out hk hl hs _ harr
+  have hA := cw_out hfs hk hl hs _ harr
   have hnw := (cw_array hk hl hs harr).2
   have hsubA : Region.Sub ⟨s.gpr r, n⟩ ⟨s.gpr r, k * e.size⟩ := Region.sub_prefix hn
   obtain ⟨h0, h1, hsp⟩ := cwZeroEntry hc hn31 ⟨s.gpr r, n⟩
-  refine zeroize_pre_of h1 (by rw [hsp]; exact sub32_aligned hal (by omega_using [hsb])) (.inr ?_) rfl
+  refine zeroize_pre_of h1 (by rw [hsp]; exact subFs_aligned hfs hal (by omega_using [hsb])) (.inr ?_) rfl
     (by rw [h0]; rfl) ?_ (by rw [h0]; omega_using [hnw, hn])
   · rw [hsp, toNat_sub_ofNat' (by omega_using [hsb])]; omega_using [hsb, hzs]
   · rw [hsp, h0]
@@ -556,14 +568,14 @@ theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists
     rcases Nat.eq_zero_or_pos zst with hz0 | hz0
     · subst hz0; simp [stackBelow] at hx
     · rw [stackBelow_pos _ hz0, List.mem_singleton] at hx; subst hx
-      exact (hA (zst + 32) (zst + 32) (Nat.le_refl _) (by omega_using [hzs])).symm.sub_right hsubA
-        |>.sub_left (below_below _ 32 zst)
+      exact (hA (zst + fs) (zst + fs) (Nat.le_refl _) (by omega_using [hzs])).symm.sub_right hsubA
+        |>.sub_left (below_below _ fs zst)
 
 /-- The zeroize function's public data, at its entry, if the array's
 address is public. -/
 theorem cw_zeroPub {n zst : Nat} (hn : n < 2 ^ 31 - 2048) {s₁ s₂ c₁ c₂ : State} (hsp : s₁.sp = s₂.sp)
-    (hpp : s₁.gpr r = s₂.gpr r) (hc₁ : AfterBody sig post r stack s₁ c₁)
-    (hc₂ : AfterBody sig post r stack s₂ c₂) :
+    (hpp : s₁.gpr r = s₂.gpr r) (hc₁ : AfterBody sig post fs r stack s₁ c₁)
+    (hc₂ : AfterBody sig post fs r stack s₂ c₂) :
     (Spec.Zeroize.zeroizeContract abi zst).pub ((cwZero n c₁).callEntry.withRegions [] [⟨s₁.gpr r, n⟩])
       ((cwZero n c₂).callEntry.withRegions [] [⟨s₂.gpr r, n⟩]) := by
   obtain ⟨d₁, i₁, p₁⟩ := cwZeroEntry hc₁ hn ⟨s₁.gpr r, n⟩
@@ -574,35 +586,35 @@ theorem cw_zeroPub {n zst : Nat} (hn : n < 2 ^ 31 - 2048) {s₁ s₂ c₁ c₂ :
 /-- What the zeroize function's run leaves, from the caller's state `s`: the
 first function's, but for the first `n` bytes of the array, which are zero,
 and its result, at `sp + 16` of the frame. -/
-def AfterZero (sig : Sig) (post : sig.Post abi.ptrBits) (r : Reg) (stack n : Nat) (s e : State) : Prop :=
-  ∃ c, AfterBody sig post r stack s c ∧
-    e.rd = s.rd ∧ e.wr = ⟨s.sp - BitVec.ofNat 64 32, 32⟩ :: s.wr ∧ e.sp = s.sp - BitVec.ofNat 64 32 ∧
+def AfterZero (sig : Sig) (post : sig.Post abi.ptrBits) (fs : Nat) (r : Reg) (stack n : Nat) (s e : State) : Prop :=
+  ∃ c, AfterBody sig post fs r stack s c ∧
+    e.rd = s.rd ∧ e.wr = ⟨s.sp - BitVec.ofNat 64 fs, fs⟩ :: s.wr ∧ e.sp = s.sp - BitVec.ofNat 64 fs ∧
     (∀ q ∈ preserved, e.gpr q = s.gpr q) ∧
-    e.mem.readW (slot s 0) 64 = s.gpr .ra ∧ e.mem.readW (slot s 16) 64 = c.gpr .a0 ∧
-    Frame (s.wr ++ [below s.sp (stack + 32)]) s.mem e.mem ∧
-    Frame [⟨s.gpr r, n⟩, below s.sp (stack + 32)] c.mem e.mem ∧
+    e.mem.readW (slot fs s 0) 64 = s.gpr .ra ∧ e.mem.readW (slot fs s 16) 64 = c.gpr .a0 ∧
+    Frame (s.wr ++ [below s.sp (stack + fs)]) s.mem e.mem ∧
+    Frame [⟨s.gpr r, n⟩, below s.sp (stack + fs)] c.mem e.mem ∧
     Spec.Zeroize.bytesAt e.mem (s.gpr r) n = Spec.Zeroize.zeros n
 
 /-- The zeroize function may write only the first `n` bytes of the array. -/
 theorem cw_zeroCovers (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
-    (hn : n ≤ k * e.size) (hc : AfterBody sig post r stack s c) :
+    (hn : n ≤ k * e.size) (hc : AfterBody sig post fs r stack s c) :
     Covers [⟨s.gpr r, n⟩] (cwZero n c).wr :=
   Covers.one ⟨_, by rw [cwZero_wr, hc.2.1]; exact List.mem_cons_of_mem _ (cw_array hk hl hs harr).1, by
     simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Nat.zero_add]; exact hn⟩
 
 /-- The frame lies apart from the array and from the stack below it. -/
-theorem cw_frameApartZ (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {e : Elem} {k n : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+theorem cw_frameApartZ (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    {e : Elem} {k n : Nat} {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
     (hn : n ≤ k * e.size) {d : Nat} (hd : d ≤ stack) :
-    ∀ x ∈ [⟨s.gpr r, n⟩] ++ [below (s.sp - BitVec.ofNat 64 32) d], (below s.sp 32).Disjoint x := by
+    ∀ x ∈ [⟨s.gpr r, n⟩] ++ [below (s.sp - BitVec.ofNat 64 fs) d], (below s.sp fs).Disjoint x := by
   have hsb := (cw_sp hk hl hs).2
   intro x hx
   rcases List.mem_append.mp hx with hx | hx
   · simp only [List.mem_singleton] at hx; subst hx
-    exact (cw_out hk hl hs _ harr (a := 32) (n := 32) (by decide) (by omega_using [])).symm.sub_right
+    exact (cw_out hfs hk hl hs _ harr (a := fs) (n := fs) (Nat.le_refl _) (by omega_using [])).symm.sub_right
       (Region.sub_prefix hn)
   · simp only [List.mem_singleton] at hx; subst hx
     exact Offset.base_disjoint_below _ (by omega_using [hd, hsb])
@@ -610,45 +622,45 @@ theorem cw_frameApartZ (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noL
 theorem preserved_args : ∀ q ∈ preserved, q ≠ .a0 ∧ q ≠ .a1 ∧ q ≠ .t0 ∧ q ≠ .ra := by decide
 
 /-- The call of the zeroize function. -/
-theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
+theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat} (hfs : FrameOk fs)
     (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
     (hzd : sdepth zcode ≤ zst) (hzs : zst ≤ stack)
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
-    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hc : AfterBody sig post r stack s c) :
-    WP isa (.call zname zcode) (cwZero n c) (AfterZero sig post r stack n s) := by
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hc : AfterBody sig post fs r stack s c) :
+    WP isa (.call zname zcode) (cwZero n c) (AfterZero sig post fs r stack n s) := by
   have hsb := (cw_sp hk hl hs).2
   obtain ⟨hAw, -⟩ := cw_array hk hl hs harr
   have hsubA : Region.Sub ⟨s.gpr r, n⟩ ⟨s.gpr r, k * e.size⟩ := Region.sub_prefix hn
   obtain ⟨hrdc, hwrc, hspc, hcsc, h0c, -, hfc, -⟩ := id hc
   have hcw := cw_zeroCovers hk hl hs harr hn hc
-  have hap := cw_frameApartZ hk hl hs harr hn (d := sdepth zcode) (by omega_using [hzd, hzs])
+  have hap := cw_frameApartZ hfs hk hl hs harr hn (d := sdepth zcode) (by omega_using [hzd, hzs])
   refine WP.callAny (k := Spec.Zeroize.zeroizeContract abi zst) hz.1 (rd := []) (wr := [⟨s.gpr r, n⟩])
-    (cw_zeroPre hk hl hs harr hn hn31 hzs hc) (Covers.right hcw) hcw ?_ (by omega_using [hzd, hzs, hsb])
+    (cw_zeroPre hfs hk hl hs harr hn hn31 hzs hc) (Covers.right hcw) hcw ?_ (by omega_using [hzd, hzs, hsb])
   intro g hrd hwr hsp hfr hcs hq
   rw [cwZero_sp, hspc] at hfr hsp
   -- The result's slot, which `zeroArgs` writes.
-  have fD : Frame [below s.sp 32] c.mem (cwZero n c).mem := by
+  have fD : Frame [below s.sp fs] c.mem (cwZero n c).mem := by
     rw [cwZero_mem, cwZeroMem, hspc]
-    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (slot_contains s (off := 16) (by decide))
-  have hbelowZ : Region.Sub (below (s.sp - BitVec.ofNat 64 32) (sdepth zcode)) (below s.sp (stack + 32)) :=
-    fun y hy => below_sub (sp := s.sp) (a := sdepth zcode + 32) (b := stack + 32)
-      (by omega_using [hzd, hzs]) (by omega_using [hzd, hzs, hsb]) y (below_below _ 32 _ y hy)
-  have hframeSub : Region.Sub (below s.sp 32) (below s.sp (stack + 32)) :=
+    exact Frame.writeW (Frame.refl _ _) (List.mem_singleton_self _) _ (slot_contains hfs s (off := 16) (by decide))
+  have hbelowZ : Region.Sub (below (s.sp - BitVec.ofNat 64 fs) (sdepth zcode)) (below s.sp (stack + fs)) :=
+    fun y hy => below_sub (sp := s.sp) (a := sdepth zcode + fs) (b := stack + fs)
+      (by omega_using [hzd, hzs]) (by omega_using [hzd, hzs, hsb]) y (below_below _ fs _ y hy)
+  have hframeSub : Region.Sub (below s.sp fs) (below s.sp (stack + fs)) :=
     below_sub (by omega_using []) (by omega_using [hsb])
   refine ⟨c, hc, by rw [hrd, cwZero_rd, hrdc], by rw [hwr, cwZero_wr, hwrc], hsp,
     fun q hq => ?_, ?_, ?_, ?_, ?_, ?_⟩
   · obtain ⟨h₀, h₁, ht, -⟩ := preserved_args q hq
     rw [hcs q hq, cwZero_gpr n c h₀ h₁ ht, hcsc q hq]
   · -- The return address, at `sp`, which neither `zeroArgs` nor the zeroize function writes.
-    rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
-      show s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 16 = slot s 16 from rfl,
+    rw [hfr.readW (slot_contains hfs s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
+      show s.sp - BitVec.ofNat 64 fs + BitVec.ofNat 64 16 = slot fs s 16 from rfl,
       Mem.readW_writeW_sep (slot_sep s (a := 0) (b := 16) (.inl (by decide)) (by decide) (by decide))
         (by decide), h0c]
   · -- The result, at `sp + 16`, which the zeroize function does not write.
-    rw [hfr.readW (slot_contains s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
-      show s.sp - BitVec.ofNat 64 32 + BitVec.ofNat 64 16 = slot s 16 from rfl, Mem.readW_writeW_self64]
+    rw [hfr.readW (slot_contains hfs s (by decide)) hap (by decide), cwZero_mem, cwZeroMem, hspc,
+      show s.sp - BitVec.ofNat 64 fs + BitVec.ofNat 64 16 = slot fs s 16 from rfl, Mem.readW_writeW_self64]
   · refine Frame.trans hfc (Frame.trans (Frame.sub fD fun x hx => ?_) (Frame.sub hfr fun x hx => ?_))
     · simp only [List.mem_singleton] at hx; subst hx
       exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _), hframeSub⟩
@@ -703,7 +715,7 @@ theorem restore_run {g : State} (ha16 : (g.sp + BitVec.ofNat 64 16).toNat % 8 = 
 calling convention requires, its postcondition is the first function's if
 that reads the memory on return only within the buffers apart from the
 array (`hout`), and the first `n` bytes of the array are zero. -/
-theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
+theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat} (hfs : FrameOk fs)
     (h : Verified target body (sig.contract abi pre post wa stack leak))
     (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true) (hr : r ≠ .t0)
@@ -716,34 +728,34 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
     {e : Elem} {k n : Nat} (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
+    {s : State} (hs : (sig.contract abi pre post wa (stack + fs) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
     (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (regArgs sig s), b.1.Disjoint ⟨s.gpr r, k * e.size⟩ →
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₁ x →
         Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₂ x) :
-    WP isa (callWipe r n name body zname zcode) s fun g =>
-      abiPreserved s g ∧ (sig.contract abi pre post wa (stack + 32) leak).post s g ∧
+    WP isa (callWipe fs r n name body zname zcode) s fun g =>
+      abiPreserved s g ∧ (sig.contract abi pre post wa (stack + fs) leak).post s g ∧
         Spec.Zeroize.bytesAt g.mem (s.gpr r) n = Spec.Zeroize.zeros n := by
   obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
-  have hout' := cw_out hk hl hs
-  have hsp32 : 32 ≤ s.sp.toNat := by omega_using [hsb]
-  have hal' : ∀ off, off % 8 = 0 → off + 8 ≤ 32 → (slot s off).toNat % 8 = 0 :=
-    fun off ho h => slot_aligned hal hsp32 ho h
-  refine WP.alloc ⟨by decide, by decide, by decide⟩ hsp32 ?_
-  refine WP.seq (WP.block ⟨_, saveArg_run hr hal hsp32, ?_⟩)
-  refine WP.seq (WP.mono (cw_body_wp h hk hl hd hpre hpost hs) fun c hc => ?_)
+  have hout' := cw_out hfs hk hl hs
+  have hsp32 : fs ≤ s.sp.toNat := by omega_using [hsb]
+  have hal' : ∀ off, off % 8 = 0 → off + 8 ≤ 32 → (slot fs s off).toNat % 8 = 0 :=
+    fun off ho h => slot_aligned hfs hal hsp32 ho h
+  refine WP.alloc hfs.alloc hsp32 ?_
+  refine WP.seq (WP.block ⟨_, saveArg_run hfs hr hal hsp32, ?_⟩)
+  refine WP.seq (WP.mono (cw_body_wp hfs h hk hl hd hpre hpost hs) fun c hc => ?_)
   obtain ⟨hrdc, hwrc, hspc, -⟩ := id hc
   refine WP.seq (WP.block ⟨_, zeroArgs_run n hn31 (by rw [hspc]; exact hal' 16 (by decide) (by decide))
     (by rw [hspc]; exact hal' 8 (by decide) (by decide))
-    (by rw [hwrc, hspc]; exact slot_in s (by decide))
-    (by rw [hwrc, hspc]; exact slot_in' s c.rd (by decide)), ?_⟩)
-  refine WP.seq (WP.mono (cw_zero_wp hz hzd hzs hk hl hs harr hn hn31 hc) fun g hg => ?_)
-  obtain ⟨c', hc', hrdg, hwrg, hspg, hcsg, h0g, h16g, hfs, hfc, hz0⟩ := hg
+    (by rw [hwrc, hspc]; exact slot_in hfs s (by decide))
+    (by rw [hwrc, hspc]; exact slot_in' hfs s c.rd (by decide)), ?_⟩)
+  refine WP.seq (WP.mono (cw_zero_wp hfs hz hzd hzs hk hl hs harr hn hn31 hc) fun g hg => ?_)
+  obtain ⟨c', hc', hrdg, hwrg, hspg, hcsg, h0g, h16g, -, hfc, hz0⟩ := hg
   refine WP.block ⟨_, restore_run (by rw [hspg]; exact hal' 16 (by decide) (by decide))
     (by rw [hspg]; exact hal' 0 (by decide) (by decide))
-    (by rw [hwrg, hspg]; exact slot_in' s g.rd (by decide))
-    (by rw [hwrg, hspg]; exact slot_in' s g.rd (by decide)), ?_⟩
+    (by rw [hwrg, hspg]; exact slot_in' hfs s g.rd (by decide))
+    (by rw [hwrg, hspg]; exact slot_in' hfs s g.rd (by decide)), ?_⟩
   have hra : (cwRestore g).gpr .ra = s.gpr .ra := by
     rw [cwRestore, RegUpd.gpr_write_self, hspg]; exact h0g
   have ha0 : (cwRestore g).gpr .a0 = c'.gpr .a0 := by
@@ -756,7 +768,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     rw [cwRestore, RegUpd.gpr_write_of_ne _ _ hra', RegUpd.gpr_write_of_ne _ _ h₀, cwZ1,
       RegUpd.gpr_write_of_ne _ _ ht]
     exact hcsg q hq
-  · show (cwRestore g).sp + BitVec.ofNat 64 32 = s.sp
+  · show (cwRestore g).sp + BitVec.ofNat 64 fs = s.sp
     rw [cwRestore, RegUpd.sp_write, RegUpd.sp_write, cwZ1, RegUpd.sp_write, hspg, BitVec.sub_add_cancel]
   · exact hra
   · -- The postcondition, which reads the memory on return only within the buffers apart from the array.
@@ -768,15 +780,15 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
     rcases List.mem_cons.mp hR with rfl | hR
     · exact hbA x hx (Region.sub_prefix hn x hc)
     · simp only [List.mem_singleton] at hR; subst hR
-      exact hout' b hb (stack + 32) (stack + 32) (Nat.le_refl _) (Nat.le_refl _) x hx hc
+      exact hout' b hb (stack + fs) (stack + fs) (Nat.le_refl _) (Nat.le_refl _) x hx hc
 
 /-- The caller's public data is the first function's at its entry. -/
-theorem cw_bodyPub (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    (r : Reg) {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + 32) leak).pre s₁)
-    (h₂ : (sig.contract abi pre post wa (stack + 32) leak).pre s₂)
-    (hp : (sig.contract abi pre post wa (stack + 32) leak).pub s₁ s₂)
+theorem cw_bodyPub (hfs : FrameOk fs) (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
+    (r : Reg) {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + fs) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + fs) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + fs) leak).pub s₁ s₂)
     (hleak : Sig.LeakLocal abi.ptrBits sig leak) :
-    (sig.contract abi pre post wa stack leak).pub (cwEntry r s₁) (cwEntry r s₂) := by
+    (sig.contract abi pre post wa stack leak).pub (cwEntry fs r s₁) (cwEntry fs r s₂) := by
   rw [pub_regsL hk hl] at hp ⊢
   obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
   rw [regArgs_cwEntry, regArgs_cwEntry, cwEntry_sp, cwEntry_sp, hsp]
@@ -784,10 +796,10 @@ theorem cw_bodyPub (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists
   cases leak with
   | none => trivial
   | some f =>
-    show Curry.apply _ f (regArgs sig s₁) (cwEntry r s₁).mem =
-      Curry.apply _ f (regArgs sig s₂) (cwEntry r s₂).mem
-    rw [hleak _ _ _ (regArgs_length sig s₁ hk) (cw_agree hk hl r h₁),
-      hleak _ _ _ (regArgs_length sig s₂ hk) (cw_agree hk hl r h₂)]
+    show Curry.apply _ f (regArgs sig s₁) (cwEntry fs r s₁).mem =
+      Curry.apply _ f (regArgs sig s₂) (cwEntry fs r s₂).mem
+    rw [hleak _ _ _ (regArgs_length sig s₁ hk) (cw_agree hfs hk hl r h₁),
+      hleak _ _ _ (regArgs_length sig s₂ hk) (cw_agree hfs hk hl r h₂)]
     exact hlk
 
 end
@@ -835,7 +847,7 @@ variable {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post 
 
 /-- Code verified against `sig.contract` with `stack` bytes of stack, for a
 function whose arguments are all in registers, the one in `argRegs[i]` a
-writable array of `k` elements `e`, is verified with `stack + 32` bytes when
+writable array of `k` elements `e`, is verified with `stack + fs` bytes when
 called by `callWipe`, which then zeroes the first `n` bytes of the array with
 code verified against `Spec.Zeroize.zeroizeContract` (with `zst ≤ stack`
 bytes of stack), against the contract whose postcondition `post'` follows
@@ -871,10 +883,10 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       Curry.apply (sig.words abi.ptrBits) post vs m m' x →
       Spec.Zeroize.bytesAt m' (vs.getD i 0) n = Spec.Zeroize.zeros n →
         Curry.apply (sig.words abi.ptrBits) post' vs m m' x)
-    (hsat : ∃ s, (sig.contract abi pre post' wa (stack + 32) leak).pre s)
-    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
-    Verified target (Impl.CallWipe.RISCV64.callWipe (argRegs.getD i .a0) n name body zname zcode)
-      (sig.contract abi pre post' wa (stack + 32) leak) := by
+    (hsat : ∃ s, (sig.contract abi pre post' wa (stack + fs) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) (hfs : FrameOk fs := by decide) :
+    Verified target (Impl.CallWipe.RISCV64.callWipe fs (argRegs.getD i .a0) n name body zname zcode)
+      (sig.contract abi pre post' wa (stack + fs) leak) := by
   subst hi
   have hL : (sig.words abi.ptrBits).length = (ps₁.flatMap fun p => p.2.words 64).length + 1 +
       (ps₂.flatMap fun p => p.2.words 64).length := by
@@ -894,7 +906,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     rw [← hget s, hps]
     exact Sig.bufs_mem_array (pb := 64) ps₂ ps₁ (regArgs sig s) (by rw [regArgs_length sig s hk, hL]; omega)
   -- Its address is public.
-  have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + 32) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
+  have hpubA : ∀ s₁ s₂, (sig.contract abi pre post wa (stack + fs) leak).pub s₁ s₂ → s₁.gpr r = s₂.gpr r := by
     intro s₁ s₂ hp
     have hP : (sig.params.flatMap (·.2.pubs)).getD (ps₁.flatMap fun p => p.2.words 64).length false = true := by
       rw [hps]; exact (Sig.pub_array (pb := 64) ps₁ ps₂).1
@@ -907,7 +919,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       Nat.mod_eq_of_lt (BitVec.isLt _)] at h2
     exact BitVec.eq_of_toNat_eq h2
   -- The postcondition reads the memory on return only within the buffers apart from the array.
-  have hout : ∀ s, (sig.contract abi pre post wa (stack + 32) leak).pre s → ∀ m₁ m₂ x,
+  have hout : ∀ s, (sig.contract abi pre post wa (stack + fs) leak).pre s → ∀ m₁ m₂ x,
       (∀ b ∈ Sig.bufs sig.params (regArgs sig s), b.1.Disjoint ⟨s.gpr r, k * e.size⟩ →
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post (regArgs sig s) s.mem m₁ x →
@@ -917,93 +929,93 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     exact hpostOut _ _ _ _ _ (regArgs_length sig s hk) hs.2.2.2.1 (by rw [hget]; exact hag) hq
   refine ⟨fun s hs => ?_, ?_, hsat⟩
   · obtain ⟨t, g, he, habi, hq, hz0⟩ :=
-      cw_wp (r := r) h hz hk hl hr hd hzd hzs hpre hpost hn hn31 hs (harr s) (hout s hs)
+      cw_wp (r := r) hfs h hz hk hl hr hd hzd hzs hpre hpost hn hn31 hs (harr s) (hout s hs)
     refine ⟨t, g, he, habi, ?_⟩
     rw [post_regs' hk] at hq ⊢
     exact hwiped _ _ _ _ (regArgs_length sig s hk) hq (by rw [hget]; exact hz0)
   · refine RelCT.constantTime (Q := fun _ _ => True) (RelCT.alloc (R := fun _ _ => True) ?_)
     refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => ?_
-    by_cases hP0 : (sig.contract abi pre post' wa (stack + 32) leak).pre σ₁ ∧
-        (sig.contract abi pre post' wa (stack + 32) leak).pre σ₂ ∧
-        (sig.contract abi pre post' wa (stack + 32) leak).pub σ₁ σ₂
+    by_cases hP0 : (sig.contract abi pre post' wa (stack + fs) leak).pre σ₁ ∧
+        (sig.contract abi pre post' wa (stack + fs) leak).pre σ₂ ∧
+        (sig.contract abi pre post' wa (stack + fs) leak).pub σ₁ σ₂
     swap
     · exact RelCT.of_false fun a b hab => hP0 hab.1
     obtain ⟨h₁, h₂, hp⟩ := hP0
-    have h₁' : (sig.contract abi pre post wa (stack + 32) leak).pre σ₁ := h₁
-    have h₂' : (sig.contract abi pre post wa (stack + 32) leak).pre σ₂ := h₂
-    have hp' : (sig.contract abi pre post wa (stack + 32) leak).pub σ₁ σ₂ := hp
+    have h₁' : (sig.contract abi pre post wa (stack + fs) leak).pre σ₁ := h₁
+    have h₂' : (sig.contract abi pre post wa (stack + fs) leak).pre σ₂ := h₂
+    have hp' : (sig.contract abi pre post wa (stack + fs) leak).pub σ₁ σ₂ := hp
     have hsp12 : σ₁.sp = σ₂.sp := ((pub_regsL hk hl).mp hp').1.1
     have hpp := hpubA _ _ hp'
-    have hcov : ∀ σ : State, Covers (σ.rd ++ σ.wr) ((cwSave r σ).rd ++ (cwSave r σ).wr) ∧
-        Covers σ.wr (cwSave r σ).wr := fun σ =>
+    have hcov : ∀ σ : State, Covers (σ.rd ++ σ.wr) ((cwSave fs r σ).rd ++ (cwSave fs r σ).wr) ∧
+        Covers σ.wr (cwSave fs r σ).wr := fun σ =>
       ⟨Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx),
         Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx⟩
-    refine RelCT.mono (P := fun a b => a = allocd 32 σ₁ ∧ b = allocd 32 σ₂) ?_
+    refine RelCT.mono (P := fun a b => a = allocd fs σ₁ ∧ b = allocd fs σ₂) ?_
       (fun a b hab => hab.2) (fun _ _ h => h)
     -- The return address and the array's address are saved.
-    refine RelCT.seq (R := fun a b => a = cwSave r σ₁ ∧ b = cwSave r σ₂)
+    refine RelCT.seq (R := fun a b => a = cwSave fs r σ₁ ∧ b = cwSave fs r σ₂)
       (RelCT.block_of fun a b hab => ?_) ?_
     · obtain ⟨rfl, rfl⟩ := hab
       obtain ⟨al₁, sb₁⟩ := cw_sp hk hl h₁'
       obtain ⟨al₂, sb₂⟩ := cw_sp hk hl h₂'
-      exact ⟨_, _, _, saveArg_run hr al₁ (by omega_using [sb₁]),
-        by rw [saveArg_run hr al₂ (by omega_using [sb₂])]; simp only [slot, hsp12], rfl, rfl⟩
+      exact ⟨_, _, _, saveArg_run hfs hr al₁ (by omega_using [sb₁]),
+        by rw [saveArg_run hfs hr al₂ (by omega_using [sb₂])]; simp only [slot, hsp12], rfl, rfl⟩
     -- The first function.
-    refine RelCT.seq (R := fun c₁ c₂ => AfterBody sig post r stack σ₁ c₁ ∧ AfterBody sig post r stack σ₂ c₂)
+    refine RelCT.seq (R := fun c₁ c₂ => AfterBody sig post fs r stack σ₁ c₁ ∧ AfterBody sig post fs r stack σ₂ c₂)
       ?_ ?_
-    · refine RelCT.mono (RelCT.wp (F₁ := AfterBody sig post r stack σ₁) (F₂ := AfterBody sig post r stack σ₂)
+    · refine RelCT.mono (RelCT.wp (F₁ := AfterBody sig post fs r stack σ₁) (F₂ := AfterBody sig post fs r stack σ₂)
         (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
       · obtain ⟨rfl, rfl⟩ := hab
-        exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, cw_bodyPre hk hl hpre h₁', cw_bodyPre hk hl hpre h₂',
-          cw_bodyPub hk hl r h₁' h₂' hp' hleak, (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
+        exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, cw_bodyPre hfs hk hl hpre h₁', cw_bodyPre hfs hk hl hpre h₂',
+          cw_bodyPub hfs hk hl r h₁' h₂' hp' hleak, (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
       · obtain ⟨rfl, rfl⟩ := hab
-        exact ⟨cw_body_wp h hk hl hd hpre hpost h₁', cw_body_wp h hk hl hd hpre hpost h₂'⟩
+        exact ⟨cw_body_wp hfs h hk hl hd hpre hpost h₁', cw_body_wp hfs h hk hl hd hpre hpost h₂'⟩
     -- The zeroize function's arguments.
-    refine RelCT.seq (R := fun d₁ d₂ => (∃ c, AfterBody sig post r stack σ₁ c ∧ d₁ = cwZero n c) ∧
-      (∃ c, AfterBody sig post r stack σ₂ c ∧ d₂ = cwZero n c)) (RelCT.block_of fun c₁ c₂ hc => ?_) ?_
+    refine RelCT.seq (R := fun d₁ d₂ => (∃ c, AfterBody sig post fs r stack σ₁ c ∧ d₁ = cwZero n c) ∧
+      (∃ c, AfterBody sig post fs r stack σ₂ c ∧ d₂ = cwZero n c)) (RelCT.block_of fun c₁ c₂ hc => ?_) ?_
     · obtain ⟨hc₁, hc₂⟩ := hc
       obtain ⟨al₁, sb₁⟩ := cw_sp hk hl h₁'
       obtain ⟨al₂, sb₂⟩ := cw_sp hk hl h₂'
       have z₁ := zeroArgs_run n hn31 (c := c₁)
-        (by rw [hc₁.2.2.1]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 16) (by decide) (by decide))
-        (by rw [hc₁.2.2.1]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 8) (by decide) (by decide))
-        (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in σ₁ (by decide))
-        (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in' σ₁ c₁.rd (by decide))
+        (by rw [hc₁.2.2.1]; exact slot_aligned hfs al₁ (by omega_using [sb₁]) (off := 16) (by decide) (by decide))
+        (by rw [hc₁.2.2.1]; exact slot_aligned hfs al₁ (by omega_using [sb₁]) (off := 8) (by decide) (by decide))
+        (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in hfs σ₁ (by decide))
+        (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in' hfs σ₁ c₁.rd (by decide))
       have z₂ := zeroArgs_run n hn31 (c := c₂)
-        (by rw [hc₂.2.2.1]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 16) (by decide) (by decide))
-        (by rw [hc₂.2.2.1]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 8) (by decide) (by decide))
-        (by rw [hc₂.2.1, hc₂.2.2.1]; exact slot_in σ₂ (by decide))
-        (by rw [hc₂.2.1, hc₂.2.2.1]; exact slot_in' σ₂ c₂.rd (by decide))
+        (by rw [hc₂.2.2.1]; exact slot_aligned hfs al₂ (by omega_using [sb₂]) (off := 16) (by decide) (by decide))
+        (by rw [hc₂.2.2.1]; exact slot_aligned hfs al₂ (by omega_using [sb₂]) (off := 8) (by decide) (by decide))
+        (by rw [hc₂.2.1, hc₂.2.2.1]; exact slot_in hfs σ₂ (by decide))
+        (by rw [hc₂.2.1, hc₂.2.2.1]; exact slot_in' hfs σ₂ c₂.rd (by decide))
       refine ⟨_, _, _, z₁, ?_, ⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩
       rw [z₂, hc₁.2.2.1, hc₂.2.2.1, hsp12]
     -- The zeroize function.
-    refine RelCT.seq (R := fun g₁ g₂ => AfterZero sig post r stack n σ₁ g₁ ∧ AfterZero sig post r stack n σ₂ g₂)
+    refine RelCT.seq (R := fun g₁ g₂ => AfterZero sig post fs r stack n σ₁ g₁ ∧ AfterZero sig post fs r stack n σ₂ g₂)
       ?_ ?_
-    · refine RelCT.mono (RelCT.wp (F₁ := AfterZero sig post r stack n σ₁) (F₂ := AfterZero sig post r stack n σ₂)
+    · refine RelCT.mono (RelCT.wp (F₁ := AfterZero sig post fs r stack n σ₁) (F₂ := AfterZero sig post fs r stack n σ₂)
         (RelCT.callEx hz.1 hz.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
-        exact ⟨[], [⟨σ₁.gpr r, n⟩], [], [⟨σ₂.gpr r, n⟩], cw_zeroPre hk hl h₁' (harr σ₁) hn hn31 hzs hc₁,
-          cw_zeroPre hk hl h₂' (harr σ₂) hn hn31 hzs hc₂, cw_zeroPub hn31 hsp12 hpp hc₁ hc₂,
+        exact ⟨[], [⟨σ₁.gpr r, n⟩], [], [⟨σ₂.gpr r, n⟩], cw_zeroPre hfs hk hl h₁' (harr σ₁) hn hn31 hzs hc₁,
+          cw_zeroPre hfs hk hl h₂' (harr σ₂) hn hn31 hzs hc₂, cw_zeroPub hn31 hsp12 hpp hc₁ hc₂,
           Covers.right (cw_zeroCovers hk hl h₁' (harr σ₁) hn hc₁), cw_zeroCovers hk hl h₁' (harr σ₁) hn hc₁,
           Covers.right (cw_zeroCovers hk hl h₂' (harr σ₂) hn hc₂), cw_zeroCovers hk hl h₂' (harr σ₂) hn hc₂⟩
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
-        exact ⟨cw_zero_wp hz hzd hzs hk hl h₁' (harr σ₁) hn hn31 hc₁,
-          cw_zero_wp hz hzd hzs hk hl h₂' (harr σ₂) hn hn31 hc₂⟩
+        exact ⟨cw_zero_wp hfs hz hzd hzs hk hl h₁' (harr σ₁) hn hn31 hc₁,
+          cw_zero_wp hfs hz hzd hzs hk hl h₂' (harr σ₂) hn hn31 hc₂⟩
     -- The result and the return address are restored.
     · refine RelCT.block_of fun g₁ g₂ hg => ?_
       obtain ⟨⟨c₁, _, -, hw₁, hs₁, -⟩, ⟨c₂, _, -, hw₂, hs₂, -⟩⟩ := hg
       obtain ⟨al₁, sb₁⟩ := cw_sp hk hl h₁'
       obtain ⟨al₂, sb₂⟩ := cw_sp hk hl h₂'
       have q₁ := restore_run (g := g₁)
-        (by rw [hs₁]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 16) (by decide) (by decide))
-        (by rw [hs₁]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 0) (by decide) (by decide))
-        (by rw [hw₁, hs₁]; exact slot_in' σ₁ g₁.rd (by decide))
-        (by rw [hw₁, hs₁]; exact slot_in' σ₁ g₁.rd (by decide))
+        (by rw [hs₁]; exact slot_aligned hfs al₁ (by omega_using [sb₁]) (off := 16) (by decide) (by decide))
+        (by rw [hs₁]; exact slot_aligned hfs al₁ (by omega_using [sb₁]) (off := 0) (by decide) (by decide))
+        (by rw [hw₁, hs₁]; exact slot_in' hfs σ₁ g₁.rd (by decide))
+        (by rw [hw₁, hs₁]; exact slot_in' hfs σ₁ g₁.rd (by decide))
       have q₂ := restore_run (g := g₂)
-        (by rw [hs₂]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 16) (by decide) (by decide))
-        (by rw [hs₂]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 0) (by decide) (by decide))
-        (by rw [hw₂, hs₂]; exact slot_in' σ₂ g₂.rd (by decide))
-        (by rw [hw₂, hs₂]; exact slot_in' σ₂ g₂.rd (by decide))
+        (by rw [hs₂]; exact slot_aligned hfs al₂ (by omega_using [sb₂]) (off := 16) (by decide) (by decide))
+        (by rw [hs₂]; exact slot_aligned hfs al₂ (by omega_using [sb₂]) (off := 0) (by decide) (by decide))
+        (by rw [hw₂, hs₂]; exact slot_in' hfs σ₂ g₂.rd (by decide))
+        (by rw [hw₂, hs₂]; exact slot_in' hfs σ₂ g₂.rd (by decide))
       refine ⟨_, cwRestore g₂, _, q₁, ?_, trivial⟩
       rw [q₂, hs₁, hs₂, hsp12]
 
@@ -1030,12 +1042,12 @@ theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : N
         ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m m₁ x →
         Curry.apply (sig.words abi.ptrBits) post vs m m₂ x)
-    (hsat : ∃ s, (sig.contract abi pre post wa (stack + 32) leak).pre s)
-    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
-    Verified target (Impl.CallWipe.RISCV64.callWipe (argRegs.getD i .a0) n name body zname zcode)
-      (sig.contract abi pre post wa (stack + 32) leak) :=
+    (hsat : ∃ s, (sig.contract abi pre post wa (stack + fs) leak).pre s)
+    (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) (hfs : FrameOk fs := by decide) :
+    Verified target (Impl.CallWipe.RISCV64.callWipe fs (argRegs.getD i .a0) n name body zname zcode)
+      (sig.contract abi pre post wa (stack + fs) leak) :=
   Verified.callWipe' h hz hk hl hps hi hn hn31 hd hzd hzs hpre hpost hpostOut
-    (fun _ _ _ _ _ hq _ => hq) hsat hleak
+    (fun _ _ _ _ _ hq _ => hq) hsat hleak hfs
 
 end
 

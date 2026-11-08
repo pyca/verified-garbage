@@ -19,19 +19,19 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem1024.RISCV64.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.keyGen1024
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.encaps1024
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.encapsH1024
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact RISCV64.target {
     code := Impl.MlKem.RISCV64.Wipe.decaps1024
-    stack := 1200
+    stack := 1232
     verified := Proof.MlKem.RISCV64.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem1024.RISCV64

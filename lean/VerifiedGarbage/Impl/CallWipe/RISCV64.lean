@@ -5,11 +5,13 @@ public import VerifiedGarbage.TCB.RISCV64.Isa
 /-!
 # A call that wipes part of a buffer afterwards (RISC-V)
 
-`callWipe r n name body zname zcode` calls the function `name`, whose code is
+`callWipe fs r n name body zname zcode` calls the function `name`, whose code is
 `body`, with the arguments its caller was given, all in registers, then zeroes
 the first `n` bytes of the buffer whose address was passed in `r` by calling
 the zeroize function `zname`, whose code is `zcode`, and returns what `name`
-returned. It allocates a frame of 32 bytes: the return address (`ra`, which
+returned. It allocates a frame of `fs` bytes (a multiple of 16, with
+`32 ≤ fs < 2048`; the frame's size sets where the callees' stack lies,
+relative to the caller's): the return address (`ra`, which
 each call replaces) at `sp`, the buffer's address at `sp + 8`, saved before
 the first call, and `name`'s result at `sp + 16`, saved across the second.
 The frame is addressed through `t0` (`addi t0, sp, 0`), as the model's loads
@@ -56,13 +58,13 @@ def restore : List Instr := [.addSp .t0 0, .load .d .a0 .t0 16, .load .d .ra .t0
 /-- A call of `name`, whose code is `body`, then of the zeroize function
 `zname`, whose code is `zcode`, on the first `n` bytes of the buffer whose
 address is in `r` on entry, returning `name`'s result. -/
-def callWipe (r : Reg) (n : Nat) (name : String) (body : Prog isa) (zname : String)
+def callWipe (fs : Nat) (r : Reg) (n : Nat) (name : String) (body : Prog isa) (zname : String)
     (zcode : Prog isa) : Prog isa :=
-  .frame (.alloc 32)
+  .frame (.alloc fs)
     (.seq (.block (saveArg r))
       (.seq (.call name body)
         (.seq (.block (zeroArgs n))
           (.seq (.call zname zcode) (.block restore)))))
-    (.free 32)
+    (.free fs)
 
 end VG.Impl.CallWipe.RISCV64

@@ -63,13 +63,13 @@ bnez a1, 20b
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 1232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x1101
+.insn 2, 0x7139
 .insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x00d2b423
@@ -82,7 +82,7 @@ call {vg_zeroize}
 .insn 2, 0x828a
 .insn 4, 0x0102b503
 .insn 4, 0x0002b083
-.insn 2, 0x6105
+.insn 2, 0x6121
 .insn 2, 0x8082
 .option pop",
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
@@ -105,13 +105,13 @@ call {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 1232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x1101
+.insn 2, 0x7139
 .insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x00e2b423
@@ -124,7 +124,7 @@ call {vg_zeroize}
 .insn 2, 0x828a
 .insn 4, 0x0102b503
 .insn 4, 0x0002b083
-.insn 2, 0x6105
+.insn 2, 0x6121
 .insn 2, 0x8082
 .option pop",
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
@@ -149,13 +149,13 @@ call {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 1232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x1101
+.insn 2, 0x7139
 .insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x00f2b423
@@ -168,7 +168,7 @@ call {vg_zeroize}
 .insn 2, 0x828a
 .insn 4, 0x0102b503
 .insn 4, 0x0002b083
-.insn 2, 0x6105
+.insn 2, 0x6121
 .insn 2, 0x8082
 .option pop",
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
@@ -189,13 +189,13 @@ call {vg_zeroize}
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 203 §3.3).
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 1200 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 1232 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
         r".option push
 .option arch, +m, +c
-.insn 2, 0x1101
+.insn 2, 0x7139
 .insn 2, 0x828a
 .insn 4, 0x0012b023
 .insn 4, 0x00d2b423
@@ -208,7 +208,7 @@ call {vg_zeroize}
 .insn 2, 0x828a
 .insn 4, 0x0102b503
 .insn 4, 0x0002b083
-.insn 2, 0x6105
+.insn 2, 0x6121
 .insn 2, 0x8082
 .option pop",
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
