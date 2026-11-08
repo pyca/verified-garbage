@@ -46,13 +46,14 @@ def geo (pLen qLen : Nat) (G : Hash) (v : RoundImpl) (ck : Prog isa) : Geo where
 theorem prime_stack (bits : Nat) (name : String) (rc : Prog isa) :
     sdepth (Impl.Dsa.PPC64LE.ProbablePrime.code bits name rc) ≤ sdepth rc := by
   have z : ∀ c, sdepth c = 0 → sdepth c ≤ sdepth rc := fun _ h => h ▸ Nat.zero_le _
-  simp only [Impl.Dsa.PPC64LE.ProbablePrime.code, Impl.Dsa.PPC64LE.ProbablePrime.body,
+  have hm : sdepth (Impl.Dsa.PPC64LE.ProbablePrime.montPrepFor bits) = 0 := by
+    unfold Impl.Dsa.PPC64LE.ProbablePrime.montPrepFor; split <;> decide
+  simp only [hm, Impl.Dsa.PPC64LE.ProbablePrime.code, Impl.Dsa.PPC64LE.ProbablePrime.body,
     Impl.Dsa.PPC64LE.ProbablePrime.loadC, Impl.Dsa.PPC64LE.ProbablePrime.exit, sdepth,
     VG.Impl.MillerRabin.PPC64LE.Blinded.millerRabin, VG.Impl.MillerRabin.PPC64LE.Blinded.draw,
     VG.Impl.MillerRabin.PPC64LE.Blinded.round, VG.Impl.RsaKeyGen.PPC64LE.Trial.trial,
     VG.Impl.MillerRabin.PPC64LE.Search.roundCall, Nat.max_le, Nat.zero_le, and_true, true_and]
-  exact ⟨z _ (by decide), z _ (by decide), z _ (by decide), z _ (by decide), z _ (by decide), z _ (by decide),
-    Nat.le_refl _⟩
+  exact ⟨z _ (by decide), z _ (by decide), z _ (by decide), z _ (by decide), z _ (by decide), Nat.le_refl _⟩
 
 theorem primeOk (v : RoundImpl) (bits : Nat) (hb : VG.Proof.Dsa.PPC64LE.Prime.Bits bits := by decide) :
     PrimeOk (Impl.Dsa.PPC64LE.ProbablePrime.layout bits) (Impl.Dsa.PPC64LE.ProbablePrime.code bits v.name v.code) :=

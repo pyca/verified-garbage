@@ -26,7 +26,7 @@ tape as at the call. `BOut`: after it, `hStat` holds the status of the test
 `B`, and memory changed only in the working space and the round's stack.
 
 `body_ok`: trial division (`trial_ok`); then a composite (`comp_ok`), or
-`montPrep` and the blinded Miller–Rabin loop (`mr_ok`, `millerRabin_ok`).
+`montPrepFor bits` and the blinded Miller–Rabin loop (`mr_ok`, `millerRabin_ok`).
 -/
 
 @[expose] public section
@@ -40,7 +40,7 @@ open VG.Impl.MillerRabin.PPC64LE.Blinded (hUni hTopOff)
 open VG.Impl.Bignum (hdrBytes)
 open VG.Proof.Bignum (word off slot Frm ofs)
 open VG.Proof.MillerRabin.PPC64LE (Env arr RoundImpl)
-open VG.Proof.MillerRabin.PPC64LE.Search (Prep)
+open VG.Proof.MillerRabin.PPC64LE.Search (Prep R2Ok montPrepWith_ok r2_r2Ok r2Hi_r2Ok)
 open VG.Proof.MillerRabin.PPC64LE.Blinded (BCtx LKeep MOut millerRabin_ok)
 
 /-- The candidate. -/
@@ -134,7 +134,7 @@ theorem comp_ok {bits : Nat} {σ s : State} (h : BIn bits σ s)
     (by simp only [hStat, hUsed, List.mem_singleton, forall_eq]; omega) (by simp only [hUsed]; omega), h.hdr.used]
   simp only [tape, Spec.Rsa.bytesAt, List.length_map, List.length_range, Nat.sub_self]
 
-/-- The header's words lie apart from what `montPrep` writes. -/
+/-- The header's words lie apart from what `montPrepWith` writes. -/
 theorem hdr_apart (w : Nat) :
     ∀ d ∈ hdrWords, ∀ r ∈ VG.Proof.MillerRabin.PPC64LE.Search.mpRanges w, d + 8 ≤ r.1 ∨ r.1 + r.2 ≤ d := by
   rw [hdrWords_eq]
@@ -142,7 +142,7 @@ theorem hdr_apart (w : Nat) :
   simp only [VG.Proof.MillerRabin.PPC64LE.Search.mpRanges, List.mem_cons, List.not_mem_nil, or_false] at hr hd
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp only [slot, hdrBytes, VG.Impl.MillerRabin.PPC64LE.aE] <;> omega
 
-/-- What `montPrep` writes lies within the working space. -/
+/-- What `montPrepWith` writes lies within the working space. -/
 theorem mp_within (w : Nat) :
     ∀ r ∈ VG.Proof.MillerRabin.PPC64LE.Search.mpRanges w, r.1 + r.2 ≤ 256 + 28 * (8 * (w + 2)) := by
   intro r hr
@@ -156,15 +156,19 @@ theorem tape_out {bits : Nat} {σ : State} (h : CIn bits σ) {i : Nat} (hi : i <
     simp only [Region.Contains, Offset.add_sub_cancel_left, BitVec.toNat_ofNat]
     rw [Nat.mod_eq_of_lt (by have := (σ.gpr .r6).isLt; omega)]; omega)
 
-/-- After `montPrep`: the blinded loop's context, no octets read, the tape,
-and memory changed only in the working space. -/
-theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
-    WP isa montPrep s fun v =>
+/-- After `montPrepFor`: the blinded loop's context, no octets read, the
+tape, and memory changed only in the working space. -/
+abbrev MCtx (bits : Nat) (σ s v : State) : Prop :=
       BCtx v (wsB σ) (keyWords bits) (words bits) (cand bits σ) (σ.gpr .r5) (σ.gpr .r6).toNat
         ((bits - 1) / 64) (topBits bits) (checks bits) ∧
       word v.mem (wsB σ) (8 * hUsed) = BitVec.ofNat 64 0 ∧
       Spec.Rsa.bytesAt v.mem (σ.gpr .r5) (σ.gpr .r6).toNat = tape σ ∧ v.sp = σ.sp ∧ v.rd = σ.rd ∧ v.wr = σ.wr ∧
-      Frame [⟨wsB σ, 8 * keyWords bits⟩, below σ.sp 176] s.mem v.mem := by
+      Frame [⟨wsB σ, 8 * keyWords bits⟩, below σ.sp 176] s.mem v.mem
+
+/-- `montPrepWith r2c`, for `r2c` computing `R² mod c` under `P`. -/
+theorem prepWith_ctx {r2c : Prog isa} {P : Nat → Nat → Prop} (hr2 : R2Ok r2c P) {bits : Nat} {σ s : State}
+    (h : BIn bits σ s) (hP : P (words bits) (cand bits σ)) :
+    WP isa (montPrepWith r2c) s (MCtx bits σ s) := by
   have e := h.env
   have hnw := e.hs.nowrap
   have hZ : 256 + 28 * (8 * (words bits + 2)) ≤ 8 * keyWords bits := e.hZ
@@ -172,7 +176,7 @@ theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
   have cin := h.cin
   obtain ⟨-, h3, hodd, hbl1⟩ := cand_facts h.hb cin
   have hch : checks bits < 2 ^ 63 := by rcases h.hb with rfl | rfl | rfl | rfl | rfl <;> decide
-  refine WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.montPrep_ok e h.cand hodd h3)
+  refine WP.mono (VG.Proof.MillerRabin.PPC64LE.Search.montPrepWith_ok hr2 e h.cand hodd h3 hP)
     fun v ⟨⟨ev, v0, vinv, _, _, v1, v9, v10, vE, vl, vO⟩, kv⟩ => ?_
   have hd : Hdr bits (σ.gpr .r3) (σ.gpr .r5) (σ.gpr .r6) v.mem :=
     h.hdr.keep fun d hdm => Frm.word_eq (fun x hx => vO x hx) (hdr_apart _ d hdm) (by
@@ -206,14 +210,32 @@ theorem montPrep_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
   exact ⟨bc, hd.used, htape, vsp, vrd, kv.wr.trans h.wr,
     (VG.Proof.Mont.Outs.frame vO fun r hr => Nat.le_trans (mp_within _ r hr) hZ).mono (by simp)⟩
 
-/-- No small prime divides: `montPrep` and the blinded Miller–Rabin loop. -/
+/-- `montPrepFor`: `montPrepHi` when the candidate's top word cannot be
+zero. -/
+theorem montPrepFor_ctx {bits : Nat} {σ s : State} (h : BIn bits σ s) :
+    WP isa (montPrepFor bits) s (MCtx bits σ s) := by
+  unfold montPrepFor
+  split
+  · rename_i hlt
+    obtain ⟨hlo, -⟩ := (VG.Proof.Dsa.bitLength_iff_bounds (by have := (shape_of h.hb).big; omega)).mp h.cin.bl
+    obtain ⟨-, -, hodd, -⟩ := cand_facts h.hb h.cin
+    have hw := h.env.hw
+    refine prepWith_ctx r2Hi_r2Ok h ?_
+    have hle : 2 ^ (64 * (words bits - 1)) ≤ 2 ^ (bits - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+    refine Nat.lt_of_le_of_ne (Nat.le_trans hle hlo) fun he => ?_
+    have h2 : 2 ^ (64 * (words bits - 1)) % 2 = 0 :=
+      Nat.mod_eq_zero_of_dvd ⟨2 ^ (64 * (words bits - 1) - 1), by rw [← Nat.pow_succ']; congr 1; omega⟩
+    omega
+  · exact prepWith_ctx r2_r2Ok h trivial
+
+/-- No small prime divides: `montPrepFor bits` and the blinded Miller–Rabin loop. -/
 theorem mr_ok (Ri : RoundImpl) {bits : Nat} {σ s : State} (h : BIn bits σ s)
     (hc : Spec.RsaKeyGen.obviouslyComposite bits (cand bits σ) = false) :
-    WP isa (.seq montPrep (VG.Impl.MillerRabin.PPC64LE.Blinded.millerRabin Ri.name Ri.code)) s (BOut bits σ s) := by
+    WP isa (.seq (montPrepFor bits) (VG.Impl.MillerRabin.PPC64LE.Blinded.millerRabin Ri.name Ri.code)) s (BOut bits σ s) := by
   have sh := shape_of h.hb
   have cin := h.cin
   obtain ⟨hbig, -, hodd, -⟩ := cand_facts h.hb cin
-  refine WP.seq (WP.mono (montPrep_ctx h) fun v ⟨bc, hu, htape, vsp, vrd, vwr, f1⟩ => ?_)
+  refine WP.seq (WP.mono (montPrepFor_ctx h) fun v ⟨bc, hu, htape, vsp, vrd, vwr, f1⟩ => ?_)
   refine WP.mono (millerRabin_ok Ri bc hu htape) fun t mo => ?_
   have hres : res bits σ = Spec.RsaKeyGen.loop (Spec.RsaKeyGen.mrStep (cand bits σ) (checks bits)
       (Spec.Rsa.splitTwos (cand bits σ - 1)).1 (Spec.Rsa.splitTwos (cand bits σ - 1)).2) (1, 0) (tape σ) := by
@@ -235,7 +257,7 @@ theorem bin_after_trial {bits : Nat} {σ s u : State} (h : BIn bits σ s) (um : 
 
 /-- The body. -/
 theorem body_ok (Ri : RoundImpl) {bits : Nat} {σ s : State} (h : BIn bits σ s) :
-    WP isa (body Ri.name Ri.code) s (BOut bits σ s) := by
+    WP isa (body bits Ri.name Ri.code) s (BOut bits σ s) := by
   obtain ⟨hbig, -, -, -⟩ := cand_facts h.hb h.cin
   unfold body
   refine WP.seq (WP.mono (trial_ok (c := cand bits σ) (T := σ.syms TrialTable32.symbol) h.env h.cand h.hdr.cnt

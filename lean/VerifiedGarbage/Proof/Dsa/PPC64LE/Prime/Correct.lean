@@ -165,7 +165,7 @@ theorem saved_body {bits : Nat} {σ s t : State} (h : CIn bits σ) (bo : BOut bi
 /-- The body and the exit, from the body's context. -/
 theorem tail_ok (Ri : RoundImpl) {bits : Nat} {σ s₂ : State} (h : CIn bits σ) (bin : BIn bits σ s₂)
     (sv₂ : Spill.Saved (σ.gpr .r3) (σ.write .r0 σ.lr).gpr savedSlots s₂.mem) (kept : Kept bits σ s₂.mem) :
-    WP isa (.seq (body Ri.name Ri.code) exit) s₂ (COut bits σ) := by
+    WP isa (.seq (body bits Ri.name Ri.code) exit) s₂ (COut bits σ) := by
   have hsz := h.size
   have hfw := h.fw
   refine WP.seq (WP.mono (body_ok Ri bin) fun t bo => ?_)
