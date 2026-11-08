@@ -1,5 +1,7 @@
 module
 
+-- separate module: the proofs, which need none of the variants' instances (`Instances.lean`), so that a change to them does not rebuild them
+
 public import VerifiedGarbage.Proof.AesGcm.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo
