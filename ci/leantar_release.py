@@ -16,8 +16,9 @@ archives to the release, with their `SHA256SUMS`. `ci/leantar/release.toml`
 pins the release and the SHA-256 of each archive: a download is used only if it
 matches. It is kept in `$XDG_CACHE_HOME/verified-garbage/leantar/<tag>/`
 (`~/.cache` by default), so only the first use downloads it, with
-`ci/github_release.py`: authenticated with `GH_TOKEN` if it is set, and tried
-again if it fails transiently.
+`ci/github_release.py`: authenticated with `GH_TOKEN` if it is set (from the
+release's public URL if the API refuses it), and tried again if it fails
+transiently.
 """
 
 import argparse

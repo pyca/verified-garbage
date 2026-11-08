@@ -108,6 +108,38 @@ class Download(unittest.TestCase):
         self.assertEqual(len(server.requests), 1)
         self.assertEqual(self.slept, [])
 
+    def test_refused_token_downloads_publicly(self):
+        # A spent rate limit, on the release or its asset: the release's
+        # public URL, without the token.
+        for errors in ([http_error(403)], [http_error(429)] * 5):
+            with self.subTest(errors=errors):
+                server = Server(errors)
+                self.assertEqual(self.download(server, token="secret"), b"data")
+                self.assertEqual(len(server.requests), len(errors) + 1)
+                public = server.requests[-1]
+                self.assertEqual(public.full_url,
+                                 "https://github.com/owner/repo/releases/download/v1/tool.tar.gz")
+                self.assertIsNone(public.get_header("Authorization"))
+                self.assertNotIn("Authorization", public.unredirected_hdrs)
+        server = Server()
+        serve = server.__call__
+
+        def refuse_asset(req):
+            if req.full_url == ASSET:
+                server.requests.append(req)
+                raise http_error(403)
+            return serve(req)
+        self.assertEqual(self.download(refuse_asset, tag="latest", token="secret"), b"data")
+        self.assertEqual([r.full_url for r in server.requests], [
+            f"{API}/repos/owner/repo/releases/latest", ASSET,
+            "https://github.com/owner/repo/releases/latest/download/tool.tar.gz"])
+
+    def test_other_api_error_not_downloaded_publicly(self):
+        server = Server([http_error(404)])
+        with self.assertRaises(urllib.error.HTTPError):
+            self.download(server, token="secret")
+        self.assertEqual(len(server.requests), 1)
+
     def test_other_error_not_retried(self):
         with self.assertRaises(ValueError):
             self.download(Server([ValueError("bad")]))
