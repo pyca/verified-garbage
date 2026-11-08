@@ -27,8 +27,10 @@ runs:
       run: |
         # Shows the background job's log as it is written, so a slow or
         # stuck download is visible while it happens. The job bounds every
-        # step it runs; the limit here only catches a job that died without
-        # writing its status.
+        # step it runs (at most about 1,340 s: five attempts of 15 s at
+        # elan and of 180 s at the toolchain, 60 s of waits between them,
+        # and 300 s listing the imports); the limit here only catches a
+        # job that died without writing its status.
         log="$RUNNER_TEMP/lean-setup.log"
         shown=0
         show() {
@@ -38,7 +40,7 @@ runs:
           [ "$n" -gt "$shown" ] && sed -n "$((shown + 1)),${n}p" "$log"
           shown=$n
         }
-        for _ in $(seq 1200); do
+        for _ in $(seq 1500); do
           show
           [ -f "$RUNNER_TEMP/lean-setup.status" ] && break
           sleep 1

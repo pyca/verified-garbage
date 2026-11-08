@@ -54,18 +54,22 @@ runs:
           # the status, or `lean-setup` would wait for it.
           set +e -o pipefail
           log() { echo "[lean-setup $(date -u +%T)] $*"; }
-          # Runs a download up to three times; the command bounds each
-          # attempt with `timeout` (which stops its whole process group),
-          # or a stalled connection would hang until `lean-setup` gives up.
+          # Runs a download up to five times, waiting 2, 4, 8 and 16 s
+          # between attempts: GitHub's release downloads sometimes fail
+          # with a 5xx for a few seconds, which attempts back to back all
+          # hit. The command bounds each attempt with `timeout` (which stops
+          # its whole process group), or a stalled connection would hang
+          # until `lean-setup` gives up.
           retry() {
             local what=$1 attempt status
             shift
-            for attempt in 1 2 3; do
+            for attempt in 1 2 3 4 5; do
               log "$what (attempt $attempt)"
               "$@"
               status=$?
               [ "$status" = 0 ] && { log "$what: done"; return 0; }
               [ "$status" = 124 ] && log "$what: timed out" || log "$what: failed ($status)"
+              [ "$attempt" = 5 ] || sleep $((2 ** attempt))
             done
             return 1
           }
