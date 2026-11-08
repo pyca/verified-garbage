@@ -18,6 +18,13 @@ def artifacts : List Artifact := [
     verified := Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verified
     features := ["aes","sha3"]
     written := [("scratch",0)]
-    writtenOk := Proof.AesCbc.AArch64.Decrypt.written }]
+    writtenOk := Proof.AesCbc.AArch64.Decrypt.written },
+  Spec.Cbc.aesDecryptApi.artifact VG.AArch64.target {
+    suffix := "_aes"
+    code := Impl.AesCbc.AArch64.Decrypt.codeAes
+    verified := Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes
+    features := ["aes"]
+    written := [("scratch",0)]
+    writtenOk := Proof.AesCbc.AArch64.Decrypt.writtenAes }]
 
 end VG.Artifacts.AesCbc.AArch64
