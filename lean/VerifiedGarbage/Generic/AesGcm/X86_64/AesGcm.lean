@@ -40,10 +40,10 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn)
-    stack := openToStackR v
+    code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
+    stack := openToStackF v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v)
-    spSafe := VG.X86_64.onFlag_spSafe (openToCodeF_spAll v) (OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll)
+    spSafe := openToCodeR_onFlag_spAll v
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
@@ -98,10 +98,10 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn
-    stack := 2728
-    verified := VG.Proof.AesGcm.Flag.openTo_keyed (Flag.openTo_of_base (OpenTo.openTo_verified v.impl.copyW (openFn v.impl)))
-    spSafe := OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll
+    code := openToCode v
+    stack := openToStack v
+    verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
+    spSafe := openToCode_spAll v
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
@@ -147,10 +147,10 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn)
-    stack := openToStackR16 v
+    code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
+    stack := openToStackF16 v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR16_onFlag v r)
-    spSafe := VG.X86_64.onFlag_spSafe (openToCodeF16_spAll v r) (OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll)
+    spSafe := openToCodeR16_onFlag_spAll v r
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
