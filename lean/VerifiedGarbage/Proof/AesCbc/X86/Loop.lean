@@ -269,7 +269,7 @@ theorem take_succ_blks (s₀ : State) {k : Nat} (hk : k < N s₀) :
 /-! ## The prologue -/
 
 theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
-    WP isa (.block setup) s₀ fun s => LInv M s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)) := by
+    WP isa (.block setup) s₀ fun s => (LInv M s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0))) ∧ s.mem = savedMem s₀ := by
   have hsc := hp.scr_fit
   rw [setup_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
@@ -297,7 +297,7 @@ theorem prologue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) :
     refine List.map_congr_left fun j hj => Proof.Cmac.bytesAt_frame f₀ (fun r hr => ?_) (by decide)
     simp only [List.mem_singleton] at hr; subst hr
     exact hp.data_scr.sub_left (UPre.data_sub (List.mem_range.mp hj))
-  refine wp_test fun s₅ f₅ z₅ => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  refine wp_test fun s₅ f₅ z₅ => WP.block_nil ⟨⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩, by rw [f₅.mem, u₄.mem, u₃.mem, hm₂]⟩
   · rw [f₅.gpr, u₄.other _ (by decide), u₃.gpr, Nat.mul_zero, add0']
   · rw [f₅.gpr, u₄.other _ (by decide), u₃.other _ (by decide), esp₂]
   · rw [f₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd]
@@ -367,6 +367,53 @@ theorem loop_ok {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State}
   · right
     refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h'⟩
 
+/-- What a step may change for a block function that writes only the first
+`b` bytes of the working space: the chaining value, the data, those bytes,
+the saved ciphertext block and the stack below `esp`. -/
+abbrev FB (s₀ : State) (b : Nat) : List Region :=
+  [ivR s₀, dataR s₀, ⟨(S s₀).setWidth 64, b⟩, ⟨(S s₀).setWidth 64 + BitVec.ofNat 64 2048, 16⟩, stkR s₀]
+
+/-- `BodyOk`, changing memory only within `FB s₀ b`. -/
+def BodyOkB (M : Mode) (body : Prog isa) (b : Nat) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k < N s₀ → ∀ {s : State}, LInv M s₀ k s →
+    WP isa body s fun s' => (LInv M s₀ (k + 1) s' ∧ s'.zf = some (decide (k + 1 = N s₀))) ∧
+      Frame (FB s₀ b) s.mem s'.mem
+
+theorem BodyOkB.ok {M : Mode} {body : Prog isa} {b : Nat} (h : BodyOkB M body b) : BodyOk M body := by
+  intro s₀ hp k hk s hs
+  exact (h hp hk hs).mono fun _ h => h.1
+
+theorem loop_okB {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b) {s₀ : State} (hp : UPre s₀)
+    {k : Nat} (hk : k < N s₀) {s : State} (h : LInv M s₀ k s) :
+    WP isa (.loop body .ne) s fun t => LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s.mem t.mem := by
+  refine WP.loop (M := isa) (body := body) (c := .ne)
+    (fun (n : Nat) (t : State) => ∃ j, n = N s₀ - j ∧ j < N s₀ ∧ LInv M s₀ j t ∧ Frame (FB s₀ b) s.mem t.mem)
+    ?_ (N s₀ - k) s ⟨k, rfl, hk, h, Frame.refl _ _⟩
+  rintro n t ⟨k, rfl, hk, h, hf⟩
+  refine WP.mono (hb hp hk h) fun s' ⟨⟨h', hz⟩, hf'⟩ => ?_
+  have ev : isa.eval .ne s' = some !decide (k + 1 = N s₀) := by
+    show VG.X86.eval .ne s' = _; rw [eval_ne, hz]; rfl
+  by_cases hz' : k + 1 = N s₀
+  · left
+    refine ⟨by rw [ev]; simp [hz'], ?_, hf.trans hf'⟩
+    rwa [← hz']
+  · right
+    refine ⟨by rw [ev]; simp [hz'], N s₀ - (k + 1), by omega, k + 1, rfl, by omega, h', hf.trans hf'⟩
+
+/-- No blocks, or `body`'s loop on all of them, changing memory only within
+`FB s₀ b`. -/
+theorem ends_mid_wpB {M : Mode} {body : Prog isa} {b : Nat} (hb : BodyOkB M body b) {s₀ : State}
+    (hp : UPre s₀) {s₁ : State} (h : LInv M s₀ 0 s₁) (hz : s₁.zf = some (decide (N s₀ = 0))) :
+    WP isa (.ite .e (.block []) (.loop body .ne)) s₁ fun t =>
+      LInv M s₀ (N s₀) t ∧ Frame (FB s₀ b) s₁.mem t.mem := by
+  have ev : isa.eval .e s₁ = some (decide (N s₀ = 0)) := by
+    show VG.X86.eval .e s₁ = _; rw [eval_e, hz]
+  by_cases hn : N s₀ = 0
+  · refine WP.ite true (by rw [ev]; simp [hn]) (fun _ => WP.block_nil ⟨?_, Frame.refl _ _⟩) (fun h => by cases h)
+    rw [hn]; exact h
+  · refine WP.ite false (by rw [ev]; simp [hn]) (fun h => by cases h) fun _ => ?_
+    exact loop_okB hb hp (by omega) h
+
 /-- No blocks, or `mid` on all of them. -/
 theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
     (hm : 0 < N s₀ → WP isa mid s₁ (LInv M s₀ (N s₀)))
@@ -413,7 +460,8 @@ theorem ret_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     · exact hp.ret_stk) (by decide)
 
 theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv M s₀ (N s₀) s) :
-    WP isa (.block (restore 5)) s fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' := by
+    WP isa (.block (restore 5)) s fun s' => (abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s') ∧
+      s'.mem = s.mem ∧ s'.gpr .esp = E s₀ ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   have hsc : (arg s₀ 5).toNat + 2176 ≤ 2 ^ 32 := hp.scr_fit
   have rdwr : s.rd ++ s.wr = [schR s₀, argsR s₀, ivR s₀, dataR s₀, scrR s₀] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
@@ -428,7 +476,9 @@ theorem epilogue_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {s : State} (h : 
   refine wp_arg (s₀ := s₀) h.esp (by rw [hrw]; exact hp.arg_in (by decide))
     (hp.arg_keep (UPre.big_of h.frame) (by decide)) fun s₁ u₁ => ?_
   refine Spill.restore_ofNat_ok saved saved_fits (by rw [u₁.gpr]; omega) saved_ne_eax (fun p hp' => ?_)
-    (fun p hp' => by rw [u₁.gpr, u₁.mem]; exact sl p.1 p.2 hp') fun s₂ r₂ => WP.block_nil ?_
+    (fun p hp' => by rw [u₁.gpr, u₁.mem]; exact sl p.1 p.2 hp') fun s₂ r₂ => WP.block_nil ⟨?_, by rw [r₂.mem, u₁.mem],
+      by rw [r₂.abi (by decide) (by decide) (by rw [u₁.other _ (by decide), h.esp]) .esp (by simp [calleeSaved])],
+      by rw [r₂.rd, u₁.rd], by rw [r₂.wr, u₁.wr]⟩
   · have hb := saved_bound p hp'
     rw [u₁.gpr, u₁.rd, u₁.wr, rdwr]
     exact ⟨scrR s₀, by simp, Offset.contains_base _ (by omega) (by omega)⟩
@@ -447,8 +497,9 @@ theorem ends_wp {M : Mode} {mid : Prog isa} {s₀ : State} (h0 : (modeX86 M).pre
     WP isa (.seq (.block setup) (.seq (.ite .e (.block []) mid) (.block (restore 5)))) s₀
       fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' := by
   have hp := UPre.of h0
-  exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, hz⟩ =>
-    WP.seq (WP.mono (ends_mid_wp (fun hn => hm hp hn h₁) h₁ hz) fun _ h₂ => epilogue_wp hp h₂))
+  exact WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨⟨h₁, hz⟩, _⟩ =>
+    WP.seq (WP.mono (ends_mid_wp (fun hn => hm hp hn h₁) h₁ hz) fun _ h₂ =>
+      (epilogue_wp hp h₂).mono fun _ h => h.1))
 
 theorem whole_wp {M : Mode} {body : Prog isa} (hb : BodyOk M body) {s₀ : State} (h0 : (modeX86 M).pre s₀) :
     WP isa (whole body) s₀ fun s' => abiPreserved s₀ s' ∧ (modeX86 M).post s₀ s' :=

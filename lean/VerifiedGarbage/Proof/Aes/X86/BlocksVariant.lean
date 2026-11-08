@@ -30,7 +30,9 @@ A `BlocksImpl` is what a function that encrypts and decrypts whole blocks
 with AES needs of them, so that its proof holds for every implementation:
 each is a variant of the interface `AesBlocks` on x86
 (`Variants/AesBlocks/X86/`), and each caller (in `Generic/AesBlocks/X86/`)
-is emitted once for each of them (see `TCB/Emit.lean`). Both functions are
+is emitted once for each of them (see `TCB/Emit.lean`). Each states how
+much of `scratch` its functions may write (`encWritten`, `decWritten`), so
+that its callers zero only that. Both functions are
 proven against the same contract, `Proof.Aes.blocksX86` (with
 `Spec.Aes.cipher` and `Spec.Aes.invCipher`), and make no calls. They come
 with the implementation of `vg_aes_expand_key` that goes with them (with
@@ -74,6 +76,19 @@ structure BlocksImpl where
     (Proof.Aes.blocksX86 Spec.Aes.invCipher).pub dec.code
   decNosp : NoSp dec.code
   decSpSafe : dec.code.all (fun i => !isa.writesSp i) = true
+  /-- `enc` writes no byte of `scratch` at offset `encWritten` or beyond:
+  its callers need to zero only the first `encWritten` bytes. -/
+  encWritten : Nat
+  encWrittenLe : encWritten ≤ 2048
+  encWrittenOk : ∀ s, (Proof.Aes.blocksX86 Spec.Aes.cipher).pre s → ∀ t s', Exec isa enc.code s t s' →
+    ∀ i, encWritten ≤ i → i < 2048 →
+      s'.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i)
+  /-- `dec` writes no byte of `scratch` at offset `decWritten` or beyond. -/
+  decWritten : Nat
+  decWrittenLe : decWritten ≤ 2048
+  decWrittenOk : ∀ s, (Proof.Aes.blocksX86 Spec.Aes.invCipher).pre s → ∀ t s', Exec isa dec.code s t s' →
+    ∀ i, decWritten ≤ i → i < 2048 →
+      s'.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i) = s.mem ((arg s 4).setWidth 64 + BitVec.ofNat 64 i)
   /-- What the names of its callers' instances end with (e.g. `_aesni`;
   nothing for the baseline implementation). -/
   suffix : String
@@ -105,6 +120,12 @@ def scalar : BlocksImpl where
   decCt := decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encWritten := 2048
+  encWrittenLe := Nat.le_refl _
+  encWrittenOk := fun _ _ _ _ _ _ h1 h2 => absurd h2 (Nat.not_lt.mpr h1)
+  decWritten := 2048
+  decWrittenLe := Nat.le_refl _
+  decWrittenOk := fun _ _ _ _ _ _ h1 h2 => absurd h2 (Nat.not_lt.mpr h1)
   suffix := ""
   features := []
   expand := Ctr32Impl.scalar.expand
@@ -128,6 +149,12 @@ def aesni : BlocksImpl where
   decCt := AesNi.decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
   decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encWritten := 0
+  encWrittenLe := Nat.zero_le _
+  encWrittenOk := AesNi.encryptBlocks_unwritten
+  decWritten := 240
+  decWrittenLe := by decide
+  decWrittenOk := AesNi.decryptBlocks_unwritten
   suffix := "_aesni"
   features := ["aes"]
   expand := Ctr32Impl.aesni.expand
