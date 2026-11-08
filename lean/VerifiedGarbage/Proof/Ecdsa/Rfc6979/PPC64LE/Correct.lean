@@ -145,7 +145,7 @@ theorem stageX_ok (hL : L.Ok) (hq : HOk P L) {u : State} (hc : Ctx L g lr m₀ u
   have hD : P.v.H.D = P.I.hashLen := P.len.symm
   have hdg : Spec.Sha256.bytesAt u.mem L.dg (min P.v.H.D P.Q) = (hBOf P L m₀).take (min P.v.H.D P.Q) := by
     rw [hc.dgBytes hL (by rw [← hD]; omega), hBOf, ← bytesAt_take _ _ (Nat.min_le_left _ _)]
-  exact WP.mono (prepX_ok hL hq.2 (by rw [← hD]) hc) fun u₁ ⟨hc₁, _, hx₁⟩ =>
+  exact WP.mono (prepX_ok hL hq.2.1 (by rw [← hD]) hc) fun u₁ ⟨hc₁, _, hx₁⟩ =>
     ⟨hc₁, by show Spec.Sha256.bytesAt _ _ _ = _; rw [hx₁, hdg]⟩
 
 theorem fHo_small (h : P.R.big = false) : (cfgOf P).fHo = fH := by
@@ -202,7 +202,7 @@ theorem stageH_ok (hL : L.Ok) (hq : HOk P L) {u₁ : State} (hc₁ : Ctx L g lr 
     rw [hm, List.take_of_length_le (by rw [hlB])] at hx₁
     rw [show (cfgOf P).prepH = (cfgOf P).prepC by
       simp only [Cfg.prepH, show (cfgOf P).big = true from hb, ite_true]]
-    refine WP.mono (prepC_ok hL hq.2 hb (by rw [← hD]) hc₁) fun u₂ ⟨hc₂, hf₂, hx₂⟩ => ⟨hc₂, ?_, ?_⟩
+    refine WP.mono (prepC_ok hL hq.2.1 hb (by rw [← hD]) hc₁) fun u₂ ⟨hc₂, hf₂, hx₂⟩ => ⟨hc₂, ?_, ?_⟩
     · show Spec.Sha256.bytesAt u₂.mem (L.B + BitVec.ofNat 64 (96 + (cfgOf P).fHo)) P.Q = _
       rw [fHo_big hb, bytesAt_frame hf₂ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -341,13 +341,13 @@ theorem result_eq {i : Nat} {t : State} (hx : Exit P L m₀ i t) :
 /-- The contract the code for `P`'s hash function is proven against, with
 `P`'s table and the functions `ns`' addresses public. -/
 abbrev rfcP (P : RfcHash) (ns : List String) : Contract isa :=
-  rfcPPC P.I 736 (tabFacts P.v P.f) ns
+  rfcPPC P.I 736 (tabFacts P.v P.f) ns P.R.C.cs
 
 /-- The layout of a call from `s`. -/
-abbrev layOf (P : RfcHash) (s : State) : Lay P.I.hashLen := lay P.I.hashLen P.I.ecdsa.curve.len P.v P.f s
+abbrev layOf (P : RfcHash) (s : State) : Lay P.I.hashLen := lay P.I.hashLen P.I.ecdsa.curve.len P.v P.f s P.R.C.cs
 
 theorem hok_lay (P : RfcHash) (s : State) : HOk P (layOf P s) :=
-  ⟨show P.I.ecdsa.curve.len = P.R.C.E.curve.len by rw [P.ecdsa], rfl, rfl⟩
+  ⟨show P.I.ecdsa.curve.len = P.R.C.E.curve.len by rw [P.ecdsa], ⟨rfl, rfl⟩, rfl⟩
 
 theorem freed_mem (n : Nat) (u : State) : (freed n u).mem = u.mem := rfl
 theorem freed_sp (n : Nat) (u : State) : (freed n u).sp = u.sp + BitVec.ofNat 64 n := rfl
