@@ -323,10 +323,15 @@ impl Key {
         }
         // The scratch space may hold the key schedule, the data and our
         // caller's registers: wipe the bytes the function's proved write
-        // bound (`scratch_written`) allows it to write, if any.
+        // bound (`scratch_written`) allows it to write, if any. On ARMv7
+        // each implementation leaves each byte of it unchanged or zero
+        // (`Proof/AesCbc/Arm/Wiped.lean`), so there is nothing to wipe.
+        #[cfg(not(target_arch = "arm"))]
         if scratch_written != 0 {
             zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
         }
+        #[cfg(target_arch = "arm")]
+        let _ = scratch_written;
         Ok(())
     }
 }
