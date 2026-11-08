@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.Rounds
+public import VerifiedGarbage.Proof.AesGcm.Flag
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Contract
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Callee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
@@ -265,6 +266,78 @@ def OpenFn.ofPrepared16 (f : Fn)
   CallFn.ofSpec f hv (fun _ h => openSpecR16_pre h)
     (fun _ _ h h' => openSpecR16_post h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 h')
     (fun _ _ h => openSpecR16_pub h) sp xd mx
+
+theorem openSpecF_pre {s : State} (h : openPreK CtxMode.flagged s) :
+    (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).pre s := by
+  sig_split h
+  rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
+  have a₂₈ := h
+  clear h
+  sig_pre [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
+    X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
+  sig_and_intros
+  all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
+    X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flagged, Proof.AesGcm.Flag.PreparedRepr,
+    VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+  all_goals first
+    | with_reducible assumption
+    | omega
+    | exact Or.inr a₂₈
+    | exact Or.inr a₂₈.2
+theorem openSpecF_post {s s' : State} (hR : rounds s)
+    (h : (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).post s s') :
+    Proof.AesGcm.openX86_64.post s s' := by
+  sig_post [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    Proof.AesGcm.Flag.openPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
+  exact h hR
+theorem openSpecF_pub {s₁ s₂ : State} (h : openPubK s₁ s₂)
+    (o₁ : CtxMode.flagged.ok s₁.mem (s₁.gpr .rdi)) (o₂ : CtxMode.flagged.ok s₂.mem (s₂.gpr .rdi)) :
+    (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).pub s₁ s₂ := by
+  have f₁ : Proof.AesGcm.Flag.flagLeak s₁.mem (s₁.gpr .rdi) = 0 := by
+    simp only [Proof.AesGcm.Flag.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₁.1
+  have f₂ : Proof.AesGcm.Flag.flagLeak s₂.mem (s₂.gpr .rdi) = 0 := by
+    simp only [Proof.AesGcm.Flag.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₂.1
+  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
+  have b₀ := a₈ 0 (by decide)
+  have b₁ := a₈ 1 (by decide)
+  have b₂ := a₈ 2 (by decide)
+  have b₃ := a₈ 3 (by decide)
+  sig_pub [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    Proof.AesGcm.Flag.openLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs]
+  sig_reduce [Proof.AesGcm.Flag.openRoundsContract, Proof.AesGcm.Flag.openSig, Proof.AesGcm.Flag.openSig,
+    Proof.AesGcm.Flag.openLeak, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range,
+    List.range.loop, Proof.AesGcm.arg]
+  simp only [Proof.AesGcm.arg, Proof.AesGcm.openLeak, Proof.AesGcm.rounds, X86_64.stackArg,
+    X86_64.stackArgAddr] at b₀ b₁ b₂ b₃ a₉
+  sig_and_intros
+  all_goals try simp only [f₁, f₂]
+  all_goals first | with_reducible assumption | trivial | exact congrArg (List.cons 0) a₉ |
+    (intro r hr; simp at hr)
+
+/-- `vg_aes_gcm_open_prepared` from its contract on the prepared key context,
+for one whose powers are present: the flag it may leak is the same, 0, in
+every call. -/
+def OpenFn.ofFlagged (f : Fn)
+    (hv : Verified X86_64.target f.code (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632))
+    (sp : f.code.all (fun i => !X86_64.isa.writesSp i) = true) (xd : f.code.x86_64Depth ≤ 2632)
+    (mx : f.code.allInstrs (fun i => !loadsMxcsr i) = true) : OpenFn CtxMode.flagged where
+  fn := f
+  ok s h := by
+    obtain ⟨t, s', he, ha, hp⟩ := hv.1 s (openSpecF_pre h)
+    exact ⟨t, s', he, ha, openSpecF_post h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1 hp⟩
+  ct s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hq e₁ e₂ :=
+    hv.2.1 s₁ s₂ t₁ t₂ s₁' s₂' (openSpecF_pre h₁) (openSpecF_pre h₂)
+      (openSpecF_pub hq h₁.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2
+        h₂.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2) e₁ e₂
+  sp := SpSafe.of_all sp
+  xd := xd
+  mx := mx
+  spAll := sp
 
 /-! ## The contract -/
 

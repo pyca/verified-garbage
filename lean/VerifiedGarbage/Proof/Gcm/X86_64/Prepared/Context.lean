@@ -27,7 +27,7 @@ def CtxMode.preparedN (n : Nat) (hn : 8 ≤ n ∧ n ≤ 24 := by decide) : CtxMo
   len := 1024
   ok := PowersN n
   ge := by decide
-  le := Nat.le_refl _
+  le := by decide
   frame {rs m m' p} hf hd hw h := by
     have hH : Spec.Gcm.ctxH m' p = Spec.Gcm.ctxH m p :=
       VG.Proof.Aes.X86_64.AesNi.blockAt_frame hf fun r hr =>
@@ -47,6 +47,21 @@ abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 /-- The key context of `vg_aes_gcm_prepare16`: its first 8 pairs, which the
 256-bit loops read. -/
 abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
+
+/-- The 1088-byte prepared key context of `vg_aes_gcm_prepare`
+(`Proof.AesGcm.Flag.PreparedRepr`) whose powers are present: its flag word is not 1,
+and it holds all 24 pairs. -/
+def CtxMode.flagged : CtxMode where
+  len := 1088
+  ok m p := m.readW (p + 1024) 64 ≠ 1 ∧ PowersN 24 m p
+  ge := by decide
+  le := by decide
+  frame {rs m m' p} hf hd hw h := by
+    refine ⟨?_, CtxMode.prepared.frame hf (fun r hr => (hd r hr).sub_left (Region.sub_prefix (by decide)))
+      (by show p.toNat + 1024 ≤ 2 ^ 64; omega) h.2⟩
+    rw [show (p + 1024 : Addr) = p + BitVec.ofNat 64 1024 from rfl,
+      hf.readW (r := ⟨p, 1088⟩) (Offset.contains_base _ (by decide) (by omega)) hd (by decide)]
+    exact h.1
 
 /-- The interleaved-loop precondition, with prepared powers. -/
 structure SPrePrepared (s₀ : State) (lo : Nat := 16) (n : Nat := 24) : Prop where
