@@ -15,54 +15,25 @@ The fork's release workflow builds it for each platform and attaches the
 archives to the release, with their `SHA256SUMS`. `ci/leantar/release.toml`
 pins the release and the SHA-256 of each archive: a download is used only if it
 matches. It is kept in `$XDG_CACHE_HOME/verified-garbage/leantar/<tag>/`
-(`~/.cache` by default), so only the first use downloads it. GitHub's release
-downloads now and then fail with a 5xx or a dropped connection, so a download
-that fails that way is tried again, after 2, 4, 8 and 16 seconds.
+(`~/.cache` by default), so only the first use downloads it, with
+`ci/github_release.py`: authenticated with `GH_TOKEN` if it is set, and tried
+again if it fails transiently.
 """
 
 import argparse
 import hashlib
-import http.client
 import io
 import os
 import platform
-import sys
 import tarfile
 import tempfile
 import time
 import tomllib
-import urllib.error
-import urllib.request
 from pathlib import Path
 
+import github_release
+
 RELEASE = Path(__file__).resolve().parent / "leantar" / "release.toml"
-# Seconds to wait before each retry of a download that failed transiently.
-BACKOFF = (2, 4, 8, 16)
-TIMEOUT = 60
-
-
-def urlopen(url):
-    return urllib.request.urlopen(url, timeout=TIMEOUT)
-
-
-def transient(e):
-    """Whether a download that failed with `e` may succeed if tried again."""
-    if isinstance(e, urllib.error.HTTPError):
-        return e.code == 429 or e.code >= 500
-    return isinstance(e, (urllib.error.URLError, http.client.HTTPException, OSError))
-
-
-def download(url, opener=urlopen, sleep=time.sleep):
-    """The bytes at `url`, retrying a transient failure after each `BACKOFF`."""
-    for delay in (*BACKOFF, None):
-        try:
-            with opener(url) as r:
-                return r.read()
-        except Exception as e:
-            if delay is None or not transient(e):
-                raise
-            print(f"{url}: {e}; retrying in {delay} s", file=sys.stderr)
-            sleep(delay)
 
 
 def target(system=None, machine=None):
@@ -96,9 +67,10 @@ def unpack_binary(data, name):
         return tar.extractfile(member).read()
 
 
-def fetch(rel=None, plat=None, cache=None, opener=urlopen, sleep=time.sleep):
+def fetch(rel=None, plat=None, cache=None, token=None, opener=github_release.urlopen,
+          sleep=time.sleep):
     """The path of the release's `leantar` for `plat`, downloaded and checked
-    once into `cache`."""
+    once into `cache`, authenticated with `token` if there is one."""
     rel = rel or release()
     plat = plat or target()
     tag = rel["tag"]
@@ -109,12 +81,10 @@ def fetch(rel=None, plat=None, cache=None, opener=urlopen, sleep=time.sleep):
     if dest.is_file():
         return dest
     name = f"leantar-{tag}-{plat}"
-    url = rel["url"].format(tag=tag, name=name)
-    print(f"Downloading {url}", file=sys.stderr)
-    data = download(url, opener, sleep)
+    data = github_release.download(rel["repo"], tag, f"{name}.tar.gz", token, opener, sleep)
     got = hashlib.sha256(data).hexdigest()
     if got != want:
-        raise SystemExit(f"{url}: SHA-256 {got}, but {RELEASE.name} pins {want}")
+        raise SystemExit(f"{name}.tar.gz: SHA-256 {got}, but {RELEASE.name} pins {want}")
     binary = unpack_binary(data, name)
     dest.parent.mkdir(parents=True, exist_ok=True)
     # Written beside it and renamed, so that a binary there is always whole.
@@ -127,7 +97,7 @@ def fetch(rel=None, plat=None, cache=None, opener=urlopen, sleep=time.sleep):
 
 def main(argv=None):
     argparse.ArgumentParser(description=__doc__.split("\n")[0]).parse_args(argv)
-    print(fetch())
+    print(fetch(token=os.environ.get("GH_TOKEN")))
 
 
 if __name__ == "__main__":

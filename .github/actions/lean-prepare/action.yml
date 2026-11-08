@@ -44,34 +44,54 @@ runs:
     # a step outlives it; the runner stops what is left at the end of the
     # job. Its output goes to a file: holding the step's open would make the
     # step wait for it.
+    #
+    # Elan's release is downloaded with the job's token
+    # (`ci/github_release.py`), since GitHub sometimes degrades
+    # unauthenticated downloads alone, and its `elan-init` run, as elan's
+    # installer script does. Only that download sees the token: elan, its
+    # installer and Lean are third-party code.
     - name: Install elan and list the imports, in the background
       shell: bash
       working-directory: lean
+      env:
+        RELEASE_TOKEN: ${{ github.token }}
       run: |
         echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+        token=$RELEASE_TOKEN
+        unset RELEASE_TOKEN
         (
           # Not `-e` (bash steps run with it): a failure must still write
           # the status, or `lean-setup` would wait for it.
           set +e -o pipefail
           log() { echo "[lean-setup $(date -u +%T)] $*"; }
-          # Runs a download up to five times, waiting 2, 4, 8 and 16 s
-          # between attempts: GitHub's release downloads sometimes fail
-          # with a 5xx for a few seconds, which attempts back to back all
-          # hit. The command bounds each attempt with `timeout` (which stops
-          # its whole process group), or a stalled connection would hang
-          # until `lean-setup` gives up.
+          # Runs a download up to three times, waiting 5 and then 10 s
+          # between attempts: GitHub's downloads sometimes fail for a few
+          # seconds, which attempts back to back all hit. The command bounds
+          # each attempt with `timeout` (which stops its whole process
+          # group), or a stalled connection would hang until `lean-setup`
+          # gives up.
           retry() {
             local what=$1 attempt status
             shift
-            for attempt in 1 2 3 4 5; do
+            for attempt in 1 2 3; do
               log "$what (attempt $attempt)"
               "$@"
               status=$?
               [ "$status" = 0 ] && { log "$what: done"; return 0; }
               [ "$status" = 124 ] && log "$what: timed out" || log "$what: failed ($status)"
-              [ "$attempt" = 5 ] || sleep $((2 ** attempt))
+              [ "$attempt" = 3 ] || sleep $((5 * attempt))
             done
             return 1
+          }
+          # `github_release.py` retries the download itself; 120 s bounds
+          # its attempts.
+          install_elan() {
+            local dir="$RUNNER_TEMP/elan-init"
+            rm -rf "$dir" && mkdir -p "$dir" &&
+            GH_TOKEN=$token timeout 120 python3 ../ci/github_release.py leanprover/elan latest \
+              "elan-$(uname -m)-unknown-linux-gnu.tar.gz" "$dir/elan.tar.gz" &&
+            tar -xzf "$dir/elan.tar.gz" -C "$dir" &&
+            "$dir/elan-init" -y --default-toolchain none
           }
           # Before downloading a toolchain, elan fetches the index of Lean's
           # releases (https://release.lean-lang.org, about 4 MB) with no
@@ -104,9 +124,9 @@ runs:
             return "$(cat "$done")"
           }
           {
-            retry "Installing elan" timeout 15 sh -c '
-              curl -sSfL --connect-timeout 20 https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh \
-                | sh -s -- -y --default-toolchain none' &&
+            log "Installing elan" &&
+            { install_elan || { log "Installing elan: failed"; false; }; } &&
+            log "Installing elan: done" &&
             retry "Installing $(cat lean-toolchain)" install_toolchain "$(cat lean-toolchain)" &&
             log "Listing the imports" &&
             # Every module the Lean files import from outside this project
