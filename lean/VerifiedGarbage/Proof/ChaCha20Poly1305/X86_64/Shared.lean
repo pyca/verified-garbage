@@ -206,25 +206,43 @@ theorem flags_pre (enc : Bool) {s t : State} (h : FlagsOnly s t)
       (pre := Curry.const (fun _ => True) _) (post := Spec.ChaCha20Poly1305.sealPost 64)
       (wa := true) (leak := none) (by decide) h hp
 
+theorem flags_post_sig {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s t z : State}
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (h : FlagsOnly s t)
+    (hp : (sig.contract abi pre post wa stack leak).post t z) :
+    (sig.contract abi pre post wa stack leak).post s z := by
+  rw [post_args hk] at hp ⊢
+  simpa only [flags_args h, h.mem] using hp
+
+theorem flags_pub_sig {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)}
+    {post : sig.Post abi.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s₁ s₂ t₁ t₂ : State}
+    (hk : 6 ≤ (sig.words abi.ptrBits).length) (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
+    (hp : (sig.contract abi pre post wa stack leak).pub s₁ s₂) :
+    (sig.contract abi pre post wa stack leak).pub t₁ t₂ := by
+  rw [pubL_args hk] at hp ⊢
+  simpa only [flags_args h₁, flags_args h₂, h₁.rsp, h₂.rsp, h₁.mem, h₂.mem] using hp
+
 theorem flags_post (enc : Bool) {s t z : State} (h : FlagsOnly s t)
     (hp : (contract enc 1768).post t z) : (contract enc 1768).post s z := by
   cases enc
-  · simp only [contract, Bool.false_eq_true, ↓reduceIte] at hp ⊢
-    rw [Spec.ChaCha20Poly1305.openZeroContract, post_args (by decide)] at hp ⊢
-    simpa only [flags_args h, h.mem] using hp
-  · simp only [contract, ↓reduceIte] at hp ⊢
-    rw [Spec.ChaCha20Poly1305.sealContract, post_args (by decide)] at hp ⊢
-    simpa only [flags_args h, h.mem] using hp
+  · exact flags_post_sig (sig := Spec.ChaCha20Poly1305.openSig)
+      (pre := Curry.const (fun _ => True) _) (post := Spec.ChaCha20Poly1305.openZeroPost 64)
+      (wa := true) (stack := 1768) (leak := some (Spec.ChaCha20Poly1305.openLeak 64)) (by decide) h hp
+  · exact flags_post_sig (sig := Spec.ChaCha20Poly1305.sealSig)
+      (pre := Curry.const (fun _ => True) _) (post := Spec.ChaCha20Poly1305.sealPost 64)
+      (wa := true) (stack := 1768) (leak := none) (by decide) h hp
 
 theorem flags_pub (enc : Bool) {s₁ s₂ t₁ t₂ : State} (h₁ : FlagsOnly s₁ t₁) (h₂ : FlagsOnly s₂ t₂)
     (hp : (contract enc 1768).pub s₁ s₂) : (contract enc 1768).pub t₁ t₂ := by
   cases enc
-  · simp only [contract, Bool.false_eq_true, ↓reduceIte] at hp ⊢
-    rw [Spec.ChaCha20Poly1305.openZeroContract, pubL_args (by decide)] at hp ⊢
-    simpa only [flags_args h₁, flags_args h₂, h₁.rsp, h₂.rsp, h₁.mem, h₂.mem] using hp
-  · simp only [contract, ↓reduceIte] at hp ⊢
-    rw [Spec.ChaCha20Poly1305.sealContract, pubL_args (by decide)] at hp ⊢
-    simpa only [flags_args h₁, flags_args h₂, h₁.rsp, h₂.rsp, h₁.mem, h₂.mem] using hp
+  · exact flags_pub_sig (sig := Spec.ChaCha20Poly1305.openSig)
+      (pre := Curry.const (fun _ => True) _) (post := Spec.ChaCha20Poly1305.openZeroPost 64)
+      (wa := true) (stack := 1768) (leak := some (Spec.ChaCha20Poly1305.openLeak 64)) (by decide) h₁ h₂ hp
+  · exact flags_pub_sig (sig := Spec.ChaCha20Poly1305.sealSig)
+      (pre := Curry.const (fun _ => True) _) (post := Spec.ChaCha20Poly1305.sealPost 64)
+      (wa := true) (stack := 1768) (leak := none) (by decide) h₁ h₂ hp
 
 theorem pub_len (enc : Bool) {s t : State} (h : (contract enc 1768).pub s t) :
     s.gpr .r9 = t.gpr .r9 := by
@@ -240,24 +258,31 @@ theorem pub_len (enc : Bool) {s t : State} (h : (contract enc 1768).pub s t) :
     change (s.gpr .r9).setWidth 64 = (t.gpr .r9).setWidth 64 at hh
     simpa only [BitVec.setWidth_eq] using hh
 
-/-- A public length choice between two framed implementations of the same API. -/
-theorem choose (enc : Bool) {b : List Instr} {p : Addr → Bool} {a c : Prog isa}
-    (ha : Verified target a (contract enc 1768)) (hc : Verified target c (contract enc 1768))
+/-- A public length choice between two framed implementations of the same
+contract `k`, which the comparison (changing only the flags, `rax` and
+`r10`) keeps, and whose public data includes the length, `r9`. -/
+theorem chooseK {k : Contract isa}
+    (hpre : ∀ s t, FlagsOnly s t → k.pre s → k.pre t)
+    (hpost : ∀ s t z, FlagsOnly s t → k.post t z → k.post s z)
+    (hpub : ∀ s₁ s₂ t₁ t₂, FlagsOnly s₁ t₁ → FlagsOnly s₂ t₂ → k.pub s₁ s₂ → k.pub t₁ t₂)
+    (hlen : ∀ s t, k.pub s t → s.gpr .r9 = t.gpr .r9) (hsat : ∃ s, k.pre s)
+    {b : List Instr} {p : Addr → Bool} {a c : Prog isa}
+    (ha : Verified target a k) (hc : Verified target c k)
     (hb : ∀ s, WP isa (.block b) s fun u => isa.eval .b u = some (p (s.gpr .r9)) ∧ FlagsOnly s u)
     (ht : ∀ i ∈ b, ∀ s, isa.addrs i s = []) :
-    Verified target (.seq (.block b) (Code.iteCold .b a c)) (contract enc 1768) := by
+    Verified target (.seq (.block b) (Code.iteCold .b a c)) k := by
   have cmp (s : State) : ∃ u, execBlock isa b s = some (u, []) ∧
       isa.eval .b u = some (p (s.gpr .r9)) ∧ FlagsOnly s u := by
     obtain ⟨t, u, he, hp⟩ := hb s
     have e := Exec.block_eq (T := target) he
     have hn := execBlock_trace_nil ht e
     exact ⟨u, hn ▸ e, hp⟩
-  refine Verified.entryBranch (p := fun s => p (s.gpr .r9)) (fun _ => []) ha hc ?_ ?_ (sat enc)
+  refine Verified.entryBranch (p := fun s => p (s.gpr .r9)) (fun _ => []) ha hc ?_ ?_ hsat
   · intro s hs
     obtain ⟨u, he, hp, hf⟩ := cmp s
-    exact ⟨u, he, hp, fun _ => ⟨flags_pre enc hf hs,
-      fun _ hA hP => ⟨hf.abi hA, flags_post enc hf hP⟩⟩,
-      fun _ => ⟨flags_pre enc hf hs, fun _ hA hP => ⟨hf.abi hA, flags_post enc hf hP⟩⟩⟩
+    exact ⟨u, he, hp, fun _ => ⟨hpre _ _ hf hs,
+      fun _ hA hP => ⟨hf.abi hA, hpost _ _ _ hf hP⟩⟩,
+      fun _ => ⟨hpre _ _ hf hs, fun _ hA hP => ⟨hf.abi hA, hpost _ _ _ hf hP⟩⟩⟩
   · intro s t u v _ _ hp eu ev
     obtain ⟨u', eu', _, hf⟩ := cmp s
     obtain ⟨v', ev', _, hg⟩ := cmp t
@@ -265,8 +290,17 @@ theorem choose (enc : Bool) {b : List Instr} {p : Addr → Bool} {a c : Prog isa
     have ef := Option.some.inj (ev.symm.trans ev')
     obtain rfl := (Prod.mk.inj ee).1
     obtain rfl := (Prod.mk.inj ef).1
-    exact ⟨rfl, congrArg p (pub_len enc hp), fun _ => flags_pub enc hf hg hp,
-      fun _ => flags_pub enc hf hg hp⟩
+    exact ⟨rfl, congrArg p (hlen _ _ hp), fun _ => hpub _ _ _ _ hf hg hp,
+      fun _ => hpub _ _ _ _ hf hg hp⟩
+
+/-- A public length choice between two framed implementations of the same API. -/
+theorem choose (enc : Bool) {b : List Instr} {p : Addr → Bool} {a c : Prog isa}
+    (ha : Verified target a (contract enc 1768)) (hc : Verified target c (contract enc 1768))
+    (hb : ∀ s, WP isa (.block b) s fun u => isa.eval .b u = some (p (s.gpr .r9)) ∧ FlagsOnly s u)
+    (ht : ∀ i ∈ b, ∀ s, isa.addrs i s = []) :
+    Verified target (.seq (.block b) (Code.iteCold .b a c)) (contract enc 1768) :=
+  chooseK (fun _ _ hf hs => flags_pre enc hf hs) (fun _ _ _ hf hP => flags_post enc hf hP)
+    (fun _ _ _ _ hf hg hp => flags_pub enc hf hg hp) (fun _ _ hp => pub_len enc hp) (sat enc) ha hc hb ht
 
 /-- The dispatch tests access no memory. -/
 theorem small_trace (lim : Nat) : ∀ i ∈ Impl.ChaCha20Poly1305.X86_64.Stitch.smallTest lim,
