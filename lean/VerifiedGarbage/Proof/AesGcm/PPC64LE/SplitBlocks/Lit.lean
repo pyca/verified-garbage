@@ -17,6 +17,5 @@ materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.head
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.rest
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decRest
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.encrypt
-materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decrypt
 materialize_code Impl.AesGcm.PPC64LE.SplitBlocks.decryptTo
 end VG

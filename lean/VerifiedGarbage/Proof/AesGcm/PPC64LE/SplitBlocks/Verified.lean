@@ -126,16 +126,6 @@ theorem encrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vp
   exact ⟨hp.out,hp.counter,hp.y⟩
 
 
-theorem decrypt_correct [VG.Proof.Gcm.PPC64LE.GhashLaw] [VG.Proof.Gcm.PPC64LE.Vpmsum.FoldLaw]
-    (s : State) (hs : (Proof.Gcm.decryptBlocksSplitContract PPC64LE.abi).pre s) :
-    ∃ tr t, Exec isa Impl.AesGcm.PPC64LE.SplitBlocks.decrypt s tr t ∧ abiPreserved s t ∧
-      (Proof.Gcm.decryptBlocksSplitContract PPC64LE.abi).post s t := by
-  obtain ⟨tr,t,he,hp⟩ := crypt_wp true s hs
-  refine ⟨tr,t,he,⟨hp.saved,Exec.sp he,hp.lr⟩,?_⟩
-  sig_eval [Proof.Gcm.decryptBlocksSplitContract,Proof.Gcm.encryptBlocksSplitSig,Proof.Gcm.decryptBlocksSplitPost,
-    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop]
-  exact ⟨hp.out,hp.counter,hp.y⟩
-
 theorem toArgs_ok (s : State) :
     WP isa (.block Impl.AesGcm.PPC64LE.SplitBlocks.toArgs) s (· = Contract.toArgsState s) := by
   apply WP.of_runBlock

@@ -115,13 +115,10 @@ def cryptOf (dec : Bool) : Prog isa := .ite (.zero .d .r10) (.block [])
 /-- `vg_aes_gcm_encrypt_blocks_split`. -/
 def encrypt : Prog isa := cryptOf false
 
-/-- `vg_aes_gcm_decrypt_blocks_split`: the same, decrypting, and hashing
-the ciphertext it reads. -/
-def decrypt : Prog isa := cryptOf true
-
 /-- `vg_aes_gcm_decrypt_blocks_to(ctx, rounds, state, src, n, dst, dst_n,
-scratch)`: `decrypt` with every block in the source and its eight arguments
-in registers, moved to `decrypt`'s: the hash accumulator at `state` and the
+scratch)`: `encrypt`'s body decrypting, and hashing the ciphertext it
+reads, with every block in the source and its eight arguments in registers,
+moved to `encrypt`'s: the hash accumulator at `state` and the
 counter block at `state + 32`, `src_n = n`, and `scratch` in `r11`. -/
 def toArgs : List Instr :=
  [mov .r11 .r10,mov .r10 .r7,mov .r9 .r8,mov .r8 .r7,mov .r7 .r6,mov .r6 .r5,.addi .r5 .r5 32]
