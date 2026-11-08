@@ -69,6 +69,8 @@ structure Layout (K : TCombCfg) : Prop where
   al : K.zero % 4 = 0 ∧ K.neg % 4 = 0
   negApart : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z, K.zero], K.neg + 8 * K.L.M.n ≤ x ∨ x + 8 * K.L.M.n ≤ K.neg
   zeroApart : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], K.zero + 8 * K.L.M.n ≤ x ∨ x + 8 * K.L.M.n ≤ K.zero
+  /-- The entry is selected to the point functions' `Q`. -/
+  qAt : K.qBase = qAt K.L.M.n
 
 /-- What the comb writes: `R`, `-y`, and the point functions' slots and own
 working space (with the field functions' own working space in it). -/
@@ -110,8 +112,9 @@ theorem Layout.loop_bounded {K : TCombCfg} (h : Layout K) : ∀ r ∈ loopWrites
     exact Nat.le_trans h2 (h.bounded t ht)
 
 /-- The point functions' slots, by layout. -/
-theorem Q_eq (K : TCombCfg) : K.Q = ⟨qAt K.L.M.n, qAt K.L.M.n + elemBytes K.L.M.n,
-    qAt K.L.M.n + 2 * elemBytes K.L.M.n⟩ := rfl
+theorem Q_eq {K : TCombCfg} (h : Layout K) : K.Q = ⟨qAt K.L.M.n, qAt K.L.M.n + elemBytes K.L.M.n,
+    qAt K.L.M.n + 2 * elemBytes K.L.M.n⟩ := by
+  simp only [TCombCfg.Q, ptAt, h.qAt]
 theorem P_eq (K : TCombCfg) : K.P = ⟨pAt K.L.M.n, pAt K.L.M.n + elemBytes K.L.M.n,
     pAt K.L.M.n + 2 * elemBytes K.L.M.n⟩ := rfl
 theorem O_eq (K : TCombCfg) : K.O = ⟨oAt K.L.M.n, oAt K.L.M.n + elemBytes K.L.M.n,
@@ -1117,7 +1120,7 @@ theorem q_lay {K : TCombCfg} (h : Layout K) :
       own K.L.M.n + 64 * K.L.M.n = 4096 ∧ b3At K.L.M.n = aAt K.L.M.n + 8 * K.L.M.n ∧
       ownAt K.L.M.n = aAt K.L.M.n + 16 * K.L.M.n ∧ K.Q.x % 4 = 0 := by
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, ho, -, h8⟩ := lay_nums h.point.k3 h.point.k6
-  simp only [TCombCfg.Q, ptAt]
+  simp only [TCombCfg.Q, ptAt, h.qAt]
   omega
 
 /-- `y = -y` if the digit is negative: `-y` by the field's subtraction from
@@ -1344,9 +1347,9 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
     simp only [Bool.false_eq_true, ↓reduceIte, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq]
     refine ⟨by rw [px]; exact lx, by rw [py]; exact ly, by rw [pz]; exact lz, ?_, ?_, ?_, ?_, ?_⟩
-    · have e := other K.Q.x (by simp); rw [Q_eq] at e; rw [e]; exact lqx
-    · have e := other K.Q.y (by simp); rw [Q_eq] at e; rw [e]; exact lqy
-    · have e := other K.Q.z (by simp); rw [Q_eq] at e; rw [e]; exact lqz
+    · have e := other K.Q.x (by simp); rw [Q_eq h] at e; rw [e, ← congrArg Pt.x (Q_eq h)]; exact lqx
+    · have e := other K.Q.y (by simp); rw [Q_eq h] at e; rw [e, ← congrArg Pt.y (Q_eq h)]; exact lqy
+    · have e := other K.Q.z (by simp); rw [Q_eq h] at e; rw [e, ← congrArg Pt.z (Q_eq h)]; exact lqz
     · rw [other _ (by simp)]; exact la
     · rw [other _ (by simp)]; exact lb
   refine WP.seq (WP.mono (ptCallAt_ok (S := K.F) (a0 := false) hn hm hM hodd hk3 hk6 false wu hltu)
@@ -1406,9 +1409,9 @@ theorem add_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} [NeZero m]
     have ox := other K.Q.x (by simp)
     have oy := other K.Q.y (by simp)
     have oz := other K.Q.z (by simp)
-    rw [Q_eq] at ox oy oz
+    rw [Q_eq h] at ox oy oz
     dsimp only at ox oy oz
-    rw [Q_eq]
+    rw [Q_eq h]
     dsimp only
     rw [oa, ob, ox, oy, oz]
 
