@@ -2,23 +2,6 @@
 //! The tables of functions of the verified functions for `arm` (`Artifact.tables`).
 #![allow(dead_code, unused_imports)]
 
-/// A table of functions of the interface `Hash` (`VG.FnTable`): the addresses of its 3 functions, then its 2 words of data. Only the statics of this module are of this type.
-#[repr(C)]
-pub struct Hash {
-    fns: [*const (); 3],
-    data: [usize; 2],
-}
-
-// SAFETY: a `Hash` is immutable, and the functions it holds the addresses of may be called from any thread.
-unsafe impl Sync for Hash {}
-
-impl Hash {
-    /// A pointer to the table's words, as the verified functions that take it read them.
-    pub const fn as_ptr(&'static self) -> *const [usize; 5] {
-        core::ptr::from_ref(self).cast()
-    }
-}
-
 /// A table of functions of the interface `Hmac` (`VG.FnTable`): the addresses of its 3 functions, then its 3 words of data. Only the statics of this module are of this type.
 #[repr(C)]
 pub struct Hmac {
@@ -32,6 +15,23 @@ unsafe impl Sync for Hmac {}
 impl Hmac {
     /// A pointer to the table's words, as the verified functions that take it read them.
     pub const fn as_ptr(&'static self) -> *const [usize; 6] {
+        core::ptr::from_ref(self).cast()
+    }
+}
+
+/// A table of functions of the interface `Hash` (`VG.FnTable`): the addresses of its 3 functions, then its 2 words of data. Only the statics of this module are of this type.
+#[repr(C)]
+pub struct Hash {
+    fns: [*const (); 3],
+    data: [usize; 2],
+}
+
+// SAFETY: a `Hash` is immutable, and the functions it holds the addresses of may be called from any thread.
+unsafe impl Sync for Hash {}
+
+impl Hash {
+    /// A pointer to the table's words, as the verified functions that take it read them.
+    pub const fn as_ptr(&'static self) -> *const [usize; 5] {
         core::ptr::from_ref(self).cast()
     }
 }
@@ -52,38 +52,6 @@ impl MdHash {
         core::ptr::from_ref(self).cast()
     }
 }
-
-#[rustfmt::skip]
-mod vg_hash_md5;
-pub use vg_hash_md5::VG_HASH_MD5;
-
-#[rustfmt::skip]
-mod vg_hash_sha1;
-pub use vg_hash_sha1::VG_HASH_SHA1;
-
-#[rustfmt::skip]
-mod vg_hash_sha224;
-pub use vg_hash_sha224::VG_HASH_SHA224;
-
-#[rustfmt::skip]
-mod vg_hash_sha256;
-pub use vg_hash_sha256::VG_HASH_SHA256;
-
-#[rustfmt::skip]
-mod vg_hash_sha384;
-pub use vg_hash_sha384::VG_HASH_SHA384;
-
-#[rustfmt::skip]
-mod vg_hash_sha512;
-pub use vg_hash_sha512::VG_HASH_SHA512;
-
-#[rustfmt::skip]
-mod vg_hash_sha512_224;
-pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
-
-#[rustfmt::skip]
-mod vg_hash_sha512_256;
-pub use vg_hash_sha512_256::VG_HASH_SHA512_256;
 
 #[rustfmt::skip]
 mod vg_hmac_md5;
@@ -116,6 +84,38 @@ pub use vg_hmac_sha512_224::VG_HMAC_SHA512_224;
 #[rustfmt::skip]
 mod vg_hmac_sha512_256;
 pub use vg_hmac_sha512_256::VG_HMAC_SHA512_256;
+
+#[rustfmt::skip]
+mod vg_hash_md5;
+pub use vg_hash_md5::VG_HASH_MD5;
+
+#[rustfmt::skip]
+mod vg_hash_sha1;
+pub use vg_hash_sha1::VG_HASH_SHA1;
+
+#[rustfmt::skip]
+mod vg_hash_sha224;
+pub use vg_hash_sha224::VG_HASH_SHA224;
+
+#[rustfmt::skip]
+mod vg_hash_sha256;
+pub use vg_hash_sha256::VG_HASH_SHA256;
+
+#[rustfmt::skip]
+mod vg_hash_sha384;
+pub use vg_hash_sha384::VG_HASH_SHA384;
+
+#[rustfmt::skip]
+mod vg_hash_sha512;
+pub use vg_hash_sha512::VG_HASH_SHA512;
+
+#[rustfmt::skip]
+mod vg_hash_sha512_224;
+pub use vg_hash_sha512_224::VG_HASH_SHA512_224;
+
+#[rustfmt::skip]
+mod vg_hash_sha512_256;
+pub use vg_hash_sha512_256::VG_HASH_SHA512_256;
 
 #[rustfmt::skip]
 mod vg_md_hash_md5;

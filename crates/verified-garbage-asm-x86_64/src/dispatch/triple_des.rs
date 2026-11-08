@@ -26,7 +26,7 @@ pub unsafe fn vg_triple_des_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.TripleDes.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_encrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_encrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_triple_des_ecb_encrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_encrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_ENCRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -79,7 +79,7 @@ pub unsafe fn vg_triple_des_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.TripleDes.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_triple_des_ecb_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_triple_des_ecb_decrypt_avx512` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX512_FEATURES`); `vg_triple_des_ecb_decrypt_avx2` if the CPU supports its features (`VG_TRIPLE_DES_ECB_DECRYPT_AVX2_FEATURES`); or else `vg_triple_des_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

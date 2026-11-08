@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPkcs1Enc.decryptContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the ciphertext, the private key, the validity of the padding, the length of the message or which message is returned.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pkcs1_decrypt_sha256_sha2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHA2_FEATURES`); or else `vg_rsa_pkcs1_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_decrypt_sha256_sha2` if the CPU supports its features (`VG_RSA_PKCS1_DECRYPT_SHA256_SHA2_FEATURES`); or else `vg_rsa_pkcs1_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

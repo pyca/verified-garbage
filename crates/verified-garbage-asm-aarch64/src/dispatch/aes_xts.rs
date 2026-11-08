@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_encrypt_unit_aes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES`); or else `vg_aes_xts_encrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_encrypt_unit_aes` if the CPU supports its features (`VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES`); or else `vg_aes_xts_encrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -60,7 +60,7 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(_dit: verified_garbage_cpu::Dit<'_>, 
 ///
 /// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_xts_decrypt_unit_aes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES`); or else `vg_aes_xts_decrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_xts_decrypt_unit_aes` if the CPU supports its features (`VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES`); or else `vg_aes_xts_decrypt_unit`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

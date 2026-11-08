@@ -106,13 +106,15 @@ instructions in an ISA model) go in their own PR before either.
    new implementation is a new element of its interface's list, and its
    callers follow.
    The emitter writes each function's dispatcher, `<name>_auto` (in
-   `crate::arch::dispatch::<module>`), which
-   tries its implementations in the order `Dispatch.lean` ranks their
-   suffixes on the target (a suffix of several parts by the rank of each
-   part's): a variant with a suffix it does not rank yet fails the
-   emitter, so rank it there, best first (`VG.Rust.Rank`). Extra
-   features or a `vendor` it is chosen only with go in its registration
-   (`Registration.extra`, `Registration.vendor`).
+   `crate::arch::dispatch::<module>`), which tries its implementations (the
+   artifacts of its `Api`, all in one registration file) in the order that
+   file lists them: so list them best first, and put a new variant in its
+   interface's list where it ranks, which orders its callers' instances
+   too (those of a caller of several interfaces by the first list, then the
+   next). One the dispatcher would never choose (it needs every feature of
+   one before it, or more) fails the emitter. Extra features or a `vendor`
+   it is chosen only with go in its registration (`Registration.extra`,
+   `Registration.vendor`).
    Registration files (`Artifacts/`) are reviewed by hand, so they only
    bind: no theorems, no tactic proofs beyond the defaults (not even a
    `(by decide)` argument), no definitions but those of its artifacts, and

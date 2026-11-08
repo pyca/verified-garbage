@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaPss.signTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pss_sign_crt_ifma` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES`); `vg_rsa_pss_sign_crt_adx` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_ADX_FEATURES`); or else `vg_rsa_pss_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_sign_crt_ifma` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES`); `vg_rsa_pss_sign_crt_adx` if the CPU supports its features (`VG_RSA_PSS_SIGN_CRT_ADX_FEATURES`); or else `vg_rsa_pss_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -82,7 +82,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
 ///
 /// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_pss_verify_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_pss_verify_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_pss_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_verify_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_pss_verify_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_pss_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

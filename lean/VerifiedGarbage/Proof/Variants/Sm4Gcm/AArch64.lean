@@ -13,7 +13,8 @@ def aes : Proof.Sm4Gcm.AArch64.GcmVariant := ⟨.aes⟩
 def scalar : Proof.Sm4Gcm.AArch64.GcmVariant := ⟨.scalar⟩
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [aes, scalar]
 
 end VG.Proof.Variants.Sm4Gcm.AArch64

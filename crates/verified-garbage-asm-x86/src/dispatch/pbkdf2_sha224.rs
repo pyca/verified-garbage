@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Hmac.Instance.pbkdf2Contract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers, the lengths and `c` may affect timing, not the password, the salt or the key.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_pbkdf2_hmac_sha224_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES`); or else `vg_pbkdf2_hmac_sha224`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_pbkdf2_hmac_sha224_shani` if the CPU supports its features (`VG_PBKDF2_HMAC_SHA224_SHANI_FEATURES`); or else `vg_pbkdf2_hmac_sha224`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// The function may overwrite the arguments on the stack, as the calling convention lets it.
 ///

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.EcKey.Instance.compressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_brainpoolp384r1_compress_public_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_EC_BRAINPOOLP384R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES`); or else `vg_ec_brainpoolp384r1_compress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ec_brainpoolp384r1_compress_public_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_EC_BRAINPOOLP384R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES`); or else `vg_ec_brainpoolp384r1_compress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -57,7 +57,7 @@ pub unsafe fn vg_ec_brainpoolp384r1_compress_public_key_auto(_dit: verified_garb
 ///
 /// Contract: `VG.Spec.EcKey.Instance.decompressPublicKeyContract`. The input is public: timing may depend on the pointers and the contents of `public`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ec_brainpoolp384r1_decompress_public_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES`); or else `vg_ec_brainpoolp384r1_decompress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_ec_brainpoolp384r1_decompress_public_key_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_EC_BRAINPOOLP384R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES`); or else `vg_ec_brainpoolp384r1_decompress_public_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

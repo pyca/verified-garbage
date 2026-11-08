@@ -2,36 +2,28 @@
 //! The dispatchers of the verified `rsa` functions for `aarch64`
 //! (`crate::rsa`, `VG.Rust.dispatcher`).
 
-/// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
+/// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
 ///
-/// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
+/// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
 ///
-/// It runs `vg_rsa_check_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs `vg_rsa_public_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
 ///
 /// # Safety
 ///
+/// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
 /// * `n` must be valid for reads of `n_len` bytes.
-/// * `e` must be valid for reads of `e_len` bytes.
-/// * `d` must be valid for reads of `d_len` bytes.
-/// * `p` must be valid for reads of `p_len` bytes.
-/// * `q` must be valid for reads of `q_len` bytes.
-/// * `dp` must be valid for reads of `dp_len` bytes.
-/// * `dq` must be valid for reads of `dq_len` bytes.
-/// * `qinv` must be valid for reads of `qinv_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `n_len` must be in 64..=1024.
-/// * `e_len` and `d_len` must be in 1..=`n_len`.
-/// * `p_len` and `q_len` must be in 1..`n_len`.
-/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
-/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
+/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
+/// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa::vg_rsa_check_key(n, n_len, e, e_len, d, d_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
+    unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
 }
 
 /// The CRT values of an RSA private key `(p, q, d)` (SP 800-56B Rev. 2 §6.2.2's prime-factor format), which bring it to the CRT format `(p, q, dP, dQ, qInv)` that `vg_rsa_private_checked` takes: `dP = d mod (p - 1)`, `dQ = d mod (q - 1)` and `qInv = q⁻¹ mod p` (§6.2.2's CRT format). With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), `p` (`p_len` bytes), `q` (`q_len` bytes) and `d` (`d_len` bytes), all most significant first, writes `dP` to `dp` and `qInv` to `qinv` (`p_len` bytes each) and `dQ` to `dq` (`q_len` bytes), most significant first, and returns 1; or writes zeros to all three and returns 0 if `n` is not such a modulus, `p q ≠ n`, or `q` has no inverse modulo `p`. Nothing checks that `p` and `q` are prime or that `d` is the key's private exponent.
@@ -65,30 +57,6 @@ pub unsafe fn vg_rsa_crt_values_auto(_dit: verified_garbage_cpu::Dit<'_>, dp: *m
     unsafe { crate::rsa::vg_rsa_crt_values(dp, dp_len, dq, dq_len, qinv, qinv_len, n, n_len, p, p_len, q, q_len, d, d_len, scratch, scratch_len) }
 }
 
-/// The values of an RSA modulus that `vg_rsa_public_precomputed_checked` takes, so that they are computed once per public key rather than once per operation. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) of `w = ⌈n_len / 8⌉` words of 64 bits, writes `n` and then `R² mod n` for `R = 2^(64 w)` to `pre` (`w` words each, least significant first) and returns 1; or writes zeros and returns 0 if `n` is not such a modulus.
-///
-/// Contract: `VG.Spec.Rsa.publicPrecomputeContract`. Timing may depend on the pointers, the lengths and the contents of `n`.
-///
-/// It runs `vg_rsa_public_precompute`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `pre` must be valid for reads and writes of `8 * pre_len` bytes.
-/// * `n` must be valid for reads of `n_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `n_len` must be in 64..=1024.
-/// * `pre_len` must be `2 * ⌈n_len / 8⌉`.
-/// * `scratch_len` must be at least `8 * ⌈n_len / 8⌉ + 48`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `pre` and `scratch` must not overlap each other or `n` (distinct Rust objects never do).
-/// * None of `pre`, `n` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>, pre: *mut u64, pre_len: usize, n: *const u8, n_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::rsa::vg_rsa_public_precompute(pre, pre_len, n, n_len, scratch, scratch_len) }
-}
-
 /// The prime factors `p > q` of the modulus of an RSA private key `(n, e, d)` (SP 800-56B Rev. 2 §6.2.2's basic format), which bring it to the prime-factor format `(p, q, d)` that `vg_rsa_crt_values` takes, recovered by SP 800-56B Rev. 2 Appendix C.2's deterministic method. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes) and the private exponent `d` (`d_len` bytes), both most significant first, writes `p` and `q` (`n_len` bytes each, most significant first) and returns 1; or writes zeros to both and returns 0 if `n` is not such a modulus or the method fails. It finds the factors of a valid two-prime key whenever `K (p + q − 1) ≤ n` for `a = K φ(n)` (Appendix C.2's step 1): with the least private exponent, whenever the smaller prime exceeds `e²`, and in practice for every key whose primes are not tiny.
 ///
 /// Contract: `VG.Spec.Rsa.recoverPrimesDetContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on `d`, the factors, or whether they were found.
@@ -116,4 +84,36 @@ pub unsafe fn vg_rsa_public_precompute_auto(_dit: verified_garbage_cpu::Dit<'_>,
 pub unsafe fn vg_rsa_recover_primes_det_auto(_dit: verified_garbage_cpu::Dit<'_>, p: *mut u8, p_len: usize, q: *mut u8, q_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::rsa::vg_rsa_recover_primes_det(p, p_len, q, q_len, n, n_len, e, e_len, d, d_len, scratch, scratch_len) }
+}
+
+/// Checks an RSA private key `(n, e, d, p, q, dP, dQ, qInv)` exactly as BoringSSL's `RSA_check_key` does. With the modulus `n` (`n_len` bytes), the public exponent `e` (`e_len` bytes), the private exponent `d` (`d_len` bytes), `p`, `dp` and `qinv` (`p_len` bytes) and `q` and `dq` (`q_len` bytes), all most significant first, returns 1 if `n` is odd, from 512 to 8192 bits and its first byte not zero, `e` is odd and from 3 to `2^33 - 1`, `d < n`, `p < n`, `q < n`, `p q = n`, `d e ≡ 1 (mod p - 1)`, `d e ≡ 1 (mod q - 1)`, `dP < p - 1`, `e dP ≡ 1 (mod p - 1)`, `dQ < q - 1`, `e dQ ≡ 1 (mod q - 1)`, `qInv < p` and `q qInv ≡ 1 (mod p)`; and 0 otherwise. Like `RSA_check_key`, it does not check that `p` and `q` are prime; if they are, `vg_rsa_private_checked` never returns its internal error for a key it accepts.
+///
+/// Contract: `VG.Spec.Rsa.checkKeyContract`. Constant time but for the public key: timing may depend on the pointers, the lengths and the contents of `n` and `e`, not on the private key.
+///
+/// It runs `vg_rsa_check_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `n` must be valid for reads of `n_len` bytes.
+/// * `e` must be valid for reads of `e_len` bytes.
+/// * `d` must be valid for reads of `d_len` bytes.
+/// * `p` must be valid for reads of `p_len` bytes.
+/// * `q` must be valid for reads of `q_len` bytes.
+/// * `dp` must be valid for reads of `dp_len` bytes.
+/// * `dq` must be valid for reads of `dq_len` bytes.
+/// * `qinv` must be valid for reads of `qinv_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
+/// * `n_len` must be in 64..=1024.
+/// * `e_len` and `d_len` must be in 1..=`n_len`.
+/// * `p_len` and `q_len` must be in 1..`n_len`.
+/// * `dp_len` and `qinv_len` must be `p_len`, and `dq_len` must be `q_len`.
+/// * `scratch_len` must be at least `16 * n_len + 32`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `n`, `e`, `d`, `p`, `q`, `dp`, `dq`, `qinv` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_rsa_check_key_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, d: *const u8, d_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::rsa::vg_rsa_check_key(n, n_len, e, e_len, d, d_len, p, p_len, q, q_len, dp, dp_len, dq, dq_len, qinv, qinv_len, scratch, scratch_len) }
 }

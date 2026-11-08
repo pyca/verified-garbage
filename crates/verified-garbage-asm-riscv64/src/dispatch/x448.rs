@@ -2,27 +2,6 @@
 //! The dispatchers of the verified `x448` functions for `riscv64`
 //! (`crate::x448`, `VG.Rust.dispatcher`).
 
-/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
-///
-/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
-///
-/// It runs `vg_x448_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 56 bytes.
-/// * `scalar` must be valid for reads of 56 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
-/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x448::vg_x448_base(out, scalar, scratch) }
-}
-
 /// Computes an X448 shared secret (RFC 7748 §6.2): writes `X448(k, u)` to `*out`, for the 56-byte scalar `k` at `scalar` and the 56-byte u-coordinate `u` at `point`, and returns 0 if it is all zero (for a `u` of small order), 1 otherwise. The scalar is decoded (clamped); all 448 bits of `u` are used and noncanonical coordinates are reduced modulo the field prime (§5).
 ///
 /// Contract: `VG.Spec.X448.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
@@ -43,4 +22,25 @@ pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [
 pub unsafe fn vg_x448_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::x448::vg_x448_exchange(out, scalar, point, scratch) }
+}
+
+/// Computes an X448 public key (RFC 7748 §6.2): writes `X448(k, 5)`, the X448 function of the 56-byte scalar `k` at `scalar` and the base point's u-coordinate 5, to `*out`. The scalar is decoded (clamped).
+///
+/// Contract: `VG.Spec.X448.x448BaseContract`. Constant time: only the pointers may affect timing, not the scalar.
+///
+/// It runs `vg_x448_base`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 56 bytes.
+/// * `scalar` must be valid for reads of 56 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes, and aligned for `u64`.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `scalar` (distinct Rust objects never do).
+/// * None of `out`, `scalar` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_x448_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::x448::vg_x448_base(out, scalar, scratch) }
 }
