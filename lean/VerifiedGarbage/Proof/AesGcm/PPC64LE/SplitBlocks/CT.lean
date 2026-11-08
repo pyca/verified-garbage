@@ -118,4 +118,27 @@ theorem decrypt_ct : ConstantTime isa (Proof.Gcm.decryptBlocksSplitContract PPC6
     exact ⟨hs.1.trans ht.1.symm,fun r hr =>
       (hs.2 r (Taint.mem_ofRegs.mp hr)).trans (ht.2 r (Taint.mem_ofRegs.mp hr)).symm⟩
 
+theorem decryptTo_taint : ∃ h, (VG.Taint.check vectorTaint
+    (Taint.ofRegs [.r3,.r4,.r5,.r6,.r7,.r8,.r9,.r10])
+    Impl.AesGcm.PPC64LE.SplitBlocks.decryptTo h).isSome=true := ⟨_,by taint_decide⟩
+
+
+theorem decryptTo_ct : ConstantTime isa (Proof.Gcm.decryptBlocksToContract PPC64LE.abi).pre
+    (Proof.Gcm.decryptBlocksToContract PPC64LE.abi).pub Impl.AesGcm.PPC64LE.SplitBlocks.decryptTo := by
+  refine ct_of fun a b ha hb hp => ?_
+  sig_pub [Proof.Gcm.decryptBlocksToContract,Proof.Gcm.decryptBlocksToSig,
+    PPC64LE.abi,PPC64LE.argRegs,stackArg,stackArgAddr,List.getD,List.range,List.range.loop] at hp
+  obtain ⟨hsp,h3,h4,h5,h6,h7,h8,h9,h10⟩ := hp
+  let rs : List Reg := [.r3,.r4,.r5,.r6,.r7,.r8,.r9,.r10]
+  let I : State → Prop := fun s => s.sp=a.sp ∧ ∀ r ∈ rs, s.gpr r=a.gpr r
+  have ib : I b := by
+    refine ⟨hsp.symm,fun r hr => ?_⟩
+    simp only [rs,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> symm <;> with_reducible assumption
+  refine ⟨I,⟨rfl,fun _ _ => rfl⟩,ib,?_⟩
+  obtain ⟨_,hc⟩ := decryptTo_taint
+  refine RelCT.taint (A := vectorTaint) (Taint.ofRegs rs) (fun s t ⟨hs,ht⟩ => ?_) hc
+  exact ⟨hs.1.trans ht.1.symm,fun r hr =>
+    (hs.2 r (Taint.mem_ofRegs.mp hr)).trans (ht.2 r (Taint.mem_ofRegs.mp hr)).symm⟩
+
 end VG.Proof.AesGcm.PPC64LE.SplitBlocks

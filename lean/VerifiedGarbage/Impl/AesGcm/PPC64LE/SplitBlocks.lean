@@ -119,4 +119,13 @@ def encrypt : Prog isa := cryptOf false
 the ciphertext it reads. -/
 def decrypt : Prog isa := cryptOf true
 
+/-- `vg_aes_gcm_decrypt_blocks_to(ctx, rounds, state, src, n, dst, dst_n,
+scratch)`: `decrypt` with every block in the source and its eight arguments
+in registers, moved to `decrypt`'s: the hash accumulator at `state` and the
+counter block at `state + 32`, `src_n = n`, and `scratch` in `r11`. -/
+def toArgs : List Instr :=
+ [mov .r11 .r10,mov .r10 .r7,mov .r9 .r8,mov .r8 .r7,mov .r7 .r6,mov .r6 .r5,.addi .r5 .r5 32]
+
+def decryptTo : Prog isa := .ite (.zero .d .r7) (.block []) (.seq (.block toArgs) decRest)
+
 end VG.Impl.AesGcm.PPC64LE.SplitBlocks
