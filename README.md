@@ -2830,8 +2830,8 @@ The tables are generated from the code by `ci/algorithms_table.py`.
 ### What is not verified
 
 The public APIs are Rust around the verified functions, and that Rust is
-tested, not proven. Most of it only lays out buffers and selects an
-implementation, but in some algorithms it does part of the cryptography:
+tested, not proven. Most of it only checks arguments and lays out buffers,
+but in some algorithms it does part of the cryptography:
 
 * **AES-GCM**: the length limits of SP 800-38D §5.2.1.1 (a nonempty
   nonce, at most `2^36 − 32` bytes of text and `2^61 − 1` of additional
@@ -2841,6 +2841,15 @@ implementation, but in some algorithms it does part of the cryptography:
   are ChaCha20-Poly1305 and ML-KEM.
 * **HMAC** with a key longer than a block hashes it first, in Rust (with the
   verified hash).
+* **Wiping** of some working space and of failed outputs is in Rust, after
+  the verified call:
+  * ML-KEM's key and ciphertext when encapsulation fails, and its key when
+    decapsulation fails (`src/mlkem_common.rs`);
+  * ML-DSA's working space after each key generation, key preparation and
+    signature, and the signature when signing fails (`src/mldsa_common.rs`);
+  * the `scratch` of AES's CFB, CFB8, CTR, OFB and XTS modes
+    (`src/cipher/aes/`), of CAST5-ECB (`src/cipher/cast5/ecb.rs`) and of
+    X25519 (`src/x25519.rs`).
 
 ### Unsupported platform features
 

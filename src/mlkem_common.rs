@@ -41,13 +41,6 @@ macro_rules! ml_kem {
         use $crate::error::{InvalidKey, MlKemError};
         use $crate::zeroize::zeroize;
 
-        /// The working space of the assembly functions, aligned to a cache line:
-        /// their vector loads and stores of it are then never split across
-        /// two (wherever the stack frame puts it, which made the instances
-        /// up to about 5% slower).
-        #[repr(C, align(64))]
-        struct Scratch([u64; $scratch]);
-
         #[doc = concat!("An ", $name, " encapsulation key, which passed the check of FIPS 203 §7.2.")]
         #[derive(Clone)]
         pub struct $EncapsulationKey {
@@ -123,7 +116,7 @@ macro_rules! ml_kem {
                 let mut key = [0u8; 32];
                 let mut ct = [0u8; $ct];
                 // The verified contract accepts arbitrary initial scratch bytes.
-                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; $scratch]>::uninit());
                 // SAFETY: `self.bytes`, `h`, `m`, `key`, `ct` and
                 // `scratch` are valid for reads (and, for the last three,
                 // writes) of their sizes; they are distinct Rust objects, so
@@ -135,7 +128,7 @@ macro_rules! ml_kem {
                 // dispatchers call only an implementation the CPU has the
                 // features of.
                 let r = unsafe {
-                    let (ek, s) = (&self.bytes, scratch.as_mut_ptr().cast());
+                    let (ek, s) = (&self.bytes, scratch.0.as_mut_ptr());
                     match &self.h {
                         Some(h) => $encaps_h(ek, h, m, &mut key, &mut ct, s),
                         None => $encaps(ek, m, &mut key, &mut ct, s),
@@ -194,14 +187,14 @@ macro_rules! ml_kem {
                     dk: [0; $dk],
                 };
                 // The verified contract accepts arbitrary initial scratch bytes.
-                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; $scratch]>::uninit());
                 // SAFETY: `seed`, `key.ek.bytes`, `key.dk` and `scratch` are
                 // valid for reads (and, for the last three, writes) of their
                 // sizes; they are distinct Rust objects, so they do not
                 // overlap each other or the stack, or wrap around the end of
                 // the address space. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.as_mut_ptr().cast()) };
+                let r = unsafe { $keygen(seed, &mut key.ek.bytes, &mut key.dk, scratch.0.as_mut_ptr()) };
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives; dropping `key`
@@ -235,7 +228,7 @@ macro_rules! ml_kem {
             pub fn decapsulate(&self, ct: &[u8; $ct]) -> Result<[u8; 32], MlKemError> {
                 let mut key = [0u8; 32];
                 // The verified contract accepts arbitrary initial scratch bytes.
-                let mut scratch = core::mem::MaybeUninit::<Scratch>::uninit();
+                let mut scratch = $crate::align::CacheAligned(core::mem::MaybeUninit::<[u64; $scratch]>::uninit());
                 // SAFETY: `self.dk`, `ct`, `key` and `scratch` are valid for
                 // reads (and, for the last two, writes) of their sizes; they
                 // are distinct Rust objects, so they do not overlap each
@@ -243,7 +236,7 @@ macro_rules! ml_kem {
                 // space. `self.dk` was written by the key generation. The
                 // dispatcher calls only an implementation the CPU has the
                 // features of.
-                let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.as_mut_ptr().cast()) };
+                let r = unsafe { $decaps(&self.dk, ct, &mut key, scratch.0.as_mut_ptr()) };
                 if r != 1 {
                     // A `SampleNTT` reaches its bound with the probability
                     // the module's documentation gives.
