@@ -28,15 +28,6 @@ open VG.Impl.MillerRabin.PPC64LE.Search VG.Proof.MillerRabin.PPC64LE.Search
 open VG.Proof.MillerRabin.PPC64LE (RoundImpl)
 open VG.Proof.Ffdh.ParameterCandidate (sievedTests sieved_eq)
 
-/-- `Ph` survives a change of memory that keeps the header but `hBad`. -/
-theorem Ph.keepBad {C : Nat} {p : PP} {mb : Nat} {s t : State} (h : Ph p mb C s)
-    (r10 : t.gpr .r10 = s.gpr .r10) (r11 : t.gpr .r11 = s.gpr .r11) (r29 : t.gpr .r29 = s.gpr .r29)
-    (hw : ∀ d, d + 8 ≤ 200 ∨ (208 ≤ d ∧ d + 8 ≤ 256) → word t.mem p.B d = word s.mem p.B d) : Ph p mb C t :=
-  ⟨r10.trans h.r10, r11.trans h.r11, r29.trans h.r29, (hw 248 (by decide)).trans h.mbW,
-    (hw 216 (by decide)).trans h.kW, (hw 48 (by decide)).trans h.wW, (hw 224 (by decide)).trans h.strideW,
-    fun j hj => (hw _ (by omega_arith)).trans (h.arrW j hj), (hw 168 (by decide)).trans h.checksW, h.k1, h.k2,
-    (hw 192 (by decide)).trans h.topW⟩
-
 /-- A piece of the shape checks, which changes `hBad` and array 0 at most. -/
 theorem shapeStep {C : Nat} {p : PP} {s t : State} (h : St p s) (hp : Ph p p.bits C s)
     (hu : word s.mem p.B 152 = BitVec.ofNat 64 p.L) {rs : List (Nat × Nat)} (hf : Frm p.B rs s.mem t.mem)
