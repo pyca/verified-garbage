@@ -409,7 +409,7 @@ def wideLens : List Nat := [128, 64, 32, 16, 8, 4]
 
 theorem foldl_take_succ (P : Poly) {ℓ : Nat} (hℓ : ℓ < 6) :
     (wideLens.take (ℓ + 1)).foldl nttLayer P = nttLayer ((wideLens.take ℓ).foldl nttLayer P) (128 / 2 ^ ℓ) := by
-  rw [List.take_succ, List.foldl_append, List.getElem?_eq_getElem (by rw [show wideLens.length = 6 from rfl]; exact hℓ),
+  rw [List.take_add_one, List.foldl_append, List.getElem?_eq_getElem (by rw [show wideLens.length = 6 from rfl]; exact hℓ),
     Option.toList_some, List.foldl_cons, List.foldl_nil]
   refine congrArg (nttLayer _) ?_
   rcases (by omega : ℓ = 0 ∨ ℓ = 1 ∨ ℓ = 2 ∨ ℓ = 3 ∨ ℓ = 4 ∨ ℓ = 5) with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
