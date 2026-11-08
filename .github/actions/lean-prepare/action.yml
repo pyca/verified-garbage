@@ -45,11 +45,15 @@ runs:
     # job. Its output goes to a file: holding the step's open would make the
     # step wait for it.
     #
-    # Elan's release is downloaded with the job's token
-    # (`ci/github_release.py`), since GitHub sometimes degrades
-    # unauthenticated downloads alone, and its `elan-init` run, as elan's
-    # installer script does. Only that download sees the token: elan, its
-    # installer and Lean are third-party code.
+    # Elan and the toolchain are downloaded from their GitHub releases with
+    # the job's token (`ci/github_release.py`), since GitHub sometimes
+    # degrades unauthenticated downloads alone: elan's release, whose
+    # `elan-init` is run as elan's installer script does, and the
+    # toolchain's archive, unpacked where elan keeps the toolchain
+    # `lean-toolchain` names, so that elan finds it installed and fetches
+    # nothing (not even its index of releases, which it reads with no
+    # timeout). Only these downloads see the token: elan, its installer and
+    # Lean are third-party code.
     - name: Install elan and list the imports, in the background
       shell: bash
       working-directory: lean
@@ -64,70 +68,51 @@ runs:
           # the status, or `lean-setup` would wait for it.
           set +e -o pipefail
           log() { echo "[lean-setup $(date -u +%T)] $*"; }
-          # Runs a download up to three times, waiting 5 and then 10 s
-          # between attempts: GitHub's downloads sometimes fail for a few
-          # seconds, which attempts back to back all hit. The command bounds
-          # each attempt with `timeout` (which stops its whole process
-          # group), or a stalled connection would hang until `lean-setup`
-          # gives up.
-          retry() {
-            local what=$1 attempt status
+          # Runs a step, logging it. `github_release.py` retries a download
+          # itself; each `timeout` bounds its attempts, which normally take
+          # seconds, well inside `lean-setup`'s limit.
+          step() {
+            local what=$1
             shift
-            for attempt in 1 2 3; do
-              log "$what (attempt $attempt)"
-              "$@"
-              status=$?
-              [ "$status" = 0 ] && { log "$what: done"; return 0; }
-              [ "$status" = 124 ] && log "$what: timed out" || log "$what: failed ($status)"
-              [ "$attempt" = 3 ] || sleep $((5 * attempt))
-            done
-            return 1
+            log "$what"
+            "$@" || { log "$what: failed ($?)"; return 1; }
+            log "$what: done"
           }
-          # `github_release.py` retries the download itself; 120 s bounds
-          # its attempts.
+          # `download SECONDS OWNER/REPO TAG NAME OUT`
+          download() {
+            timeout "$1" env GH_TOKEN="$token" python3 ../ci/github_release.py "${@:2}"
+          }
           install_elan() {
             local dir="$RUNNER_TEMP/elan-init"
             rm -rf "$dir" && mkdir -p "$dir" &&
-            GH_TOKEN=$token timeout 120 python3 ../ci/github_release.py leanprover/elan latest \
+            download 120 leanprover/elan latest \
               "elan-$(uname -m)-unknown-linux-gnu.tar.gz" "$dir/elan.tar.gz" &&
             tar -xzf "$dir/elan.tar.gz" -C "$dir" &&
             "$dir/elan-init" -y --default-toolchain none
           }
-          # Before downloading a toolchain, elan fetches the index of Lean's
-          # releases (https://release.lean-lang.org, about 4 MB) with no
-          # timeout at all (`fetch_url` in elan's `elan-utils`), and prints
-          # nothing while it does. That server sometimes stalls partway through
-          # the transfer, and elan then waits forever. The index normally
-          # takes under a second, after which elan prints
-          # `info: downloading https://…`: an attempt that has not printed it
-          # within 10 s is stuck, so stop it and try again. The download
-          # itself elan aborts on a stall (30 s below 10 B/s); the 180 s
-          # bounds the whole attempt.
+          # `leanprover/lean4:v4.35.0` is the release `v4.35.0` of
+          # leanprover/lean4, whose archive for this platform is
+          # `lean-4.35.0-linux.tar.zst` (`-linux_aarch64` on Arm), and
+          # elan keeps it in `toolchains/leanprover--lean4---v4.35.0`.
           install_toolchain() {
-            local out="$RUNNER_TEMP/elan-install.log" done="$RUNNER_TEMP/elan-install.status" pid
-            rm -f "$done"
-            # Shown as it is written, and kept to look for the download.
-            { timeout 180 "$HOME/.elan/bin/elan" -v toolchain install "$1" 2>&1 | tee "$out"
-              echo $? > "$done"; } &
-            pid=$!
-            for _ in $(seq 10); do
-              sleep 1
-              [ -f "$done" ] || grep -q 'downloading https://' "$out" 2>/dev/null && break
-            done
-            if [ ! -f "$done" ] && ! grep -q 'downloading https://' "$out" 2>/dev/null; then
-              log "elan has not started downloading after 10 s: stuck fetching the index of releases"
-              pkill -P "$pid"
-              wait "$pid"
-              return 124
-            fi
-            wait "$pid"
-            return "$(cat "$done")"
+            local repo=${1%%:*} tag=${1#*:} platform dir
+            case "$(uname -m)" in
+              x86_64) platform=linux ;;
+              aarch64) platform=linux_aarch64 ;;
+              *) echo "no Lean release for $(uname -m)"; return 1 ;;
+            esac
+            dir="$HOME/.elan/toolchains/${repo//\//--}---$tag"
+            rm -rf "$dir" "$dir.tmp" && mkdir -p "$dir.tmp" &&
+            download 600 "$repo" "$tag" "lean-${tag#v}-$platform.tar.zst" \
+              "$RUNNER_TEMP/lean.tar.zst" &&
+            tar --zstd -xf "$RUNNER_TEMP/lean.tar.zst" -C "$dir.tmp" --strip-components=1 &&
+            rm "$RUNNER_TEMP/lean.tar.zst" &&
+            mv "$dir.tmp" "$dir" &&
+            "$HOME/.elan/bin/lean" --version
           }
           {
-            log "Installing elan" &&
-            { install_elan || { log "Installing elan: failed"; false; }; } &&
-            log "Installing elan: done" &&
-            retry "Installing $(cat lean-toolchain)" install_toolchain "$(cat lean-toolchain)" &&
+            step "Installing elan" install_elan &&
+            step "Installing $(cat lean-toolchain)" install_toolchain "$(cat lean-toolchain)" &&
             log "Listing the imports" &&
             # Every module the Lean files import from outside this project
             # and Lean itself, as Lean's own parser reads their headers.
