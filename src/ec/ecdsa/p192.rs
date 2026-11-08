@@ -11,20 +11,21 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdsa_p192::{vg_ecdsa_p192_sign_auto, vg_ecdsa_p192_verify_auto};
 use crate::ec::P192;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(q: &[u8; 49], digest: &[u8], signature: &[u8; 48]) -> Result<(), InvalidSignature> {
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `q` is valid for reads of 49 bytes, `digest` of `digest.len()`,
     // `signature` of 48 and `scratch` for reads and writes of 8192; `scratch`
     // is a distinct object from the others, so it overlaps neither them nor the
     // call's stack frame, and, as Rust objects, none wraps around the address
     // space.
     let ok = unsafe {
-        vg_ecdsa_p192_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch)
+        vg_ecdsa_p192_verify_auto(q, digest.as_ptr(), digest.len(), signature, &mut scratch.0)
     };
     if ok == 1 {
         Ok(())

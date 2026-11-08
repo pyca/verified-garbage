@@ -28,6 +28,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::sm4_gcm::{
     vg_sm4_gcm_init_auto, vg_sm4_gcm_open_auto, vg_sm4_gcm_seal_auto, vg_sm4_gcm_stream_aad_auto,
     vg_sm4_gcm_stream_decrypt_auto, vg_sm4_gcm_stream_encrypt_auto, vg_sm4_gcm_stream_finish_auto,
@@ -110,13 +111,13 @@ macro_rules! assert_tag_length {
 #[derive(Clone)]
 pub struct Sm4Gcm {
     /// The key context `vg_sm4_gcm_init` writes (`VG.Spec.Sm4.Gcm.KeyRepr`).
-    ctx: [u64; 32],
+    ctx: CacheAligned<[u64; 32]>,
 }
 
 impl Drop for Sm4Gcm {
     /// Wipes the key context.
     fn drop(&mut self) {
-        zeroize(&mut self.ctx);
+        zeroize(&mut self.ctx.0);
     }
 }
 
@@ -126,13 +127,15 @@ impl Sm4Gcm {
 
     /// Prepares a 16-byte SM4 key.
     pub fn new(key: &[u8; 16]) -> Self {
-        let mut k = Sm4Gcm { ctx: [0; 32] };
+        let mut k = Sm4Gcm {
+            ctx: CacheAligned([0; 32]),
+        };
         // SAFETY: `key` is valid for reads of 16 bytes and `k.ctx` for reads
         // and writes of 256. They are distinct objects, so they do not
         // overlap each other or anything on the stack, or wrap around the end
         // of the address space. The dispatcher calls only an implementation
         // the CPU has the features of.
-        unsafe { vg_sm4_gcm_init_auto(key, &mut k.ctx) };
+        unsafe { vg_sm4_gcm_init_auto(key, &mut k.ctx.0) };
         k
     }
 
@@ -164,7 +167,7 @@ impl Sm4Gcm {
         // CPU has the features of.
         unsafe {
             vg_sm4_gcm_seal_auto(
-                &self.ctx,
+                &self.ctx.0,
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -217,7 +220,7 @@ impl Sm4Gcm {
         // rejects any other length).
         let ok = unsafe {
             vg_sm4_gcm_open_auto(
-                &self.ctx,
+                &self.ctx.0,
                 nonce.as_ptr(),
                 nonce.len(),
                 aad.as_ptr(),
@@ -258,7 +261,7 @@ struct Stream<'a, const DECRYPT: bool> {
     key: &'a Sm4Gcm,
     /// The streaming state `vg_sm4_gcm_stream_init` writes and the other
     /// functions update (`VG.Spec.Gcm.StreamRepr`).
-    state: [u64; 10],
+    state: CacheAligned<[u64; 10]>,
     aad_len: u64,
     text_len: u64,
     /// Whether [`update`](Self::update) has been called.
@@ -268,7 +271,7 @@ struct Stream<'a, const DECRYPT: bool> {
 impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
     /// Wipes the streaming state (the key wipes itself).
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
@@ -278,7 +281,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
-            state: [0; 10],
+            state: CacheAligned([0; 10]),
             aad_len: 0,
             text_len: 0,
             in_text: false,
@@ -290,7 +293,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // else, nor anything on the stack, and none wraps around. The
         // dispatcher calls only an implementation the CPU has the features
         // of.
-        unsafe { vg_sm4_gcm_stream_init_auto(&key.ctx, nonce.as_ptr(), nonce.len(), &mut s.state) };
+        unsafe {
+            vg_sm4_gcm_stream_init_auto(&key.ctx.0, nonce.as_ptr(), nonce.len(), &mut s.state.0)
+        };
         Ok(s)
     }
 
@@ -305,8 +310,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // `self.aad_len` bytes of additional data and no text yet.
         unsafe {
             vg_sm4_gcm_stream_aad_auto(
-                &self.key.ctx,
-                &mut self.state,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
@@ -333,8 +338,8 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // additional data and `self.text_len` of text.
         unsafe {
             f(
-                &self.key.ctx,
-                &mut self.state,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 data.as_mut_ptr(),
@@ -355,8 +360,8 @@ impl Stream<'_, false> {
         // (§5.2.1.1).
         unsafe {
             vg_sm4_gcm_stream_finish_auto(
-                &self.key.ctx,
-                &mut self.state,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 &mut tag,
@@ -374,8 +379,8 @@ impl Stream<'_, true> {
         // reads of its length.
         let ok = unsafe {
             vg_sm4_gcm_stream_verify_auto(
-                &self.key.ctx,
-                &mut self.state,
+                &self.key.ctx.0,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 tag.as_ptr(),

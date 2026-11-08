@@ -1,6 +1,7 @@
 //! HMAC over each hash function ([`HmacHash`]) as the table of functions that
 //! deterministic ECDSA's signing takes.
 
+use crate::align::CacheAligned;
 use crate::error::InvalidKey;
 use crate::hashes::HashFunction;
 use crate::hashes::md5::Md5;
@@ -89,9 +90,9 @@ pub(super) fn sign_with<H: HmacHash, const Q: usize, const S: usize>(
 ) -> Result<[u8; S], InvalidKey> {
     let table = H::hmac_table();
     let mut out = [0; S];
-    let mut scratch = [0u64; 1024];
-    let ok = sign(&mut out, d, digest.as_ref(), &mut scratch, table);
-    zeroize(&mut scratch);
+    let mut scratch = CacheAligned([0u64; 1024]);
+    let ok = sign(&mut out, d, digest.as_ref(), &mut scratch.0, table);
+    zeroize(&mut scratch.0);
     if ok == 1 { Ok(out) } else { Err(InvalidKey) }
 }
 

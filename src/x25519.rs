@@ -13,6 +13,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::align::CacheAligned;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::x25519::VG_X25519_BASE_AUTO_SCRATCH_WRITTEN;
 use crate::arch::dispatch::x25519::{vg_x25519_base_auto, vg_x25519_exchange_auto};
@@ -26,15 +27,15 @@ fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
     let mut out = [0u8; 32];
     // Uninitialized: the function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
-    let mut scratch = MaybeUninit::<[u64; 512]>::uninit();
+    let mut scratch = CacheAligned(MaybeUninit::<[u64; 512]>::uninit());
     // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
     // 4096 bytes, and `scalar` and `u` for reads of 32 bytes; they are
     // distinct Rust objects, so they do not overlap each other or the stack,
     // or wrap around the end of the address space. The dispatcher calls only
     // an implementation the CPU has the features of.
-    let nonzero = unsafe { vg_x25519_exchange_auto(&mut out, scalar, u, scratch.as_mut_ptr()) };
+    let nonzero = unsafe { vg_x25519_exchange_auto(&mut out, scalar, u, scratch.0.as_mut_ptr()) };
     // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
+    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 512]>()) };
     // The contract: 0 if and only if `out` is all zero, so there is no
     // secret in it to destroy.
     (nonzero != 0).then_some(out)
@@ -44,13 +45,13 @@ fn exchange(scalar: &[u8; 32], u: &[u8; 32]) -> Option<[u8; 32]> {
 fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let mut out = [0u8; 32];
     // Uninitialized, as in `exchange`.
-    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
+    let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
     // SAFETY: `out` and `scratch` are valid for reads and writes of 32 and
     // 8192 bytes, and `scalar` for reads of 32 bytes; the writable buffers are
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space. The dispatcher calls
     // only an implementation the CPU has the features of.
-    unsafe { vg_x25519_base_auto(&mut out, scalar, scratch.as_mut_ptr()) };
+    unsafe { vg_x25519_base_auto(&mut out, scalar, scratch.0.as_mut_ptr()) };
     // The bytes of `scratch` the function may have written: on AArch64 its
     // first `VG_X25519_BASE_AUTO_SCRATCH_WRITTEN` (`Artifact.written`, which
     // every implementation the dispatcher may call bounds), elsewhere all of it.
@@ -60,7 +61,7 @@ fn base(scalar: &[u8; 32]) -> [u8; 32] {
     let written = size_of::<[u64; 1024]>();
     // SAFETY: `scratch` is writable for its whole length, which `written`
     // does not exceed.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), written) };
+    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), written) };
     out
 }
 

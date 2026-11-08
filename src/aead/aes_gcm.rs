@@ -36,6 +36,7 @@ use crate::arch::dispatch::gcm::{
 // On AArch64 and x86-64, a key computes the powers of its hash subkey when
 // it is created, which the functions below read; elsewhere the functions
 // read the key context alone.
+use crate::align::CacheAligned;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
@@ -161,24 +162,24 @@ macro_rules! assert_tag_length {
 /// one-shot AEAD; [`encryptor`](Self::encryptor) and
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
-// On x86-64 the key context, with the powers, is the first field, aligned
-// to a cache line, so that the prepared functions' reads of it do not cross
-// cache lines, as some would at 8 bytes' alignment. Elsewhere it is the
-// first field too: on x86 its offset in a 4-byte-aligned value after a
-// pointer left the compiler unable to clear it with aligned 16-byte stores
-// in `new`, and it called `memset` instead (4–5% slower `new` on Zen 3).
-#[cfg_attr(target_arch = "x86_64", repr(C, align(64)))]
-#[cfg_attr(not(target_arch = "x86_64"), repr(C))]
+// The key context, with the powers on x86-64, is the first field, aligned
+// to a cache line, so that the implementations' reads of it (the prepared
+// functions' of the powers) do not cross cache lines, as some would at 8
+// bytes' alignment. After a pointer, on x86 its offset in a 4-byte-aligned
+// value also left the compiler unable to clear it with aligned 16-byte
+// stores in `new`, and it called `memset` instead (4–5% slower `new` on
+// Zen 3).
+#[repr(C)]
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`),
     /// with the powers `vg_aes_gcm_prepare` writes after it on x86-64
     /// (`KeyCtx`), all of which `new` writes.
-    ctx: MaybeUninit<KeyCtx>,
+    ctx: CacheAligned<MaybeUninit<KeyCtx>>,
     rounds: usize,
     /// On AArch64, the powers of the hash subkey that `new` stores
     /// (`VG.Spec.Gcm.Powers8Repr`).
     #[cfg(target_arch = "aarch64")]
-    powers: Powers,
+    powers: CacheAligned<Powers>,
 }
 
 impl Drop for AesGcm {
@@ -190,16 +191,16 @@ impl Drop for AesGcm {
         // flag word (`VG.Spec.Gcm.wipePreparedContract`).
         #[cfg(target_arch = "x86_64")]
         unsafe {
-            vg_aes_gcm_wipe_prepared_auto(self.ctx.as_mut_ptr())
+            vg_aes_gcm_wipe_prepared_auto(self.ctx.0.as_mut_ptr())
         };
         // SAFETY: `self.ctx` is valid for writes of `size_of::<KeyCtx>()`
         // bytes, and lies outside `zeroize_raw`'s frame.
         #[cfg(not(target_arch = "x86_64"))]
         unsafe {
-            zeroize_raw(self.ctx.as_mut_ptr().cast(), size_of::<KeyCtx>())
+            zeroize_raw(self.ctx.0.as_mut_ptr().cast(), size_of::<KeyCtx>())
         };
         #[cfg(target_arch = "aarch64")]
-        zeroize(&mut self.powers);
+        zeroize(&mut self.powers.0);
     }
 }
 
@@ -214,20 +215,20 @@ impl AesGcm {
             return Err(InvalidKeyLength);
         }
         let mut k = AesGcm {
-            ctx: MaybeUninit::uninit(),
+            ctx: CacheAligned(MaybeUninit::uninit()),
             rounds: key.len() / 4 + 6,
             #[cfg(target_arch = "aarch64")]
-            powers: [0; size_of::<Powers>() / 8],
+            powers: CacheAligned([0; size_of::<Powers>() / 8]),
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`init`
         // reads it); on x86-64 `prepare` writes the rest.
         // SAFETY: `k.ctx` is valid for writes of at least 256 bytes.
-        unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
+        unsafe { k.ctx.0.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 16,
         // 24 or 32; `k.ctx` is valid for reads and writes of 256 bytes. They
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space.
-        unsafe { vg_aes_gcm_init_auto(key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
+        unsafe { vg_aes_gcm_init_auto(key.as_ptr(), key.len(), k.ctx.0.as_mut_ptr().cast()) };
         // SAFETY: `k.ctx` is valid for reads and writes of 1032 bytes, and
         // overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
@@ -235,7 +236,7 @@ impl AesGcm {
         // (`PreparedRepr`), which the `_prepared` functions require.
         #[cfg(target_arch = "x86_64")]
         unsafe {
-            vg_aes_gcm_prepare_auto(k.ctx.as_mut_ptr())
+            vg_aes_gcm_prepare_auto(k.ctx.0.as_mut_ptr())
         };
         // SAFETY: the key context, valid for reads of 256 bytes (written
         // above), and `k.powers`, for writes of 128, are distinct fields, so
@@ -245,7 +246,7 @@ impl AesGcm {
         // which the `_with_powers` functions require.
         #[cfg(target_arch = "aarch64")]
         unsafe {
-            vg_aes_gcm_store_powers_auto(k.ctx.as_ptr().cast(), &mut k.powers)
+            vg_aes_gcm_store_powers_auto(k.ctx.0.as_ptr().cast(), &mut k.powers.0)
         };
         Ok(k)
     }
@@ -255,7 +256,7 @@ impl AesGcm {
     #[inline(always)]
     fn key(&self) -> &[u64; 32] {
         // SAFETY: `new` writes the first 256 bytes of `self.ctx`.
-        unsafe { &*self.ctx.as_ptr().cast::<[u64; 32]>() }
+        unsafe { &*self.ctx.0.as_ptr().cast::<[u64; 32]>() }
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -298,7 +299,7 @@ impl AesGcm {
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_prepared_auto(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -319,7 +320,7 @@ impl AesGcm {
                 data.as_mut_ptr(),
                 data.len(),
                 &mut tag,
-                &self.powers,
+                &self.powers.0,
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             vg_aes_gcm_seal_auto(
@@ -395,7 +396,7 @@ impl AesGcm {
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
             let ok = vg_aes_gcm_open_prepared_auto(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -418,7 +419,7 @@ impl AesGcm {
                 data.len(),
                 tag.as_ptr(),
                 tag.len(),
-                &self.powers,
+                &self.powers.0,
             );
             #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             let ok = vg_aes_gcm_open_auto(
@@ -487,7 +488,7 @@ impl AesGcm {
         let ok = unsafe {
             #[cfg(target_arch = "x86_64")]
             let ok = vg_aes_gcm_open_to_prepared_auto(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -598,7 +599,7 @@ impl AesGcm {
         unsafe {
             #[cfg(target_arch = "x86_64")]
             vg_aes_gcm_seal_gather_prepared_auto(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -656,7 +657,7 @@ struct Stream<'a, const DECRYPT: bool> {
     key: &'a AesGcm,
     /// The streaming state `vg_aes_gcm_stream_init` writes and the other
     /// functions update (`VG.Spec.Gcm.StreamRepr`).
-    state: [u64; 10],
+    state: CacheAligned<[u64; 10]>,
     aad_len: u64,
     text_len: u64,
     /// Whether [`update`](Self::update) has been called.
@@ -666,7 +667,7 @@ struct Stream<'a, const DECRYPT: bool> {
 impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
     /// Wipes the streaming state (the key wipes itself).
     fn drop(&mut self) {
-        crate::zeroize::zeroize(&mut self.state);
+        crate::zeroize::zeroize(&mut self.state.0);
     }
 }
 
@@ -676,7 +677,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
-            state: [0; 10],
+            state: CacheAligned([0; 10]),
             aad_len: 0,
             text_len: 0,
             in_text: false,
@@ -687,7 +688,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // the writable one overlaps nothing else, nor anything on the stack,
         // and none wraps around.
         unsafe {
-            vg_aes_gcm_stream_init_auto(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state)
+            vg_aes_gcm_stream_init_auto(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0)
         };
         Ok(s)
     }
@@ -704,7 +705,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         unsafe {
             vg_aes_gcm_stream_aad_auto(
                 self.key.key(),
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
@@ -727,7 +728,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             } else {
                 vg_aes_gcm_stream_encrypt_prepared_auto
             },
-            self.key.ctx.as_ptr(),
+            self.key.ctx.0.as_ptr(),
         );
         #[cfg(not(target_arch = "x86_64"))]
         let (f, ctx) = (
@@ -747,7 +748,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
             f(
                 ctx,
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 data.as_mut_ptr(),
@@ -770,7 +771,7 @@ impl Stream<'_, false> {
             vg_aes_gcm_stream_finish_auto(
                 self.key.key(),
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 &mut tag,
@@ -790,7 +791,7 @@ impl Stream<'_, true> {
             vg_aes_gcm_stream_verify_auto(
                 self.key.key(),
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 tag.as_ptr(),

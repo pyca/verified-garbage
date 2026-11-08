@@ -10,24 +10,18 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes::vg_aes_expand_key_auto;
 use crate::arch::dispatch::aes_cbc::{vg_aes_cbc_decrypt_auto, vg_aes_cbc_encrypt_auto};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
-
-/// The scratch space of the CBC functions, aligned to a cache line: the
-/// VAES implementations read the round keys they keep there in every
-/// iteration, and at the 8 bytes' alignment of `[u64; 272]` some of those
-/// reads would cross cache lines, depending on the caller's stack.
-#[repr(C, align(64))]
-struct Scratch([u64; 272]);
 
 /// An expanded AES key, which serves both directions. Every implementation
 /// of `vg_aes_expand_key` writes the same schedule (`Spec.Aes.KeySchedule`),
 /// which every implementation of the CBC functions reads.
 struct Key {
     /// The key schedule `vg_aes_expand_key` writes.
-    schedule: [u8; 240],
+    schedule: CacheAligned<[u8; 240]>,
     /// The number of rounds of AES: 10, 12 or 14.
     rounds: usize,
 }
@@ -98,10 +92,10 @@ impl Key {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
-        let mut schedule = [0; 240];
+        let mut schedule = CacheAligned([0; 240]);
         // SAFETY: the key is 16, 24 or 32 bytes long, and the key and the
         // schedule are separate valid buffers of the sizes of the signature.
-        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule) };
+        unsafe { vg_aes_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self {
             schedule,
             rounds: key.len() / 4 + 6,
@@ -136,7 +130,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = Scratch([0; 272]);
+        let mut scratch = CacheAligned([0; 272]);
         let data = buffer.as_mut_ptr().cast();
         let n = buffer.len() / 16;
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
@@ -145,9 +139,9 @@ impl Key {
         // objects of the sizes of the signature.
         unsafe {
             if encrypt {
-                vg_aes_cbc_encrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch.0);
+                vg_aes_cbc_encrypt_auto(&self.schedule.0, self.rounds, iv, data, n, &mut scratch.0);
             } else {
-                vg_aes_cbc_decrypt_auto(&self.schedule, self.rounds, iv, data, n, &mut scratch.0);
+                vg_aes_cbc_decrypt_auto(&self.schedule.0, self.rounds, iv, data, n, &mut scratch.0);
             }
         }
         // The scratch space may hold the key schedule, the data and our
@@ -174,6 +168,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

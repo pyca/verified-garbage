@@ -113,7 +113,7 @@ macro_rules! streaming_hash {
         #[derive(Clone)]
         pub struct $name {
             /// The streaming state, representing the message so far.
-            state: [u8; $state],
+            state: $crate::align::CacheAligned<[u8; $state]>,
             /// The message length so far, in bytes.
             length: u64,
         }
@@ -128,7 +128,7 @@ macro_rules! streaming_hash {
             /// Wipes the streaming state (which, for HMAC, represents the
             /// key).
             fn drop(&mut self) {
-                $crate::zeroize::zeroize(&mut self.state);
+                $crate::zeroize::zeroize(&mut self.state.0);
             }
         }
 
@@ -140,12 +140,12 @@ macro_rules! streaming_hash {
 
             /// Starts a new computation.
             pub fn new() -> Self {
-                let mut state = [0; $state];
+                let mut state = $crate::align::CacheAligned([0; $state]);
                 // SAFETY: `state` is valid for writes of its size, and is a
                 // distinct object from the return address (on x86-64 and x86)
                 // and the argument on the stack (on x86); as a Rust object, it
                 // does not wrap around the end of the address space.
-                unsafe { $init(&mut state) };
+                unsafe { $init(&mut state.0) };
                 $name { state, length: 0 }
             }
 
@@ -165,7 +165,7 @@ macro_rules! streaming_hash {
                 // the address space. `self.length` is the length of the
                 // message `self.state` represents. The dispatcher calls only
                 // an implementation the CPU has the features of.
-                unsafe { $update(&mut self.state, self.length, data.as_ptr(), data.len()) };
+                unsafe { $update(&mut self.state.0, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
@@ -181,7 +181,7 @@ macro_rules! streaming_hash {
                 // `self.length` is the exact length of the message
                 // `self.state` represents. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                unsafe { $finalize(&mut self.state, self.length, &mut out) };
+                unsafe { $finalize(&mut self.state.0, self.length, &mut out) };
                 out
             }
 
@@ -192,14 +192,17 @@ macro_rules! streaming_hash {
             /// `init` makes such states).
             #[allow(dead_code)]
             pub(crate) fn from_state(state: [u8; $state], length: u64) -> Self {
-                $name { state, length }
+                $name {
+                    state: $crate::align::CacheAligned(state),
+                    length,
+                }
             }
 
             /// The streaming state, in place, and the length of the message
             /// it represents.
             #[allow(dead_code)]
             pub(crate) fn state_mut(&mut self) -> (&mut [u8; $state], u64) {
-                (&mut self.state, self.length)
+                (&mut self.state.0, self.length)
             }
         }
 
