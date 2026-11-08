@@ -38,6 +38,8 @@ use crate::arch::dispatch::gcm::{
 // read the key context alone.
 use crate::align::CacheAligned;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
 };
@@ -48,15 +50,13 @@ use crate::arch::dispatch::gcm::{
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
     vg_aes_gcm_wipe_prepared_auto,
 };
-#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
-use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
-#[cfg(not(target_arch = "x86_64"))]
-use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
     vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
 use crate::error::InvalidKeyLength;
 #[cfg(target_arch = "aarch64")]
 use crate::zeroize::zeroize;
