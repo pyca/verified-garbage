@@ -494,7 +494,7 @@ jb 26b
 .base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_avx512vl}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
-call {vg_poly1305_init}
+call {vg_poly1305_init_core}
 .base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
 je 27f
 call {vg_poly1305_blocks_avx512}
@@ -685,7 +685,7 @@ call {vg_chacha20_poly1305_seal_body_avx512vl}
 jmp 21b
 .p2align 6"#,
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
-        vg_poly1305_init = sym super::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym super::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
         vg_poly1305_finalize_scratch = sym super::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
         vg_chacha20_poly1305_seal_body_avx512vl = sym super::chacha20::vg_chacha20_poly1305_seal_body_avx512vl::vg_chacha20_poly1305_seal_body_avx512vl,

@@ -62,11 +62,11 @@ vg_chacha20_apply_avx2:
 	cmp rax, rdx
 	jb 20f
 	mov QWORD PTR [rdi+576], rbx
-	mov QWORD PTR [rdi+584], rbp
-	mov QWORD PTR [rdi+592], r12
+	mov QWORD PTR [rdi+584], r14
+	mov QWORD PTR [rdi+592], r15
 	mov rbx, rdi
-	mov rbp, rsi
-	mov r12, rdx
+	mov r14, rsi
+	mov r15, rdx
 	mov rcx, rax
 	sub rcx, rdx
 	mov QWORD PTR [rbx+600], rcx
@@ -85,9 +85,9 @@ vg_chacha20_apply_avx2:
 	shr rax, 3
 	je 24f
 26:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 26b
@@ -97,19 +97,19 @@ vg_chacha20_apply_avx2:
 	cmp rcx, rdx
 	je 27f
 29:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 29b
 	jmp 28f
 27:
 28:
-	add rbp, rdx
-	sub r12, rdx
-	mov rdx, r12
+	add r14, rdx
+	sub r15, rdx
+	mov rdx, r15
 	and rdx, -64
 	je 210f
 	mov rax, QWORD PTR [rbx]
@@ -135,17 +135,19 @@ vg_chacha20_apply_avx2:
 	mov DWORD PTR [rbx+48], eax
 	mov rdi, rbx
 	add rdi, 192
-	mov rsi, rbp
+	mov rsi, r14
 	mov rcx, rbx
 	add rcx, 256
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	mov r8, rsi
 	call {vg_chacha20_xor_avx2}
+	mov rbx, rsi
+	sub rbx, 256
 	jmp 211f
 210:
 211:
-	test r12, r12
+	test r15, r15
 	je 212f
 	mov rdi, rbx
 	mov rsi, rbx
@@ -156,15 +158,15 @@ vg_chacha20_apply_avx2:
 	mov DWORD PTR [rbx+48], eax
 	mov rsi, rbx
 	add rsi, 64
-	mov rdx, r12
+	mov rdx, r15
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
 	je 214f
 216:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 216b
@@ -174,31 +176,58 @@ vg_chacha20_apply_avx2:
 	cmp rcx, rdx
 	je 217f
 219:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 219b
 	jmp 218f
 217:
 218:
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	jmp 213f
 212:
 213:
 	mov rax, QWORD PTR [rbx+600]
 	mov QWORD PTR [rbx+128], rax
-	mov rbp, QWORD PTR [rbx+584]
-	mov r12, QWORD PTR [rbx+592]
+	mov r14, QWORD PTR [rbx+584]
+	mov r15, QWORD PTR [rbx+592]
 	mov rbx, QWORD PTR [rbx+576]
 	mov eax, 1
 	jmp 21f
 20:
 	mov eax, 0
 21:
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	lea rsp, [rsp-24]
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -207,11 +236,11 @@ vg_chacha20_apply_avx512:
 	cmp rax, rdx
 	jb 20f
 	mov QWORD PTR [rdi+576], rbx
-	mov QWORD PTR [rdi+584], rbp
-	mov QWORD PTR [rdi+592], r12
+	mov QWORD PTR [rdi+584], r14
+	mov QWORD PTR [rdi+592], r15
 	mov rbx, rdi
-	mov rbp, rsi
-	mov r12, rdx
+	mov r14, rsi
+	mov r15, rdx
 	mov rcx, rax
 	sub rcx, rdx
 	mov QWORD PTR [rbx+600], rcx
@@ -230,9 +259,9 @@ vg_chacha20_apply_avx512:
 	shr rax, 3
 	je 24f
 26:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 26b
@@ -242,19 +271,19 @@ vg_chacha20_apply_avx512:
 	cmp rcx, rdx
 	je 27f
 29:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 29b
 	jmp 28f
 27:
 28:
-	add rbp, rdx
-	sub r12, rdx
-	mov rdx, r12
+	add r14, rdx
+	sub r15, rdx
+	mov rdx, r15
 	and rdx, -64
 	je 210f
 	mov rax, QWORD PTR [rbx]
@@ -280,17 +309,19 @@ vg_chacha20_apply_avx512:
 	mov DWORD PTR [rbx+48], eax
 	mov rdi, rbx
 	add rdi, 192
-	mov rsi, rbp
+	mov rsi, r14
 	mov rcx, rbx
 	add rcx, 256
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	mov r8, rsi
 	call {vg_chacha20_xor_avx512}
+	mov rbx, rsi
+	sub rbx, 256
 	jmp 211f
 210:
 211:
-	test r12, r12
+	test r15, r15
 	je 212f
 	mov rdi, rbx
 	mov rsi, rbx
@@ -301,15 +332,15 @@ vg_chacha20_apply_avx512:
 	mov DWORD PTR [rbx+48], eax
 	mov rsi, rbx
 	add rsi, 64
-	mov rdx, r12
+	mov rdx, r15
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
 	je 214f
 216:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 216b
@@ -319,31 +350,58 @@ vg_chacha20_apply_avx512:
 	cmp rcx, rdx
 	je 217f
 219:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 219b
 	jmp 218f
 217:
 218:
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	jmp 213f
 212:
 213:
 	mov rax, QWORD PTR [rbx+600]
 	mov QWORD PTR [rbx+128], rax
-	mov rbp, QWORD PTR [rbx+584]
-	mov r12, QWORD PTR [rbx+592]
+	mov r14, QWORD PTR [rbx+584]
+	mov r15, QWORD PTR [rbx+592]
 	mov rbx, QWORD PTR [rbx+576]
 	mov eax, 1
 	jmp 21f
 20:
 	mov eax, 0
 21:
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	lea rsp, [rsp-24]
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -352,11 +410,11 @@ vg_chacha20_apply_avx512vl:
 	cmp rax, rdx
 	jb 20f
 	mov QWORD PTR [rdi+576], rbx
-	mov QWORD PTR [rdi+584], rbp
-	mov QWORD PTR [rdi+592], r12
+	mov QWORD PTR [rdi+584], r14
+	mov QWORD PTR [rdi+592], r15
 	mov rbx, rdi
-	mov rbp, rsi
-	mov r12, rdx
+	mov r14, rsi
+	mov r15, rdx
 	mov rcx, rax
 	sub rcx, rdx
 	mov QWORD PTR [rbx+600], rcx
@@ -375,9 +433,9 @@ vg_chacha20_apply_avx512vl:
 	shr rax, 3
 	je 24f
 26:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 26b
@@ -387,19 +445,19 @@ vg_chacha20_apply_avx512vl:
 	cmp rcx, rdx
 	je 27f
 29:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 29b
 	jmp 28f
 27:
 28:
-	add rbp, rdx
-	sub r12, rdx
-	mov rdx, r12
+	add r14, rdx
+	sub r15, rdx
+	mov rdx, r15
 	and rdx, -64
 	je 210f
 	mov rax, QWORD PTR [rbx]
@@ -425,17 +483,19 @@ vg_chacha20_apply_avx512vl:
 	mov DWORD PTR [rbx+48], eax
 	mov rdi, rbx
 	add rdi, 192
-	mov rsi, rbp
+	mov rsi, r14
 	mov rcx, rbx
 	add rcx, 256
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	mov r8, rsi
 	call {vg_chacha20_xor_avx512vl}
+	mov rbx, rsi
+	sub rbx, 256
 	jmp 211f
 210:
 211:
-	test r12, r12
+	test r15, r15
 	je 212f
 	mov rdi, rbx
 	mov rsi, rbx
@@ -446,15 +506,15 @@ vg_chacha20_apply_avx512vl:
 	mov DWORD PTR [rbx+48], eax
 	mov rsi, rbx
 	add rsi, 64
-	mov rdx, r12
+	mov rdx, r15
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
 	je 214f
 216:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 216b
@@ -464,31 +524,58 @@ vg_chacha20_apply_avx512vl:
 	cmp rcx, rdx
 	je 217f
 219:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 219b
 	jmp 218f
 217:
 218:
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	jmp 213f
 212:
 213:
 	mov rax, QWORD PTR [rbx+600]
 	mov QWORD PTR [rbx+128], rax
-	mov rbp, QWORD PTR [rbx+584]
-	mov r12, QWORD PTR [rbx+592]
+	mov r14, QWORD PTR [rbx+584]
+	mov r15, QWORD PTR [rbx+592]
 	mov rbx, QWORD PTR [rbx+576]
 	mov eax, 1
 	jmp 21f
 20:
 	mov eax, 0
 21:
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	lea rsp, [rsp-24]
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -497,11 +584,11 @@ vg_chacha20_apply:
 	cmp rax, rdx
 	jb 20f
 	mov QWORD PTR [rdi+576], rbx
-	mov QWORD PTR [rdi+584], rbp
-	mov QWORD PTR [rdi+592], r12
+	mov QWORD PTR [rdi+584], r14
+	mov QWORD PTR [rdi+592], r15
 	mov rbx, rdi
-	mov rbp, rsi
-	mov r12, rdx
+	mov r14, rsi
+	mov r15, rdx
 	mov rcx, rax
 	sub rcx, rdx
 	mov QWORD PTR [rbx+600], rcx
@@ -520,9 +607,9 @@ vg_chacha20_apply:
 	shr rax, 3
 	je 24f
 26:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 26b
@@ -532,19 +619,19 @@ vg_chacha20_apply:
 	cmp rcx, rdx
 	je 27f
 29:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 29b
 	jmp 28f
 27:
 28:
-	add rbp, rdx
-	sub r12, rdx
-	mov rdx, r12
+	add r14, rdx
+	sub r15, rdx
+	mov rdx, r15
 	and rdx, -64
 	je 210f
 	mov rax, QWORD PTR [rbx]
@@ -570,17 +657,19 @@ vg_chacha20_apply:
 	mov DWORD PTR [rbx+48], eax
 	mov rdi, rbx
 	add rdi, 192
-	mov rsi, rbp
+	mov rsi, r14
 	mov rcx, rbx
 	add rcx, 256
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	mov r8, rsi
 	call {vg_chacha20_xor}
+	mov rbx, rsi
+	sub rbx, 256
 	jmp 211f
 210:
 211:
-	test r12, r12
+	test r15, r15
 	je 212f
 	mov rdi, rbx
 	mov rsi, rbx
@@ -591,15 +680,15 @@ vg_chacha20_apply:
 	mov DWORD PTR [rbx+48], eax
 	mov rsi, rbx
 	add rsi, 64
-	mov rdx, r12
+	mov rdx, r15
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
 	je 214f
 216:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 216b
@@ -609,31 +698,42 @@ vg_chacha20_apply:
 	cmp rcx, rdx
 	je 217f
 219:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 219b
 	jmp 218f
 217:
 218:
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	jmp 213f
 212:
 213:
 	mov rax, QWORD PTR [rbx+600]
 	mov QWORD PTR [rbx+128], rax
-	mov rbp, QWORD PTR [rbx+584]
-	mov r12, QWORD PTR [rbx+592]
+	mov r14, QWORD PTR [rbx+584]
+	mov r15, QWORD PTR [rbx+592]
 	mov rbx, QWORD PTR [rbx+576]
 	mov eax, 1
 	jmp 21f
 20:
 	mov eax, 0
 21:
+	lea rsp, [rsp-24]
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -642,11 +742,11 @@ vg_chacha20_apply_ssse3:
 	cmp rax, rdx
 	jb 20f
 	mov QWORD PTR [rdi+576], rbx
-	mov QWORD PTR [rdi+584], rbp
-	mov QWORD PTR [rdi+592], r12
+	mov QWORD PTR [rdi+584], r14
+	mov QWORD PTR [rdi+592], r15
 	mov rbx, rdi
-	mov rbp, rsi
-	mov r12, rdx
+	mov r14, rsi
+	mov r15, rdx
 	mov rcx, rax
 	sub rcx, rdx
 	mov QWORD PTR [rbx+600], rcx
@@ -665,9 +765,9 @@ vg_chacha20_apply_ssse3:
 	shr rax, 3
 	je 24f
 26:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 26b
@@ -677,19 +777,19 @@ vg_chacha20_apply_ssse3:
 	cmp rcx, rdx
 	je 27f
 29:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 29b
 	jmp 28f
 27:
 28:
-	add rbp, rdx
-	sub r12, rdx
-	mov rdx, r12
+	add r14, rdx
+	sub r15, rdx
+	mov rdx, r15
 	and rdx, -64
 	je 210f
 	mov rax, QWORD PTR [rbx]
@@ -715,17 +815,19 @@ vg_chacha20_apply_ssse3:
 	mov DWORD PTR [rbx+48], eax
 	mov rdi, rbx
 	add rdi, 192
-	mov rsi, rbp
+	mov rsi, r14
 	mov rcx, rbx
 	add rcx, 256
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	mov r8, rsi
 	call {vg_chacha20_xor_ssse3}
+	mov rbx, rsi
+	sub rbx, 256
 	jmp 211f
 210:
 211:
-	test r12, r12
+	test r15, r15
 	je 212f
 	mov rdi, rbx
 	mov rsi, rbx
@@ -736,15 +838,15 @@ vg_chacha20_apply_ssse3:
 	mov DWORD PTR [rbx+48], eax
 	mov rsi, rbx
 	add rsi, 64
-	mov rdx, r12
+	mov rdx, r15
 	mov ecx, 0
 	mov rax, rdx
 	shr rax, 3
 	je 214f
 216:
-	mov r8, QWORD PTR [rbp+rcx*1]
+	mov r8, QWORD PTR [r14+rcx*1]
 	xor r8, QWORD PTR [rsi+rcx*1]
-	mov QWORD PTR [rbp+rcx*1], r8
+	mov QWORD PTR [r14+rcx*1], r8
 	add rcx, 8
 	sub rax, 1
 	jne 216b
@@ -754,30 +856,57 @@ vg_chacha20_apply_ssse3:
 	cmp rcx, rdx
 	je 217f
 219:
-	movzx eax, BYTE PTR [rbp+rcx*1]
+	movzx eax, BYTE PTR [r14+rcx*1]
 	movzx r8d, BYTE PTR [rsi+rcx*1]
 	xor rax, r8
-	mov BYTE PTR [rbp+rcx*1], al
+	mov BYTE PTR [r14+rcx*1], al
 	add rcx, 1
 	cmp rcx, rdx
 	jne 219b
 	jmp 218f
 217:
 218:
-	add rbp, rdx
-	sub r12, rdx
+	add r14, rdx
+	sub r15, rdx
 	jmp 213f
 212:
 213:
 	mov rax, QWORD PTR [rbx+600]
 	mov QWORD PTR [rbx+128], rax
-	mov rbp, QWORD PTR [rbx+584]
-	mov r12, QWORD PTR [rbx+592]
+	mov r14, QWORD PTR [rbx+584]
+	mov r15, QWORD PTR [rbx+592]
 	mov rbx, QWORD PTR [rbx+576]
 	mov eax, 1
 	jmp 21f
 20:
 	mov eax, 0
 21:
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	lea rsp, [rsp-24]
+	lea rsp, [rsp+24]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

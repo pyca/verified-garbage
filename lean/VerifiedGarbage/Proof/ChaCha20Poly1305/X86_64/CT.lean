@@ -164,7 +164,7 @@ theorem init_call {s : State} {P K : Addr} (hrdi : s.gpr .rdi = P) (hrsi : s.gpr
     (hQ : ∀ s', s'.rd = s.rd → s'.wr = s.wr → (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) →
       Frame [⟨P, 128⟩, below (s.gpr .rsp) 8] s.mem s'.mem → s'.gpr .rdi = P →
       Repr s'.mem P (bytesAt s.mem K 32) [] → Q s') :
-    WP isa (.call "vg_poly1305_init" Impl.Poly1305.X86_64.init) s Q := by
+    WP isa (.call "vg_poly1305_init_core" Impl.Poly1305.X86_64.init) s Q := by
   refine WP.call (k := Proof.Poly1305.initX86_64) Proof.Poly1305.X86_64.init_ok
     (keeps_of init_keeps fun _ h => and_right h) (by rw [init_depth]; decide)
     (rd := [⟨K, 32⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_

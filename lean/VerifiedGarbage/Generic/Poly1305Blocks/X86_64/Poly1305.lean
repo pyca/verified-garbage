@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -39,13 +40,6 @@ namespace VG.Generic.Poly1305Blocks.X86_64.Poly1305
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 
 def artifacts (v : BlocksImpl) : List Artifact := [
-  Spec.Poly1305.updateApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 136 .r8
-      (Impl.Poly1305.X86_64.update v.name v.code)
-    stack := 160
-    verified := Proof.Poly1305.X86_64.update_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v)
-    features := v.features }]
+  Spec.Poly1305.updateApi.artifact X86_64.target (Proof.Poly1305.X86_64.updateReg v)]
 
 end VG.Generic.Poly1305Blocks.X86_64.Poly1305

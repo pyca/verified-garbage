@@ -14,6 +14,8 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`) and it also supports `avx512ifma`; `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.

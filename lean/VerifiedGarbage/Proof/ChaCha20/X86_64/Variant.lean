@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512VL
 public import VerifiedGarbage.Impl.ChaCha20.X86_64.Callee
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.ApplyResidue
 public import VerifiedGarbage.Impl.Poly1305.X86_64.Callee
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.Xor
@@ -82,6 +83,11 @@ structure XorImpl where
   call `vg_poly1305_blocks` (`vg_chacha20_apply`) are not instantiated for it,
   as they would be that other's. -/
   polyOnly : Bool := false
+  /-- The residue analysis of `vg_chacha20_apply` over it, if the analysis
+  handles it: that instance then returns without secret residue
+  (`Scrub.applyReg`). -/
+  apply : Option (RScrub.Analysed Spec.ChaCha20.applyApi.sig 24 applyPubs
+    (Impl.ChaCha20.X86_64.Stream.apply callee)) := none
   /-- Its `fold`, `pass` and `wide` with the implementation of
   `vg_poly1305_blocks` it comes with: one of the combinations whose
   ChaCha20-Poly1305 the constant-time analysis checks (it runs on code with
@@ -97,6 +103,7 @@ namespace XorImpl
 /-- The scalar implementation, `vg_chacha20_xor`, in the baseline ISA. -/
 def scalar : XorImpl where
   callee := .scalar
+  apply := some scalarApply
   fold_le := by decide
   stack := 8
   stack_le := by decide
@@ -129,6 +136,7 @@ AVX2: its callers that also call `vg_poly1305_blocks` call the baseline
 `vg_poly1305_blocks`, as the baseline implementation's do. -/
 def ssse3 : XorImpl where
   callee := .ssse3
+  apply := some ssse3Apply
   fold_le := by decide
   stack := 16
   stack_le := by decide
@@ -159,6 +167,7 @@ theorem avx2_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx2.code := by
 /-- The AVX2 implementation, `vg_chacha20_xor_avx2`. -/
 def avx2 : XorImpl where
   callee := .avx2
+  apply := some avx2Apply
   fold_le := by decide
   stack := 16
   stack_le := by decide
@@ -189,6 +198,7 @@ theorem avx512_nosp : NoSp Impl.ChaCha20.X86_64.Callee.avx512.code := by
 /-- The AVX-512 implementation, `vg_chacha20_xor_avx512`. -/
 def avx512 : XorImpl where
   callee := .avx512
+  apply := some avx512Apply
   fold_le := by decide
   stack := 16
   stack_le := by decide
@@ -236,6 +246,7 @@ bytes in `ymm` registers, for CPUs with AVX-512 but not IFMA, whose clock a
 call `vg_poly1305_blocks_avx512`. -/
 def avx512vl : XorImpl where
   callee := .avx512vl
+  apply := some avx512vlApply
   fold_le := by decide
   stack := 16
   stack_le := by decide

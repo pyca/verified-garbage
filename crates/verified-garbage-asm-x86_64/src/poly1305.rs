@@ -7,6 +7,8 @@
 ///
 /// Contract: `VG.Spec.Poly1305.initContract`. The streaming state is the accumulator followed by the key (`VG.Spec.Poly1305.Repr`). Constant time: only the pointers may affect timing, not the key.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -16,7 +18,7 @@
 #[unsafe(naked)]
 pub unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *const [u8; 32]) {
     core::arch::naked_asm!(
-        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxDD"
+        r#".base64 "SIsGSItOCEiLVhBMi0YYSIlHGEiJTyBIiVcoTIlHMLgAAAAASIkHSIlHCEiJRxAxwDHJMdJFMcDD"
 .p2align 6"#,
     )
 }
@@ -24,6 +26,8 @@ pub unsafe extern "sysv64" fn vg_poly1305_init(state: *mut [u64; 16], key: *cons
 /// Finishes a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, writes the tag of that message, under that key, to `*out`.
 ///
 /// Contract: `VG.Spec.Poly1305.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -45,7 +49,7 @@ jne 22b
 jmp 21f
 20:
 21:
-.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAMM="
+.base64 "TInYSIPABUiJ2kiD0gBJiexJg9QATYnlScHtAkG+AAAAAE0p7kmD5ANMMdhMIfBJMcNIMdpMIfJIMdNJMexNIfRMMeVMA18oSBNfMEyJGUiJWQhIi19ISItvUEyLZ1hMi29gTIt3aEyLf3BIjaQkiAAAAEiNpCR4////SI2kJIgAAAAxwDHJMdJFMcBFMclFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -243,6 +247,8 @@ jmp 212f
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 128 bytes.
@@ -292,7 +298,7 @@ jne 213b
 jmp 212f
 211:
 212:
-.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
+.base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAGYP78BFMdtIjaQkYP////MPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEEiNpCSgAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_poly1305_blocks = sym super::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
     )
@@ -317,3 +323,7 @@ pub(crate) mod vg_poly1305_blocks_ifma;
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]
 pub(crate) mod vg_poly1305_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_poly1305_init_core.rs"]
+pub(crate) mod vg_poly1305_init_core;

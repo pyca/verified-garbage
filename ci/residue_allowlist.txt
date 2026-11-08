@@ -290,11 +290,6 @@ x86_64 vg_cast5_ecb_encrypt
 x86_64 vg_cast5_expand_key
 x86_64 vg_cast5_ofb
 x86_64 vg_cast5_ofb_final
-x86_64 vg_chacha20_apply
-x86_64 vg_chacha20_apply_avx2
-x86_64 vg_chacha20_apply_avx512
-x86_64 vg_chacha20_apply_avx512vl
-x86_64 vg_chacha20_apply_ssse3
 x86_64 vg_chacha20_init
 x86_64 vg_chacha20_poly1305_open
 x86_64 vg_chacha20_poly1305_open_avx2
@@ -697,9 +692,6 @@ x86_64 vg_pbkdf2_hmac_sha512_256_avx2
 x86_64 vg_pbkdf2_hmac_sha512_256_shani
 x86_64 vg_pbkdf2_hmac_sha512_avx2
 x86_64 vg_pbkdf2_hmac_sha512_shani
-x86_64 vg_poly1305_finalize
-x86_64 vg_poly1305_init
-x86_64 vg_poly1305_update
 x86_64 vg_poly1305_update_avx2
 x86_64 vg_poly1305_update_avx512
 x86_64 vg_poly1305_update_ifma
