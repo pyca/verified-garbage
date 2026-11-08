@@ -457,7 +457,7 @@ theorem openRunAX_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State} {ex : List Re
       (by rw [r₂₀.wr, wr₁₉, wr₁₇, wr₁₆, o₁₄.wr, o₁₃.wr, wr₁₂, wr₁₁, wr₁₀, r₃.wr, h₂.wr]),
     by rw [slot_kept F₂₀ (disj_ex (slots_fastFrame W) (exW (Lay.wSub (by decide)))) (by decide) (by decide), o.sD],
     by rw [slot_kept F₂₀ (disj_ex (slots_fastFrame W) (exW (Lay.wSub (by decide)))) (by decide) (by decide), o.sN],
-    hcb⟩, x26₂₀⟩, I₂₀⟩
+    hcb, rfl⟩, x26₂₀⟩, I₂₀⟩
 
 theorem openRunA_ok (v : GcmImpl) (hMK : MulKey) {s₀ t : State}
     (o : OpenIn Ctx W SP Np A D Tg R 12 al n tl s₀ t)

@@ -44,9 +44,10 @@ theorem WP.seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop} (h : WP
 abbrev bodyFrame (St W D : Addr) (n : Nat) : List Region :=
   tFrame St W 16 ++ crFrame St W D n ++ absFrame St W 16
 
-/-- Before a body. -/
-structure BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr) (a c : List Byte)
-    (H : Block) (s : State) : Prop where
+/-- Before a body; out of place (`to`), the text is only read (`DataOk`, as
+`decAbs` needs it). -/
+structure BodyInG (to : Bool) (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr)
+    (a c : List Byte) (H : Block) (s : State) : Prop where
   env : Env Ctx St W SP s
   kept : Kept k s
   x22 : s.gpr .x22 = BitVec.ofNat 64 R
@@ -57,8 +58,13 @@ structure BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D :
   x28 : s.gpr .x28 = D
   hc : c.length = P
   hP : P < 2 ^ 64
-  data : DataW Ctx St W s D n
+  data : cond to (DataOk St W s D n) (DataW Ctx St W s D n)
   hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
+
+/-- Before a body, in place. -/
+abbrev BodyIn (Ctx St W SP : Addr) (k : Reg → BitVec 64) (R n P : Nat) (D : Addr) (a c : List Byte)
+    (H : Block) (s : State) : Prop :=
+  BodyInG false Ctx St W SP k R n P D a c H s
 
 /-- What a body leaves, from `m₀`, where `e` is the data absorbed and `out`
 what it leaves at `D`. -/
@@ -119,14 +125,19 @@ theorem acc_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n)
   · exact st_wpart L (by decide) ⟨by decide, by decide⟩
 
 omit L in
-theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
+theorem dataOk_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataOk St W s D n) :
     ∀ r ∈ tFrame St W 16, (⟨D, n⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact hd.ok.st.sub_right (Lay.stSub (by decide))
-  · exact hd.ok.w.sub_right (Lay.wSub (by decide))
-  · exact hd.ok.w.sub_right (Lay.wSub (by decide))
+  · exact hd.st.sub_right (Lay.stSub (by decide))
+  · exact hd.w.sub_right (Lay.wSub (by decide))
+  · exact hd.w.sub_right (Lay.wSub (by decide))
+
+omit L in
+theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) :
+    ∀ r ∈ tFrame St W 16, (⟨D, n⟩ : Region).Disjoint r :=
+  dataOk_tFrame hd.ok
 
 theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) {m m' : Mem}
     (hf : Frame (crFrame St W D n) m m') :
@@ -134,14 +145,14 @@ theorem hH_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW Ctx St W s D n) 
   blockAt_frame hf fun r hr => (ctx_crFrame L hd r hr).sub_left (Lay.ctxSub (by decide))
 
 /-- The additional data padded if this is the first text: `fo` and `flush`. -/
-theorem pad_ok (v : GcmImpl) {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte} {H : Block}
-    {s : State} (h : BodyIn Ctx St W SP k R n P D a c H s) :
+theorem pad_ok (v : GcmImpl) {to : Bool} {k : Reg → BitVec 64} {R n P : Nat} {D : Addr} {a c : List Byte}
+    {H : Block} {s : State} (h : BodyInG to Ctx St W SP k R n P D a c H s) :
     WP isa (.seq fo (flush v.callees 16)) s fun s' => Env Ctx St W SP s' ∧ Kept k s' ∧
       blockAt s'.mem (Ctx + BitVec.ofNat 64 240) = H ∧ Frame (tFrame St W 16) s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c) →
         Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (xf a c n)) := by
-  have hn := h.data.ok.lt
+  have hn := (dataOk_of h.data).lt
   refine WP.seq (WP.mono (fo_ok h.x25 h.x26 h.x27 hn h.hP) fun s₁ ⟨x25₁, r₁⟩ => ?_)
   have he₁ := h.env.of_regs r₁
   have h25 : s₁.gpr .x25 = BitVec.ofNat 64 (if n ≠ 0 ∧ c.length = 0 then a.length % 16 else 0) := by
