@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 public import VerifiedGarbage.Proof.MlKem.Mem
 public import VerifiedGarbage.Proof.MlKem.Ntt
 import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.MlKem.NttLayer
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 /-!
@@ -483,5 +484,90 @@ theorem body2_ok {s : State} {R T Z : BitVec 128}
   · simp only [RegUpd.gpr_write, gpr_writeV, g₂, h5, h6', h7', h10, ite_false]
   · simp only [vpr_writeV, vpr_write, n8, n9, ite_false]
     exact v₂ v n4 n5 n6 n7 n8 n9 n10 n11
+
+/-! ## The polynomials -/
+
+section
+open VG.Proof.MlKem VG.Spec.MlKem
+
+/-- Four butterflies of a block of the layer with `len`, from `st + t`. -/
+theorem group_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t + 4 ≤ len)
+    (hs : st + 2 * len ≤ 256) (h : PolyIs m F (nttBlockN Q len k st t)) {A B : BitVec 128}
+    (hA : ∀ p < 4, vword A p = bx (vword (swapDwords (m.read (coeffAddr F (st + t)) 16)) p)
+      (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p) (BitVec.ofNat 32 (zeta k).val))
+    (hB : ∀ p < 4, vword B p = by' (vword (swapDwords (m.read (coeffAddr F (st + t)) 16)) p)
+      (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p) (BitVec.ofNat 32 (zeta k).val)) :
+    PolyIs ((m.write (coeffAddr F (st + t)) 16 (swapDwords A)).write (coeffAddr F (st + t + len)) 16
+      (swapDwords B)) F (nttBlockN Q len k st (t + 4)) := by
+  have hl : 0 < len := by omega
+  have hs' : st + 2 * len ≤ n := by rw [n_eq]; exact hs
+  have g4 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t + 4) hl ht hs' (i := i) (by rw [n_eq]; exact hi)
+  have g0 := fun i (hi : i < 256) => nttBlockN_get Q (k := k) (t := t) hl (by omega) hs' (i := i) (by rw [n_eq]; exact hi)
+  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+    (fun i hi r1 r2 => ?_)
+  · have l := (xor1 p hp).1
+    rw [hA p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, bx_val]
+    simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
+    rw [Nat.add_right_comm (st + t) _ len]
+  · have l := (xor1 p hp).1
+    rw [hB p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, by'_val]
+    simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
+    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega]
+  · rw [g4 i hi, g0 i hi]
+    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega
+    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega
+    simp only [c1, c2]
+
+/-- The coefficients of the layer with `len = 2` before block `c`. -/
+theorem layer2_old (Q : Poly) {c i : Nat} (hc : c ≤ 64) (h1 : 4 * c ≤ i) (h2 : i < 256) :
+    (nttLayerN Q 2 c)[i]! = Q[i]! := by
+  rw [nttLayerN_get Q (by decide) (by omega) h2, ite_eq_right (by omega)]
+
+/-- The coefficients of blocks `c` and `c + 1` of the layer with `len = 2`. -/
+theorem layer2_new (Q : Poly) {c d : Nat} (hc : c + 2 ≤ 64) (hd : d < 8) :
+    (nttLayerN Q 2 (c + 2))[4 * c + d]! =
+      if d % 4 < 2 then Q[4 * c + d]! + zeta (64 + c + d / 4) * Q[4 * c + (d + 2)]!
+      else Q[4 * c + (d - 2)]! - zeta (64 + c + d / 4) * Q[4 * c + d]! := by
+  rw [nttLayerN_get Q (by decide) (by omega) (by omega), ite_eq_left (by omega),
+    show (4 * c + d) % (2 * 2) = d % 4 by omega, show 128 / 2 + (4 * c + d) / (2 * 2) = 64 + c + d / 4 by omega]
+  split
+  · rfl
+  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega]
+
+theorem layer2_new0 (Q : Poly) {c : Nat} (hc : c + 2 ≤ 64) :
+    (nttLayerN Q 2 (c + 2))[4 * c]! = Q[4 * c]! + zeta (64 + c) * Q[4 * c + 2]! := by
+  have := layer2_new Q hc (d := 0) (by decide)
+  simpa only [Nat.add_zero, Nat.zero_mod, Nat.zero_div, Nat.zero_add, ite_true, show 0 < 2 by decide] using this
+
+/-- Two blocks of the layer with `len = 2`. -/
+theorem pair_poly {m : Mem} {F : Addr} {Q : Poly} {c : Nat} (hc : c + 2 ≤ 64)
+    (h : PolyIs m F (nttLayerN Q 2 c)) {Z A B : BitVec 128}
+    (hz1 : vword Z 1 = BitVec.ofNat 32 (zeta (64 + c)).val)
+    (hz3 : vword Z 3 = BitVec.ofNat 32 (zeta (64 + c + 1)).val)
+    (hA : ∀ p < 4, vword A p = if p < 2 then
+        bx (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) p)
+          (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) (p + 2)) (vword Z 1)
+      else by' (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) (p - 2))
+          (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) p) (vword Z 1))
+    (hB : ∀ p < 4, vword B p = if p < 2 then
+        bx (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) p)
+          (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) (p + 2)) (vword Z 3)
+      else by' (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) (p - 2))
+          (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) p) (vword Z 3)) :
+    PolyIs ((m.write (coeffAddr F (4 * c)) 16 (swapDwords A)).write (coeffAddr F (4 * c + 4)) 16
+      (swapDwords B)) F (nttLayerN Q 2 (c + 2)) := by
+  refine polyIs_rows h (j₁ := 4 * c) (j₂ := 4 * c + 4) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+    (fun i hi r1 r2 => ?_)
+  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega) only [hA, hz1, row_lane h, layer2_old, layer2_new, layer2_new0, bx_val, by'_val,
+      ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero]
+  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega) only [hB, hz3, row_lane h, layer2_old, layer2_new, bx_val, by'_val, ↓ite_eq_left,
+      ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero, Nat.add_assoc]
+  · rw [nttLayerN_get Q (by decide) (by omega) hi, nttLayerN_get Q (by decide) (by omega) hi]
+    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega
+    simp only [c1]
+
+end
 
 end VG.Proof.MlKem.PPC64LE.VBfly
