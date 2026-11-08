@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesOcb.X86.Frame
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Tactic.Conv
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
@@ -41,40 +40,6 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Aes.X86.AesNi.BlocksLoop
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.Aes.X86.Decrypt
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import VerifiedGarbage.Proof.AesOcb.X86.Blk
-import VerifiedGarbage.Proof.AesOcb.X86.Calls
-import VerifiedGarbage.Proof.AesOcb.X86.Entry
-import VerifiedGarbage.Proof.AesOcb.X86.Init
-import VerifiedGarbage.Proof.AesOcb.X86.LNtz
-import VerifiedGarbage.Proof.AesOcb.X86.NonceBlock
-import VerifiedGarbage.Proof.AesOcb.X86.Offset0
-import VerifiedGarbage.Proof.AesOcb.X86.Run
-import VerifiedGarbage.Proof.AesOcb.X86.Setup
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.CmacAes.X86.Verified
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Gcm.Be64
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # AES-OCB (RFC 7253) on x86 -/
 

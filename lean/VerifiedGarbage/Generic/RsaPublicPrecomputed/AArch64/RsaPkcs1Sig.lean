@@ -1,16 +1,14 @@
 module
 
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.Callees
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
+public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.RecoverPrecomputed
 public import VerifiedGarbage.Impl.RsaPkcs1Sig.AArch64.Precomputed
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.VerifyPre
 public import VerifiedGarbage.Spec.RsaPkcs1Sig.Precomputed
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.PrecomputedVerified
-public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcVerified
 public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
@@ -18,11 +16,6 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcCorrect
-import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.RecPcTail
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
-import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 
 /-! # PKCS #1 v1.5 verification and recovery over precomputed RSA public variants on AArch64 -/
 

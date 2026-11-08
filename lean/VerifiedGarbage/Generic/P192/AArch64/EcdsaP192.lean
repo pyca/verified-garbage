@@ -4,8 +4,8 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Joint.Verified
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -15,8 +15,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P192
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Lit
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Proof.EcKey.PublicKey
@@ -37,23 +35,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P192.Config
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Stages
-import VerifiedGarbage.Proof.Ecdsa.Projective
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P192.Sum
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-! # p192 on AArch64, generic over its proven group law and inversions -/
 

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
-import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Verified
+public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdh.BrainpoolP512r1
 import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
@@ -58,20 +57,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.SetConst
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.Main
-import VerifiedGarbage.Proof.Ecdh.AArch64.BrainpoolP512r1.MulPow
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Rep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-! # brainpoolP512r1 on AArch64, generic over its proven group law and inversions -/
 

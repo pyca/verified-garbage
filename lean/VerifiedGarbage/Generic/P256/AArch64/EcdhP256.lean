@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
-import VerifiedGarbage.Proof.P256.EcdhJac.Verified
+public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 public import VerifiedGarbage.Proof.P256.EcdhDouble.Certificate
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.BitVec
@@ -37,7 +37,6 @@ public import VerifiedGarbage.Spec.Ecdh.P256
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.ClearExcept
 import Mathlib.Data.Finset.Card
-public import VerifiedGarbage.Proof.P256.EcdhJac.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Divstep.Bound
 import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowEntryTiming
@@ -100,52 +99,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Divstep.Incl
-import VerifiedGarbage.Proof.Divstep.Tc
-import VerifiedGarbage.Proof.Divstep.Word
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdh.AArch64.Verified
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedArithmetic
 import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.P256.EcdhDouble.Field
-import VerifiedGarbage.Proof.P256.EcdhDouble.LinearField
-import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
-import VerifiedGarbage.Proof.P256.EcdhInverse.Extra
-import VerifiedGarbage.Proof.P256.EcdhInverse.Extract
-import VerifiedGarbage.Proof.P256.EcdhInverse.Finish
-import VerifiedGarbage.Proof.P256.EcdhInverse.Inverse
-import VerifiedGarbage.Proof.P256.EcdhInverse.Packed
-import VerifiedGarbage.Proof.P256.EcdhInverse.RawUpdate
-import VerifiedGarbage.Proof.P256.EcdhInverse.Shift
-import VerifiedGarbage.Proof.P256.EcdhJac.BuildDblu
-import VerifiedGarbage.Proof.P256.EcdhJac.Dblu
-import VerifiedGarbage.Proof.P256.EcdhJac.Frame
-import VerifiedGarbage.Proof.P256.EcdhJac.Prefix
-import VerifiedGarbage.Proof.P256.EcdhJac.Select
-import VerifiedGarbage.Proof.P256.EcdhJac.Timing
-import VerifiedGarbage.Proof.P256.EcdhJac.Window
-import VerifiedGarbage.Proof.P256.EcdhTable.DbluRaw
-import VerifiedGarbage.Proof.P256.EcdhTable.Transfer
-import VerifiedGarbage.Proof.P256.Linear.WeakAdd
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 
 /-! # ECDH over P-256 (SP 800-56A) on AArch64 -/
 

@@ -9,8 +9,6 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.P192.Point
 public import VerifiedGarbage.Proof.Weierstrass.Cubic
-import VerifiedGarbage.Proof.P192.Point
-import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-! # P-192's group law, on RISCV64 -/
 

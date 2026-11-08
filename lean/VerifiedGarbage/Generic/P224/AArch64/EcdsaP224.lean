@@ -3,9 +3,9 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvSpec
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P224.Comb7
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P224.AArch64
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -14,8 +14,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P224
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P224.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P224.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P224.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -41,27 +39,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Impl.Ecdh.P224.AArch64
-import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Jacobian
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Projective
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.Main
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.P224.Point
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # ECDSA over P-224 (FIPS 186-5) on AArch64 -/
 

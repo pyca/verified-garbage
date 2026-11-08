@@ -13,15 +13,6 @@ public import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.TCB.Arm.Print
-import VerifiedGarbage.Proof.Framework.Arm.CallF
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-import VerifiedGarbage.Proof.Framework.Arm.RegScratchWipe
-import VerifiedGarbage.Proof.Framework.Arm.RegUpd
-import VerifiedGarbage.Proof.Framework.Arm.RelCT
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.TripleDes.Arm.Key.Verified
-import VerifiedGarbage.Proof.TripleDes.Bytes
-import VerifiedGarbage.Proof.TripleDes.Permutation
 
 @[expose] public section
 

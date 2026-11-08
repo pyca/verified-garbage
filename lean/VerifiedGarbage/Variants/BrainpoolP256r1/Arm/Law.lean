@@ -9,8 +9,6 @@ import Mathlib.Tactic.NormNum.GCD
 import Mathlib.Tactic.Positivity.Finset
 public import VerifiedGarbage.Proof.BrainpoolP256r1.Point
 public import VerifiedGarbage.Proof.Weierstrass.Cubic
-import VerifiedGarbage.Proof.BrainpoolP256r1.Point
-import VerifiedGarbage.Proof.Weierstrass.Cubic
 
 /-! # brainpoolP256r1's group law, on 32-bit ARM -/
 

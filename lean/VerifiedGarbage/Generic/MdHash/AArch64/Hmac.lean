@@ -20,23 +20,6 @@ public import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
 public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-import VerifiedGarbage.Proof.Framework.AArch64.Syms
-import VerifiedGarbage.Proof.Framework.Cold
-import VerifiedGarbage.Proof.Framework.EntryBranch
-import VerifiedGarbage.Proof.Framework.KernelRfl
-import VerifiedGarbage.Proof.Hmac.AnyKey
-import VerifiedGarbage.Proof.Hmac.Generic.Implies
-import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.AnyKeyEntry
-import VerifiedGarbage.Proof.Sha256.AArch64.Compress
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Digest
-import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Digest
-import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 
 /-! # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64 -/
 

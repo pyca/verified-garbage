@@ -8,88 +8,6 @@ import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombContract
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P256
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.X86.Peer
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombBodyCT
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombMain
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombStagesCT
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.Final
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafCallerCT
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafLayout
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.NafMulTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.WindowPoints
-import VerifiedGarbage.Proof.Ecdsa.X86.CombCT
-import VerifiedGarbage.Proof.Ecdsa.X86.CombMain
-import VerifiedGarbage.Proof.Ecdsa.X86.Finish
-import VerifiedGarbage.Proof.Ecdsa.X86.Inv
-import VerifiedGarbage.Proof.Ecdsa.X86.Lays
-import VerifiedGarbage.Proof.Ecdsa.X86.Middle
-import VerifiedGarbage.Proof.Ecdsa.X86.PtLays
-import VerifiedGarbage.Proof.Ecdsa.X86.Scalar
-import VerifiedGarbage.Proof.Ecdsa.X86.Setup
-import VerifiedGarbage.Proof.Ecdsa.X86.SlotOps
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.NativeTaint
-import VerifiedGarbage.Proof.Framework.NativeTaintCore
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86.CallWith
-import VerifiedGarbage.Proof.Framework.X86.Lit
-import VerifiedGarbage.Proof.Framework.X86.Mmx
-import VerifiedGarbage.Proof.Framework.X86.RegUpd
-import VerifiedGarbage.Proof.Framework.X86.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86.Csub
-import VerifiedGarbage.Proof.Mont.X86.Instr
-import VerifiedGarbage.Proof.Mont.X86.RedRow
-import VerifiedGarbage.Proof.Mont.X86.Row
-import VerifiedGarbage.Proof.Mont.X86.Step
-import VerifiedGarbage.Proof.P256.Order
-import VerifiedGarbage.Proof.P256.Prime
-import VerifiedGarbage.Proof.Rc2.Memory32
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.InvToM
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.Window5
-import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.X86.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
-import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
-import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
-import VerifiedGarbage.Proof.Weierstrass.X86.InvUnsigned
-import VerifiedGarbage.Proof.Weierstrass.X86.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.X86.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86.MontRed
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareArithmetic
-import VerifiedGarbage.Proof.Weierstrass.X86.MontSquareRed
-import VerifiedGarbage.Proof.Weierstrass.X86.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPoint
-import VerifiedGarbage.Proof.Weierstrass.X86.NafPublicFields
-import VerifiedGarbage.Proof.Weierstrass.X86.NafTableFields
-import VerifiedGarbage.Proof.Weierstrass.X86.P256Power
-import VerifiedGarbage.Proof.Weierstrass.X86.PointFieldTiming
-import VerifiedGarbage.Proof.Weierstrass.X86.Rep
-import VerifiedGarbage.Proof.Weierstrass.X86.ScalarPower
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJEntry
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombJSelect
-import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
-import VerifiedGarbage.Proof.X25519.Field
-import VerifiedGarbage.Proof.X25519.X86.Arith
-import VerifiedGarbage.Proof.X25519.X86.Fold
-public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
-import VerifiedGarbage.TCB.X86.Target
-public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P256.X86
-import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Ecdh.X86.Peer
 public import VerifiedGarbage.Proof.Ecdsa.Sign
@@ -140,6 +58,7 @@ public import VerifiedGarbage.Proof.Weierstrass.TCombWords
 public import VerifiedGarbage.Proof.Weierstrass.Window5
 public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
+import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 public import VerifiedGarbage.Proof.Weierstrass.X86.FprogJ
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvFinishPrep
 public import VerifiedGarbage.Proof.Weierstrass.X86.InvShiftMath
@@ -166,6 +85,11 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.TCombOne
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
+public import VerifiedGarbage.Proof.Weierstrass.X86.InvInterface
+import VerifiedGarbage.TCB.X86.Target
+public import VerifiedGarbage.Proof.Weierstrass.Law
+public import VerifiedGarbage.Impl.Ecdsa.P256.X86
+import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 

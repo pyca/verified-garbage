@@ -13,9 +13,9 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdh.P256
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Proof.Mont.X86_64.Wide
+public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
-import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
+public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
 public import VerifiedGarbage.Proof.Ecdsa.Sign
@@ -43,7 +43,6 @@ public import VerifiedGarbage.Proof.Mont.X86_64.Round
 public import VerifiedGarbage.Proof.Mont.X86_64.Sparse
 public import VerifiedGarbage.Proof.Mont.X86_64.SparseX
 public import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-public import VerifiedGarbage.Proof.Mont.X86_64.Wide
 public import VerifiedGarbage.Proof.Mont.X86_64.WideOps
 public import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.P256.Prime
@@ -77,68 +76,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
-public import VerifiedGarbage.Proof.X25519.X86_64.Adx.SqrProd
 public import VerifiedGarbage.TCB.X86_64.Print
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.X86_64.Peer
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.X86_64.CombLays
-import VerifiedGarbage.Proof.Ecdsa.X86_64.MulFn
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.BitByte
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.X86_64.Avx
-import VerifiedGarbage.Proof.Framework.X86_64.Bswap
-import VerifiedGarbage.Proof.Framework.X86_64.CallInlineSig
-import VerifiedGarbage.Proof.Framework.X86_64.Exec
-import VerifiedGarbage.Proof.Framework.X86_64.Inline
-import VerifiedGarbage.Proof.Framework.X86_64.Lit
-import VerifiedGarbage.Proof.Framework.X86_64.Masked
-import VerifiedGarbage.Proof.Framework.X86_64.Sse
-import VerifiedGarbage.Proof.Mont.Words128
-import VerifiedGarbage.Proof.Mont.X86_64.Blocks
-import VerifiedGarbage.Proof.Mont.X86_64.CsubS
-import VerifiedGarbage.Proof.Mont.X86_64.Friendly
-import VerifiedGarbage.Proof.Mont.X86_64.Ops
-import VerifiedGarbage.Proof.Mont.X86_64.Round
-import VerifiedGarbage.Proof.Mont.X86_64.Sparse
-import VerifiedGarbage.Proof.Mont.X86_64.SparseX
-import VerifiedGarbage.Proof.Mont.X86_64.SqrPX
-import VerifiedGarbage.Proof.Mont.X86_64.WideOps
-import VerifiedGarbage.Proof.P256.Order
-import VerifiedGarbage.Proof.P256.Prime
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfForward
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfPublic
-import VerifiedGarbage.Proof.P256.X86_64.DoubleHalfWP
-import VerifiedGarbage.Proof.P256.X86_64.HalfMemory
-import VerifiedGarbage.Proof.P256.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.TCombWords
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Bytes
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CachedJacOps
-import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Copy
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardField
-import VerifiedGarbage.Proof.Weierstrass.X86_64.ForwardStores
-import VerifiedGarbage.Proof.Weierstrass.X86_64.FprogJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacAdd
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacState
-import VerifiedGarbage.Proof.Weierstrass.X86_64.JacZero
-import VerifiedGarbage.Proof.Weierstrass.X86_64.Loop
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontCall
-import VerifiedGarbage.Proof.Weierstrass.X86_64.MontWide8
-import VerifiedGarbage.Proof.Weierstrass.X86_64.SpillUnch
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJac
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacBuild
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacEntry
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinJacStep
-import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 
 /-! # ECDH over P-256 (SP 800-56A) on x86-64 -/
 

@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 import VerifiedGarbage.Impl.Ecdh.P384.AArch64
-import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdh.P384
 import Mathlib.Tactic.ClearExcept
-public import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
@@ -29,18 +28,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdh.Exchange
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJLoop
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Proof.Weierstrass.MulContract
 
 /-! # ECDH over P-384 (SP 800-56A) on AArch64 -/
 

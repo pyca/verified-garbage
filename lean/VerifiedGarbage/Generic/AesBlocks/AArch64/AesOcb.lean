@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
-import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
@@ -18,7 +18,6 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 public import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Range
@@ -28,29 +27,6 @@ public import VerifiedGarbage.Proof.Gcm.Bits
 public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Ocb.State
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
-import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
-import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
-import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
-import VerifiedGarbage.Proof.AesGcm.AArch64.Rel
-import VerifiedGarbage.Proof.AesOcb.AArch64.CTBase
-import VerifiedGarbage.Proof.AesOcb.AArch64.InitCT
-import VerifiedGarbage.Proof.Cmac.Block
-import VerifiedGarbage.Proof.Cmac.Dbl32
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import VerifiedGarbage.Proof.Framework.AArch64.Lit
-import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Framework.Range
-import VerifiedGarbage.Proof.Framework.RegionsSub
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Gcm.Bits
-import VerifiedGarbage.Proof.Ocb.Spec
-import VerifiedGarbage.Proof.Ocb.State
 
 /-! # AES-OCB (RFC 7253) on AArch64 -/
 

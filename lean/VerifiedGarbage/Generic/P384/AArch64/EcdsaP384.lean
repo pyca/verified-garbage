@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P384.Comb7
 public import VerifiedGarbage.Proof.P384.GTable9 -- shake: keep (the artifacts' bodies use `gtabOk9`)
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P384.AArch64
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -16,8 +16,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Verified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P384.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
@@ -56,40 +54,6 @@ public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Impl.Ecdh.P384.AArch64
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Projective
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P384.Checks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
-import VerifiedGarbage.Proof.Framework.AArch64.RelCT
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.P384.Point
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacTableTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.CoZTable
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 /-! # ECDSA over P-384 (FIPS 186-5) on AArch64 -/
 

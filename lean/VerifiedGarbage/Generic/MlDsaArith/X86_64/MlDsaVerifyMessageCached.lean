@@ -1,14 +1,12 @@
 module
 
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
+public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 import Mathlib.Tactic.Conv
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.Sat
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.X86_64.Message
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
-import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
-public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyFn
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Message.VerifyVerified
 public import VerifiedGarbage.TCB.X86_64.Target
 import VerifiedGarbage.Proof.MlKem.X86_64.YLanes

@@ -22,19 +22,6 @@ public import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Proof.Framework.AArch64.TaintErase
-import VerifiedGarbage.Proof.Mgf1.Bytes
-import VerifiedGarbage.Proof.RsaOaep.AArch64.Args
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT1
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCT2
-import VerifiedGarbage.Proof.RsaOaep.AArch64.DecCorrect
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCT1
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncCorrect
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncEm
-import VerifiedGarbage.Proof.RsaOaep.AArch64.EncMain
-import VerifiedGarbage.Proof.RsaOaep.AArch64.LabelTCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.MgfCT
-import VerifiedGarbage.Proof.RsaOaep.AArch64.TaintImm
 
 /-! # RSAES-OAEP encryption with a precomputed public key on AArch64, with both hash functions as tables -/
 

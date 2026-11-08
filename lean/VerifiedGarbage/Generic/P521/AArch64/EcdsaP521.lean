@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P521.Comb7
-import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P521.AArch64
 import Mathlib.Data.Finset.Card
 import Mathlib.Data.Nat.Find
@@ -15,8 +15,6 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowBase
 public import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 public import Mathlib.Tactic.ClearExcept
 public import VerifiedGarbage.Proof.Framework.Contract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointVerified
 import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
@@ -104,88 +102,6 @@ public import VerifiedGarbage.Proof.Weierstrass.CoZTable
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-import VerifiedGarbage.Impl.P256.VerifyRegisters
-import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Projective
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.Checks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointAbi
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointBoundaryTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointContract
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointDigitsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixed
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedBridge
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedPoint
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedSignTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointFixedTable
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointLoopTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointMain
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPointsTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrep
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointPrepTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointTopTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindow
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.P521.JointWindowTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.PubNafMul
-import VerifiedGarbage.Proof.P521.Point
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedAddB
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTimingB
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointFixedLookupTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Add
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddC
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.AddTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.CacheBuild
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Copy
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.JointFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Table
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.TableCoZ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Wide
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WidePrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.WideStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.PubNaf.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.CoZTable
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 /-! # ECDSA over P-521 (FIPS 186-5) on AArch64 -/
 

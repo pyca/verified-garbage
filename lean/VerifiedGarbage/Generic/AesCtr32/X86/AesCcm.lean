@@ -1,10 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.AesCcm.X86.Frame
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
+public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Cmac.Contract
-public import VerifiedGarbage.Proof.CmacAes.Stream.X86.Frame
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
 public import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
@@ -35,34 +34,6 @@ public import VerifiedGarbage.Proof.Framework.X86.SseTaint
 public import VerifiedGarbage.Proof.Framework.X86.StackScratch
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.X86.Print
-import VerifiedGarbage.Proof.Aes.X86.AesNi.KeyRecurrence
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Load
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Prologue
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Restore
-import VerifiedGarbage.Proof.Aes.X86.AesNi.Tail
-import VerifiedGarbage.Proof.AesCcm.X86.Aad
-import VerifiedGarbage.Proof.AesCcm.X86.AadCT
-import VerifiedGarbage.Proof.AesCcm.X86.Blocks
-import VerifiedGarbage.Proof.AesCcm.X86.Entry
-import VerifiedGarbage.Proof.AesCcm.X86.Mac
-import VerifiedGarbage.Proof.AesCcm.X86.Run
-import VerifiedGarbage.Proof.AesCcm.X86.SealCT
-import VerifiedGarbage.Proof.AesGcm.X86.CryptHead
-import VerifiedGarbage.Proof.AesGcm.X86.CryptTail
-import VerifiedGarbage.Proof.AesGcm.X86.CryptWhole
-import VerifiedGarbage.Proof.AesGcm.X86.Flush
-import VerifiedGarbage.Proof.AesGcm.X86.Top
-import VerifiedGarbage.Proof.Cmac.Frame
-import VerifiedGarbage.Proof.Cmac.Mem
-import VerifiedGarbage.Proof.Cmac.Spec
-import VerifiedGarbage.Proof.CmacAes.Stream.X86.Absorb
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCT
-import VerifiedGarbage.Proof.CmacAes.X86.UpdateCorrect
-import VerifiedGarbage.Proof.CmacAes.X86.Verified
-import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Framework.X86.SseTaint
-import VerifiedGarbage.Proof.Framework.X86.StackScratch
-import VerifiedGarbage.Proof.Sha256.Stream
 
 /-! # AES-CCM (NIST SP 800-38C) on x86 -/
 

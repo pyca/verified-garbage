@@ -4,9 +4,9 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 public import VerifiedGarbage.Impl.Ecdsa.AArch64.VerifyHash
 public import VerifiedGarbage.Proof.P256.GTable9
 public import VerifiedGarbage.Proof.P256.Comb7
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
+public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
 public import VerifiedGarbage.Impl.Ecdsa.Verify.AArch64.Allocated
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
+public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import Mathlib.Data.BitVec
 public import Mathlib.Data.Int.ModEq
@@ -40,8 +40,6 @@ public import VerifiedGarbage.Proof.EcKey.AArch64.Lit
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothLit
 public import VerifiedGarbage.Proof.Framework.Contract
 import Mathlib.Data.Finset.Card
-public import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothVerified
-public import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedVerified
 import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Impl.Ecdsa.P256.AArch64
 import VerifiedGarbage.Proof.Divstep.Bound
@@ -128,83 +126,8 @@ public import VerifiedGarbage.Proof.Weierstrass.BytesLen
 public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 public import VerifiedGarbage.TCB.AArch64.Print
-import VerifiedGarbage.Impl.Ecdh.P256.AArch64
-import VerifiedGarbage.Impl.P256.EcdhJac
-import VerifiedGarbage.Proof.Divstep.Batch
-import VerifiedGarbage.Proof.Divstep.Incl
-import VerifiedGarbage.Proof.Divstep.Tc
-import VerifiedGarbage.Proof.Divstep.Word
-import VerifiedGarbage.Proof.EcKey.AArch64.Verified
-import VerifiedGarbage.Proof.EcKey.PublicKey
-import VerifiedGarbage.Proof.Ecdh.AArch64.Peer
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothContract
-import VerifiedGarbage.Proof.Ecdsa.AArch64.BoothTiming
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Finish
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Lays
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Middle
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Padd
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Scalar
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Setup
-import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
-import VerifiedGarbage.Proof.Ecdsa.Projective
-import VerifiedGarbage.Proof.Ecdsa.Sign
-import VerifiedGarbage.Proof.Ecdsa.Verify
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedCached
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.AllocatedPoints
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacChecks
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JointInitTiming
-import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.NafWindowTiming
 import VerifiedGarbage.Proof.Framework.Pratt
-import VerifiedGarbage.Proof.P256.EcdhDouble.Field
-import VerifiedGarbage.Proof.P256.EcdhDouble.LinearField
-import VerifiedGarbage.Proof.P256.EcdhDouble.Verified
-import VerifiedGarbage.Proof.P256.EcdhJac.StoreWords
-import VerifiedGarbage.Proof.P256.Linear.WeakAdd
-import VerifiedGarbage.Proof.P256.Point
-import VerifiedGarbage.Proof.P256.VerifyAllocated.Timing
-import VerifiedGarbage.Proof.P256.VerifyTable.Env
-import VerifiedGarbage.Proof.P256.VerifyTable.Store
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AddConst
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedJointDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.AllocatedState
-import VerifiedGarbage.Proof.Weierstrass.AArch64.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.AArch64.CachedLoad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafArith
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafDigits
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafExec
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafInit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.FastNafPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CT
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.CombProduction
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyCheck
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyFinish
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvEarlyTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvMain
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvRed
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.InvWords
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacCombOut
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JacWindowSumTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointLoopTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.JointPrep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafArithmeticTiming
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafChoose
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.NafSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJ
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJDigit
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.TCombJStep
-import VerifiedGarbage.Proof.Weierstrass.AArch64.Window
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowEntry
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowSum
-import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowTable
-import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
-import VerifiedGarbage.Proof.Weierstrass.WinJacMath
 
 /-! # ECDSA over P-256 (FIPS 186-5) on AArch64 -/
 
