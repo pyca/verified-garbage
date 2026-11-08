@@ -176,6 +176,10 @@ GROUPS = {
         "lib": ["dsa::parameters"],
         "tests": [],
     },
+    "dsa_parameters_dispatch": {
+        "lib": ["dsa::parameters::search"],
+        "tests": [],
+    },
     "dsa": {
         "lib": ["dsa"],
         "tests": ["cavp::dsa", "wycheproof::dsa"],
