@@ -58,10 +58,8 @@ use crate::arch::dispatch::gcm::{
 #[cfg(not(target_arch = "x86_64"))]
 use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
 use crate::error::InvalidKeyLength;
-#[cfg(target_arch = "aarch64")]
-use crate::zeroize::zeroize;
 #[cfg(not(target_arch = "x86_64"))]
-use crate::zeroize::zeroize_raw;
+use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
 
 /// A 16-byte block.
@@ -196,12 +194,8 @@ impl Drop for AesGcm {
                 self.ctx.0.as_mut_ptr(),
             )
         };
-        // SAFETY: `self.ctx` is valid for writes of `size_of::<KeyCtx>()`
-        // bytes, and lies outside `zeroize_raw`'s frame.
         #[cfg(not(target_arch = "x86_64"))]
-        unsafe {
-            zeroize_raw(self.ctx.0.as_mut_ptr().cast(), size_of::<KeyCtx>())
-        };
+        zeroize(core::slice::from_mut(&mut self.ctx));
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers.0);
     }

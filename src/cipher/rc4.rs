@@ -18,7 +18,7 @@ use core::mem::MaybeUninit;
 
 use crate::arch::dispatch::rc4::{vg_rc4_apply_auto, vg_rc4_init_auto};
 use crate::error::InvalidKeyLength;
-use crate::zeroize::zeroize_raw;
+use crate::zeroize::zeroize;
 
 /// An incremental raw RC4 encryptor or decryptor.
 pub struct Rc4 {
@@ -66,9 +66,8 @@ impl Rc4 {
 
 impl Drop for Rc4 {
     fn drop(&mut self) {
-        // SAFETY: the context is writable for all 258 bytes, including
-        // after failed initialization. It is a distinct Rust object that
-        // does not overlap the callee's stack or wrap around the address space.
-        unsafe { zeroize_raw(self.ctx.0.as_mut_ptr().cast::<u8>(), 258) };
+        // Including after failed initialization: zeros are a valid
+        // `MaybeUninit`.
+        zeroize(core::slice::from_mut(&mut self.ctx));
     }
 }
