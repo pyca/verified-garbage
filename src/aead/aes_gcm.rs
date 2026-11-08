@@ -29,6 +29,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 #[cfg(target_arch = "aarch64")]
 use crate::arch::gcm::VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES;
 use crate::arch::gcm::vg_aes_gcm_open_to;
@@ -976,21 +977,20 @@ macro_rules! assert_tag_length {
 /// one-shot AEAD; [`encryptor`](Self::encryptor) and
 /// [`decryptor`](Self::decryptor) start incremental ones.
 #[derive(Clone)]
-// On x86-64 the key context, with the powers, is the first field, aligned
-// to a cache line, so that the `_prepared` variants' reads of it do not
-// cross cache lines, as some would at 8 bytes' alignment. Elsewhere it is
-// the first field too: after the pointer `fns`, on x86 its offset in a
-// 4-byte-aligned value left the compiler unable to clear it with aligned
-// 16-byte stores in `new`, and it called `memset` instead (4–5% slower
-// `new` on Zen 3).
-#[cfg_attr(all(target_arch = "x86_64", feature = "alloc"), repr(C, align(64)))]
-#[cfg_attr(not(all(target_arch = "x86_64", feature = "alloc")), repr(C))]
+// The key context, with the powers on x86-64, is the first field, aligned
+// to a cache line, so that the implementations' reads of it (the
+// `_prepared` variants' of the powers) do not cross cache lines, as some
+// would at 8 bytes' alignment. After the pointer `fns`, on x86 its offset
+// in a 4-byte-aligned value also left the compiler unable to clear it with
+// aligned 16-byte stores in `new`, and it called `memset` instead (4–5%
+// slower `new` on Zen 3).
+#[repr(C)]
 pub struct AesGcm {
     /// The key context `vg_aes_gcm_init` writes (`VG.Spec.Gcm.KeyRepr`),
     /// with the powers of the hash subkey after it on x86-64 (`KeyCtx`):
     /// its first `written()` bytes, which `new` writes; the rest is never
     /// read.
-    ctx: MaybeUninit<KeyCtx>,
+    ctx: CacheAligned<MaybeUninit<KeyCtx>>,
     rounds: usize,
     /// The functions it calls (`Backend::fns`); on x86-64, if they are a
     /// backend's `_prepared` instances (`Fns::prepare`), `ctx` holds the
@@ -1000,7 +1000,7 @@ pub struct AesGcm {
     /// that `new` stores if `fns` has `_with_powers` instances
     /// (`Fns::powers`), which read them; zero otherwise.
     #[cfg(target_arch = "aarch64")]
-    powers: Ctx,
+    powers: CacheAligned<Ctx>,
 }
 
 impl Drop for AesGcm {
@@ -1008,9 +1008,9 @@ impl Drop for AesGcm {
     fn drop(&mut self) {
         // SAFETY: `self.ctx` is valid for writes of its `written()` bytes (at
         // most `size_of::<KeyCtx>()`), and lies outside `zeroize_raw`'s frame.
-        unsafe { zeroize_raw(self.ctx.as_mut_ptr().cast(), self.written()) };
+        unsafe { zeroize_raw(self.ctx.0.as_mut_ptr().cast(), self.written()) };
         #[cfg(target_arch = "aarch64")]
-        zeroize(&mut self.powers);
+        zeroize(&mut self.powers.0);
     }
 }
 
@@ -1028,17 +1028,17 @@ impl AesGcm {
         let f = detected();
         let backend = select(f);
         let mut k = AesGcm {
-            ctx: MaybeUninit::uninit(),
+            ctx: CacheAligned(MaybeUninit::uninit()),
             rounds: key.len() / 4 + 6,
             fns: backend.fns(f),
             #[cfg(target_arch = "aarch64")]
-            powers: [0; size_of::<Ctx>() / 8],
+            powers: CacheAligned([0; size_of::<Ctx>() / 8]),
         };
         // Only the key context of `vg_aes_gcm_init` is cleared first (`key`
         // reads it); `prepare` writes its proven `written` bytes of powers,
         // and the bytes after them are never read.
         // SAFETY: `k.ctx` is valid for writes of at least 256 bytes.
-        unsafe { k.ctx.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
+        unsafe { k.ctx.0.as_mut_ptr().cast::<[u64; 32]>().write([0; 32]) };
         // Chosen from `backend` rather than read from `k.fns`: the load
         // before the call made `new` 1–4% slower on Neoverse N2.
         let init = backend.plain_fns().init;
@@ -1047,7 +1047,7 @@ impl AesGcm {
         // are distinct objects, so they do not overlap each other or anything
         // on the stack, or wrap around the end of the address space. The CPU
         // has the features of the implementation selected.
-        unsafe { init(key.as_ptr(), key.len(), k.ctx.as_mut_ptr().cast()) };
+        unsafe { init(key.as_ptr(), key.len(), k.ctx.0.as_mut_ptr().cast()) };
         #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
         if let Some(prepare) = k.fns.prepare {
             k.prepare(prepare);
@@ -1063,7 +1063,7 @@ impl AesGcm {
     #[inline(always)]
     fn key(&self) -> &[u64; 32] {
         // SAFETY: `new` writes the first 256 bytes of `self.ctx`.
-        unsafe { &*self.ctx.as_ptr().cast::<[u64; 32]>() }
+        unsafe { &*self.ctx.0.as_ptr().cast::<[u64; 32]>() }
     }
 
     /// The bytes of `self.ctx` that `new` writes, and `drop` wipes.
@@ -1084,7 +1084,7 @@ impl AesGcm {
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
         // `vg_aes_gcm_prepare` keeps. The CPU has its features
         // (`Backend::prepared`).
-        unsafe { prepare(self.ctx.as_mut_ptr()) };
+        unsafe { prepare(self.ctx.0.as_mut_ptr()) };
     }
 
     /// Computes the powers of the hash subkey of the key context into
@@ -1101,7 +1101,7 @@ impl AesGcm {
         // address space. The CPU has the features of the key's backend,
         // which has `_with_powers` instances, whose features include
         // `vg_aes_gcm_store_powers_aes`'s (see the tests).
-        unsafe { vg_aes_gcm_store_powers_aes(ctx, &mut self.powers) };
+        unsafe { vg_aes_gcm_store_powers_aes(ctx, &mut self.powers.0) };
     }
 
     /// GCM-AE (§7.1): encrypts `data` in place under `nonce`, and returns
@@ -1143,7 +1143,7 @@ impl AesGcm {
         // the implementation selected.
         unsafe {
             seal(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1217,7 +1217,7 @@ impl AesGcm {
             // valid for reads of its length.
             let ok = unsafe {
                 open(
-                    self.ctx.as_ptr(),
+                    self.ctx.0.as_ptr(),
                     self.rounds,
                     nonce.as_ptr(),
                     nonce.len(),
@@ -1260,7 +1260,7 @@ impl AesGcm {
         // valid for reads of its length.
         let ok = unsafe {
             open(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1343,7 +1343,7 @@ impl AesGcm {
         // overlaps neither `src` nor any other argument.
         let ok = unsafe {
             open_to(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1417,7 +1417,7 @@ impl AesGcm {
         // the stack the function uses.
         unsafe {
             f(
-                self.ctx.as_ptr(),
+                self.ctx.0.as_ptr(),
                 self.rounds,
                 nonce.as_ptr(),
                 nonce.len(),
@@ -1486,7 +1486,7 @@ impl AesGcm {
                 data.as_mut_ptr(),
                 data.len(),
                 &mut tag,
-                &self.powers,
+                &self.powers.0,
             )
         };
         tag
@@ -1517,7 +1517,7 @@ impl AesGcm {
                 data.len(),
                 tag.as_ptr(),
                 tag.len(),
-                &self.powers,
+                &self.powers.0,
             )
         };
         // As in `open`.
@@ -1555,7 +1555,7 @@ impl AesGcm {
                 out.len(),
                 tag.as_ptr(),
                 tag.len(),
-                &self.powers,
+                &self.powers.0,
             )
         };
         // As in `open_to`.
@@ -1598,7 +1598,7 @@ struct Stream<'a, const DECRYPT: bool> {
     key: &'a AesGcm,
     /// The streaming state `vg_aes_gcm_stream_init` writes and the other
     /// functions update (`VG.Spec.Gcm.StreamRepr`).
-    state: [u64; 10],
+    state: CacheAligned<[u64; 10]>,
     aad_len: u64,
     text_len: u64,
     /// Whether [`update`](Self::update) has been called.
@@ -1608,7 +1608,7 @@ struct Stream<'a, const DECRYPT: bool> {
 impl<const DECRYPT: bool> Drop for Stream<'_, DECRYPT> {
     /// Wipes the streaming state (the key wipes itself).
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
@@ -1618,7 +1618,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         check_nonce(nonce)?;
         let mut s = Stream {
             key,
-            state: [0; 10],
+            state: CacheAligned([0; 10]),
             aad_len: 0,
             text_len: 0,
             in_text: false,
@@ -1630,7 +1630,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // 80. They are distinct objects, so the writable one overlaps nothing
         // else, nor anything on the stack, and none wraps around. The CPU has
         // the features of the implementation selected.
-        unsafe { init(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state) };
+        unsafe { init(key.key(), nonce.as_ptr(), nonce.len(), &mut s.state.0) };
         Ok(s)
     }
 
@@ -1647,7 +1647,7 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         unsafe {
             f(
                 self.key.key(),
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 aad.as_ptr(),
                 aad.len(),
@@ -1675,9 +1675,9 @@ impl<'a, const DECRYPT: bool> Stream<'a, DECRYPT> {
         // additional data and `self.text_len` of text.
         unsafe {
             f(
-                self.key.ctx.as_ptr(),
+                self.key.ctx.0.as_ptr(),
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 data.as_mut_ptr(),
@@ -1701,7 +1701,7 @@ impl Stream<'_, false> {
             f(
                 self.key.key(),
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 &mut tag,
@@ -1722,7 +1722,7 @@ impl Stream<'_, true> {
             f(
                 self.key.key(),
                 self.key.rounds,
-                &mut self.state,
+                &mut self.state.0,
                 self.aad_len,
                 self.text_len,
                 tag.as_ptr(),
@@ -2449,7 +2449,7 @@ mod tests {
                 // bytes, at least `key`.
                 unsafe {
                     crate::zeroize::zeroize_raw(
-                        k.ctx.as_mut_ptr().cast::<u8>().add(key),
+                        k.ctx.0.as_mut_ptr().cast::<u8>().add(key),
                         self.written() - key,
                     );
                 }
@@ -2461,7 +2461,7 @@ mod tests {
             // stores them), and none otherwise.
             #[cfg(target_arch = "aarch64")]
             {
-                k.powers = [0; 16];
+                k.powers.0 = [0; 16];
                 if k.fns.powers.is_some() {
                     k.store_powers();
                 }
@@ -2474,7 +2474,7 @@ mod tests {
         fn written_ctx(&self) -> &[u64] {
             // SAFETY: `new` wrote the first `written()` bytes of `self.ctx`,
             // a multiple of 8.
-            unsafe { core::slice::from_raw_parts(self.ctx.as_ptr().cast(), self.written() / 8) }
+            unsafe { core::slice::from_raw_parts(self.ctx.0.as_ptr().cast(), self.written() / 8) }
         }
     }
 
@@ -2789,14 +2789,14 @@ mod tests {
             }
             #[cfg(target_arch = "aarch64")]
             assert_eq!(
-                fresh.powers.iter().all(|&w| w == 0),
+                fresh.powers.0.iter().all(|&w| w == 0),
                 fresh.fns.powers.is_none()
             );
             let base = fresh.with_backend(Backend::Scalar);
             #[cfg(target_arch = "x86_64")]
             assert!(base.fns.prepare.is_none());
             #[cfg(target_arch = "aarch64")]
-            assert!(base.fns.powers.is_none() && base.powers == [0; 16]);
+            assert!(base.fns.powers.is_none() && base.powers.0 == [0; 16]);
             for &b in PREPARED {
                 if !runs_prepared(b) {
                     continue;
@@ -2819,11 +2819,11 @@ mod tests {
                 {
                     assert!(k.fns.powers.is_some());
                     assert_eq!(k.clone().key(), k.key());
-                    assert_ne!(k.powers, [0; 16]);
-                    assert_eq!(k.clone().powers, k.powers);
+                    assert_ne!(k.powers.0, [0; 16]);
+                    assert_eq!(k.clone().powers.0, k.powers.0);
                     // This CPU runs `b`, so `new` chose a backend with
                     // powers too, which are the same.
-                    assert_eq!(fresh.powers, k.powers);
+                    assert_eq!(fresh.powers.0, k.powers.0);
                 }
                 for len in [0, 1, 15, 16, 17, 63, 64, 255, 256, 300, 512, 700] {
                     let mut want = msg;

@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::sm4::vg_sm4_expand_key;
 use crate::arch::sm4_cfb::{
     vg_sm4_cfb128_decrypt, vg_sm4_cfb128_decrypt_final, vg_sm4_cfb128_encrypt,
@@ -21,7 +22,7 @@ use crate::zeroize::zeroize;
 /// An expanded SM4 key.
 struct Key {
     /// The key schedule `vg_sm4_expand_key` writes.
-    schedule: [u8; 128],
+    schedule: CacheAligned<[u8; 128]>,
 }
 
 /// An SM4-CFB128 encryption of one message.
@@ -169,10 +170,10 @@ type CfbFinal = unsafe extern "C" fn(*const [u8; 128], *mut [u8; 16], *mut u8, u
 impl Key {
     /// Expands a 16-byte key.
     fn new(key: &[u8; 16]) -> Self {
-        let mut schedule = [0; 128];
+        let mut schedule = CacheAligned([0; 128]);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
-        unsafe { vg_sm4_expand_key(key, &mut schedule) };
+        unsafe { vg_sm4_expand_key(key, &mut schedule.0) };
         Self { schedule }
     }
 
@@ -198,7 +199,7 @@ impl Key {
         // the callee's stack.
         unsafe {
             f(
-                &self.schedule,
+                &self.schedule.0,
                 iv,
                 blocks.as_mut_ptr().cast(),
                 blocks.len() / 16,
@@ -225,12 +226,12 @@ impl Key {
         // SAFETY: `buffer` is valid for `len` bytes, and it, the block
         // at `iv` and the schedule are separate valid objects of the sizes of
         // the signature, none of them on the callee's stack.
-        unsafe { f(&self.schedule, iv, buffer.as_mut_ptr(), buffer.len()) };
+        unsafe { f(&self.schedule.0, iv, buffer.as_mut_ptr(), buffer.len()) };
     }
 }
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

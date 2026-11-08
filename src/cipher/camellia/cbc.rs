@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::camellia::vg_camellia_expand_key;
 use crate::arch::camellia_cbc::{vg_camellia_cbc_decrypt_chained, vg_camellia_cbc_encrypt_chained};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
@@ -18,7 +19,7 @@ use crate::zeroize::zeroize;
 /// An expanded Camellia key, which serves both directions.
 struct Key {
     /// The subkeys `vg_camellia_expand_key` writes.
-    schedule: [u8; 272],
+    schedule: CacheAligned<[u8; 272]>,
     rounds: usize,
 }
 
@@ -92,11 +93,11 @@ impl Key {
             24 | 32 => 24,
             _ => return Err(InvalidKeyLength),
         };
-        let mut schedule = [0; 272];
+        let mut schedule = CacheAligned([0; 272]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
         unsafe {
-            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule);
+            vg_camellia_expand_key(key.as_ptr(), key.len(), &mut schedule.0);
         }
         Ok(Self { schedule, rounds })
     }
@@ -117,7 +118,7 @@ impl Key {
         // the signature, none of them on the callee's stack.
         unsafe {
             vg_camellia_cbc_encrypt_chained(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -139,7 +140,7 @@ impl Key {
         // SAFETY: as in `encrypt`.
         unsafe {
             vg_camellia_cbc_decrypt_chained(
-                &self.schedule,
+                &self.schedule.0,
                 self.rounds,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -152,6 +153,6 @@ impl Key {
 
 impl Drop for Key {
     fn drop(&mut self) {
-        zeroize(&mut self.schedule);
+        zeroize(&mut self.schedule.0);
     }
 }

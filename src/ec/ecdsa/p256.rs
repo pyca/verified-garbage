@@ -11,17 +11,14 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdsa_p256::{vg_ecdsa_p256_sign_auto, vg_ecdsa_p256_verify_auto};
 use crate::ec::P256;
 use crate::error::{InvalidKey, InvalidSignature};
 
 /// Whether `signature` verifies with `q` for the hash `digest`.
 fn verify_with(q: &[u8; 65], digest: &[u8], signature: &[u8; 64]) -> Result<(), InvalidSignature> {
-    // Aligned to a cache line on x86-64, where that makes verification
-    // faster.
-    #[cfg_attr(target_arch = "x86_64", repr(align(64)))]
-    struct Scratch([u64; 1024]);
-    let mut scratch = Scratch([0u64; 1024]);
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `q` is valid for reads of 65 bytes, `digest` of `digest.len()`,
     // `signature` of 64 and `scratch` for reads and writes of 8192; `scratch`
     // is a distinct object from the others, so it overlaps neither them nor the

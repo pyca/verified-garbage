@@ -50,7 +50,7 @@ macro_rules! blake2 {
         #[derive(Clone)]
         pub struct $name<const N: usize = $max> {
             /// The streaming state, representing the data so far.
-            state: [u8; $state],
+            state: $crate::align::CacheAligned<[u8; $state]>,
             /// The length of the data so far (the key block included), in
             /// bytes.
             length: u64,
@@ -59,7 +59,7 @@ macro_rules! blake2 {
         impl<const N: usize> Drop for $name<N> {
             /// Wipes the streaming state (which represents the key, if any).
             fn drop(&mut self) {
-                $crate::zeroize::zeroize(&mut self.state);
+                $crate::zeroize::zeroize(&mut self.state.0);
             }
         }
 
@@ -91,14 +91,14 @@ macro_rules! blake2 {
             pub fn new_keyed(key: &[u8]) -> Self {
                 const { assert!(1 <= N && N <= $max, "unsupported digest size") };
                 assert!(key.len() <= $max, "key too long");
-                let mut state = [0; $state];
+                let mut state = $crate::align::CacheAligned([0; $state]);
                 // SAFETY: `1 ≤ N ≤ MAX` and `key.len() ≤ MAX`. `state` is
                 // valid for writes of its size and `key` for reads of
                 // `key.len()` bytes; they are distinct objects, so they do
                 // not overlap each other, the return address (on x86-64 and
                 // x86) or the arguments on the stack (on x86), and do not
                 // wrap around the end of the address space.
-                unsafe { $init(&mut state, N, key.as_ptr(), key.len()) };
+                unsafe { $init(&mut state.0, N, key.as_ptr(), key.len()) };
                 // The key block is the first block of the data.
                 let length = if key.is_empty() { 0 } else { $block };
                 $name { state, length }
@@ -124,7 +124,7 @@ macro_rules! blake2 {
                 // `self.state` represents, and adding `data.len()` to it
                 // does not reach 2⁶⁴. The dispatcher calls only an
                 // implementation the CPU has the features of.
-                unsafe { $update(&mut self.state, self.length, data.as_ptr(), data.len()) };
+                unsafe { $update(&mut self.state.0, self.length, data.as_ptr(), data.len()) };
                 self.length = length;
             }
 
@@ -141,7 +141,7 @@ macro_rules! blake2 {
                 // the exact length, less than 2⁶⁴, of the data `self.state`
                 // represents. The dispatcher calls only an implementation
                 // the CPU has the features of.
-                unsafe { $finalize(&mut self.state, self.length, &mut out) };
+                unsafe { $finalize(&mut self.state.0, self.length, &mut out) };
                 let mut digest = [0; N];
                 digest.copy_from_slice(&out[..N]);
                 digest

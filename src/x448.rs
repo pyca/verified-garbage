@@ -13,6 +13,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::x448::{vg_x448_base_auto, vg_x448_exchange_auto};
 use crate::error::XdhError;
 use crate::zeroize::zeroize;
@@ -21,14 +22,14 @@ use crate::zeroize::zeroize;
 /// it: `None` if it is all zero (§6.2).
 fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
     let mut out = [0u8; 56];
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
     // 8192 bytes, and `scalar` and `u` for reads of 56 bytes; the writable
     // buffers are disjoint from each other and from the inputs.
     // No buffer overlaps the callee's stack or wraps around the address space.
     // The dispatcher calls only an implementation the CPU has the features of.
-    let nonzero = unsafe { vg_x448_exchange_auto(&mut out, scalar, u, &mut scratch) };
-    zeroize(&mut scratch);
+    let nonzero = unsafe { vg_x448_exchange_auto(&mut out, scalar, u, &mut scratch.0) };
+    zeroize(&mut scratch.0);
     // The contract: 0 if and only if `out` is all zero, so there is no
     // secret in it to destroy.
     (nonzero != 0).then_some(out)
@@ -37,14 +38,14 @@ fn exchange(scalar: &[u8; 56], u: &[u8; 56]) -> Option<[u8; 56]> {
 /// `X448(scalar, 5)`, by `vg_x448_base`.
 fn base(scalar: &[u8; 56]) -> [u8; 56] {
     let mut out = [0u8; 56];
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `out` and `scratch` are valid for reads and writes of 56 and
     // 8192 bytes, and `scalar` for reads of 56 bytes; the writable buffers are
     // disjoint from each other and from the input. No buffer overlaps the
     // callee's stack or wraps around the address space. The dispatcher calls
     // only an implementation the CPU has the features of.
-    unsafe { vg_x448_base_auto(&mut out, scalar, &mut scratch) };
-    zeroize(&mut scratch);
+    unsafe { vg_x448_base_auto(&mut out, scalar, &mut scratch.0) };
+    zeroize(&mut scratch.0);
     out
 }
 

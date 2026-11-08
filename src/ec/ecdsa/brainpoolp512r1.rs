@@ -11,6 +11,7 @@
 
 use super::table::{HmacHash, sign_with};
 use super::{SignatureHash, sealed};
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ecdsa_brainpoolp512r1::{
     vg_ecdsa_brainpoolp512r1_sign_auto, vg_ecdsa_brainpoolp512r1_verify_auto,
 };
@@ -23,7 +24,7 @@ fn verify_with(
     digest: &[u8],
     signature: &[u8; 128],
 ) -> Result<(), InvalidSignature> {
-    let mut scratch = [0u64; 1024];
+    let mut scratch = CacheAligned([0u64; 1024]);
     // SAFETY: `q` is valid for reads of 129 bytes, `digest` of `digest.len()`,
     // `signature` of 128 and `scratch` for reads and writes of 8192; `scratch`
     // is a distinct object from the others, so it overlaps neither them nor the
@@ -36,7 +37,7 @@ fn verify_with(
             digest.as_ptr(),
             digest.len(),
             signature,
-            &mut scratch,
+            &mut scratch.0,
         )
     };
     if ok == 1 {
