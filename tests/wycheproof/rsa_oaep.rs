@@ -2,14 +2,15 @@
 //! `rsa_oaep_*_test.json`.
 //!
 //! A `valid` vector (and an `acceptable` one, whose ciphertext is a small
-//! integer) decrypts to its message, and so does that message encrypted
-//! again; an `invalid` one is refused, as of the wrong length if its
-//! ciphertext is, and otherwise with the one error for every failure of
-//! the ciphertext and its decoding. Every pair of the vectors' hash
-//! functions is supported, MGF1 being over any of them. The files of
-//! three-prime keys are not this module's. And every pair the module
-//! supports encrypts and decrypts with a key of the vectors
-//! (`rsa_oaep_every_pair`).
+//! integer) decrypts to its message; an `invalid` one is refused, as of the
+//! wrong length if its ciphertext is, and otherwise with the one error for
+//! every failure of the ciphertext and its decoding. Every pair of the
+//! vectors' hash functions is supported, MGF1 being over any of them. The
+//! files of three-prime keys are not this module's. Some of the decrypted
+//! messages are encrypted again and decrypted ([`round_trips`]): with each
+//! key, an empty, a longest and another message, with and without a label.
+//! And every pair the module supports encrypts and decrypts with a key of
+//! the vectors (`rsa_oaep_every_pair`).
 
 #![cfg(all(
     any(
@@ -24,6 +25,7 @@
 ))]
 
 use crate::json_struct;
+use std::collections::HashSet;
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::rsa::oaep::{Error, Hash};
 use verified_garbage::rsa::{BigUint, PrivateKey, PublicKey};
@@ -91,14 +93,49 @@ fn keys(name: &str, k: &RsaPrivateKey) -> (PrivateKey, PublicKey) {
     )
 }
 
+/// The `tcId`s of the vectors of `file` whose messages [`check`] encrypts
+/// again and decrypts: with each key (modulus), the first `valid` or
+/// `acceptable` vector of each kind, by whether its message is empty, the
+/// longest the key and the label's hash function allow, or neither, and
+/// whether its label is empty. Other vectors of a kind would encrypt with
+/// the same key and lengths again, at the cost of a private-key operation
+/// each; the pairs of hash functions are `rsa_oaep_every_pair`'s.
+fn round_trips(file: &TestFile<Group, Case>) -> HashSet<u64> {
+    let mut kinds = HashSet::new();
+    let mut ids = HashSet::new();
+    for group in &file.test_groups {
+        let p = &group.params;
+        let n = trim_zeros(&p.private_key.modulus.0);
+        let longest = n.len().checked_sub(2 * hash(&p.sha).digest_len() + 2);
+        for test in &group.tests {
+            if test.result == Expectation::Invalid {
+                continue;
+            }
+            let len = test.case.msg.0.len();
+            let kind = (
+                n,
+                len == 0,
+                Some(len) == longest,
+                test.case.label.0.is_empty(),
+            );
+            if kinds.insert(kind) {
+                ids.insert(test.tc_id);
+            }
+        }
+    }
+    ids
+}
+
 /// Checks every vector of the file `name` with a key that
-/// [`harness::rsa_key_tested`] tests; returns the numbers of decrypted and
-/// refused vectors.
-fn check(name: &str) -> (usize, usize) {
-    let (valid, refused) = (Count::default(), Count::default());
+/// [`harness::rsa_key_tested`] tests, and encrypts again and decrypts the
+/// messages of [`round_trips`]; returns the numbers of decrypted, refused
+/// and encrypted again vectors.
+fn check(name: &str) -> (usize, usize, usize) {
+    let (valid, refused, again) = (Count::default(), Count::default(), Count::default());
     let mut file: TestFile<Group, Case> = harness::load(name);
     file.test_groups
         .retain(|g| harness::rsa_key_tested(&g.params.private_key.modulus.0));
+    let round_trips = round_trips(&file);
     let keys = |group: &TestGroup<Group, Case>| keys(name, &group.params.private_key);
     file.par_tests_with(keys, |group, (key, public), test| {
         let p = &group.params;
@@ -117,12 +154,15 @@ fn check(name: &str) -> (usize, usize) {
             refused.add();
         } else {
             assert_eq!(r.as_deref(), Ok(&msg[..]), "{name} tcId {id}");
-            let again = public.encrypt_oaep(msg, h, g, label).unwrap();
-            assert_eq!(key.decrypt_oaep(&again, h, g, label), r, "{name} tcId {id}");
             valid.add();
+            if round_trips.contains(&id) {
+                let ct = public.encrypt_oaep(msg, h, g, label).unwrap();
+                assert_eq!(key.decrypt_oaep(&ct, h, g, label), r, "{name} tcId {id}");
+                again.add();
+            }
         }
     });
-    (valid.get(), refused.get())
+    (valid.get(), refused.get(), again.get())
 }
 
 #[test]
@@ -136,8 +176,8 @@ fn rsa_oaep_test() {
         .collect();
     assert!(!names.is_empty());
     for name in &names {
-        let (valid, refused) = check(name);
-        assert!(valid > 0, "{name}");
+        let (valid, refused, again) = check(name);
+        assert!(valid > 0 && again > 0, "{name}");
         assert!(refused > 0 || name == "rsa_oaep_misc_test.json", "{name}");
     }
 }
