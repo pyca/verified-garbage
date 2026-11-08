@@ -59,7 +59,12 @@ def contract (d : Direction) : Contract isa where
 theorem ecb_correct (d : Direction) (s : State) (hs : (contract d).pre s) :
     ∃ t s', Exec isa (ecb d) s t s' ∧ abiPreserved s s' ∧ (contract d).post s s' := by
   obtain ⟨rd, wr, kd, kb, db, fit⟩ := hs
-  obtain ⟨t, s', he, hp, hl, hb⟩ := ecb_wp d ⟨rd, wr, kd, kb, db, fit⟩
+  have pre : EcbPre s :=
+    ⟨⟨_, List.mem_append_left _ (by rw [rd]; exact List.mem_singleton_self _), Region.contains_self _ _⟩,
+      covers_of_in ⟨_, by rw [wr]; exact List.mem_cons_self, Region.contains_self _ _⟩,
+      ⟨_, by rw [wr]; exact List.mem_cons_of_mem _ List.mem_cons_self, Region.contains_self _ _⟩,
+      kd, kb, db, fit⟩
+  obtain ⟨t, s', he, hp, hl, -, -, hb⟩ := ecb_wp d pre
   exact ⟨t, s', he, ⟨hp, Exec.sp he, hl⟩, VG.Proof.TripleDes.Bitslice.ecb_blocks _ _ _ _ _ _ hb⟩
 
 theorem ecb_constantTime (d : Direction) (pre : State → Prop) :
