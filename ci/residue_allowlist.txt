@@ -782,16 +782,7 @@ x86_64 vg_sha224_finalize
 x86_64 vg_sha224_finalize_avx2
 x86_64 vg_sha224_finalize_shani
 x86_64 vg_sha224_init
-x86_64 vg_sha256_digest
-x86_64 vg_sha256_digest_avx2
-x86_64 vg_sha256_digest_shani
-x86_64 vg_sha256_finalize
-x86_64 vg_sha256_finalize_avx2
-x86_64 vg_sha256_finalize_shani
 x86_64 vg_sha256_init
-x86_64 vg_sha256_update
-x86_64 vg_sha256_update_avx2
-x86_64 vg_sha256_update_shani
 x86_64 vg_sha384_digest
 x86_64 vg_sha384_digest_avx2
 x86_64 vg_sha384_digest_shani

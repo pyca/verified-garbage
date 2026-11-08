@@ -50,6 +50,8 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha256_update_shani` if the CPU supports its features (`VG_SHA256_UPDATE_SHANI_FEATURES`); `vg_sha256_update_avx2` if the CPU supports its features (`VG_SHA256_UPDATE_AVX2_FEATURES`); or else `vg_sha256_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -79,6 +81,8 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha256_digest_shani` if the CPU supports its features (`VG_SHA256_DIGEST_SHANI_FEATURES`); `vg_sha256_digest_avx2` if the CPU supports its features (`VG_SHA256_DIGEST_AVX2_FEATURES`); or else `vg_sha256_digest`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -140,6 +144,8 @@ pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
 /// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_sha256_finalize_shani` if the CPU supports its features (`VG_SHA256_FINALIZE_SHANI_FEATURES`); `vg_sha256_finalize_avx2` if the CPU supports its features (`VG_SHA256_FINALIZE_AVX2_FEATURES`); or else `vg_sha256_finalize`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
