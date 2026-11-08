@@ -661,7 +661,7 @@ b 22f
 .base64 "IACf6AAAoDgAAKT4AABgOA=="
 22:
 .base64 "AAB/6SQfa3kUWn99YP9rOZAAC+imAwh8AADL6QgA6+kQAAvqGAAr6iAAS+ooAGvqMACL6jgAq+pAAMvqSADr6lAAC+tYACvrYABL62gAa+twAIvreACr64AAy+uIAOvrIACATg==""#,
-        vg_miller_rabin_round = sym crate::ffdh::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym crate::consts::VG_RSA_KEYGEN_TRIAL32,
     )
 }
