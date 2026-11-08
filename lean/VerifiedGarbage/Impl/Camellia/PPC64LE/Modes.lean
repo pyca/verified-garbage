@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Modes.Ctr
 public import VerifiedGarbage.Impl.Camellia.PPC64LE.Prepared
+public import VerifiedGarbage.Impl.Camellia.PPC64LE.Serial
 
 /-!
 # Camellia's modes on PPC64LE
@@ -21,9 +22,11 @@ direction `d`: encryption's for CBC encryption, OFB and CFB, decryption's
 for CBC decryption. `prepare` inlines the body of `vg_camellia_prepare_keys`
 (`Prepared.lean`), which sets the masks and builds the table of bitsliced
 subkeys, once; `crypt` calls `vg_camellia_crypt_prepared`, which transforms
-the eight blocks of the tail buffer in place: the serial modes use the
-first, one step at a time; CBC and CFB decryption and CTR take eight blocks
-a step while eight are left, then one (`Impl/Modes/PPC64LE/Wide.lean`).
+the eight blocks of the tail buffer in place: CBC and CFB decryption and
+CTR take eight blocks a step while eight are left, then one
+(`Impl/Modes/PPC64LE/Wide.lean`). The serial modes, CBC and CFB encryption
+and OFB, take one block a step, by the single-block core (`Serial.lean`),
+which takes the same scratch buffer.
 
 Both functions use every callee-saved register, which they save in their
 working space and restore. The body of `vg_camellia_prepare_keys` stores
@@ -97,19 +100,22 @@ def wrap (p : Prog isa) : Prog isa :=
       mov .r7 .r8])
     (.seq p (.block [.load .d .r28 Modes.PPC64LE.sb (8 * extraSlot)]))
 
-/-- `vg_camellia_cbc_encrypt_chained`, with its scratch buffer as the sixth argument. -/
-def cbcEncryptChained : Prog isa := wrap ((dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4))
+/-- `vg_camellia_cbc_encrypt_chained`, with its scratch buffer as the sixth
+argument: one block a step, by the single-block core. -/
+def cbcEncryptChained : Prog isa := wrap (Serial.core.seq (Modes.Mode.cbcEncChained 4))
 
 /-- `vg_camellia_cbc_decrypt_chained`, with its scratch buffer as the sixth
 argument: eight blocks a step, then one. -/
 def cbcDecryptChained : Prog isa :=
   wrap ((dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 8) (Modes.Mode.cbcDecChained 4) 3)
 
-/-- `vg_camellia_ofb`, with its scratch buffer as the sixth argument. -/
-def ofb : Prog isa := wrap ((dirCore .encrypt).seq (Modes.Mode.ofb 4))
+/-- `vg_camellia_ofb`, with its scratch buffer as the sixth argument: one
+block a step, by the single-block core. -/
+def ofb : Prog isa := wrap (Serial.core.seq (Modes.Mode.ofb 4))
 
-/-- `vg_camellia_cfb128_encrypt`, with its scratch buffer as the sixth argument. -/
-def cfbEncrypt : Prog isa := wrap ((dirCore .encrypt).seq (Modes.Mode.cfbEnc 4))
+/-- `vg_camellia_cfb128_encrypt`, with its scratch buffer as the sixth
+argument: one block a step, by the single-block core. -/
+def cfbEncrypt : Prog isa := wrap (Serial.core.seq (Modes.Mode.cfbEnc 4))
 
 /-- `vg_camellia_cfb128_decrypt`, with its scratch buffer as the sixth
 argument: eight blocks a step, then one. -/

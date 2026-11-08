@@ -7,6 +7,10 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_camellia_ppc64le_affine;
+pub use vg_camellia_ppc64le_affine::VG_CAMELLIA_PPC64LE_AFFINE;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 

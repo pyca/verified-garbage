@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.SerialSbox
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorBytes
 public import VerifiedGarbage.Proof.Sm4.Rounds
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
@@ -42,21 +43,10 @@ slots and the mode's regions), and its cipher `Spec.Sm4.cipher`.
 
 namespace VG.Proof.Sm4.PPC64LE.Serial
 
-open VG VG.PPC64LE VG.PPC64LE.RegUpd
+open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.PPC64LE.Bytes
 open VG.Impl.Sm4.PPC64LE.Serial
 
 /-! ## Bytes -/
-
-/-- Byte `k` of a doubleword, from the least significant. -/
-abbrev gbyte (x : BitVec 64) (k : Nat) : BitVec 8 := x.extractLsb' (8 * k) 8
-
-theorem gbyte_and (x y : BitVec 64) (k : Nat) : gbyte (x &&& y) k = gbyte x k &&& gbyte y k := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_and, hi, decide_true, Bool.true_and]
-
-theorem gbyte_xor (x y : BitVec 64) (k : Nat) : gbyte (x ^^^ y) k = gbyte x k ^^^ gbyte y k := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, hi, decide_true, Bool.true_and]
 
 /-- The mask `0x0f0f0f0f` has `0x0f` in each byte of its low word. -/
 theorem gbyte_mask {k : Nat} (hk : k < 4) : gbyte 0x0f0f0f0f k = 0x0f := by
@@ -73,70 +63,6 @@ theorem gbyte_lsr4 (x : BitVec 64) {k : Nat} (hk : k < 4) :
     BitVec.getLsbD_ushiftRight, hi, decide_true, Bool.true_and]
   rcases k with _ | _ | _ | _ | k <;> rcases i with _ | _ | _ | _ | _ | _ | _ | _ | i <;>
     first | omega | simp
-
-/-- The register's doubleword `x`, moved to the high doubleword of a vector
-register: its byte `k` is the vector's byte `7 - k`. -/
-theorem vbyte_append (x u : BitVec 64) {k : Nat} (hk : k < 8) : vbyte (x ++ u) (7 - k) = gbyte x k := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hi, decide_true, Bool.true_and]
-  split
-  · omega
-  · congr 1; omega
-
-theorem gbyte_vdword (v : BitVec 128) {k : Nat} (hk : k < 8) : gbyte (vdword v 0) k = vbyte v (7 - k) := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [vdword, vbyte, BitVec.getLsbD_extractLsb', hi, decide_true, Bool.true_and]
-  rw [show 64 * (1 - 0) + (8 * k + i) = 8 * (15 - (7 - k)) + i by omega]
-  simp only [show 8 * k + i < 64 by omega, decide_true, Bool.true_and]
-
-theorem toNat_and_0f (b : BitVec 8) : (b &&& 0x0f).toNat < 16 := by
-  rw [BitVec.toNat_and]; exact Nat.lt_of_le_of_lt Nat.and_le_right (by decide)
-
-theorem toNat_shr4 (b : BitVec 8) : (b >>> 4).toNat < 16 := by
-  rw [BitVec.toNat_ushiftRight]; have := b.isLt
-  rw [Nat.shiftRight_eq_div_pow]; omega
-
-/-! ## Vector instructions -/
-
-theorem vbyte_xor' (a b : BitVec 128) (i : Nat) : vbyte (a ^^^ b) i = vbyte a i ^^^ vbyte b i := by
-  apply BitVec.eq_of_getLsbD_eq; intro j hj
-  simp only [vbyte, BitVec.getLsbD_extractLsb', BitVec.getLsbD_xor, hj, decide_true, Bool.true_and]
-
-theorem exec_mtvsrd {s : State} {d : VReg} {n : Reg} :
-    exec (.mtvsrd d n) s = some { s.writeV d (s.gpr n ++ s.unknowns 0) with
-      unknowns := fun i => s.unknowns (i + 1) } := rfl
-
-theorem exec_mfvsrd {s : State} {d : Reg} {n : VReg} :
-    exec (.mfvsrd d n) s = some (s.write d (vdword (s.vpr n) 0)) := rfl
-
-theorem exec_vperm {s : State} {d n m c : VReg} :
-    exec (.vop (.perm d n m c)) s = some (s.writeV d (ofVBytes fun i =>
-      let j := (vbyte (s.vpr c) i).toNat % 32
-      if j < 16 then vbyte (s.vpr n) j else vbyte (s.vpr m) (j - 16))) := rfl
-
-theorem exec_vxor {s : State} {d n m : VReg} :
-    exec (.vop (.logic .xor d n m)) s = some (s.writeV d (s.vpr n ^^^ s.vpr m)) := rfl
-
-theorem exec_vsbox {s : State} {d n : VReg} :
-    exec (.vop (.sbox d n)) s =
-      some (s.writeV d (ofVBytes fun i => VectorCrypto.aesSbox (vbyte (s.vpr n) i))) := rfl
-
-theorem vpr_writeV (s : State) (d : VReg) (v : BitVec 128) (d' : VReg) :
-    (s.writeV d v).vpr d' = if d' = d then v else s.vpr d' := rfl
-
-/-- A table of sixteen bytes, in a vector register. -/
-def TabOk (v : BitVec 128) (t : Vector Byte 16) : Prop := ∀ j < 16, vbyte v j = t.getD j 0
-
-/-- A table lookup by `vperm` of a byte below 16. -/
-theorem vperm_byte {T c : BitVec 128} {t : Vector Byte 16} (hT : TabOk T t) {i : Nat} (hi : i < 16)
-    (hc : (vbyte c i).toNat < 16) :
-    vbyte (ofVBytes fun i =>
-      let j := (vbyte c i).toNat % 32
-      if j < 16 then vbyte T j else vbyte T (j - 16)) i = t.getD (vbyte c i).toNat 0 := by
-  rw [vbyte_packed _ hi]
-  have hm : (vbyte c i).toNat % 32 = (vbyte c i).toNat := Nat.mod_eq_of_lt (by omega)
-  simp only [hm, hc, ite_true]
-  exact hT _ hc
 
 /-! ## The affine maps -/
 

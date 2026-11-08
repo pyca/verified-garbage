@@ -1,12 +1,17 @@
 module
 
 public import VerifiedGarbage.Spec.Camellia
+public import VerifiedGarbage.Proof.Camellia.Words
 import Mathlib.Tactic.IntervalCases
 
-/-! # Word-oriented descriptions of Camellia's substitution and diffusion -/
+/-! # Word-oriented descriptions of Camellia's substitution and diffusion
+
+`f_eq`: Camellia's F-function is the S-boxes of the bytes (`substituted`)
+and then the P-function on 32-bit halves by rotations (`linearWord`), as
+the single-block cores compute it (AArch64's and PPC64LE's). -/
 
 @[expose] public section
-namespace VG.Proof.Camellia.AArch64.Serial
+namespace VG.Proof.Camellia.Serial
 open VG
 
 def byte (x : BitVec 64) (j : Nat) : Byte := (x >>> (8*j)).setWidth 8
@@ -101,4 +106,79 @@ theorem f_eq (x k : BitVec 64) :
     byte_packed _ 7 (by decide)]
   rfl
 
-end VG.Proof.Camellia.AArch64.Serial
+/-- `cryptWords` reads only the schedule's first `8 g + 2` words. -/
+theorem cryptWords_congr (g : Nat) (hg : g = 3 ∨ g = 4)
+    (E F : Nat → BitVec 64) (m : BitVec 128)
+    (h : ∀ i < 8*g+2, E i = F i) :
+    Proof.Camellia.cryptWords g E m = Proof.Camellia.cryptWords g F m := by
+  rcases hg with rfl | rfl
+  · simp only [Proof.Camellia.cryptWords,Proof.Camellia.groups,
+      Proof.Camellia.group,Proof.Camellia.pair,List.range_succ,List.range_zero,
+      List.foldl_append,List.foldl_cons,List.foldl_nil,List.nil_append,
+      Nat.reduceAdd,Nat.reduceMul,Nat.reduceLT,ite_true,ite_false]
+    simp only [h 0 (by decide),
+      h 1 (by decide),
+      h 2 (by decide),
+      h 3 (by decide),
+      h 4 (by decide),
+      h 5 (by decide),
+      h 6 (by decide),
+      h 7 (by decide),
+      h 8 (by decide),
+      h 9 (by decide),
+      h 10 (by decide),
+      h 11 (by decide),
+      h 12 (by decide),
+      h 13 (by decide),
+      h 14 (by decide),
+      h 15 (by decide),
+      h 16 (by decide),
+      h 17 (by decide),
+      h 18 (by decide),
+      h 19 (by decide),
+      h 20 (by decide),
+      h 21 (by decide),
+      h 22 (by decide),
+      h 23 (by decide),
+      h 24 (by decide),
+      h 25 (by decide)]
+  · simp only [Proof.Camellia.cryptWords,Proof.Camellia.groups,
+      Proof.Camellia.group,Proof.Camellia.pair,List.range_succ,List.range_zero,
+      List.foldl_append,List.foldl_cons,List.foldl_nil,List.nil_append,
+      Nat.reduceAdd,Nat.reduceMul,Nat.reduceLT,ite_true,ite_false]
+    simp only [h 0 (by decide),
+      h 1 (by decide),
+      h 2 (by decide),
+      h 3 (by decide),
+      h 4 (by decide),
+      h 5 (by decide),
+      h 6 (by decide),
+      h 7 (by decide),
+      h 8 (by decide),
+      h 9 (by decide),
+      h 10 (by decide),
+      h 11 (by decide),
+      h 12 (by decide),
+      h 13 (by decide),
+      h 14 (by decide),
+      h 15 (by decide),
+      h 16 (by decide),
+      h 17 (by decide),
+      h 18 (by decide),
+      h 19 (by decide),
+      h 20 (by decide),
+      h 21 (by decide),
+      h 22 (by decide),
+      h 23 (by decide),
+      h 24 (by decide),
+      h 25 (by decide),
+      h 26 (by decide),
+      h 27 (by decide),
+      h 28 (by decide),
+      h 29 (by decide),
+      h 30 (by decide),
+      h 31 (by decide),
+      h 32 (by decide),
+      h 33 (by decide)]
+
+end VG.Proof.Camellia.Serial

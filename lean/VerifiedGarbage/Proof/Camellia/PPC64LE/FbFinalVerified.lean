@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
+public import VerifiedGarbage.Proof.Camellia.PPC64LE.SerialCore
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
 public import VerifiedGarbage.Proof.Modes.PPC64LE.SeqFinal
@@ -10,9 +11,8 @@ public import VerifiedGarbage.Spec.Camellia.OfbFinal
 public import VerifiedGarbage.Proof.Framework.Scratch
 import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
-import VerifiedGarbage.Proof.Camellia.PPC64LE.CallSum
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
-import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Contract
@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Modes.Addr
 meta import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 meta import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
-meta import VerifiedGarbage.Proof.Camellia.PPC64LE.CallSum
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 meta import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesVerified
 meta import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesFrame
 meta import VerifiedGarbage.Proof.Camellia.CfbFinalScratch
@@ -30,7 +30,6 @@ meta import VerifiedGarbage.Spec.Camellia.CfbFinal
 meta import VerifiedGarbage.Spec.Camellia.OfbFinal
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Lit
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -44,13 +43,13 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 `cfbEncryptFinal_verified`, `cfbDecryptFinal_verified`, `ofbFinal_verified`:
 the modes' CFB and OFB over a message's last piece
 (`Proof.Modes.PPC64LE.cfbEncFinal_wp`, …, `ofbFinal_wp`) over
-Camellia's core (`Mode.dirCoreSpec`), run from the state `wrap` makes of the
+Camellia's single-block core (`Serial.coreSpec`), run from the state `wrap` makes of the
 arguments (`entry`, `wrap_wp`), with the working space as the sixth argument
 (`finalContract`), as the whole-block functions are (`ModesVerified.lean`),
 but the data `len` bytes, meet the contracts on the subkeys at the schedule
 (`Proof.Camellia.cfbEncFinalScratchContract`, …, `ofbFinalScratchContract`) with a scratch buffer of 422
-words. Each is constant time by the slot taint analysis with the prepared
-function's summary, as theirs are; the `_framed` theorems run them with their
+words. Each is constant time by the vector taint analysis, as the serial
+whole-block functions are; the `_framed` theorems run them with their
 working space on the stack, zeroed on return, and give the specification's
 contracts (`cfbEncryptFinal_of_sk`, …, `ofbFinal_of_sk`).
 -/
@@ -61,10 +60,10 @@ namespace VG.Proof.Camellia.PPC64LE.FbFinal
 
 open VG VG.PPC64LE VG.Impl.Camellia.PPC64LE VG.Impl.Modes
 open VG.Proof.Modes.PPC64LE (SeqPre ivR scrRegion S P Dp N Changes byteMode)
-open VG.Proof.Camellia.PPC64LE (modePub modeTaint cryptSum)
-open VG.Proof.Camellia.PPC64LE.Mode (dirCoreSpec KeyArgs)
+open VG.Proof.Camellia.PPC64LE (modePub)
+open VG.Proof.Camellia.PPC64LE.Mode (KeyArgs)
 open VG.Proof.Camellia.PPC64LE.Modes (entry entry_gpr entry_mem entry_rd entry_wr extraA wrap_wp entry_frame
-  modeSlots_eq extraSlot_eq cipher_enc entry_args ciph modeSat modePub_iff)
+  modeSlots_eq extraSlot_eq cipher_ser entry_args ciph modeSat modePub_iff)
 open VG.Proof.Camellia (schedWords)
 
 /-- The functions' postconditions. -/
@@ -136,23 +135,23 @@ theorem dataR_entry : Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) byteMode.ste
   simp [Proof.Modes.PPC64LE.dataRegion, Dp, N, entry_gpr, byteMode]
 
 /-- `finalContract`'s precondition gives the modes', for steps of a byte. -/
-theorem seqPre_of (hs : (finalContract post).pre s) : SeqPre (dirCore .encrypt) byteMode (entry s) := by
+theorem seqPre_of (hs : (finalContract post).pre s) : SeqPre Serial.core byteMode (entry s) := by
   have h := hs
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h
-  have e16 : 4 * (dirCore .encrypt).bw = 16 := rfl
-  have eS : scrRegion (dirCore .encrypt) (S (entry s)) = ⟨s.gpr .r8, 8 * modeSlots⟩ := by
-    simp [scrRegion, S, entry_gpr, dirCore]
-  have eV : ivR (entry s) (dirCore .encrypt) = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, dirCore]
-  refine ⟨⟨by rw [show (8 * (dirCore .encrypt).total) = 8 * modeSlots from rfl, show S (entry s) = s.gpr .r8 by
-      simp [S, entry_gpr], entry_wr, hwr]; simp, by simpa [S, entry_gpr, dirCore] using fS⟩,
+  have e16 : 4 * Serial.core.bw = 16 := rfl
+  have eS : scrRegion Serial.core (S (entry s)) = ⟨s.gpr .r8, 8 * modeSlots⟩ := by
+    simp [scrRegion, S, entry_gpr, Serial.core, modeSlots]
+  have eV : ivR (entry s) Serial.core = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, Serial.core]
+  refine ⟨⟨by rw [show (8 * Serial.core.total) = 8 * modeSlots from rfl, show S (entry s) = s.gpr .r8 by
+      simp [S, entry_gpr], entry_wr, hwr]; simp, by simpa [S, entry_gpr, Serial.core, modeSlots] using fS⟩,
     by rw [eV, entry_rd, entry_wr, hwr]; simp, fun _ => by rw [eV, entry_wr, hwr]; simp,
     by rw [e16]; simpa [P, entry_gpr] using fV, by rw [dataR_entry, entry_wr, hwr]; simp,
     by simpa [Dp, N, entry_gpr, byteMode] using fD, by rw [dataR_entry, eS]; exact dDS,
     by rw [eV, eS]; exact dVS, fun _ => by rw [eV, dataR_entry]; exact dVD, ⟨by decide, by rw [e16]; decide⟩,
-    (dirCoreSpec .encrypt).layout⟩
+    Serial.coreSpec.layout⟩
 
 theorem keyArgs_of (hs : (finalContract post).pre s) :
-    KeyArgs (entry s) (Proof.Modes.PPC64LE.wrs0 (dirCore .encrypt) byteMode (entry s))
+    KeyArgs (entry s) (Proof.Modes.PPC64LE.wrs0 Serial.core byteMode (entry s))
       ((s.gpr .r4).toNat, schedWords s.mem (s.gpr .r3) (s.gpr .r4).toNat) := by
   have hR := rounds_of hs
   have h := hs
@@ -163,13 +162,13 @@ theorem keyArgs_of (hs : (finalContract post).pre s) :
     or_false] at hr
   rcases hr with rfl | rfl
   · rw [dataR_entry]; exact dKD
-  · simpa [scrRegion, S, entry_gpr, dirCore] using dKS
+  · simpa [scrRegion, S, entry_gpr, Serial.core, modeSlots] using dKS
 
 /-- A mode over the core, wrapped: its results on the entry's memory. -/
 theorem run_wrapped (hs : (finalContract post).pre s) {M : Mode} {X : State → Prop}
-    (hres : WP isa ((dirCore .encrypt).seqFinal M) (entry s) fun s' => abiPreserved (entry s) s' ∧ X s')
-    (hch : WP isa ((dirCore .encrypt).seqFinal M) (entry s) (Changes (dirCore .encrypt) byteMode (entry s))) :
-    WP isa (wrap ((dirCore .encrypt).seqFinal M)) s fun s' => abiPreserved s s' ∧
+    (hres : WP isa (Serial.core.seqFinal M) (entry s) fun s' => abiPreserved (entry s) s' ∧ X s')
+    (hch : WP isa (Serial.core.seqFinal M) (entry s) (Changes Serial.core byteMode (entry s))) :
+    WP isa (wrap (Serial.core.seqFinal M)) s fun s' => abiPreserved s s' ∧
       ∃ s₂ : State, s₂.mem = s'.mem ∧ X s₂ := by
   have h := hs
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h
@@ -178,21 +177,21 @@ theorem run_wrapped (hs : (finalContract post).pre s) {M : Mode} {X : State → 
   refine ⟨t, s', he, abi, by simpa [S, entry_gpr, Impl.Modes.PPC64LE.sb] using ch.sb, ?_,
     by rw [(Exec.rdwr he).2.1]; rfl, s', rfl, r⟩
   have hfit := fS
-  have ex : ∀ r ∈ [Proof.Modes.PPC64LE.coreRegion (dirCore .encrypt) (S (entry s)),
-      Proof.Modes.PPC64LE.modeR (dirCore .encrypt) (S (entry s)),
-      Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) byteMode.step (N (entry s)), ivR (entry s) (dirCore .encrypt)],
+  have ex : ∀ r ∈ [Proof.Modes.PPC64LE.coreRegion Serial.core (S (entry s)),
+      Proof.Modes.PPC64LE.modeR Serial.core (S (entry s)),
+      Proof.Modes.PPC64LE.dataRegion (Dp (entry s)) byteMode.step (N (entry s)), ivR (entry s) Serial.core],
       Region.Disjoint ⟨extraA s, 8⟩ r := by
     intro r hr
     have eS : S (entry s) = s.gpr .r8 := by simp [S, entry_gpr]
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, dirCore, slots_eq])
+    · rw [eS]; exact VG.Offset.disjoint_base _ (by simp [extraSlot_eq, Serial.core, slots_eq])
         (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega)
-    · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, dirCore, slots_eq]))
-        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega) (by rw [modeSlots_eq] at hfit; simp [dirCore, slots_eq])
+    · rw [eS]; exact VG.Offset.disjoint _ (.inr (by simp [extraSlot_eq, Serial.core, slots_eq]))
+        (by rw [modeSlots_eq] at hfit; rw [extraSlot_eq]; omega) (by rw [modeSlots_eq] at hfit; simp [Serial.core, slots_eq])
     · rw [dataR_entry]
       exact (extra_apart dDS _ (List.mem_singleton_self _)).symm
-    · have e : ivR (entry s) (dirCore .encrypt) = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, dirCore]
+    · have e : ivR (entry s) Serial.core = ⟨s.gpr .r5, 16⟩ := by simp [ivR, P, entry_gpr, Serial.core]
       rw [e]
       exact (extra_apart dVS _ (List.mem_singleton_self _)).symm
   rw [ch.frame.readW (Region.contains_self _ _) ex (by decide), entry_mem, Mem.readW_writeW_self64]
@@ -203,69 +202,47 @@ end
 
 theorem cfbEncryptFinal_correct (s : State) (hs : (finalContract encPost).pre s) :
     ∃ t s', Exec isa cfbEncryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract encPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cfbEncFinal_wp (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
-  have hc := Proof.Modes.PPC64LE.cfbEncFinal_changes (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
+  have hw := Proof.Modes.PPC64LE.cfbEncFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
+  have hc := Proof.Modes.PPC64LE.cfbEncFinal_changes Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
   refine WP.mono (run_wrapped hs hw hc) fun s' ⟨abi, s₂, hm, h⟩ => ⟨abi, ?_⟩
-  rw [show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, cipher_enc, hm] at h
+  rw [show 4 * Serial.core.bw = 16 from rfl, cipher_ser, hm] at h
   obtain ⟨h1, h2⟩ := h
   rw [iv_entry hs, data_entry hs] at h1 h2
   exact ⟨h1, h2⟩
 
 theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decPost).pre s) :
     ∃ t s', Exec isa cfbDecryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract decPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cfbDecFinal_wp (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
-  have hc := Proof.Modes.PPC64LE.cfbDecFinal_changes (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
+  have hw := Proof.Modes.PPC64LE.cfbDecFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
+  have hc := Proof.Modes.PPC64LE.cfbDecFinal_changes Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
   refine WP.mono (run_wrapped hs hw hc) fun s' ⟨abi, s₂, hm, h⟩ => ⟨abi, ?_⟩
-  rw [show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, cipher_enc, hm] at h
+  rw [show 4 * Serial.core.bw = 16 from rfl, cipher_ser, hm] at h
   obtain ⟨h1, h2⟩ := h
   rw [iv_entry hs, data_entry hs] at h1 h2
   exact ⟨h1, h2⟩
 
 /-! ## Constant time -/
 
+/-- The public arguments agree: the vector analysis's taint on entry. -/
 theorem final_agree {post : State → State → Prop} (s₁ s₂ : State)
-    (h₁ : (finalContract post).pre s₁) (h₂ : (finalContract post).pre s₂) (hp : modePub s₁ s₂) :
-    SlotTaint.Agree modeTaint s₁ s₂ := by
-  obtain ⟨-, hw₁, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h₁
-  obtain ⟨-, hw₂, -⟩ := h₂
+    (_ : (finalContract post).pre s₁) (_ : (finalContract post).pre s₂) (hp : modePub s₁ s₂) :
+    VG.PPC64LE.Taint.Agree (VG.PPC64LE.Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) s₁ s₂ := by
   obtain ⟨hsp, hr⟩ := hp
-  have r5 := hr .r5 (by simp)
-  have r6 := hr .r6 (by simp)
-  have r7 := hr .r7 (by simp)
-  have r8 := hr .r8 (by simp)
-  refine SlotTaint.agree_mk' hsp (fun r h => hr r (by simpa using h)) (by rw [hw₁, hw₂, r5, r6, r7, r8])
-    ?_ ?_ ?_ ?_ ?_
-  · rw [hw₁]
-    exact .cons (Nat.le_refl _) (.cons (Nat.zero_le _) (.cons (Nat.le_refl _) .nil))
-  · rw [hw₁]
-    refine .cons (fun r hr => ?_) (.cons (fun r hr => ?_) (.cons (fun r hr => absurd hr List.not_mem_nil) .nil))
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact dVD
-      · exact dVS
-    · simp only [List.mem_singleton] at hr; subst hr; exact dDS
-  · rw [hw₁]
-    intro r hr
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega
-  · intro p hp
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₁]
-  · intro p hp
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
-    rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₂]
+  refine ⟨hsp, fun r h => hr r ?_⟩
+  simpa only [VG.PPC64LE.Taint.mem_ofRegs] using h
 
 theorem cfbEncryptFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub cfbEncryptFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) final_agree
+    (by taint_decide)
 
 theorem cfbDecryptFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub cfbDecryptFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) final_agree
+    (by taint_decide)
 
 /-! ## The contracts -/
 
@@ -325,12 +302,12 @@ def ofbPost (s s' : State) : Prop :=
 
 theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
     ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ (finalContract ofbPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.ofbFinal_wp (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
-  have hc := Proof.Modes.PPC64LE.ofbFinal_changes (dirCoreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)
+  have hw := Proof.Modes.PPC64LE.ofbFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
+  have hc := Proof.Modes.PPC64LE.ofbFinal_changes Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
   refine WP.mono (run_wrapped hs hw hc) fun s' ⟨abi, s₂, hm, h⟩ => ⟨abi, ?_⟩
-  rw [show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, cipher_enc, hm] at h
+  rw [show 4 * Serial.core.bw = 16 from rfl, cipher_ser, hm] at h
   obtain ⟨h1, h2⟩ := h
   rw [iv_entry hs, data_entry hs] at h1
   rw [iv_entry hs] at h2
@@ -338,7 +315,8 @@ theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
 
 theorem ofbFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub ofbFinal :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) modeTaint final_agree (by taint_decide_sum [cryptSum])
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7, .r8]) final_agree
+    (by taint_decide)
 
 theorem ofbFinal_verified :
     Verified target ofbFinal (Proof.Camellia.ofbFinalScratchContract abi 422) := by
