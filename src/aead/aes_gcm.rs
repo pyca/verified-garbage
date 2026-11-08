@@ -48,14 +48,14 @@ use crate::arch::dispatch::gcm::{
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
     vg_aes_gcm_wipe_prepared_auto,
 };
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
 #[cfg(not(target_arch = "x86_64"))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_to_auto, vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto,
-};
+use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
-    vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
+    vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
 use crate::error::InvalidKeyLength;
 #[cfg(target_arch = "aarch64")]
@@ -522,7 +522,23 @@ impl AesGcm {
                 tag.as_ptr(),
                 tag.len(),
             );
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "aarch64")]
+            let ok = vg_aes_gcm_open_to_with_powers_auto(
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.powers.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             let ok = vg_aes_gcm_open_to_auto(
                 dit,
                 self.key(),
