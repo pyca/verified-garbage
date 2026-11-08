@@ -12,7 +12,7 @@ pub use crate::x25519::vg_x25519_base as vg_x25519_base_auto;
 ///
 /// Contract: `VG.Spec.X25519.exchangeContract`. Constant time: only the pointers may affect timing, not the scalar or the u-coordinate; the return value depends on both.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x25519_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_X25519_EXCHANGE_UMAAL_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_x25519_exchange_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_X25519_EXCHANGE_UMAAL_FEATURES`); or else `vg_x25519_exchange`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -26,13 +26,34 @@ pub use crate::x25519::vg_x25519_base as vg_x25519_base_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_x25519_exchange_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::x25519::vg_x25519_exchange_umaal(out, scalar, point, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES) {
+            return crate::x25519::vg_x25519_exchange_umaal;
+        }
+        crate::x25519::vg_x25519_exchange
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::x25519::vg_x25519_exchange(out, scalar, point, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, scalar, point, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, scalar, point, scratch) }
 }

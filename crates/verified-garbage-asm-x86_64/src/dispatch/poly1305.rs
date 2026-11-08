@@ -12,7 +12,7 @@ pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;
 ///
 /// Contract: `VG.Spec.Poly1305.updateContract`. The streaming state is the accumulator, the key and the message's last bytes that do not fill a block (`VG.Spec.Poly1305.Buffered`). Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_poly1305_update_ifma` if the CPU supports its features (`VG_POLY1305_UPDATE_IFMA_FEATURES`); `vg_poly1305_update_avx512` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX512_FEATURES`); `vg_poly1305_update_avx2` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX2_FEATURES`); or else `vg_poly1305_update`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_poly1305_update_ifma` if the CPU supports its features (`VG_POLY1305_UPDATE_IFMA_FEATURES`); `vg_poly1305_update_avx512` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX512_FEATURES`); `vg_poly1305_update_avx2` if the CPU supports its features (`VG_POLY1305_UPDATE_AVX2_FEATURES`); or else `vg_poly1305_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,24 +23,41 @@ pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_poly1305_update_ifma`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_ifma(state, count, data, len) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(state: *mut [u64; 16], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) {
+            return crate::poly1305::vg_poly1305_update_ifma;
+        }
+        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES) {
+            return crate::poly1305::vg_poly1305_update_avx512;
+        }
+        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES) {
+            return crate::poly1305::vg_poly1305_update_avx2;
+        }
+        crate::poly1305::vg_poly1305_update
     }
-    if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_poly1305_update_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_avx512(state, count, data, len) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
     }
-    if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_poly1305_update_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::poly1305::vg_poly1305_update_avx2(state, count, data, len) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::poly1305::vg_poly1305_update(state, count, data, len) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// `vg_poly1305_finalize`, the only implementation of it on this target, which needs no CPU feature

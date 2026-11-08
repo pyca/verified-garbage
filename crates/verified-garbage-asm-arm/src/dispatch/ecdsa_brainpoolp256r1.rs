@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ecdsa.Rfc6979.TableInstance.signContract`. Constant time but for the number of candidates for `k` tried (almost always 1) and which table `hmac` is: timing may depend on the pointers, that number and the table, not otherwise on the key or the hash.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -24,22 +24,43 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp256r1_sign_auto(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp256r1_sign_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_umaal(out, d, digest, digest_len, scratch, hmac) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_SIGN_UMAAL_FEATURES) {
+            return crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign_umaal;
+        }
+        crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_sign(out, d, digest, digest_len, scratch, hmac) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(out: *mut [u8; 64], d: *const [u8; 32], digest: *const u8, digest_len: usize, scratch: *mut [u64; 1024], hmac: *const [usize; 6]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(out, d, digest, digest_len, scratch, hmac) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(out, d, digest, digest_len, scratch, hmac) }
 }
 
 /// ECDSA signature verification over brainpoolP256r1 (FIPS 186-5 §6.4.2): whether the signature at `sig` (`r` then `s`, 32 bytes each, most significant first) of the hash at `digest` (`digest_len` bytes, the hash function's output, of any length; `e` is its leftmost 256 bits, or all of it if it is shorter) verifies with the public key at `public`, which must be a valid public key in the uncompressed form of SEC 1 §2.3.3 (`04`, then `x` and `y` in 32 bytes each, most significant first, both below `p`, on the curve; SP 800-56A §5.6.2.3.3). Returns 1 if it does, and 0 if it does not or the public key is not valid.
 ///
 /// Contract: `VG.Spec.Ecdsa.Instance.verifyHashContract`. Every input is public: timing may depend on the pointers, `digest_len` and the contents of `public`, `digest` and `sig`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_ecdsa_brainpoolp256r1_verify_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES`); or else `vg_ecdsa_brainpoolp256r1_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -53,13 +74,34 @@ pub unsafe fn vg_ecdsa_brainpoolp256r1_sign_auto(out: *mut [u8; 64], d: *const [
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdsa_brainpoolp256r1_verify_auto(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-    if cpu.contains(crate::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_ecdsa_brainpoolp256r1_verify_umaal`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify_umaal(public, digest, digest_len, sig, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
+        if cpu.contains(crate::ecdsa_brainpoolp256r1::VG_ECDSA_BRAINPOOLP256R1_VERIFY_UMAAL_FEATURES) {
+            return crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify_umaal;
+        }
+        crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::ecdsa_brainpoolp256r1::vg_ecdsa_brainpoolp256r1_verify(public, digest, digest_len, sig, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(public: *const [u8; 65], digest: *const u8, digest_len: usize, sig: *const [u8; 64], scratch: *mut [u64; 1024]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(public, digest, digest_len, sig, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(public, digest, digest_len, sig, scratch) }
 }
