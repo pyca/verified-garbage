@@ -11,7 +11,9 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::rc2::{vg_rc2_cbc_decrypt_update, vg_rc2_cbc_encrypt_update, vg_rc2_cbc_init};
+use crate::arch::dispatch::rc2::{
+    vg_rc2_cbc_decrypt_update_auto, vg_rc2_cbc_encrypt_update_auto, vg_rc2_cbc_init_auto,
+};
 use crate::error::{IncompleteBlock, OutputTooSmall};
 use crate::zeroize::zeroize;
 
@@ -53,7 +55,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // SAFETY: the key, IV and context are valid, separate objects of the
         // lengths passed; the primitive checks the lengths.
         let code = unsafe {
-            vg_rc2_cbc_init(
+            vg_rc2_cbc_init_auto(
                 key.as_ptr(),
                 key.len(),
                 effective_bits,
@@ -87,9 +89,9 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         let written = self.output_len(input.len());
         let output = output.get_mut(..written).ok_or(OutputTooSmall)?;
         let update = if DECRYPT {
-            vg_rc2_cbc_decrypt_update
+            vg_rc2_cbc_decrypt_update_auto
         } else {
-            vg_rc2_cbc_encrypt_update
+            vg_rc2_cbc_encrypt_update_auto
         };
         // SAFETY: the context holds `pending_len` (less than 8) pending
         // bytes; `output` is exactly `(pending_len + input.len()) / 8 * 8`

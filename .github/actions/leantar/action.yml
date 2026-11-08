@@ -15,7 +15,15 @@ description: >
 runs:
   using: composite
   steps:
+    # Authenticated with the job's token (`ci/github_release.py`): GitHub
+    # sometimes degrades unauthenticated downloads alone. Only the download
+    # sees it.
     - name: Download leantar
       shell: bash
+      env:
+        RELEASE_TOKEN: ${{ github.token }}
       run: |
-        "$(python3 ci/leantar_release.py)" --version
+        token=$RELEASE_TOKEN
+        unset RELEASE_TOKEN
+        leantar=$(GH_TOKEN=$token python3 ci/leantar_release.py)
+        "$leantar" --version

@@ -90,6 +90,7 @@ namespace VG.Proof.AesGcm.X86_64.BlocksToDec
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.BlocksTo
 open VG.Proof.AesGcm.X86_64.BlocksTo
 open VG.Impl.AesGcm.X86_64.Blocks (argCtx argRounds argCtr argY argN)
+open VG.Impl.AesGcm.X86_64.BlocksToDec (ghArgsTo ctrArgsTo tailTo decryptTo)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 
 /-- `MidD`, with the arguments of the call in their registers. -/
@@ -135,6 +136,12 @@ theorem argsM_ok {q : Nat} {st : State} (h : MidD s q q st) : WP isa (.block arg
       (by rw [m₄]; exact Frame.refl _ _) rd₄ wr₄, a₁, a₂, a₃, a₄, a₅, a₆, a₇⟩
 
 end
+
+theorem ghArgsTo_check : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rsp]) (.block ghArgsTo.tail) hc).map fun τ' =>
+    (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true := ⟨_, by taint_decide⟩
+
+theorem ctrArgsTo_check : ∃ hc, ((taint.check (Taint.ofRegs [.r11, .rsp]) (.block ctrArgsTo.tail) hc).map fun τ' =>
+    (RegSet.ofList [Reg.rsp]).subset τ'.regs && (!false || τ'.flags)) = some true := ⟨_, by taint_decide⟩
 
 /-- What the head of `tail` leaves. -/
 def TH (s : State) (q : Nat) (st : State) : Prop :=
@@ -249,7 +256,74 @@ theorem tail_rel (B : BlkFn M) {q : Nat} :
     AP s₀ q s₁ ∧ AP s₀' q s₂) (fun _ _ h => h.2) fun _ _ h => h
   exact (RelCT.seq b (RelCT.seq c (RelCT.seq d e))) _ _ _ _ _ _ ⟨⟨M₁, r11₁, cx₁⟩, ⟨M₂, r11₂, cx₂⟩⟩ e₁ e₂
 
+omit hp hp' in
+theorem pub_ew5 : BlocksToDec.W5 s₀' = BlocksToDec.W5 s₀ := by simp only [BlocksToDec.W5, pb.sc]
+
+/-- `tailTo`, from two runs after the entry: the branch on the number of
+blocks, public, and the calls, with the same public arguments. -/
+theorem tailTo_rel (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    RelCT isa (fun s₁ s₂ => MidD s₀ 0 0 s₁ ∧ MidD s₀' 0 0 s₂) (tailTo g.fn ⟨v.callee.name, v.callee.code⟩)
+      fun _ _ => True := by
+  have a := rel_wp (rel_r11 (l₀ := headB) (l := headB.tail) rfl
+      (P := fun s₁ s₂ => MidD s₀ 0 0 s₁ ∧ MidD s₀' 0 0 s₂) [.rsp] [.rsp] (by simp)
+      (fun _ _ h => mid_rsp pb h.1 h.2) (fun _ _ h => mid_hS hp hp' pb h.1 h.2) tailHead_check)
+    (fun _ _ h => h) (G₁ := TH s₀ 0) (G₂ := TH s₀' 0)
+    (fun _ h => WP.mono (BlocksToDec.tailHead_ok hp h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+    (fun _ h => WP.mono (BlocksToDec.tailHead_ok hp' h) fun _ h => ⟨h.1, h.2.1, h.2.2.1, h.2.2.2.1⟩)
+  refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.2.1.2.1, h.2.2.2.1, pb.en]) ?_ ?_)
+  · exact (rel_taint [] (fun _ _ _ r hr => by cases hr) empty_check).mono (fun _ _ h => h) fun _ _ h => h
+  -- The hash.
+  have b := rel_wp (rel_r11 (l₀ := ghArgsTo) (l := ghArgsTo.tail) rfl
+      (P := fun s₁ s₂ => MidD s₀ 0 0 s₁ ∧ MidD s₀' 0 0 s₂) [.rsp] [.rsp] (by simp)
+      (fun _ _ h => mid_rsp pb h.1 h.2) (fun _ _ h => mid_hS hp hp' pb h.1 h.2) ghArgsTo_check)
+    (fun _ _ h => h)
+    (G₁ := fun st' => GhCall st' (K s₀ + BitVec.ofNat 64 240) (Y s₀) (Src s₀) (BlocksToDec.W5 s₀) (n s₀))
+    (G₂ := fun st' => GhCall st' (K s₀' + BitVec.ofNat 64 240) (Y s₀') (Src s₀') (BlocksToDec.W5 s₀') (n s₀'))
+    (fun _ h => WP.mono (BlocksToDec.ghArgsTo_ok hp h) fun _ h => h.1)
+    (fun _ h => WP.mono (BlocksToDec.ghArgsTo_ok hp' h) fun _ h => h.1)
+  have gh := rel_wp (RelCT.seq b (gh_rel g fun s₁ s₂ h => by
+      obtain ⟨hr, c₁, c₂⟩ := h
+      rw [pb.k, pb.y, pb.src, pub_ew5 pb, pb.en] at c₂
+      exact ⟨_, _, _, _, _, c₁, c₂, hr _ (List.mem_singleton_self _)⟩)) (fun _ _ h => h)
+    (fun _ h => BlocksToDec.ghStep_ok hp g h) (fun _ h => BlocksToDec.ghStep_ok hp' g h)
+  -- The decryption.
+  have c := rel_wp (rel_r11 (l₀ := ctrArgsTo) (l := ctrArgsTo.tail) rfl
+      (P := fun s₁ s₂ => BlocksToDec.GD s₀ s₁ ∧ BlocksToDec.GD s₀' s₂) [.rsp] [.rsp] (by simp)
+      (fun _ _ h r hr => by simp only [List.mem_singleton] at hr; subst hr; rw [h.1.rsp, h.2.rsp, pb.sp])
+      (fun _ _ h => ⟨by rw [h.1.rsp, h.2.rsp, h.1.arg, h.2.arg, pb.sc],
+        by rw [h.1.rd, h.1.wr, h.1.rsp]; exact a_in hp (i := 2) (by decide),
+        by rw [h.2.rd, h.2.wr, h.2.rsp]; exact a_in hp' (i := 2) (by decide)⟩) ctrArgsTo_check)
+    (fun _ _ h => h)
+    (G₁ := fun st' => CtrToCall st' (K s₀) (C s₀) (Src s₀) (Dst s₀) (BlocksToDec.W5 s₀) (R s₀) (n s₀))
+    (G₂ := fun st' => CtrToCall st' (K s₀') (C s₀') (Src s₀') (Dst s₀') (BlocksToDec.W5 s₀') (R s₀') (n s₀'))
+    (fun _ h => WP.mono (BlocksToDec.ctrArgsTo_ok hp h.rsp h.rd h.wr h.kept h.arg) fun _ h => h.1)
+    (fun _ h => WP.mono (BlocksToDec.ctrArgsTo_ok hp' h.rsp h.rd h.wr h.kept h.arg) fun _ h => h.1)
+  have d := RelCT.seq c (ctrTo_rel v fun s₁ s₂ h => by
+    obtain ⟨hr, c₁, c₂⟩ := h
+    rw [pb.k, pb.c, pb.src, pb.dst, pub_ew5 pb, pb.eR, pb.en] at c₂
+    exact ⟨_, _, _, _, _, _, _, c₁, c₂, hr _ (List.mem_singleton_self _)⟩)
+  intro s₁ s₂ t₁ t₂ s₁' s₂' hP e₁ e₂
+  obtain ⟨⟨-, ⟨M₁, -⟩, ⟨M₂, -⟩⟩, -⟩ := hP
+  exact (RelCT.seq gh (d.mono (fun _ _ h => h.2) fun _ _ h => h)) _ _ _ _ _ _ ⟨M₁, M₂⟩ e₁ e₂
+
 end
+
+theorem decryptTo_ct {M : CtxMode} (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    ConstantTime isa (Proof.AesGcm.decryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
+      (decryptTo g.fn ⟨v.callee.name, v.callee.code⟩) := by
+  refine ct_of_rel fun s₀ s₀' h h' hq => ?_
+  have hp := BT.ofM h
+  have hp' := BT.ofM h'
+  have pb := Pub.of hq
+  have me : ∀ (s s₁ : State), BT M s → EntryPost s s₁ → MidD s 0 0 s₁ := fun s s₁ hp h => by
+    obtain ⟨_, _, g₁, k₁, f₁, rd₁, wr₁⟩ := h
+    exact BlocksToDec.mid_entry hp (g₁ _ (by decide) (by decide))
+      (fun r hr => g₁ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr))
+      k₁ f₁ rd₁ wr₁
+  unfold decryptTo
+  refine RelCT.seq (entry_rel hp hp' pb) ?_
+  intro s₁ s₂ t₁ t₂ s₁' s₂' ⟨_, E₁, E₂⟩ e₁ e₂
+  exact tailTo_rel hp hp' pb g v _ _ _ _ _ _ ⟨me _ _ hp E₁, me _ _ hp' E₂⟩ e₁ e₂
 
 theorem decrypt_ct {M : CtxMode} (B : BlkFn M) {aligned : Bool} (st : Option (StitchToDecCode M aligned)) :
     ConstantTime isa (Proof.AesGcm.decryptBlocksToX86_64M M).pre Proof.AesGcm.blocksToPub
@@ -343,5 +417,45 @@ def BlkToDecFn.ofBlocks {M : CtxMode} (n : String) (B : BlkFn M) {aligned : Bool
   xd := decryptTo_xdepth st B
   mx := decryptTo_mx st B
   spAll := decryptTo_spSafe st B
+
+section
+variable (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl)
+
+theorem decryptToTo_mx :
+    (BlocksToDec.decryptTo g.fn ⟨v.callee.name, v.callee.code⟩).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have e₁ := g.mxcsr
+  have e₂ := v.mxcsr
+  simp only [BlocksToDec.decryptTo, BlocksToDec.tailTo, Code.allInstrs, e₁, e₂, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem decryptToTo_spSafe :
+    (BlocksToDec.decryptTo g.fn ⟨v.callee.name, v.callee.code⟩).all (fun i => !X86_64.isa.writesSp i) = true := by
+  have e₁ := g.spSafe
+  have e₂ := v.spSafe
+  simp only [BlocksToDec.decryptTo, BlocksToDec.tailTo, Code.all, e₁, e₂, Bool.true_and, Bool.and_true]
+  decide +kernel
+
+theorem decryptToTo_xdepth : (BlocksToDec.decryptTo g.fn ⟨v.callee.name, v.callee.code⟩).x86_64Depth ≤ 24 := by
+  have e₁ := g.noStack
+  have e₂ := v.noStack
+  simp only [BlocksToDec.decryptTo, BlocksToDec.tailTo, Code.x86_64Depth, e₁, e₂]
+  omega
+
+end
+
+/-- The instance of `vg_aes_gcm_decrypt_blocks_to` named `n` with no
+out-of-place loop and no copy, calling `g` (`vg_ghash`) and `v`
+(`vg_aes_ctr32_to`). -/
+def BlkToDecFn.ofTo {M : CtxMode} (n : String) (g : GhashImpl) (v : Proof.Aes.X86_64.Ctr32ToImpl) :
+    BlkToDecFn M where
+  fn := ⟨n, BlocksToDec.decryptTo g.fn ⟨v.callee.name, v.callee.code⟩⟩
+  ok s hs := by
+    obtain ⟨t, s', he, hg, hp⟩ := BlocksToDec.decryptTo_wp g v hs
+    exact ⟨t, s', he, abiPreserved_of_exec (decryptToTo_mx g v) he hg, hp⟩
+  ct := BlocksToDec.decryptTo_ct g v
+  sp := SpSafe.of_all (decryptToTo_spSafe g v)
+  xd := decryptToTo_xdepth g v
+  mx := decryptToTo_mx g v
+  spAll := decryptToTo_spSafe g v
 
 end VG.Proof.AesGcm.X86_64

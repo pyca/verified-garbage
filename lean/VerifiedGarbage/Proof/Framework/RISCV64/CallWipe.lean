@@ -340,20 +340,49 @@ theorem cw_body_wp {name : String} {body : Prog isa}
 
 /-- The value `lenArg n` leaves in `a1`. -/
 def lenVal (n : Nat) : BitVec 64 :=
-  if n < 2048 then BitVec.ofInt 64 n else BitVec.ofInt 64 2047 + BitVec.ofInt 64 ((n : Int) - 2047)
+  if n < 2048 then BitVec.ofInt 64 n
+  else if n < 4095 then BitVec.ofInt 64 2047 + BitVec.ofInt 64 ((n : Int) - 2047)
+  else BitVec.ofNat 64 n
 
-theorem lenVal_toNat {n : Nat} (hn : n < 4095) : (lenVal n).toNat = n := by
+theorem lenVal_toNat {n : Nat} (hn : n < 2 ^ 31 - 2048) : (lenVal n).toNat = n := by
   unfold lenVal
   split
   · rw [show BitVec.ofInt 64 (n : Int) = BitVec.ofNat 64 n from BitVec.ofInt_natCast _ _,
       BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
   · rename_i h
-    rw [show ((n : Int) - 2047) = ((n - 2047 : Nat) : Int) by omega_using [h],
-      BitVec.ofInt_natCast, show (2047 : Int) = ((2047 : Nat) : Int) from rfl, BitVec.ofInt_natCast,
-      ← BitVec.ofNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
-    omega_using [h]
+    split
+    · rename_i h'
+      rw [show ((n : Int) - 2047) = ((n - 2047 : Nat) : Int) by omega_using [h],
+        show (2047 : Int) = ((2047 : Nat) : Int) from rfl, BitVec.ofInt_natCast, BitVec.ofInt_natCast,
+        ← BitVec.ofNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [h'])]
+      omega_using [h]
+    · rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hn])]
 
-theorem lenArg_run (n : Nat) (hn : n < 4095) (X : State) :
+/-- `lui` of `hiOf n` holds `4096 * hiOf n`. -/
+theorem lui_hiOf {n : Nat} (hn : n < 2 ^ 31 - 2048) :
+    sext32 (BitVec.ofNat 20 (hiOf n) ++ (0 : BitVec 12)) = BitVec.ofNat 64 (4096 * hiOf n) := by
+  have hh : hiOf n < 2 ^ 19 := by unfold hiOf; omega_using [hn]
+  have e : BitVec.ofNat 20 (hiOf n) ++ (0 : BitVec 12) = BitVec.ofNat 32 (4096 * hiOf n) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_append, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+      Nat.mod_eq_of_lt (by omega)]
+    simp [Nat.shiftLeft_eq]; omega
+  have hm : (BitVec.ofNat 32 (4096 * hiOf n)).msb = false := by
+    rw [BitVec.msb_eq_decide, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; simp; omega
+  rw [e, sext32, BitVec.signExtend_eq_setWidth_of_msb_false hm]
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega),
+    Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+
+/-- `4096 * hiOf n` plus `loOf n` is `n`. -/
+theorem lui_addi_loOf {n : Nat} :
+    BitVec.ofNat 64 (4096 * hiOf n) + BitVec.ofInt 64 (loOf n) = BitVec.ofNat 64 n := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_add, BitVec.toNat_ofInt, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+  unfold loOf hiOf
+  omega
+
+theorem lenArg_run (n : Nat) (hn : n < 2 ^ 31 - 2048) (X : State) :
     execBlock isa (lenArg n) X = some (X.write .a1 (lenVal n), []) := by
   unfold lenArg lenVal
   split
@@ -361,9 +390,21 @@ theorem lenArg_run (n : Nat) (hn : n < 4095) (X : State) :
     simp only [execBlock, isa, exec_li (show imm12 (n : Int) by unfold imm12; omega_using [h]),
       Option.map_some, addrs, List.map_nil, List.nil_append]
   · rename_i h
-    simp only [execBlock, isa, exec_li (show imm12 (2047 : Int) by decide),
-      exec_addi (show imm12 ((n : Int) - 2047) by unfold imm12; omega_using [h, hn]), Option.map_some,
-      addrs, List.map_nil, List.nil_append, RegUpd.gpr_write_self, RegUpd.write_write]
+    split
+    · rename_i h'
+      simp only [execBlock, isa, exec_li (show imm12 (2047 : Int) by decide),
+        exec_addi (show imm12 ((n : Int) - 2047) by unfold imm12; omega_using [h, h']), Option.map_some,
+        addrs, List.map_nil, List.nil_append, RegUpd.gpr_write_self, RegUpd.write_write]
+    · split
+      · rename_i hz
+        have hv : BitVec.ofNat 64 (4096 * hiOf n) = BitVec.ofNat 64 n := by
+          rw [← lui_addi_loOf (n := n), hz, show BitVec.ofInt 64 (0 : Int) = 0#64 from rfl, BitVec.add_zero]
+        simp only [execBlock, isa, exec_lui, lui_hiOf hn, hv, Option.map_some, addrs, List.map_nil,
+          List.nil_append]
+      · simp only [execBlock, isa, exec_lui, lui_hiOf hn,
+          exec_addi (show imm12 (loOf n) by unfold imm12 loOf hiOf; omega), Option.map_some,
+          addrs, List.map_nil, List.nil_append, RegUpd.gpr_write_self, RegUpd.write_write,
+          lui_addi_loOf]
 
 /-- `t0` at `sp`. -/
 def cwZ1 (c : State) : State := c.write .t0 (c.sp + BitVec.ofNat 64 0)
@@ -399,10 +440,10 @@ theorem cwZero_a0 (n : Nat) (c : State) :
     Mem.readW_writeW_sep (Offset.sep c.sp (d := 8) (n := 8) (e := 16) (k := 8)
       (.inl (by decide)) (by decide) (by decide)) (by decide)]
 
-theorem cwZero_a1 {n : Nat} (hn : n < 4095) (c : State) : ((cwZero n c).gpr .a1).toNat = n := by
+theorem cwZero_a1 {n : Nat} (hn : n < 2 ^ 31 - 2048) (c : State) : ((cwZero n c).gpr .a1).toNat = n := by
   rw [cwZero, RegUpd.gpr_write_self, lenVal_toNat hn]
 
-theorem zeroArgs_run (n : Nat) (hn : n < 4095) {c : State}
+theorem zeroArgs_run (n : Nat) (hn : n < 2 ^ 31 - 2048) {c : State}
     (ha16 : (c.sp + BitVec.ofNat 64 16).toNat % 8 = 0) (ha8 : (c.sp + BitVec.ofNat 64 8).toNat % 8 = 0)
     (hw : InRegions c.wr (c.sp + BitVec.ofNat 64 16) 8)
     (hr : InRegions (c.rd ++ c.wr) (c.sp + BitVec.ofNat 64 8) 8) :
@@ -486,7 +527,7 @@ theorem cwZero_a0' {s c : State} (hc : AfterBody sig post r stack s c) (n : Nat)
   rw [cwZero_a0, hc.2.2.1]; exact hc.2.2.2.2.2.1
 
 /-- The zeroize function's entry state. -/
-theorem cwZeroEntry {s c : State} (hc : AfterBody sig post r stack s c) {n : Nat} (hn : n < 4095)
+theorem cwZeroEntry {s c : State} (hc : AfterBody sig post r stack s c) {n : Nat} (hn : n < 2 ^ 31 - 2048)
     (R : Region) :
     ((cwZero n c).callEntry.withRegions [] [R]).gpr .a0 = s.gpr r ∧
       (((cwZero n c).callEntry.withRegions [] [R]).gpr .a1).toNat = n ∧
@@ -499,14 +540,14 @@ theorem cwZeroEntry {s c : State} (hc : AfterBody sig post r stack s c) {n : Nat
 theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
     {e : Elem} {k n zst : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
-    (hn : n ≤ k * e.size) (hn12 : n < 4095) (hzs : zst ≤ stack) (hc : AfterBody sig post r stack s c) :
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hzs : zst ≤ stack) (hc : AfterBody sig post r stack s c) :
     (Spec.Zeroize.zeroizeContract abi zst).pre
       ((cwZero n c).callEntry.withRegions [] [⟨s.gpr r, n⟩]) := by
   obtain ⟨hal, hsb⟩ := cw_sp hk hl hs
   have hA := cw_out hk hl hs _ harr
   have hnw := (cw_array hk hl hs harr).2
   have hsubA : Region.Sub ⟨s.gpr r, n⟩ ⟨s.gpr r, k * e.size⟩ := Region.sub_prefix hn
-  obtain ⟨h0, h1, hsp⟩ := cwZeroEntry hc hn12 ⟨s.gpr r, n⟩
+  obtain ⟨h0, h1, hsp⟩ := cwZeroEntry hc hn31 ⟨s.gpr r, n⟩
   refine zeroize_pre_of h1 (by rw [hsp]; exact sub32_aligned hal (by omega_using [hsb])) (.inr ?_) rfl
     (by rw [h0]; rfl) ?_ (by rw [h0]; omega_using [hnw, hn])
   · rw [hsp, toNat_sub_ofNat' (by omega_using [hsb])]; omega_using [hsb, hzs]
@@ -520,7 +561,7 @@ theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists
 
 /-- The zeroize function's public data, at its entry, if the array's
 address is public. -/
-theorem cw_zeroPub {n zst : Nat} (hn : n < 4095) {s₁ s₂ c₁ c₂ : State} (hsp : s₁.sp = s₂.sp)
+theorem cw_zeroPub {n zst : Nat} (hn : n < 2 ^ 31 - 2048) {s₁ s₂ c₁ c₂ : State} (hsp : s₁.sp = s₂.sp)
     (hpp : s₁.gpr r = s₂.gpr r) (hc₁ : AfterBody sig post r stack s₁ c₁)
     (hc₂ : AfterBody sig post r stack s₂ c₂) :
     (Spec.Zeroize.zeroizeContract abi zst).pub ((cwZero n c₁).callEntry.withRegions [] [⟨s₁.gpr r, n⟩])
@@ -575,7 +616,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
     {e : Elem} {k n : Nat} {s c : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
-    (hn : n ≤ k * e.size) (hn12 : n < 4095) (hc : AfterBody sig post r stack s c) :
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048) (hc : AfterBody sig post r stack s c) :
     WP isa (.call zname zcode) (cwZero n c) (AfterZero sig post r stack n s) := by
   have hsb := (cw_sp hk hl hs).2
   obtain ⟨hAw, -⟩ := cw_array hk hl hs harr
@@ -584,7 +625,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
   have hcw := cw_zeroCovers hk hl hs harr hn hc
   have hap := cw_frameApartZ hk hl hs harr hn (d := sdepth zcode) (by omega_using [hzd, hzs])
   refine WP.callAny (k := Spec.Zeroize.zeroizeContract abi zst) hz.1 (rd := []) (wr := [⟨s.gpr r, n⟩])
-    (cw_zeroPre hk hl hs harr hn hn12 hzs hc) (Covers.right hcw) hcw ?_ (by omega_using [hzd, hzs, hsb])
+    (cw_zeroPre hk hl hs harr hn hn31 hzs hc) (Covers.right hcw) hcw ?_ (by omega_using [hzd, hzs, hsb])
   intro g hrd hwr hsp hfr hcs hq
   rw [cwZero_sp, hspc] at hfr hsp
   -- The result's slot, which `zeroArgs` writes.
@@ -625,7 +666,7 @@ theorem cw_zero_wp {zname : String} {zcode : Prog isa} {zst : Nat}
       · simp only [List.mem_singleton] at hx; subst hx
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), hbelowZ⟩
   · -- The zeroize function's postcondition.
-    obtain ⟨h0, h1, -⟩ := cwZeroEntry hc hn12 ⟨s.gpr r, n⟩
+    obtain ⟨h0, h1, -⟩ := cwZeroEntry hc hn31 ⟨s.gpr r, n⟩
     rw [zeroize_post_iff, h0, BitVec.setWidth_eq, h1, State.withRegions_mem] at hq
     exact hq
 
@@ -674,7 +715,7 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) post vs m₁ m' x →
         Curry.apply (sig.words abi.ptrBits) post vs m₂ m' x)
-    {e : Elem} {k n : Nat} (hn : n ≤ k * e.size) (hn12 : n < 4095)
+    {e : Elem} {k n : Nat} (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048)
     {s : State} (hs : (sig.contract abi pre post wa (stack + 32) leak).pre s)
     (harr : (⟨s.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig s))
     (hout : ∀ m₁ m₂ x, (∀ b ∈ Sig.bufs sig.params (regArgs sig s), b.1.Disjoint ⟨s.gpr r, k * e.size⟩ →
@@ -693,11 +734,11 @@ theorem cw_wp {name zname : String} {body zcode : Prog isa} {zst : Nat}
   refine WP.seq (WP.block ⟨_, saveArg_run hr hal hsp32, ?_⟩)
   refine WP.seq (WP.mono (cw_body_wp h hk hl hd hpre hpost hs) fun c hc => ?_)
   obtain ⟨hrdc, hwrc, hspc, -⟩ := id hc
-  refine WP.seq (WP.block ⟨_, zeroArgs_run n hn12 (by rw [hspc]; exact hal' 16 (by decide) (by decide))
+  refine WP.seq (WP.block ⟨_, zeroArgs_run n hn31 (by rw [hspc]; exact hal' 16 (by decide) (by decide))
     (by rw [hspc]; exact hal' 8 (by decide) (by decide))
     (by rw [hwrc, hspc]; exact slot_in s (by decide))
     (by rw [hwrc, hspc]; exact slot_in' s c.rd (by decide)), ?_⟩)
-  refine WP.seq (WP.mono (cw_zero_wp hz hzd hzs hk hl hs harr hn hn12 hc) fun g hg => ?_)
+  refine WP.seq (WP.mono (cw_zero_wp hz hzd hzs hk hl hs harr hn hn31 hc) fun g hg => ?_)
   obtain ⟨c', hc', hrdg, hwrg, hspg, hcsg, h0g, h16g, hfs, hfc, hz0⟩ := hg
   refine WP.block ⟨_, restore_run (by rw [hspg]; exact hal' 16 (by decide) (by decide))
     (by rw [hspg]; exact hal' 0 (by decide) (by decide))
@@ -811,7 +852,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
-    (hn : n ≤ k * e.size) (hn12 : n < 4095)
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048)
     (hd : sdepth body ≤ stack) (hzd : sdepth zcode ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -876,7 +917,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     exact hpostOut _ _ _ _ _ (regArgs_length sig s hk) hs.2.2.2.1 (by rw [hget]; exact hag) hq
   refine ⟨fun s hs => ?_, ?_, hsat⟩
   · obtain ⟨t, g, he, habi, hq, hz0⟩ :=
-      cw_wp (r := r) h hz hk hl hr hd hzd hzs hpre hpost hn hn12 hs (harr s) (hout s hs)
+      cw_wp (r := r) h hz hk hl hr hd hzd hzs hpre hpost hn hn31 hs (harr s) (hout s hs)
     refine ⟨t, g, he, habi, ?_⟩
     rw [post_regs' hk] at hq ⊢
     exact hwiped _ _ _ _ (regArgs_length sig s hk) hq (by rw [hget]; exact hz0)
@@ -923,12 +964,12 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     · obtain ⟨hc₁, hc₂⟩ := hc
       obtain ⟨al₁, sb₁⟩ := cw_sp hk hl h₁'
       obtain ⟨al₂, sb₂⟩ := cw_sp hk hl h₂'
-      have z₁ := zeroArgs_run n hn12 (c := c₁)
+      have z₁ := zeroArgs_run n hn31 (c := c₁)
         (by rw [hc₁.2.2.1]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 16) (by decide) (by decide))
         (by rw [hc₁.2.2.1]; exact slot_aligned al₁ (by omega_using [sb₁]) (off := 8) (by decide) (by decide))
         (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in σ₁ (by decide))
         (by rw [hc₁.2.1, hc₁.2.2.1]; exact slot_in' σ₁ c₁.rd (by decide))
-      have z₂ := zeroArgs_run n hn12 (c := c₂)
+      have z₂ := zeroArgs_run n hn31 (c := c₂)
         (by rw [hc₂.2.2.1]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 16) (by decide) (by decide))
         (by rw [hc₂.2.2.1]; exact slot_aligned al₂ (by omega_using [sb₂]) (off := 8) (by decide) (by decide))
         (by rw [hc₂.2.1, hc₂.2.2.1]; exact slot_in σ₂ (by decide))
@@ -941,13 +982,13 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     · refine RelCT.mono (RelCT.wp (F₁ := AfterZero sig post r stack n σ₁) (F₂ := AfterZero sig post r stack n σ₂)
         (RelCT.callEx hz.1 hz.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
-        exact ⟨[], [⟨σ₁.gpr r, n⟩], [], [⟨σ₂.gpr r, n⟩], cw_zeroPre hk hl h₁' (harr σ₁) hn hn12 hzs hc₁,
-          cw_zeroPre hk hl h₂' (harr σ₂) hn hn12 hzs hc₂, cw_zeroPub hn12 hsp12 hpp hc₁ hc₂,
+        exact ⟨[], [⟨σ₁.gpr r, n⟩], [], [⟨σ₂.gpr r, n⟩], cw_zeroPre hk hl h₁' (harr σ₁) hn hn31 hzs hc₁,
+          cw_zeroPre hk hl h₂' (harr σ₂) hn hn31 hzs hc₂, cw_zeroPub hn31 hsp12 hpp hc₁ hc₂,
           Covers.right (cw_zeroCovers hk hl h₁' (harr σ₁) hn hc₁), cw_zeroCovers hk hl h₁' (harr σ₁) hn hc₁,
           Covers.right (cw_zeroCovers hk hl h₂' (harr σ₂) hn hc₂), cw_zeroCovers hk hl h₂' (harr σ₂) hn hc₂⟩
       · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
-        exact ⟨cw_zero_wp hz hzd hzs hk hl h₁' (harr σ₁) hn hn12 hc₁,
-          cw_zero_wp hz hzd hzs hk hl h₂' (harr σ₂) hn hn12 hc₂⟩
+        exact ⟨cw_zero_wp hz hzd hzs hk hl h₁' (harr σ₁) hn hn31 hc₁,
+          cw_zero_wp hz hzd hzs hk hl h₂' (harr σ₂) hn hn31 hc₂⟩
     -- The result and the return address are restored.
     · refine RelCT.block_of fun g₁ g₂ hg => ?_
       obtain ⟨⟨c₁, _, -, hw₁, hs₁, -⟩, ⟨c₂, _, -, hw₂, hs₂, -⟩⟩ := hg
@@ -974,7 +1015,7 @@ theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : N
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
-    (hn : n ≤ k * e.size) (hn12 : n < 4095)
+    (hn : n ≤ k * e.size) (hn31 : n < 2 ^ 31 - 2048)
     (hd : sdepth body ≤ stack) (hzd : sdepth zcode ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -993,7 +1034,7 @@ theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : N
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
     Verified target (Impl.CallWipe.RISCV64.callWipe (argRegs.getD i .a0) n name body zname zcode)
       (sig.contract abi pre post wa (stack + 32) leak) :=
-  Verified.callWipe' h hz hk hl hps hi hn hn12 hd hzd hzs hpre hpost hpostOut
+  Verified.callWipe' h hz hk hl hps hi hn hn31 hd hzd hzs hpre hpost hpostOut
     (fun _ _ _ _ _ hq _ => hq) hsat hleak
 
 end

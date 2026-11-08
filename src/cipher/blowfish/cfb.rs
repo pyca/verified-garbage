@@ -11,10 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::blowfish::vg_blowfish_expand_key;
-use crate::arch::blowfish_cfb::{
-    vg_blowfish_cfb64_decrypt, vg_blowfish_cfb64_decrypt_final, vg_blowfish_cfb64_encrypt,
-    vg_blowfish_cfb64_encrypt_final,
+use crate::arch::dispatch::blowfish::vg_blowfish_expand_key_auto;
+use crate::arch::dispatch::blowfish_cfb::{
+    vg_blowfish_cfb64_decrypt_auto, vg_blowfish_cfb64_decrypt_final_auto,
+    vg_blowfish_cfb64_encrypt_auto, vg_blowfish_cfb64_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -70,8 +70,8 @@ impl BlowfishCfb64Encryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_blowfish_cfb64_encrypt,
-            vg_blowfish_cfb64_encrypt_final,
+            vg_blowfish_cfb64_encrypt_auto,
+            vg_blowfish_cfb64_encrypt_final_auto,
         );
     }
 }
@@ -129,8 +129,8 @@ impl BlowfishCfb64Decryptor {
         self.key.last(
             &mut self.iv,
             buffer,
-            vg_blowfish_cfb64_decrypt,
-            vg_blowfish_cfb64_decrypt_final,
+            vg_blowfish_cfb64_decrypt_auto,
+            vg_blowfish_cfb64_decrypt_final_auto,
         );
     }
 }
@@ -178,7 +178,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 4168]);
         // SAFETY: the key has a length in 4..=56; the key and the schedule
         // are separate valid objects of the lengths passed.
-        unsafe { vg_blowfish_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_blowfish_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -186,14 +186,14 @@ impl Key {
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn encrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_blowfish_cfb64_encrypt);
+        self.blocks(iv, buffer, vg_blowfish_cfb64_encrypt_auto);
     }
 
     /// Decrypts the whole blocks of `buffer` in place, from the block `iv`,
     /// which it replaces with the last ciphertext block (unchanged for empty
     /// input).
     fn decrypt(&self, iv: &mut [u8; 8], buffer: &mut [u8]) {
-        self.blocks(iv, buffer, vg_blowfish_cfb64_decrypt);
+        self.blocks(iv, buffer, vg_blowfish_cfb64_decrypt_auto);
     }
 
     /// `f` on whole blocks.

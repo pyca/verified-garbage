@@ -17,9 +17,8 @@ Extension: the encryption, `Encrypt.code`, and the decryptions in seven
 independent states, `Decrypt.code` with SHA-3's `eor3` and `Decrypt.codeAes`) is called by `callWipe`, as the internal function
 `vg_aes_cbc_{en,de}crypt_unwiped<suffix>`, which then zeroes the whole of
 `scratch` with `vg_zeroize`. Each implementation meets its contract and
-leaves each byte of `scratch` unchanged or zero (`*_scrubbed`, the stronger
-contract the Spec will state once every target's implementations prove it;
-the registrations take its weakening, `*_verified`).
+leaves each byte of `scratch` unchanged or zero (`*_scrubbed`), which is
+the contract of `Spec/Cbc/` (`*_verified`).
 -/
 
 @[expose] public section
@@ -90,11 +89,11 @@ theorem decrypt_scrubbed (v : BlocksImpl) :
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified target (encrypt v) (Spec.Cbc.aesEncryptContract abi 32) :=
-  Verified.of_scrubbed (encrypt_scrubbed v)
+  encrypt_scrubbed v
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified target (decrypt v) (Spec.Cbc.aesDecryptContract abi 32) :=
-  Verified.of_scrubbed (decrypt_scrubbed v)
+  decrypt_scrubbed v
 
 theorem args_length : ∀ s vals,
     abi.args ((Spec.Cbc.aesSig.words abi.ptrBits).map (·.bits abi.ptrBits)) = some vals →

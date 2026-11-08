@@ -48,7 +48,7 @@ abbrev CtxMode.prepared : CtxMode := CtxMode.preparedN 24
 abbrev CtxMode.prepared16 : CtxMode := CtxMode.preparedN 8
 
 /-- The 1032-byte prepared key context of `vg_aes_gcm_prepare`
-(`Proof.AesGcm.Flag.PreparedRepr`) whose count is at least `t`: it holds the first 8
+(`Spec.Gcm.PreparedRepr`) whose count is at least `t`: it holds the first 8
 pairs if the count is at least 16 and all 24 if it is at least 48. -/
 def CtxMode.flaggedT (t : Nat) : CtxMode where
   len := 1032

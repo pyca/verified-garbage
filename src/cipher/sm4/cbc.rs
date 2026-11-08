@@ -11,8 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_cbc::{vg_sm4_cbc_decrypt_chained, vg_sm4_cbc_encrypt_chained};
+use crate::arch::dispatch::sm4::vg_sm4_expand_key_auto;
+use crate::arch::dispatch::sm4_cbc::{
+    vg_sm4_cbc_decrypt_chained_auto, vg_sm4_cbc_encrypt_chained_auto,
+};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -89,7 +91,7 @@ impl Key {
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule.0);
+            vg_sm4_expand_key_auto(key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -108,7 +110,7 @@ impl Key {
         // schedule are separate valid objects of the sizes of the signature,
         // none of them on the callee's stack.
         unsafe {
-            vg_sm4_cbc_encrypt_chained(
+            vg_sm4_cbc_encrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),
@@ -129,7 +131,7 @@ impl Key {
         }
         // SAFETY: as in `encrypt`.
         unsafe {
-            vg_sm4_cbc_decrypt_chained(
+            vg_sm4_cbc_decrypt_chained_auto(
                 &self.schedule.0,
                 iv,
                 buffer.as_mut_ptr().cast(),

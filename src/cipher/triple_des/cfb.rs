@@ -11,11 +11,11 @@
 ))]
 
 use crate::align::CacheAligned;
+use crate::arch::dispatch::triple_des::vg_triple_des_expand_key_auto;
 use crate::arch::dispatch::triple_des_cfb::vg_triple_des_cfb64_decrypt_auto;
-use crate::arch::triple_des::vg_triple_des_expand_key;
-use crate::arch::triple_des_cfb::{
-    vg_triple_des_cfb64_decrypt_final, vg_triple_des_cfb64_encrypt,
-    vg_triple_des_cfb64_encrypt_final,
+use crate::arch::dispatch::triple_des_cfb::{
+    vg_triple_des_cfb64_decrypt_final_auto, vg_triple_des_cfb64_encrypt_auto,
+    vg_triple_des_cfb64_encrypt_final_auto,
 };
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
@@ -145,7 +145,7 @@ impl Key {
         let mut schedule = CacheAligned([0; 384]);
         // SAFETY: the key has a validated length; key and schedule are separate
         // valid buffers of the required sizes.
-        unsafe { vg_triple_des_expand_key(key.as_ptr(), key.len(), &mut schedule.0) };
+        unsafe { vg_triple_des_expand_key_auto(key.as_ptr(), key.len(), &mut schedule.0) };
         Ok(Self { schedule })
     }
 
@@ -164,7 +164,7 @@ impl Key {
             if decrypt {
                 vg_triple_des_cfb64_decrypt_auto(&self.schedule.0, iv, data, n)
             } else {
-                vg_triple_des_cfb64_encrypt(&self.schedule.0, iv, data, n)
+                vg_triple_des_cfb64_encrypt_auto(&self.schedule.0, iv, data, n)
             }
         };
     }
@@ -180,9 +180,9 @@ impl Key {
         self.blocks(iv, blocks, decrypt);
         if !rest.is_empty() {
             let f = if decrypt {
-                vg_triple_des_cfb64_decrypt_final
+                vg_triple_des_cfb64_decrypt_final_auto
             } else {
-                vg_triple_des_cfb64_encrypt_final
+                vg_triple_des_cfb64_encrypt_final_auto
             };
             // SAFETY: `rest` is valid for `len` bytes, and it, the block at
             // `iv` and the schedule are separate valid objects of the sizes of

@@ -14,7 +14,7 @@
 
 use crate::align::CacheAligned;
 use crate::arch::dispatch::poly1305::vg_poly1305_update_auto;
-use crate::arch::poly1305::{vg_poly1305_finalize, vg_poly1305_init};
+use crate::arch::dispatch::poly1305::{vg_poly1305_finalize_auto, vg_poly1305_init_auto};
 use crate::zeroize::zeroize;
 
 use crate::error::InvalidMac;
@@ -47,7 +47,7 @@ impl Poly1305 {
         // reads of 32 bytes; they are distinct objects, so they do not overlap
         // each other or anything on the stack (the return address and any
         // arguments), and do not wrap around the end of the address space.
-        unsafe { vg_poly1305_init(&mut state.0, key) };
+        unsafe { vg_poly1305_init_auto(&mut state.0, key) };
         Poly1305 { state, count: 0 }
     }
 
@@ -76,7 +76,7 @@ impl Poly1305 {
         // and any arguments), and do not wrap around the end of the address
         // space. `self.state` represents a message of `self.count` bytes,
         // modulo 2⁶⁴.
-        unsafe { vg_poly1305_finalize(&mut self.state.0, self.count, &mut tag) };
+        unsafe { vg_poly1305_finalize_auto(&mut self.state.0, self.count, &mut tag) };
         tag
     }
 

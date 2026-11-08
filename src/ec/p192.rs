@@ -10,7 +10,7 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::ec_p192::vg_ec_p192_public_key;
+use crate::arch::dispatch::ec_p192::vg_ec_p192_public_key_auto;
 use crate::zeroize::zeroize;
 
 /// The public key `Q = dG` of the key `d`, in the uncompressed form of
@@ -23,7 +23,7 @@ pub(crate) fn public_key(d: &[u8; 24]) -> Option<[u8; 49]> {
     // are distinct objects from each other and `d`, so none overlaps another
     // or the call's stack frame, and, as Rust objects, none wraps around the
     // address space.
-    let ok = unsafe { vg_ec_p192_public_key(&mut out, d, &mut scratch.0) };
+    let ok = unsafe { vg_ec_p192_public_key_auto(&mut out, d, &mut scratch.0) };
     zeroize(&mut scratch.0);
     (ok == 1).then_some(out)
 }

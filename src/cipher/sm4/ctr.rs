@@ -13,8 +13,8 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::sm4::vg_sm4_expand_key;
-use crate::arch::sm4_ctr::{vg_sm4_ctr, vg_sm4_ctr_final};
+use crate::arch::dispatch::sm4::vg_sm4_expand_key_auto;
+use crate::arch::dispatch::sm4_ctr::{vg_sm4_ctr_auto, vg_sm4_ctr_final_auto};
 use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
@@ -79,7 +79,7 @@ impl Key {
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe {
-            vg_sm4_expand_key(key, &mut schedule.0);
+            vg_sm4_expand_key_auto(key, &mut schedule.0);
         }
         Self { schedule }
     }
@@ -102,7 +102,7 @@ impl Key {
         self.crypt(ctr, blocks);
         if !rest.is_empty() {
             // SAFETY: as for `crypt`, with `rest` valid for `len` bytes.
-            unsafe { vg_sm4_ctr_final(&self.schedule.0, ctr, rest.as_mut_ptr(), rest.len()) };
+            unsafe { vg_sm4_ctr_final_auto(&self.schedule.0, ctr, rest.as_mut_ptr(), rest.len()) };
         }
     }
 
@@ -113,7 +113,7 @@ impl Key {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_sm4_ctr(
+            vg_sm4_ctr_auto(
                 &self.schedule.0,
                 ctr,
                 blocks.as_mut_ptr().cast(),

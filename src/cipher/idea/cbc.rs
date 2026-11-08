@@ -11,8 +11,10 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::idea::{vg_idea_expand_key, vg_idea_invert_key};
-use crate::arch::idea_cbc::{vg_idea_cbc_decrypt_chained, vg_idea_cbc_encrypt_chained};
+use crate::arch::dispatch::idea::{vg_idea_expand_key_auto, vg_idea_invert_key_auto};
+use crate::arch::dispatch::idea_cbc::{
+    vg_idea_cbc_decrypt_chained_auto, vg_idea_cbc_encrypt_chained_auto,
+};
 use crate::error::{IncompleteBlock, InvalidKeyLength};
 use crate::zeroize::zeroize;
 
@@ -51,7 +53,7 @@ impl IdeaCbcEncryptor {
         // separate valid objects of the sizes of the signature, none of them on
         // the callee's stack.
         unsafe {
-            vg_idea_cbc_encrypt_chained(
+            vg_idea_cbc_encrypt_chained_auto(
                 &self.schedule.0,
                 &mut self.iv,
                 buffer.as_mut_ptr().cast(),
@@ -89,7 +91,7 @@ impl IdeaCbcDecryptor {
         let mut schedule = CacheAligned([0; 104]);
         // SAFETY: both schedules are separate valid buffers of the required
         // sizes.
-        unsafe { vg_idea_invert_key(&encrypt.0, &mut schedule.0) };
+        unsafe { vg_idea_invert_key_auto(&encrypt.0, &mut schedule.0) };
         zeroize(&mut encrypt.0);
         Ok(Self { schedule, iv: *iv })
     }
@@ -103,7 +105,7 @@ impl IdeaCbcDecryptor {
         }
         // SAFETY: as in `IdeaCbcEncryptor::encrypt`.
         unsafe {
-            vg_idea_cbc_decrypt_chained(
+            vg_idea_cbc_decrypt_chained_auto(
                 &self.schedule.0,
                 &mut self.iv,
                 buffer.as_mut_ptr().cast(),
@@ -126,6 +128,6 @@ fn expand(key: &[u8]) -> Result<CacheAligned<[u8; 104]>, InvalidKeyLength> {
     let mut schedule = CacheAligned([0; 104]);
     // SAFETY: the key and the schedule are separate valid buffers of the
     // required sizes.
-    unsafe { vg_idea_expand_key(key, &mut schedule.0) };
+    unsafe { vg_idea_expand_key_auto(key, &mut schedule.0) };
     Ok(schedule)
 }

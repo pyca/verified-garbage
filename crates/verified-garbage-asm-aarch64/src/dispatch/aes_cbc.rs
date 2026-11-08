@@ -15,7 +15,7 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
@@ -44,7 +44,7 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]

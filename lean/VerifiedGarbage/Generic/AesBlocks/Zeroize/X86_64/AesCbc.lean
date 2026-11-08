@@ -14,12 +14,12 @@ open VG.Proof.AesCbc.X86_64
 
 def artifacts (v : Proof.Aes.X86_64.BlocksImpl) (z : Proof.Zeroize.X86_64.ZeroizeImpl) :
     List Artifact :=
-  (if Caller.vaes v then [] else if Caller.hardware v then (if z.suffix = "" then [
+  (if Caller.vaes v then [] else if h : Caller.hardware v then (if z.suffix = "" then [
     Spec.Cbc.aesEncryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Caller.encrypt v
       stack := 8
-      verified := Proof.AesCbc.encrypt_keyed (Caller.verified v)
+      verified := Wiped.encrypt_free_scrubbed v h
       spSafe := Caller.spSafe v
       written := Caller.written v
       writtenOk := Caller.written_ok v
