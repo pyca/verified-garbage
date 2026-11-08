@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LE
+public import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
 public import VerifiedGarbage.Spec.Ecdsa.P521
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Verified
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Comb
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LE
+meta import VerifiedGarbage.Impl.Ecdsa.P521.PPC64LEComb
 meta import VerifiedGarbage.Spec.Ecdsa.P521
-meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P521.CombLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-! # Deterministic ECDSA on PPC64LE: P-521
@@ -26,15 +28,15 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- `vg_ecdsa_p521_sign`, with P-521's group law `hL`. -/
+/-- `vg_ecdsa_p521_sign`, with `[k]G` by the comb, and P-521's group law `hL`. -/
 def p521Core (hL : Weierstrass.Law Spec.P521.curve) : Core where
   E := Spec.Ecdsa.P521.inst
-  cs := []
-  C := Impl.Ecdsa.PPC64LE.signP521
+  cs := Impl.Weierstrass.PPC64LE.p521CombConsts
+  C := Impl.Ecdsa.PPC64LE.signP521Comb
   N := "vg_ecdsa_p521_sign_k"
-  V := (Proof.Ecdsa.PPC64LE.P521.sign_verified hL).1
-  ct := (Proof.Ecdsa.PPC64LE.P521.sign_verified hL).2.1
-  d := by decide +kernel
+  V := (Proof.Ecdsa.PPC64LE.P521.combSign_verified hL).1
+  ct := (Proof.Ecdsa.PPC64LE.P521.combSign_verified hL).2.1
+  d := by lit_decide
 
 theorem p521_nBits : Spec.Ecdsa.nBits Spec.P521.curve = 521 := by
   show Spec.P521.curve.n.log2 + 1 = 521
@@ -62,9 +64,11 @@ def p521R (hL : Weierstrass.Law Spec.P521.curve) : RfcCurve where
 
 /-- `vg_ecdsa_p521_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem p521T_verified (hL : Weierstrass.Law Spec.P521.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs) :
+    (hv : OK vs ∧ "VG_P521_COMB" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (p521R hL) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.p521 [] vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ p521_blk rfl hv (sat_nil hv (by decide) rfl)
+      (specK Spec.Ecdsa.Rfc6979.Curves.p521 Impl.Weierstrass.PPC64LE.p521CombConsts vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ p521_blk rfl hv.1
+    (sat_one hv.1 Proof.P521.PPC64LE.combSatMem hv.2
+      (by rw [Proof.P521.PPC64LE.comb_words_length]; decide) Proof.P521.PPC64LE.combSatMem_held (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE
