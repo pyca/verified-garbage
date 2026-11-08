@@ -36,7 +36,7 @@ theorem sub_ofNat {a b : Nat} (h : b ≤ a) : BitVec.ofNat 64 a - BitVec.ofNat 6
   rw [show a = (a - b) + b by omega, ← add_ofNat, BitVec.add_sub_cancel, Nat.add_sub_cancel]
 
 /-- What every loop keeps survives `vconst` into `v4` or `v5`. -/
-theorem VEnv.vc {s₀ : State} {m₁ : Mem} {s s' : State} (h : VEnv s₀ m₁ s) {d : VReg} (hd : d = .v4 ∨ d = .v5)
+theorem venv_vc {s₀ : State} {m₁ : Mem} {s s' : State} (h : VEnv s₀ m₁ s) {d : VReg} (hd : d = .v4 ∨ d = .v5)
     (hc : VC [d, .v15] s s') : VEnv s₀ m₁ s' := by
   have v : ∀ r, r ≠ d → r ≠ .v15 → s'.vpr r = s.vpr r := fun r h1 h2 => hc.v r (by simp [h1, h2])
   refine ⟨(hc.g _ (by decide) (by decide)).trans h.r3, (hc.g _ (by decide) (by decide)).trans h.r4,
@@ -243,3 +243,145 @@ theorem bstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ m₁
     · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, ite_true, vword_ofVWords _ hi, ez, z1]
     · simp only [vpr_write, vpr_writeV, reduceCtorEq, ite_false, ite_true, vword_ofVWords _ hi, ez, z0]
     · rw [Nat.mul_zero, nttInvBlockN_zero]; exact h.poly
+
+/-! ## Layers with `len ≥ 4` -/
+
+/-- What the layers' loop counters are: layer `ℓ = i + 1` has `len = 2 <<< ℓ`
+and `64 >>> ℓ` blocks. -/
+theorem layer_facts : ∀ i < 6, 4 ≤ 2 <<< (i + 1) ∧ (2 <<< (i + 1)) % 4 = 0 ∧
+    (2 <<< (i + 1)) * (64 >>> (i + 1)) = 128 ∧ 0 < 64 >>> (i + 1) ∧
+    256 / (2 <<< (i + 1)) - 1 - (64 >>> (i + 1)) = 256 / (2 <<< (i + 1 + 1)) - 1 ∧
+    128 / (2 <<< (i + 1)) = 64 >>> (i + 1) ∧
+    BitVec.ofNat 64 (4 * (2 <<< (i + 1))) <<< 1 = BitVec.ofNat 64 (4 * (2 <<< (i + 1 + 1))) ∧
+    (BitVec.ofNat 64 (4 * (2 <<< (i + 1 + 1))) - BitVec.ofNat 64 1024 != 0) = decide (i + 1 ≠ 6) := by
+  decide
+
+/-- After `ℓ ≥ 1` layers. -/
+structure LInv (s₀ : State) (m₁ : Mem) (ℓ : Nat) (s : State) : Prop where
+  env : VEnv s₀ m₁ s
+  r7 : s.gpr .r7 = BitVec.ofNat 64 (8 * (256 / (2 <<< ℓ) - 1))
+  r9 : s.gpr .r9 = BitVec.ofNat 64 (4 * (2 <<< ℓ))
+  poly : PolyIs s.mem (F s₀) (nttInvL ℓ (P s₀))
+
+theorem lstep {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : VSetup s₀ m₁) {i : Nat} (hi : i < 6) {s : State}
+    (h : LInv s₀ m₁ (i + 1) s) :
+    WP isa vilayerCode s fun s' => LInv s₀ m₁ (i + 1 + 1) s' ∧ (s'.gpr .r0 != 0) = decide (i + 1 ≠ 6) := by
+  obtain ⟨f1, f2, f3, f4, f5, f6, f7, f8⟩ := layer_facts i hi
+  rw [vilayerCode, WP.seq_iff]
+  refine WP.cons (exec_li (by decide)) (wp_nil ?_)
+  rw [WP.seq_iff]
+  refine wp_loop_nz (BInv s₀ m₁ (nttInvL (i + 1) (P s₀)) (2 <<< (i + 1))) f4
+    (fun c hc t ht => bstep hp hm f1 f2 f3 hc ht) (fun s₂ h₂ => ?_) ?_
+  · refine WP.cons (exec_lsl (by decide)) (WP.cons (exec_subi (by decide) (by decide)) (wp_nil ?_))
+    refine ⟨⟨(h₂.env.write (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide) _,
+      ?_, ?_, ?_⟩, ?_⟩
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h₂.r7, f5]
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, h₂.r9, f7]
+    · rw [nttInvL_succ _ (by omega), nttInvLayer, f6]; exact h₂.poly
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, h₂.r9, f7, f8]
+  · refine ⟨h.env.write (by decide) (by decide) (by decide) _, ?_, ?_, ?_, ?_⟩
+    · simp only [RegUpd.gpr_write, ite_true, Nat.mul_zero]
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h.r7, Nat.sub_zero]
+    · simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, h.r9]
+    · rw [nttInvLayerN_zero]; exact h.poly
+
+/-! ## Multiplication by 3303 -/
+
+theorem vword_fVec : ∀ i < 4, vword fVec i = BitVec.ofNat 32 3303 := by decide
+
+theorem vword_fpVec : ∀ i < 4, (vword fpVec i).toNat = 3303 * 2 ^ 32 / 3329 := by decide
+
+/-- After `g` steps of the multiplication by 3303 of `R`, held in `m₂`. -/
+structure SInv (s₀ : State) (m₁ m₂ : Mem) (R : Poly) (g : Nat) (s : State) : Prop where
+  env : VEnv s₀ m₁ s
+  r5 : s.gpr .r5 = BitVec.ofNat 64 (16 * g)
+  r10 : s.gpr .r10 = BitVec.ofNat 64 (64 - g)
+  v4 : s.vpr .v4 = fVec
+  v5 : s.vpr .v5 = fpVec
+  coeff : ∀ j < 256, coeffAt s.mem (F s₀) j =
+    if j < 4 * g then BitVec.ofNat 32 ((R.map (· * 3303))[j]!).val else coeffAt m₂ (F s₀) j
+
+theorem sstep {s₀ : State} (hp : Pre s₀) {m₁ m₂ : Mem} {R : Poly} (hR : PolyIs m₂ (F s₀) R) {g : Nat}
+    (hg : g < 64) {s : State} (h : SInv s₀ m₁ m₂ R g s) :
+    WP isa (.block vscaleBody) s fun s' => SInv s₀ m₁ m₂ R (g + 1) s' ∧ (s'.gpr .r10 != 0) = decide (g + 1 ≠ 64) := by
+  have eA : s.gpr .r3 + s.gpr .r5 = coeffAddr (F s₀) (4 * g) := by
+    rw [h.env.r3, h.r5]; exact congrArg (F s₀ + ·) (congrArg _ (by omega))
+  have h4 : ∀ i < 4, (vword (s.vpr .v4) i).toNat = 3303 := fun i hi => by rw [h.v4, vword_fVec i hi]; rfl
+  refine WP.mono (sbody_ok (eA ▸ h.env.rowR hp (by omega)) (eA ▸ h.env.rowW hp (by omega))
+    (fun p hp => ?_) (fun i hi => by rw [h4 i hi]; decide)
+    (fun i hi => by rw [h4 i hi, h.v5, vword_fpVec i hi]) h.env.c.v0 h.env.c.v1)
+    fun s' ⟨A, hA, m, r5, r10, kp⟩ => ⟨⟨⟨?_, ?_, fun r hr => ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_⟩,
+      kp.lr.trans h.env.lr, kp.rd.trans h.env.rd, kp.wr.trans h.env.wr, kp.sp.trans h.env.sp, ?_⟩,
+      ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · have l := xor1_lt hp
+    rw [eA, vword_load _ _ hp, coeffAddr_add, ← coeffAt_eq, h.coeff _ (by omega), ite_eq_right (by omega),
+      polyIs_coeffAt hR (by rw [n_eq]; omega), toNat_val32]
+    exact val_lt _
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.env.r3]
+  · rw [kp.g _ (by decide) (by decide) (by decide), h.env.r4]
+  · obtain ⟨-, n5, n6, -, -, n10, -⟩ := pres_ne r hr
+    rw [kp.g r n5 n6 n10, h.env.kept r hr]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v0]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v1]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v2]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v3]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v12]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.env.c.v13]
+  · rw [m, eA]
+    exact h.env.frame.write (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega) (by omega))
+  · rw [r5, h.r5, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, add_ofNat]; exact congrArg _ (by omega)
+  · rw [r10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.v4]
+  · rw [kp.v _ (by decide) (by decide) (by decide) (by decide) (by decide), h.v5]
+  · rw [m, eA]
+    exact scale_coeff hg h.coeff hR fun p hp => by rw [hA p hp, eA, h4 p hp]
+  · rw [r10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
+    exact count_nz hg (by omega)
+
+/-! ## The whole -/
+
+theorem venv_writeV14 {s₀ : State} {m₁ : Mem} {s : State} (h : VEnv s₀ m₁ s) (v : BitVec 128) :
+    VEnv s₀ m₁ (s.writeV .v14 v) :=
+  ⟨h.r3, h.r4, h.kept, ⟨by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v0,
+    by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v1, by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v2,
+    by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v3, by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v12,
+    by rw [vpr_writeV, ite_eq_right (by decide)]; exact h.c.v13⟩, h.lr, h.rd, h.wr, h.sp, h.frame⟩
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa nttInv s₀ fun s => (∀ r ∈ preserved, s.gpr r = s₀.gpr r) ∧ s.sp = s₀.sp ∧ s.lr = s₀.lr ∧
+      PolyIs s.mem (F s₀) (Spec.MlKem.nttInv (P s₀)) := by
+  rw [Impl.MlKem.PPC64LE.nttInv, WP.seq_iff, WP.block_append_iff]
+  refine WP.mono (vsetup_ok hp) fun s₁ ⟨hm, he⟩ => ?_
+  refine WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_)))
+  rw [WP.seq_iff]
+  refine wp_loop_nz (QInv s₀ s₁.mem) (N := 32) (by decide) (fun i hi s h => qstep hp hm hi h)
+    (fun s₂ h₂ => ?_) ⟨((he.write (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide)
+      _).write (by decide) (by decide) (by decide) _, rfl, rfl, rfl,
+      (by rw [Nat.mul_zero, nttInvLayerN_zero]; exact hm.poly)⟩
+  rw [WP.seq_iff]
+  refine WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_))
+  rw [WP.seq_iff]
+  refine wp_loop_nz (fun i => LInv s₀ s₁.mem (i + 1)) (N := 6) (by decide) (fun i hi s h => lstep hp hm hi h)
+    (fun s₃ h₃ => ?_) ⟨(h₂.env.write (by decide) (by decide) (by decide) _).write (by decide) (by decide)
+      (by decide) _, rfl, rfl, (by rw [nttInvL_succ _ (by decide), nttInvLayer]; exact h₂.poly)⟩
+  rw [WP.seq_iff]
+  iterate 3 rw [WP.block_append_iff]
+  refine WP.cons (exec_splat0 _) (wp_nil ?_)
+  have z₀ : (s₃.writeV .v14 0).vpr .v14 = 0 := by rw [vpr_writeV]; rfl
+  refine WP.mono (vconst_ok .v4 fVec (by decide) (by decide) z₀) fun s₄ ⟨e₄, c₄⟩ => ?_
+  refine WP.mono (vconst_ok .v5 fpVec (by decide) (by decide) ((c₄.v .v14 (by decide)).trans z₀))
+    fun s₅ ⟨e₅, c₅⟩ => ?_
+  have env₅ : VEnv s₀ s₁.mem s₅ := venv_vc (venv_vc (venv_writeV14 h₃.env 0) (Or.inl rfl) c₄) (Or.inr rfl) c₅
+  have m₅ : s₅.mem = s₃.mem := c₅.mem.trans c₄.mem
+  refine WP.cons (exec_li (by decide)) (WP.cons (exec_li (by decide)) (wp_nil ?_))
+  refine wp_loop_nz (SInv s₀ s₁.mem s₃.mem (nttInvL 7 (P s₀))) (N := 64) (by decide)
+    (fun g hg s h => sstep hp h₃.poly hg h) (fun s h => ⟨h.env.kept, h.env.sp, h.env.lr, ?_⟩)
+    ⟨(env₅.write (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide) _, rfl, rfl,
+      (c₅.v .v4 (by decide)).trans e₄, e₅, fun j _ => by rw [ite_eq_right (by omega)]; exact congrArg (coeffAt · (F s₀) j) m₅⟩
+  rw [nttInv_eq_nttInvL]
+  exact polyIs_of_coeffAt fun j hj => by
+    rw [h.coeff j (by rw [n_eq] at hj; exact hj), ite_eq_left (by rw [n_eq] at hj; omega)]
+
+/-! ## Verified -/
+
+end VG.Proof.MlKem.PPC64LE.NttInv
