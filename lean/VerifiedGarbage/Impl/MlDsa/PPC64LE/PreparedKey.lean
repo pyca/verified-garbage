@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Frag
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Pack.Encode
 public import VerifiedGarbage.Impl.Gather.PPC64LE
 public import VerifiedGarbage.Spec.MlDsa.PreparedKey
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.VNtt
 
 /-!
 # ML-DSA on PPC64LE: `vg_mldsa{44,65,87}_prepare_{signing,verifying}_key`
@@ -38,7 +39,7 @@ def prepareFrame (len : Nat) (body : Prog isa) : Prog isa :=
 
 /-- The `NTT` of the polynomial at `prepared + off`. -/
 def transform (off : Nat) : Prog isa :=
-  callAt "vg_mldsa_ntt" Arith.ntt [(.r3, .ptr (.r30, off)), (.r4, .ptr (.r31, 0))]
+  callAt "vg_mldsa_ntt" VNtt.ntt [(.r3, .ptr (.r30, off)), (.r4, .ptr (.r31, 0))]
 
 /-- The length of a polynomial of `s₁` or `s₂`. -/
 abbrev secretLen (p : Params) : Nat := 32 * bitlen (2 * p.η)

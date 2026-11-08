@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Top
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Samp
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.NttInv
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
@@ -30,7 +30,7 @@ open VG VG.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.KeyGen
 
 theorem prims_ok : PrimsOk prims 96 where
-  ntt := ⟨⟨96, by decide, Arith.Ntt.verified⟩, by decide +kernel⟩
+  ntt := ⟨⟨96, by decide, VNtt.verified⟩, by decide +kernel⟩
   invNtt := ⟨⟨96, by decide, Arith.NttInv.verified⟩, by decide +kernel⟩
   mul := ⟨⟨0, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
   mulAdd := ⟨⟨0, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩

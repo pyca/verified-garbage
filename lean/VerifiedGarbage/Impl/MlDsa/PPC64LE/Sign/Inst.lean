@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sign.Sign
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Arith
+public import VerifiedGarbage.Impl.MlDsa.PPC64LE.VNtt
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Round
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Pack.Encode
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Pack.Hint
@@ -26,7 +27,7 @@ open VG.PPC64LE
 
 /-- The PPC64LE implementations of the primitives signing calls. -/
 def prims : Prims where
-  ntt := Arith.ntt
+  ntt := VNtt.ntt
   invNtt := Arith.nttInv
   mul := Arith.mul
   mulAdd := Arith.mulAdd
