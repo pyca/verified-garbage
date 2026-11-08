@@ -48,9 +48,6 @@ theorem shoup_bounds {q b z : Nat} (hq : 0 < q) (hb : b < 2^32) :
         rw [Nat.add_mul, Nat.add_mul, Nat.mul_right_comm hi (2^32) q, Nat.mul_assoc 2 q,
           Nat.mul_comm q (2^32)]; omega
 
-/-- `vminuw`'s lane. -/
-def minu32 (x y : BitVec 32) : BitVec 32 := if x.toNat < y.toNat then x else y
-
 /-- Reduce `r < 2q` to `r mod q`: `min(r, r − q)`. -/
 theorem minu_sub {r qv : BitVec 32} (hq : 0 < qv.toNat) (hr : r.toNat < 2 * qv.toNat) (h2 : 2 * qv.toNat ≤ 2^32) :
     (minu32 r (r - qv)).toNat = r.toNat % qv.toNat := by

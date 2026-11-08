@@ -29,39 +29,6 @@ namespace VG.Proof.MlDsa.PPC64LE.VNtt
 
 open VG VG.PPC64LE VG.Impl.MlDsa.PPC64LE.VNtt
 
-/-! ## Lane operations -/
-
-def addV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i + vword y i
-def subV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i - vword y i
-def minV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => minu32 (vword x i) (vword y i)
-def loV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i * vword y i
-def mulEV (x y : BitVec 128) : BitVec 128 :=
-  BitVec.ofNat 64 ((vword x 0).toNat * (vword y 0).toNat) ++ BitVec.ofNat 64 ((vword x 2).toNat * (vword y 2).toNat)
-def mulOV (x y : BitVec 128) : BitVec 128 :=
-  BitVec.ofNat 64 ((vword x 1).toNat * (vword y 1).toNat) ++ BitVec.ofNat 64 ((vword x 3).toNat * (vword y 3).toNat)
-
-theorem eval_add (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.add false d n m) = some (d, addV (v n) (v m)) := rfl
-theorem eval_sub (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.sub true d n m) = some (d, subV (v n) (v m)) := rfl
-theorem eval_min (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.minu true d n m) = some (d, minV (v n) (v m)) := rfl
-theorem eval_lo (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.muluwm d n m) = some (d, loV (v n) (v m)) := rfl
-theorem eval_mulE (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.mulu false true d n m) = some (d, mulEV (v n) (v m)) := rfl
-theorem eval_mulO (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.mulu true true d n m) = some (d, mulOV (v n) (v m)) := rfl
-theorem eval_perm (v : VReg → BitVec 128) (d n m c : VReg) :
-    VOp.eval v (.perm d n m c) = some (d, permV (v n) (v m) (v c)) := rfl
-
-theorem syms_writeV (s : State) (d : VReg) (x : BitVec 128) : (s.writeV d x).syms = s.syms := rfl
-
-theorem wp_vop {op : VOp} {d : VReg} {x : BitVec 128} {is : List Instr} {s : State} {Q : State → Prop}
-    (h : VOp.eval s.vpr op = some (d, x)) (k : WP isa (.block is) (s.writeV d x) Q) :
-    WP isa (.block (.vop op :: is)) s Q :=
-  WP.block_cons_iff.2 ⟨_, show (VOp.eval s.vpr op).map _ = _ by rw [h]; rfl, k⟩
-
 /-! ## The butterfly's results -/
 
 /-- `t = z·b mod q`, as `bfly` computes it in `v7`. -/
@@ -111,34 +78,6 @@ theorem bfly_exec (s : State) {a b : VReg} (hp : Pair a b) :
     simp only [vpr_writeV, r1, r2, r3, r4, ite_false]
 
 /-! ## The butterfly's lanes -/
-
-theorem vword_addV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (addV x y) i = vword x i + vword y i :=
-  vword_ofVWords _ hi
-theorem vword_subV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (subV x y) i = vword x i - vword y i :=
-  vword_ofVWords _ hi
-theorem vword_minV (x y : BitVec 128) {i : Nat} (hi : i < 4) :
-    vword (minV x y) i = minu32 (vword x i) (vword y i) := vword_ofVWords _ hi
-theorem vword_loV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (loV x y) i = vword x i * vword y i :=
-  vword_ofVWords _ hi
-
-/-- The control of the high words of the even and odd products: lanes 0, 4,
-2, 6 of `VA || VB`. -/
-def hiC : BitVec 128 := 0x000102031011121308090a0b18191a1b#128
-
-theorem prod_lt (x y : BitVec 32) : x.toNat * y.toNat < 2 ^ 64 :=
-  Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' x.isLt y.isLt) (by decide)
-
-theorem vword_hi (b zp : BitVec 128) {i : Nat} (hi : i < 4) :
-    (vword (permV (mulEV b zp) (mulOV b zp) hiC) i).toNat = (vword b i).toNat * (vword zp i).toNat / 2 ^ 32 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide), ite_eq_left (by decide), mulEV,
-      (vword_dw_hi _ _).1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide), ite_eq_right (by decide), mulOV,
-      show 4 - 4 = 0 from rfl, (vword_dw_hi _ _).1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide), ite_eq_left (by decide), mulEV,
-      (vword_dw_hi _ _).2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 6) (by decide) (by decide) (by decide), ite_eq_right (by decide), mulOV,
-      show 6 - 4 = 2 from rfl, (vword_dw_hi _ _).2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
 
 open VG.Spec.MlDsa (Zq)
 
