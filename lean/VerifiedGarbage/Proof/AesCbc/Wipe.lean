@@ -1,32 +1,29 @@
 module
 
 public import VerifiedGarbage.Spec.Cbc.Contract
-public import VerifiedGarbage.Spec.Zeroize
 public import VerifiedGarbage.Proof.AesEcb.Wipe
+public import VerifiedGarbage.Proof.Framework.PostMono
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 
 -- separate module: every target's CBC proofs share it
 
 /-!
-# AES-CBC zeroing its scratch: what every target shares
+# AES-CBC leaving `scratch` scrubbed, on every target
 
-On each target, an implementation of `vg_aes_cbc_encrypt` or
-`vg_aes_cbc_decrypt` that writes its `scratch` buffer is called by that
-target's `callWipe`, which then zeroes the whole of `scratch`; one that
-writes none is its code. Either way it meets its contract and leaves each
-byte of `scratch` unchanged or zero (`scrubbedPost`, with
-`Spec.Zeroize.scrubbed`): from the zeroed bytes (`wiped`) or from its
-`written` bound of 0 (`Verified.cbc_of_unwritten`).
+An implementation of `vg_aes_cbc_encrypt` or `vg_aes_cbc_decrypt` meets its
+contract with `scratch` left scrubbed (`scrubbedPost`: each byte unchanged
+or zero, `Spec.Zeroize.scrubbed`) where it writes nothing in `scratch`
+(`Verified.cbc_of_unwritten`), and otherwise as a call of it followed by the
+zeroize function on the whole of `scratch`, which the target's `callWipe`
+proves zero on return (`wiped`). Until the contracts in `Spec/Cbc/` state
+it, such a proof is registered weakened to them (`Verified.of_scrubbed`).
 
-`Verified.callWipe` needs, of the CBC contracts, what is proven here for any
-pointer width `pb`: the precondition reads no memory (`pre_local`); the
-postconditions read the memory on entry only within the buffers
-(`encPost_local`, `decPost_local`): the key schedule (of at most 240 bytes
-for any schedule `Spec.Aes.KeySchedule` allows), the chaining value and the
-data; and the memory on return only within the buffers apart from `scratch`
-(`encPost_out`, `decPost_out`). The locality of the memory's pieces is ECB's
-(`Proof/AesEcb/Wipe.lean`).
+`callWipe` needs the CBC functions' postconditions to read the memory on
+entry only within the buffers (`encPost_local`, `decPost_local`) and the
+memory on return only within the buffers apart from `scratch`
+(`encPost_out`, `decPost_out`): the key schedule, the chaining value and the
+data. The locality of the memory's pieces is ECB's (`Proof/AesEcb/Wipe.lean`).
 -/
 
 @[expose] public section
@@ -243,11 +240,15 @@ theorem Verified.cbc_of_unwritten {T : Target} {c : Prog T.isa} {A : Abi T.isa} 
     exact unwritten _ P _ _ _ _ (hlen s vals hv) hq fun b hb hn i hi hl =>
       hW _ (List.mem_singleton_self _) b hb hn i hi hl
 
-/-- The contract that `scrubbedPost` strengthens. -/
+/-- `scrubbedPost P` implies `P`. -/
+theorem scrubbedPost_imp (pb : Nat) (P : aesSig.Post pb) : aesSig.PostImp pb (scrubbedPost pb P) P :=
+  fun _ _ _ _ _ _ _ _ _ h => h.1
+
+/-- A proof that leaves `scratch` scrubbed is one of the contract without it. -/
 theorem Verified.of_scrubbed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
     {P : aesSig.Post A.ptrBits}
     (h : Verified T c (aesSig.contract A (pre A.ptrBits) (scrubbedPost A.ptrBits P) false stack none)) :
     Verified T c (aesSig.contract A (pre A.ptrBits) P false stack none) :=
-  h.post_mono fun _ _ _ _ _ _ _ _ _ h => h.1
+  h.post_mono (scrubbedPost_imp _ P)
 
 end VG.Proof.AesCbc.Wipe
