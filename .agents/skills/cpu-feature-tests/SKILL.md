@@ -29,8 +29,10 @@ never into a line by matching part of its name. CI fails a path that
 selects no test on any CPU, and a group that selects none on a line's CPU.
 A CPU whose lines take long runs as shards (its `shards = n`: n jobs, each
 with a `shard` of `i/n`), which deal out its
-lines by the CPU time each took on `main` (`ci/cpu_shards.py`): to speed
-one up, add a shard, never split its lines by hand.
+independent groups by the CPU time each took on `main` (`ci/cpu_shards.py`).
+Overlapping selectors stay together, so every test runs once per feature
+configuration; an unrestricted line can span several shards. Add shards
+when needed, rather than duplicating feature lines or assigning them by hand.
 To test the baseline ISA's implementations:
 
 ```sh

@@ -892,8 +892,9 @@ jobs:
         run: echo "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_RUNNER=$RUNNER_TEMP/sde/sde64 -$CHIP --" >> "$GITHUB_ENV"
         env:
           CHIP: ${{ matrix.chip }}
-      # Only the tests of what depends on CPU features, once per line of
-      # `runs` (of this shard's, ci/cpu_shards.py): each of the line's
+      # Only the tests of what depends on CPU features. Sharded jobs deal
+      # out independent groups, keeping overlapping selectors together;
+      # unsharded jobs keep each feature line together. Each task's
       # groups' tests by its exact name (ci/cpu_tests.py, from the lists of
       # the library's unit tests and of the test binary's tests), in the one
       # binary or both that hold them. The lines run at the same time, slowest
@@ -918,13 +919,18 @@ jobs:
           # out repeated 3072- and 4096-bit private-key operations. ICX's
           # unrestricted line keeps a focused PSS signing check of both
           # sizes (tests/wycheproof/harness.rs and rsa_pss_large_keys).
+          # DSA keeps its SHA-1/SHA-256 answers through 2048 bits; FFDH
+          # keeps focused generation, domain and exchange checks. Native
+          # hosts still run the complete generation suites.
           if [ "${CPU%% *}" != native ] && ! grep -qw avx512ifma /proc/cpuinfo; then
             export VG_TEST_HOST_WITHOUT_IFMA=1
-            RUNS=$(python3 ci/cpu_tests.py emulated-rsa "$CPU" <<< "$RUNS")
+            RUNS=$(python3 ci/cpu_tests.py emulated-runs "$CPU" <<< "$RUNS")
           fi
           # Substitution keeps feature lines and their order: mixed hosts
           # compute identical shard membership. Record the effective groups.
-          lines=$(python3 ci/cpu_shards.py pick "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
+          planner=pick
+          if [ -n "$SHARD" ]; then planner=pick-groups; fi
+          lines=$(python3 ci/cpu_shards.py "$planner" "$CPU" "$SHARD" "$TIMES" <<< "$RUNS")
           cargo test --locked --features cpu-features-env --no-run
           lists=$RUNNER_TEMP/lists
           mkdir -p "$lists"
@@ -954,8 +960,8 @@ jobs:
           # Bash's clock avoids spawning a process for each timestamp. Local
           # records are printed with the logs; no upload or extra job is needed.
           timing_origin=${EPOCHREALTIME/./}
-          while IFS='|' read -r -u 3 features tests; do
-            keys+=("$features")
+          while IFS='|' read -r -u 3 features tests key; do
+            keys+=("${key:-$features}")
             [ "$features" = - ] && features=
             while [ "$(jobs -rp | wc -l)" -ge "$(nproc)" ]; do wait -n || true; done
             log=$logs/${#names[@]}

@@ -45,6 +45,12 @@ class SplitTests(unittest.TestCase):
             self.assertEqual(sorted(sum(shards, [])), sorted(lines))
             self.assertTrue(all(shards))
 
+    def test_zero_times_do_not_leave_shards_empty(self):
+        lines = cpu_shards.parse_runs(RUNS)
+        times = {features: 0 for features, _ in lines}
+        for n in range(1, len(lines) + 1):
+            self.assertTrue(all(cpu_shards.split(lines, times, n)))
+
     def test_slow_lines_get_their_own_shards(self):
         times = {"-": 290, "avx,avx2": 301, "avx,bmi1": 303,
                  "aes,vaes": 5, "aes,vpclmulqdq": 18, "pclmulqdq": 12}
@@ -142,7 +148,7 @@ class SplitTests(unittest.TestCase):
 
     def test_mixed_hosts_compute_the_same_icx_shard_membership(self):
         runs = matrix_runs("icx")
-        reduced = cpu_tests.emulated_rsa_runs("icx", runs)
+        reduced = cpu_tests.emulated_runs("icx", runs)
         for times in ({}, {"-": 300, "aes,avx,avx2,ssse3,vaes": 50}):
             full_shards = self.shards(2, times=times, runs=runs)
             reduced_shards = self.shards(2, times=times, runs=reduced)
@@ -154,6 +160,56 @@ class SplitTests(unittest.TestCase):
 LIB_TESTS = ["aead::aes_gcm::tests::round_trip", "aead::aes_gcm_siv::tests::errors", "cpu::tests::of_names",
              "rsa::pkcs1_enc::tests::padding", "rsa::pss::tests::sign", "x25519::tests::agreement"]
 TESTS_TESTS = ["rfc7748::x448", "wycheproof::rsa_oaep::rsa_oaep_test", "wycheproof::x25519::x25519_test"]
+
+
+class GroupSplitTests(unittest.TestCase):
+    RUNS = "- | dsa_parameters ffdh rsa cpu\navx,avx2 | cpu\n"
+
+    def shards(self, runs=None, times=None, n=2):
+        return [cpu_shards.pick_groups("icx", f"{i}/{n}", times or {}, runs or self.RUNS)
+                for i in range(1, n + 1)]
+
+    def test_one_feature_configuration_spans_both_shards(self):
+        shards = self.shards(runs="- | dsa_parameters ffdh rsa cpu\n")
+        self.assertTrue(all(shards))
+        self.assertEqual({g for _, g, _ in shards[0]}, {"dsa_parameters", "rsa"})
+        self.assertEqual({g for _, g, _ in shards[1]}, {"ffdh", "cpu"})
+
+    def test_every_group_runs_once_even_without_timings(self):
+        expected = {cpu_shards.group_key(f, g)
+                    for f, groups in cpu_shards.parse_runs(self.RUNS) for g in groups.split()}
+        for n in range(1, len(expected) + 1):
+            shards = self.shards(n=n)
+            self.assertTrue(all(shards))
+            keys = [key for shard in shards for _, _, key in shard]
+            self.assertEqual(set(keys), expected)
+            self.assertEqual(len(keys), len(expected))
+
+    def test_zero_and_legacy_times_leave_work_in_each_shard(self):
+        for observations in ({"-": 0, "avx,avx2": 0}, {"-": 1400, "avx,avx2": 1}):
+            self.assertTrue(all(self.shards(times={"icx": {"no-avx512f": observations}})))
+
+    def test_mixed_hosts_keep_identical_ownership(self):
+        runs = matrix_runs("icx")
+        reduced = cpu_tests.emulated_runs("icx", runs)
+        for observations in ({}, {"-": 1400}, {"- ffdh": 500, "- dsa_parameters": 400, "- rsa": 300}):
+            times = {"icx": {"no-avx512f": observations}}
+            full = self.shards(runs=runs, times=times)
+            small = self.shards(runs=reduced, times=times)
+            self.assertEqual([[key for _, _, key in s] for s in full],
+                             [[key for _, _, key in s] for s in small])
+
+    def test_overlapping_groups_stay_together(self):
+        shards = self.shards(runs="- | chacha20 poly1305 cpu\n")
+        tasks = [groups for shard in shards for _, groups, _ in shard]
+        self.assertEqual(sorted(tasks), ["chacha20 poly1305", "cpu"])
+
+    def test_per_group_times_separate_heavy_tasks(self):
+        shards = self.shards(times={"icx": {"no-avx512f": {"- rsa": 500, "- ffdh": 400}}})
+        self.assertTrue(all(shards))
+        self.assertEqual(len([t for s in shards for t in s]), 5)
+        owners = {key: i for i, shard in enumerate(shards) for _, _, key in shard}
+        self.assertNotEqual(owners["- rsa"], owners["- ffdh"])
 
 
 class StepTests(unittest.TestCase):
@@ -212,14 +268,11 @@ class StepTests(unittest.TestCase):
         result, calls, recorded = self.run_step("1/3", times)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(calls[0], "VG_CPU_FEATURES=unset test --locked --features cpu-features-env --no-run")
-        # The slowest line alone: the others fill the other two shards first.
-        # Its groups' tests by exact name, in each binary that has any.
+        # The old unrestricted-line timing is shared between its groups.
+        # The 40-second CPU group is now the heaviest task, alone here.
         self.assertEqual(calls[1:], [
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --lib -- -Z unstable-options --report-time --exact "
-            "cpu::tests::of_names rsa::pkcs1_enc::tests::padding rsa::pss::tests::sign "
-            "x25519::tests::agreement",
-            "VG_CPU_FEATURES= test --locked --features cpu-features-env --test tests -- -Z unstable-options --report-time --exact "
-            "wycheproof::rsa_oaep::rsa_oaep_test wycheproof::x25519::x25519_test",
+            "VG_CPU_FEATURES=avx,avx2 test --locked --features cpu-features-env --lib -- -Z unstable-options --report-time --exact "
+            "cpu::tests::of_names",
         ])
         # Every line's groups, not only this shard's, and the CPU's tests.
         self.assertEqual(self.tests_record["cpu"], "icx")
@@ -228,7 +281,7 @@ class StepTests(unittest.TestCase):
         self.assertEqual(self.tests_record["tests"], {"lib": LIB_TESTS, "tests": TESTS_TESTS})
         (host,) = recorded["icx"]
         self.assertIn(host, cpu_shards.HOSTS)
-        self.assertEqual(sorted(recorded["icx"][host]), ["-"])
+        self.assertEqual(sorted(recorded["icx"][host]), ["avx,avx2 cpu"])
         self.assertIn("s of CPU (user, system)", result.stdout)
         # Exercise the workflow's actual Bash timestamp producer, not a copy.
         record = next(l for l in result.stdout.splitlines() if l.startswith("CI_FEATURE_TIME_V1 "))

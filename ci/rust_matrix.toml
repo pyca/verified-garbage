@@ -324,14 +324,17 @@ avx,avx2,sha512,sha,ssse3 | rsa_oaep_pairs cpu
 # exhausted-tape case. They do not repeat the full parameter-generation suite:
 # these hash/IFMA combinations are synthetic, and generating the 3072-bit
 # known answer under emulated IFMA takes several minutes. The unrestricted
-# line still runs all three published sizes and the error/randomness tests.
+# line runs all three published sizes and the error/randomness tests on
+# native IFMA hosts. Hosts without IFMA use focused DSA/FFDH groups, as
+# they do for RSA, retaining the 1024/2048-bit DSA answers.
 # The unrestricted line runs RSA's full suite when the host has
 # AVX512_IFMA. On SDE hosts without it, ci/cpu_tests.py substitutes a
 # focused RSA group at run time. Feature lines stay identical so shards
 # on different host CPUs agree on their split. The restricted lines differ
 # from it only in the hash functions' implementations, so they run the
 # small RSA groups that reach each one.
-# Two shards retain separate runners for the vectors and hash checks.
+# Independent groups of every feature line are balanced over two shards,
+# so the unrestricted RSA, DSA and FFDH groups can use different runners.
 [[cpu]]
 chip = "icx"
 shards = 2
