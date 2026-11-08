@@ -32,26 +32,21 @@ structure WordInv (base : State) (P S : Addr) (nk i : Nat) (s : State) : Prop wh
   good : Good s.mem S (W base.mem P nk) i
   frame : Frame [⟨S, 240⟩] base.mem s.mem
 
+/-- The word before the `i`th, which the loop keeps in `r9`. -/
+def Prev (base : State) (P : Addr) (nk i : Nat) (s : State) : Prop :=
+  (s.gpr .r9).setWidth 32 = W base.mem P nk (i-1)
+
 theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig base P S (4*nk))
-    (h : WordInv base P S nk i s) (hi : i < 4*(nk+7)) :
-    WP isa Impl.Aes.PPC64LE.Crypto.wordBody s (WordInv base P S nk (i+1)) := by
+    (h : WordInv base P S nk i s) (hprev : Prev base P nk i s) (hi : i < 4*(nk+7)) :
+    WP isa Impl.Aes.PPC64LE.Crypto.wordBody s
+      (fun t => WordInv base P S nk (i+1) t ∧ Prev base P nk (i+1) t) := by
   have h3 : nk = 4 ∨ nk = 6 ∨ nk = 8 := by have := hc.length; omega
   have hn : 0 < nk ∧ nk ≤ 8 := by omega
   have hni := h.bound.1
-  have hread : InRegions (s.rd ++ s.wr) (s.gpr .r11) 4 := by
-    rw [h.ptr11, h.keep.2.1, h.keep.2.2]
-    exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule,
-      Offset.contains_base _ (d := 4*(i-1)) (n := 4) (k := 240) (by omega) (by omega)⟩
   rw [Impl.Aes.PPC64LE.Crypto.wordBody]
-  refine WP.seq (WP.mono (loadWord_ok .r9 .r11 s (by decide) hread) fun u ⟨hv, he⟩ => ?_)
-  have hprev : (u.gpr .r9).setWidth 32 = W base.mem P nk (i-1) := by
-    rw [hv, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq, h.ptr11]
-    exact h.good _ (by omega)
-  refine WP.seq (WP.mono (tempWord_ok u h3 hni hi
-    ((he.keep.gpr (by decide)).trans h.index) ((he.keep.gpr (by decide)).trans h.keylen)
-    ((he.keep.gpr (by decide)).trans h.constant)) fun v ⟨htemp, hrc, hf⟩ => ?_)
-  have hbefore := he.trans hf
-  rw [hprev] at htemp
+  refine WP.seq (WP.mono (tempWord_ok s h3 hni hi h.index h.keylen h.constant) fun v ⟨htemp, hrc, hf⟩ => ?_)
+  have hbefore := hf
+  rw [show (s.gpr .r9).setWidth 32 = W base.mem P nk (i-1) from hprev] at htemp
   have hrd : InRegions (v.rd ++ v.wr) (v.gpr .r10) 4 := by
     rw [hbefore.keep.2.1, hbefore.keep.2.2, hbefore.keep.gpr (by decide), h.ptr10, h.keep.2.1, h.keep.2.2]
     exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule,
@@ -88,8 +83,8 @@ theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig bas
     rw [hm]
     exact h.frame.writeW (List.mem_singleton_self _) _
       (Offset.contains_base _ (d := 4*i) (n := 4) (k := 240) (by omega) (by omega))
-  refine ⟨⟨by omega, by omega⟩, (((h.keep.trans hbefore.keep).trans ht.keep).trans hz.keep).mono
-    (by simp [keyGprs]), ?_, ?_, h12, ?_, h4, ?_, ?_, ?_⟩
+  refine ⟨⟨⟨by omega, by omega⟩, (((h.keep.trans hbefore.keep).trans ht.keep).trans hz.keep).mono
+    (by simp [keyGprs]), ?_, ?_, h12, ?_, h4, ?_, ?_, ?_⟩, ?_⟩
   · rw [hz.keep.gpr (by decide), ht.ptr10, hbefore.keep.gpr (by decide), h.ptr10]
     change S + BitVec.ofNat 64 (4*(i-nk)) + BitVec.ofNat 64 4 = _
     rw [Offset.add_add]
@@ -101,19 +96,42 @@ theorem word_step {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig bas
   · rw [hz.mem, hm]
     exact good_store h.good rfl (by omega)
   · rw [hz.mem]; exact hframes
+  · change (z.gpr .r9).setWidth 32 = W base.mem P nk (i+1-1)
+    rw [hz.keep.gpr (by decide), ht.word, Nat.add_sub_cancel]
+    exact hvalue
+
+/-- The load before the loop: the last word of the key, into `r9`. -/
+theorem prev_load_ok {base s : State} {P S : Addr} {nk : Nat} (hc : KeyConfig base P S (4*nk))
+    (h : WordInv base P S nk nk s) :
+    WP isa (.block [.load .w .r9 .r11 0]) s
+      (fun t => WordInv base P S nk nk t ∧ Prev base P nk nk t) := by
+  have hn : 0 < nk ∧ nk ≤ 8 := by have := hc.length; omega
+  have hread : InRegions (s.rd ++ s.wr) (s.gpr .r11) 4 := by
+    rw [h.ptr11, h.keep.2.1, h.keep.2.2]
+    exact ⟨⟨S, 240⟩, List.mem_append_right _ hc.schedule,
+      Offset.contains_base _ (d := 4*(nk-1)) (n := 4) (k := 240) (by omega) (by omega)⟩
+  refine WP.mono (loadWord_ok .r9 .r11 s (by decide) hread) fun u ⟨hv, he⟩ => ⟨?_, ?_⟩
+  · exact ⟨h.bound, (h.keep.trans he.keep).mono (by simp [keyGprs]),
+      (he.keep.gpr (by decide)).trans h.ptr10, (he.keep.gpr (by decide)).trans h.ptr11,
+      (he.keep.gpr (by decide)).trans h.index, (he.keep.gpr (by decide)).trans h.keylen,
+      (he.keep.gpr (by decide)).trans h.left, (he.keep.gpr (by decide)).trans h.constant,
+      by rw [he.mem]; exact h.good, by rw [he.mem]; exact h.frame⟩
+  · change (u.gpr .r9).setWidth 32 = W base.mem P nk (nk-1)
+    rw [hv, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq, h.ptr11]
+    exact h.good _ (by omega)
 
 theorem word_loop_ok {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig base P S (4*nk))
-    (h : WordInv base P S nk i s) (hi : i < 4*(nk+7)) :
+    (h : WordInv base P S nk i s) (hprev : Prev base P nk i s) (hi : i < 4*(nk+7)) :
     WP isa (.loop Impl.Aes.PPC64LE.Crypto.wordBody (.nonzero .d .r4)) s (WordInv base P S nk (4*(nk+7))) := by
   have hnk : nk ≤ 8 := by have := hc.length; omega
-  have step : ∀ j t, j+1 ≤ 4*(nk+7) → WordInv base P S nk j t →
-      WP isa Impl.Aes.PPC64LE.Crypto.wordBody t (WordInv base P S nk (j+1)) :=
-    fun _ _ hj ht => word_step hc ht (by omega)
-  have test : ∀ j t, j ≤ 4*(nk+7) → WordInv base P S nk j t →
+  have step : ∀ j t, j+1 ≤ 4*(nk+7) → (WordInv base P S nk j t ∧ Prev base P nk j t) →
+      WP isa Impl.Aes.PPC64LE.Crypto.wordBody t (fun u => WordInv base P S nk (j+1) u ∧ Prev base P nk (j+1) u) :=
+    fun _ _ hj ht => word_step hc ht.1 ht.2 (by omega)
+  have test : ∀ j t, j ≤ 4*(nk+7) → (WordInv base P S nk j t ∧ Prev base P nk j t) →
       (4*(nk+7)-j < 1 → eval (.nonzero .d .r4) t = some false) ∧
       (1 ≤ 4*(nk+7)-j → eval (.nonzero .d .r4) t = some true) := by
     intro j t hj ht
-    have he := eval_nonzero_ofNat' t .r4 (by omega) ht.left
+    have he := eval_nonzero_ofNat' t .r4 (by omega) ht.1.left
     change eval (.nonzero .d .r4) t = some (decide (4*(nk+7)-j ≠ 0)) at he
     constructor
     · intro hl
@@ -122,9 +140,9 @@ theorem word_loop_ok {base s : State} {P S : Addr} {nk i : Nat} (hc : KeyConfig 
     · intro hl
       rw [he]
       simp only [ne_eq, show ¬4*(nk+7)-j = 0 by omega, not_false_eq_true, decide_true]
-  refine WP.mono (WP.chunk_loop (by decide) (by omega) h step test) ?_
+  refine WP.mono (WP.chunk_loop (by decide) (by omega) ⟨h, hprev⟩ step test) ?_
   rintro t ⟨j, hj, he, ht⟩
   have hje : j = 4*(nk+7) := by omega
-  exact hje ▸ ht
+  exact hje ▸ ht.1
 
 end VG.Proof.Aes.PPC64LE.Crypto

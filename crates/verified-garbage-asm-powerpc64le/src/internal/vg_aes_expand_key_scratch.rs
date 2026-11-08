@@ -15,9 +15,9 @@ pub(crate) unsafe extern "C" fn vg_aes_expand_key_scratch() {
 20:
 .base64 "AAAD6QAABfkIAGM4CAClOPj/hDgAACQo"
 bne %cr0, 20b
-.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDg="
+.base64 "UChHffz/ZTkAAIA5gvDkeBQiBH0UQoR8HACEOAEAwDgAACuB"
 21:
-.base64 "AAArgQAALCg="
+.base64 "AAAsKA=="
 beq %cr0, 22f
 .base64 "8P8MOAAAICg="
 beq %cr0, 24f
