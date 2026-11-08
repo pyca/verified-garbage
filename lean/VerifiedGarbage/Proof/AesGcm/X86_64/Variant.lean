@@ -244,8 +244,8 @@ structure StitchToPart where
   pieceR : Option (PieceToR name) := none
   /-- The loop that decrypts out of place for
   `vg_aes_gcm_decrypt_blocks_to` with a prepared key context
-  (`StitchToName.decToR`), with the same CPU features (`none`: it copies
-  the blocks to the output and decrypts them there). -/
+  (`StitchToName.decToR`), with the same CPU features (`none`: it runs
+  `vg_ghash`, then the counter mode out of place). -/
   pieceToDecR : Option (PieceToDecR name) := none
 
 /-- A `StitchImpl` with its loops named, and so without their proof of
