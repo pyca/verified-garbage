@@ -7030,63 +7030,86 @@ pub const VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES: verified_garbage_cpu
 /// * `dst_len` must equal `len`.
 /// * `*pw` must be what a `*_store_powers` function wrote for the same key context (the contract's precondition: `VG.Spec.Gcm.Powers8Repr` of `pw` and its hash subkey).
 /// * `dst` must not overlap `ctx`, `nonce`, `aad`, `src`, `tag`, `pw` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `nonce`, `aad`, `src`, `dst`, `tag` and `pw` may overlap the 2656 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_gcm_open_to_with_powers_aes_sha3(ctx: *const [u64; 32], rounds: usize, nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const u8, tag_len: usize, pw: *const [u64; 16]) -> u32 {
     core::arch::naked_asm!(
-        r".inst 0xd10083ff,0x910003f0,0xf9000e1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94023f1
+        r".inst 0xd10c00e9,0xd37ffd29,0xd344fcaa,0xaa09014a,0xd2800189,0xca090069,0xaa09014a
+cbz x10, 20f
+.inst 0xd10083ff,0x910003f0,0xf9000e1e,0xf9401bf1,0xf9000211,0xf9401ff1,0xf9000611,0xf94023f1
 .inst 0xf9000a11,0xf94013eb,0x910000cc,0x910000ed,0xd344fdae
-cbz x14, 20f
-22:
+cbz x14, 22f
+24:
 .inst 0x3dc00180,0x3d800160,0x9100418c,0x9100416b,0xd10005ce
-cbnz x14, 22b
-b 21f
-20:
-21:
+cbnz x14, 24b
+b 23f
+22:
+23:
 .inst 0xd28001ef,0x8a0f01ad
-cbz x13, 23f
+cbz x13, 25f
 .inst 0xd343fdae
-cbz x14, 25f
-27:
-.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
-cbnz x14, 27b
-b 26f
-25:
-26:
-.inst 0xd342fdae
-cbz x14, 28f
-.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
-b 29f
-28:
+cbz x14, 27f
 29:
-cbz x13, 210f
-212:
-.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
-cbnz x13, 212b
+.inst 0xf940018e,0xf900016e,0x9100218c,0x9100216b,0xd10021ad,0xd343fdae
+cbnz x14, 29b
+b 28f
+27:
+28:
+.inst 0xd342fdae
+cbz x14, 210f
+.inst 0xb940018e,0xb900016e,0x9100118c,0x9100116b,0xd10011ad
 b 211f
 210:
 211:
-b 24f
-23:
-24:
+cbz x13, 212f
+214:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 214b
+b 213f
+212:
+213:
+b 26f
+25:
+26:
 .inst 0xf94013e6
 bl {vg_aes_gcm_open_with_powers_aes_sha3}
-cbz w0, 213f
-b 214f
-213:
-.inst 0xf94013e9,0xf94017ea,0xd280000b
-cbz x10, 215f
-217:
-.inst 0x3900012b,0x91000529,0xd100054a
-cbnz x10, 217b
+cbz w0, 215f
 b 216f
 215:
+.inst 0xf94013e9,0xf94017ea,0xd280000b
+cbz x10, 217f
+219:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 219b
+b 218f
+217:
+218:
 216:
-214:
-.inst 0xf9400ffe,0x910083ff,0xd65f03c0
+.inst 0xf9400ffe,0x910083ff
+21:
+.inst 0xd65f03c0
+20:
+.inst 0xd100c3ff,0x910003f0,0xf900161e,0xf94023f1,0xf9000211,0xf94027f1,0xf9000611,0xf9402bf1
+.inst 0xf9000a11,0xf9000e06,0xf9001207,0xf9401be6
+bl {vg_aes_gcm_open_split_with_powers_aes_sha3}
+cbz w0, 220f
+b 221f
+220:
+.inst 0xf9401be9,0xf9401fea,0xd280000b
+cbz x10, 222f
+224:
+.inst 0x3900012b,0x91000529,0xd100054a
+cbnz x10, 224b
+b 223f
+222:
+223:
+221:
+.inst 0xf94017fe,0x9100c3ff
+b 21b
 .p2align 6",
         vg_aes_gcm_open_with_powers_aes_sha3 = sym super::gcm::vg_aes_gcm_open_with_powers_aes_sha3,
+        vg_aes_gcm_open_split_with_powers_aes_sha3 = sym super::aes::vg_aes_gcm_open_split_with_powers_aes_sha3::vg_aes_gcm_open_split_with_powers_aes_sha3,
     )
 }
 
