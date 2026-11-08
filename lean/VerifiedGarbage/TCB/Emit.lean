@@ -71,17 +71,6 @@ def registrations : IO (List String) := modulesUnder registrationDir
 def listOf (mod : String) : String :=
   "VG." ++ (mod.dropPrefix "VerifiedGarbage.").toString ++ ".artifacts"
 
-/-- The name of an instance of a generic function of several interfaces:
-`base`, then `_<tag><suffix>` for each `(tag, suffix)` of `parts` (one per
-interface, in order) whose suffix is not empty. Suffixes start with `_`, so
-`qualifiedName "vg_argon2" [("blake2b", "_avx2"), ("g", "")]` is
-`vg_argon2_blake2b_avx2`. Two variants with the same suffix in different
-interfaces give different names, as long as the tags differ. It only names
-them: the emitter checks that names are unique (`Rust.checkUnique`). -/
-def qualifiedName (base : String) (parts : List (String × String)) : String :=
-  base ++ String.join (parts.map fun (tag, suffix) =>
-    if suffix.isEmpty then "" else "_" ++ tag ++ suffix)
-
 /-- The program that emits every artifact: those of each registration
 module `mods`, in order, each with the name of its module. It fails to
 elaborate unless each module defines its list, unless everything emitted

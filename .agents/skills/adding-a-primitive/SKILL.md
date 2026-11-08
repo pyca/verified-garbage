@@ -95,9 +95,9 @@ instructions in an ISA model) go in their own PR before either.
    SHA-256's `update`). A function that calls functions of several such
    interfaces maps over each of their lists, nested (e.g. Argon2's x86-64
    derivation, `Artifacts/Argon2/X86_64.lean`, calling BLAKE2b's streaming
-   functions and Argon2's `G`); its instances are named by
-   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
-   each interface whose variant is not the baseline
+   functions and Argon2's `G`); its instances are named by `qualifiedName`
+   (`Proof/Framework/QualifiedName.lean`): the function's name, then a tag
+   and the suffix of each interface whose variant is not the baseline
    (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline), since
    variants of different interfaces may share a suffix; callers of one
    interface append the suffix alone. A function that takes every
