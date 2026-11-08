@@ -55,7 +55,7 @@ def upToPowWith (generator : Prog isa) : Prog isa :=
   .seq (bits (c.sl EXPP) (bitsAt c.n 1) (8 * c.n)) <|
   .seq (bits (c.sl EXPN) (bitsAt c.n 2) (8 * c.n)) <|
   .seq generator <|
-  .seq (pow c.powP c.SP) (.block [])
+  .seq c.invP (.block [])
 
 /-- `upToPowWith` by `gen`. -/
 def upToPow : Prog isa := upToPowWith c c.gen
