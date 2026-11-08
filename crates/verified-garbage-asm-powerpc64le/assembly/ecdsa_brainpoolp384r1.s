@@ -1698,42 +1698,39 @@ vg_ecdsa_brainpoolp384r1_verify:
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 29b
-	ld %r4, 448(%r3)
-	std %r4, 3120(%r3)
-	ld %r4, 456(%r3)
-	std %r4, 3128(%r3)
-	ld %r4, 464(%r3)
-	std %r4, 3136(%r3)
-	ld %r4, 472(%r3)
-	std %r4, 3144(%r3)
-	ld %r4, 480(%r3)
-	std %r4, 3152(%r3)
-	ld %r4, 488(%r3)
-	std %r4, 3160(%r3)
-	ld %r4, 496(%r3)
-	std %r4, 3168(%r3)
-	ld %r4, 504(%r3)
-	std %r4, 3176(%r3)
-	ld %r4, 512(%r3)
-	std %r4, 3184(%r3)
-	ld %r4, 520(%r3)
-	std %r4, 3192(%r3)
-	ld %r4, 528(%r3)
-	std %r4, 3200(%r3)
-	ld %r4, 536(%r3)
-	std %r4, 3208(%r3)
-	ld %r4, 304(%r3)
-	std %r4, 3216(%r3)
-	ld %r4, 312(%r3)
-	std %r4, 3224(%r3)
-	ld %r4, 320(%r3)
-	std %r4, 3232(%r3)
-	ld %r4, 328(%r3)
-	std %r4, 3240(%r3)
-	ld %r4, 336(%r3)
-	std %r4, 3248(%r3)
-	ld %r4, 344(%r3)
-	std %r4, 3256(%r3)
+	li %r31, 48
+210:
+	addi %r31, %r31, -1
+	add %r4, %r3, %r31
+	lbz %r4, 1744(%r4)
+	rldicr %r5, %r31, 3, 60
+	add %r5, %r3, %r5
+	li %r7, 1
+	and %r6, %r4, %r7
+	stb %r6, 5248(%r5)
+	rldicl %r6, %r4, 63, 1
+	and %r6, %r6, %r7
+	stb %r6, 5249(%r5)
+	rldicl %r6, %r4, 62, 2
+	and %r6, %r6, %r7
+	stb %r6, 5250(%r5)
+	rldicl %r6, %r4, 61, 3
+	and %r6, %r6, %r7
+	stb %r6, 5251(%r5)
+	rldicl %r6, %r4, 60, 4
+	and %r6, %r6, %r7
+	stb %r6, 5252(%r5)
+	rldicl %r6, %r4, 59, 5
+	and %r6, %r6, %r7
+	stb %r6, 5253(%r5)
+	rldicl %r6, %r4, 58, 6
+	and %r6, %r6, %r7
+	stb %r6, 5254(%r5)
+	rldicl %r6, %r4, 57, 7
+	and %r6, %r6, %r7
+	stb %r6, 5255(%r5)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 210b
 	ld %r4, 352(%r3)
 	std %r4, 3264(%r3)
 	ld %r4, 360(%r3)
@@ -1758,233 +1755,115 @@ vg_ecdsa_brainpoolp384r1_verify:
 	std %r4, 3344(%r3)
 	ld %r4, 440(%r3)
 	std %r4, 3352(%r3)
-	li %r31, 384
-210:
-	addi %r31, %r31, -1
-	ld %r4, 736(%r3)
+	ld %r4, 448(%r3)
 	std %r4, 2976(%r3)
-	ld %r4, 744(%r3)
+	ld %r4, 456(%r3)
 	std %r4, 2984(%r3)
-	ld %r4, 752(%r3)
+	ld %r4, 464(%r3)
 	std %r4, 2992(%r3)
-	ld %r4, 760(%r3)
+	ld %r4, 472(%r3)
 	std %r4, 3000(%r3)
-	ld %r4, 768(%r3)
+	ld %r4, 480(%r3)
 	std %r4, 3008(%r3)
-	ld %r4, 776(%r3)
+	ld %r4, 488(%r3)
 	std %r4, 3016(%r3)
-	ld %r4, 784(%r3)
+	ld %r4, 496(%r3)
 	std %r4, 3024(%r3)
-	ld %r4, 792(%r3)
+	ld %r4, 504(%r3)
 	std %r4, 3032(%r3)
-	ld %r4, 800(%r3)
+	ld %r4, 512(%r3)
 	std %r4, 3040(%r3)
-	ld %r4, 808(%r3)
+	ld %r4, 520(%r3)
 	std %r4, 3048(%r3)
-	ld %r4, 816(%r3)
+	ld %r4, 528(%r3)
 	std %r4, 3056(%r3)
-	ld %r4, 824(%r3)
+	ld %r4, 536(%r3)
 	std %r4, 3064(%r3)
-	ld %r4, 832(%r3)
+	ld %r4, 304(%r3)
 	std %r4, 3072(%r3)
-	ld %r4, 840(%r3)
+	ld %r4, 312(%r3)
 	std %r4, 3080(%r3)
-	ld %r4, 848(%r3)
+	ld %r4, 320(%r3)
 	std %r4, 3088(%r3)
-	ld %r4, 856(%r3)
+	ld %r4, 328(%r3)
 	std %r4, 3096(%r3)
-	ld %r4, 864(%r3)
+	ld %r4, 336(%r3)
 	std %r4, 3104(%r3)
-	ld %r4, 872(%r3)
+	ld %r4, 344(%r3)
 	std %r4, 3112(%r3)
-	bl {vg_brainpoolp384r1_point_double}
-	ld %r4, 2832(%r3)
-	std %r4, 2976(%r3)
-	ld %r4, 2840(%r3)
-	std %r4, 2984(%r3)
-	ld %r4, 2848(%r3)
-	std %r4, 2992(%r3)
-	ld %r4, 2856(%r3)
-	std %r4, 3000(%r3)
-	ld %r4, 2864(%r3)
-	std %r4, 3008(%r3)
-	ld %r4, 2872(%r3)
-	std %r4, 3016(%r3)
-	ld %r4, 2880(%r3)
-	std %r4, 3024(%r3)
-	ld %r4, 2888(%r3)
-	std %r4, 3032(%r3)
-	ld %r4, 2896(%r3)
-	std %r4, 3040(%r3)
-	ld %r4, 2904(%r3)
-	std %r4, 3048(%r3)
-	ld %r4, 2912(%r3)
-	std %r4, 3056(%r3)
-	ld %r4, 2920(%r3)
-	std %r4, 3064(%r3)
-	ld %r4, 2928(%r3)
-	std %r4, 3072(%r3)
-	ld %r4, 2936(%r3)
-	std %r4, 3080(%r3)
-	ld %r4, 2944(%r3)
-	std %r4, 3088(%r3)
-	ld %r4, 2952(%r3)
-	std %r4, 3096(%r3)
-	ld %r4, 2960(%r3)
-	std %r4, 3104(%r3)
-	ld %r4, 2968(%r3)
-	std %r4, 3112(%r3)
+	ld %r4, 1888(%r3)
+	std %r4, 3120(%r3)
+	ld %r4, 1896(%r3)
+	std %r4, 3128(%r3)
+	ld %r4, 1904(%r3)
+	std %r4, 3136(%r3)
+	ld %r4, 1912(%r3)
+	std %r4, 3144(%r3)
+	ld %r4, 1920(%r3)
+	std %r4, 3152(%r3)
+	ld %r4, 1928(%r3)
+	std %r4, 3160(%r3)
+	ld %r4, 2128(%r3)
+	std %r4, 3168(%r3)
+	ld %r4, 2136(%r3)
+	std %r4, 3176(%r3)
+	ld %r4, 2144(%r3)
+	std %r4, 3184(%r3)
+	ld %r4, 2152(%r3)
+	std %r4, 3192(%r3)
+	ld %r4, 2160(%r3)
+	std %r4, 3200(%r3)
+	ld %r4, 2168(%r3)
+	std %r4, 3208(%r3)
+	ld %r4, 304(%r3)
+	std %r4, 3216(%r3)
+	ld %r4, 312(%r3)
+	std %r4, 3224(%r3)
+	ld %r4, 320(%r3)
+	std %r4, 3232(%r3)
+	ld %r4, 328(%r3)
+	std %r4, 3240(%r3)
+	ld %r4, 336(%r3)
+	std %r4, 3248(%r3)
+	ld %r4, 344(%r3)
+	std %r4, 3256(%r3)
 	bl {vg_brainpoolp384r1_point_add}
-	add %r4, %r3, %r31
-	lbz %r4, 4096(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
-	ld %r4, 2976(%r3)
-	ld %r5, 2832(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 736(%r3)
-	ld %r4, 2984(%r3)
-	ld %r5, 2840(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 744(%r3)
-	ld %r4, 2992(%r3)
-	ld %r5, 2848(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 752(%r3)
-	ld %r4, 3000(%r3)
-	ld %r5, 2856(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 760(%r3)
-	ld %r4, 3008(%r3)
-	ld %r5, 2864(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 768(%r3)
-	ld %r4, 3016(%r3)
-	ld %r5, 2872(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 776(%r3)
-	ld %r4, 3024(%r3)
-	ld %r5, 2880(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 784(%r3)
-	ld %r4, 3032(%r3)
-	ld %r5, 2888(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 792(%r3)
-	ld %r4, 3040(%r3)
-	ld %r5, 2896(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 800(%r3)
-	ld %r4, 3048(%r3)
-	ld %r5, 2904(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 808(%r3)
-	ld %r4, 3056(%r3)
-	ld %r5, 2912(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 816(%r3)
-	ld %r4, 3064(%r3)
-	ld %r5, 2920(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 824(%r3)
-	ld %r4, 3072(%r3)
-	ld %r5, 2928(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 832(%r3)
-	ld %r4, 3080(%r3)
-	ld %r5, 2936(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 840(%r3)
-	ld %r4, 3088(%r3)
-	ld %r5, 2944(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 848(%r3)
-	ld %r4, 3096(%r3)
-	ld %r5, 2952(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 856(%r3)
-	ld %r4, 3104(%r3)
-	ld %r5, 2960(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 864(%r3)
-	ld %r4, 3112(%r3)
-	ld %r5, 2968(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 872(%r3)
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 210b
-	ld %r4, 736(%r3)
-	std %r4, 2032(%r3)
-	ld %r4, 744(%r3)
-	std %r4, 2040(%r3)
-	ld %r4, 752(%r3)
-	std %r4, 2048(%r3)
-	ld %r4, 760(%r3)
-	std %r4, 2056(%r3)
-	ld %r4, 768(%r3)
-	std %r4, 2064(%r3)
-	ld %r4, 776(%r3)
-	std %r4, 2072(%r3)
-	ld %r4, 784(%r3)
-	std %r4, 2080(%r3)
-	ld %r4, 792(%r3)
-	std %r4, 2088(%r3)
-	ld %r4, 800(%r3)
-	std %r4, 2096(%r3)
-	ld %r4, 808(%r3)
-	std %r4, 2104(%r3)
-	ld %r4, 816(%r3)
-	std %r4, 2112(%r3)
-	ld %r4, 824(%r3)
-	std %r4, 2120(%r3)
-	ld %r4, 832(%r3)
-	std %r4, 1840(%r3)
-	ld %r4, 840(%r3)
-	std %r4, 1848(%r3)
-	ld %r4, 848(%r3)
-	std %r4, 1856(%r3)
-	ld %r4, 856(%r3)
-	std %r4, 1864(%r3)
-	ld %r4, 864(%r3)
-	std %r4, 1872(%r3)
-	ld %r4, 872(%r3)
-	std %r4, 1880(%r3)
+	ld %r4, 2832(%r3)
+	std %r4, 1552(%r3)
+	ld %r4, 2840(%r3)
+	std %r4, 1560(%r3)
+	ld %r4, 2848(%r3)
+	std %r4, 1568(%r3)
+	ld %r4, 2856(%r3)
+	std %r4, 1576(%r3)
+	ld %r4, 2864(%r3)
+	std %r4, 1584(%r3)
+	ld %r4, 2872(%r3)
+	std %r4, 1592(%r3)
+	ld %r4, 2880(%r3)
+	std %r4, 1600(%r3)
+	ld %r4, 2888(%r3)
+	std %r4, 1608(%r3)
+	ld %r4, 2896(%r3)
+	std %r4, 1616(%r3)
+	ld %r4, 2904(%r3)
+	std %r4, 1624(%r3)
+	ld %r4, 2912(%r3)
+	std %r4, 1632(%r3)
+	ld %r4, 2920(%r3)
+	std %r4, 1640(%r3)
+	ld %r4, 2928(%r3)
+	std %r4, 1648(%r3)
+	ld %r4, 2936(%r3)
+	std %r4, 1656(%r3)
+	ld %r4, 2944(%r3)
+	std %r4, 1664(%r3)
+	ld %r4, 2952(%r3)
+	std %r4, 1672(%r3)
+	ld %r4, 2960(%r3)
+	std %r4, 1680(%r3)
+	ld %r4, 2968(%r3)
+	std %r4, 1688(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 736(%r3)
@@ -2093,101 +1972,8 @@ vg_ecdsa_brainpoolp384r1_verify:
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 876(%r3)
-	li %r31, 48
-211:
-	addi %r31, %r31, -1
-	add %r4, %r3, %r31
-	lbz %r4, 1744(%r4)
-	rldicr %r5, %r31, 3, 60
-	add %r5, %r3, %r5
-	li %r7, 1
-	and %r6, %r4, %r7
-	stb %r6, 4096(%r5)
-	rldicl %r6, %r4, 63, 1
-	and %r6, %r6, %r7
-	stb %r6, 4097(%r5)
-	rldicl %r6, %r4, 62, 2
-	and %r6, %r6, %r7
-	stb %r6, 4098(%r5)
-	rldicl %r6, %r4, 61, 3
-	and %r6, %r6, %r7
-	stb %r6, 4099(%r5)
-	rldicl %r6, %r4, 60, 4
-	and %r6, %r6, %r7
-	stb %r6, 4100(%r5)
-	rldicl %r6, %r4, 59, 5
-	and %r6, %r6, %r7
-	stb %r6, 4101(%r5)
-	rldicl %r6, %r4, 58, 6
-	and %r6, %r6, %r7
-	stb %r6, 4102(%r5)
-	rldicl %r6, %r4, 57, 7
-	and %r6, %r6, %r7
-	stb %r6, 4103(%r5)
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 211b
-	ld %r4, 1888(%r3)
-	std %r4, 3120(%r3)
-	ld %r4, 1896(%r3)
-	std %r4, 3128(%r3)
-	ld %r4, 1904(%r3)
-	std %r4, 3136(%r3)
-	ld %r4, 1912(%r3)
-	std %r4, 3144(%r3)
-	ld %r4, 1920(%r3)
-	std %r4, 3152(%r3)
-	ld %r4, 1928(%r3)
-	std %r4, 3160(%r3)
-	ld %r4, 2128(%r3)
-	std %r4, 3168(%r3)
-	ld %r4, 2136(%r3)
-	std %r4, 3176(%r3)
-	ld %r4, 2144(%r3)
-	std %r4, 3184(%r3)
-	ld %r4, 2152(%r3)
-	std %r4, 3192(%r3)
-	ld %r4, 2160(%r3)
-	std %r4, 3200(%r3)
-	ld %r4, 2168(%r3)
-	std %r4, 3208(%r3)
-	ld %r4, 304(%r3)
-	std %r4, 3216(%r3)
-	ld %r4, 312(%r3)
-	std %r4, 3224(%r3)
-	ld %r4, 320(%r3)
-	std %r4, 3232(%r3)
-	ld %r4, 328(%r3)
-	std %r4, 3240(%r3)
-	ld %r4, 336(%r3)
-	std %r4, 3248(%r3)
-	ld %r4, 344(%r3)
-	std %r4, 3256(%r3)
-	ld %r4, 352(%r3)
-	std %r4, 3264(%r3)
-	ld %r4, 360(%r3)
-	std %r4, 3272(%r3)
-	ld %r4, 368(%r3)
-	std %r4, 3280(%r3)
-	ld %r4, 376(%r3)
-	std %r4, 3288(%r3)
-	ld %r4, 384(%r3)
-	std %r4, 3296(%r3)
-	ld %r4, 392(%r3)
-	std %r4, 3304(%r3)
-	ld %r4, 400(%r3)
-	std %r4, 3312(%r3)
-	ld %r4, 408(%r3)
-	std %r4, 3320(%r3)
-	ld %r4, 416(%r3)
-	std %r4, 3328(%r3)
-	ld %r4, 424(%r3)
-	std %r4, 3336(%r3)
-	ld %r4, 432(%r3)
-	std %r4, 3344(%r3)
-	ld %r4, 440(%r3)
-	std %r4, 3352(%r3)
 	li %r31, 384
-212:
+211:
 	addi %r31, %r31, -1
 	ld %r4, 736(%r3)
 	std %r4, 2976(%r3)
@@ -2262,317 +2048,377 @@ vg_ecdsa_brainpoolp384r1_verify:
 	std %r4, 3104(%r3)
 	ld %r4, 2968(%r3)
 	std %r4, 3112(%r3)
-	bl {vg_brainpoolp384r1_point_add}
 	add %r4, %r3, %r31
 	lbz %r4, 4096(%r4)
 	li %r5, 0
 	subf %r10, %r4, %r5
-	ld %r4, 2976(%r3)
-	ld %r5, 2832(%r3)
+	ld %r4, 208(%r3)
+	ld %r5, 448(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
+	std %r4, 1024(%r3)
+	ld %r4, 216(%r3)
+	ld %r5, 456(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1032(%r3)
+	ld %r4, 224(%r3)
+	ld %r5, 464(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1040(%r3)
+	ld %r4, 232(%r3)
+	ld %r5, 472(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1048(%r3)
+	ld %r4, 240(%r3)
+	ld %r5, 480(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1056(%r3)
+	ld %r4, 248(%r3)
+	ld %r5, 488(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1064(%r3)
+	ld %r4, 304(%r3)
+	ld %r5, 496(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1072(%r3)
+	ld %r4, 312(%r3)
+	ld %r5, 504(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1080(%r3)
+	ld %r4, 320(%r3)
+	ld %r5, 512(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1088(%r3)
+	ld %r4, 328(%r3)
+	ld %r5, 520(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1096(%r3)
+	ld %r4, 336(%r3)
+	ld %r5, 528(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1104(%r3)
+	ld %r4, 344(%r3)
+	ld %r5, 536(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1112(%r3)
+	ld %r4, 208(%r3)
+	ld %r5, 304(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1120(%r3)
+	ld %r4, 216(%r3)
+	ld %r5, 312(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1128(%r3)
+	ld %r4, 224(%r3)
+	ld %r5, 320(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1136(%r3)
+	ld %r4, 232(%r3)
+	ld %r5, 328(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1144(%r3)
+	ld %r4, 240(%r3)
+	ld %r5, 336(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1152(%r3)
+	ld %r4, 248(%r3)
+	ld %r5, 344(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1160(%r3)
+	ld %r4, 1888(%r3)
+	ld %r5, 1552(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 880(%r3)
+	ld %r4, 1896(%r3)
+	ld %r5, 1560(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 888(%r3)
+	ld %r4, 1904(%r3)
+	ld %r5, 1568(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 896(%r3)
+	ld %r4, 1912(%r3)
+	ld %r5, 1576(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 904(%r3)
+	ld %r4, 1920(%r3)
+	ld %r5, 1584(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 912(%r3)
+	ld %r4, 1928(%r3)
+	ld %r5, 1592(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 920(%r3)
+	ld %r4, 2128(%r3)
+	ld %r5, 1600(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 928(%r3)
+	ld %r4, 2136(%r3)
+	ld %r5, 1608(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 936(%r3)
+	ld %r4, 2144(%r3)
+	ld %r5, 1616(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 944(%r3)
+	ld %r4, 2152(%r3)
+	ld %r5, 1624(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 952(%r3)
+	ld %r4, 2160(%r3)
+	ld %r5, 1632(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 960(%r3)
+	ld %r4, 2168(%r3)
+	ld %r5, 1640(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 968(%r3)
+	ld %r4, 304(%r3)
+	ld %r5, 1648(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 976(%r3)
+	ld %r4, 312(%r3)
+	ld %r5, 1656(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 984(%r3)
+	ld %r4, 320(%r3)
+	ld %r5, 1664(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 992(%r3)
+	ld %r4, 328(%r3)
+	ld %r5, 1672(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1000(%r3)
+	ld %r4, 336(%r3)
+	ld %r5, 1680(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1008(%r3)
+	ld %r4, 344(%r3)
+	ld %r5, 1688(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1016(%r3)
+	add %r4, %r3, %r31
+	lbz %r4, 5248(%r4)
+	li %r5, 0
+	subf %r10, %r4, %r5
+	ld %r4, 1024(%r3)
+	ld %r5, 880(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3120(%r3)
+	ld %r4, 1032(%r3)
+	ld %r5, 888(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3128(%r3)
+	ld %r4, 1040(%r3)
+	ld %r5, 896(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3136(%r3)
+	ld %r4, 1048(%r3)
+	ld %r5, 904(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3144(%r3)
+	ld %r4, 1056(%r3)
+	ld %r5, 912(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3152(%r3)
+	ld %r4, 1064(%r3)
+	ld %r5, 920(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3160(%r3)
+	ld %r4, 1072(%r3)
+	ld %r5, 928(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3168(%r3)
+	ld %r4, 1080(%r3)
+	ld %r5, 936(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3176(%r3)
+	ld %r4, 1088(%r3)
+	ld %r5, 944(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3184(%r3)
+	ld %r4, 1096(%r3)
+	ld %r5, 952(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3192(%r3)
+	ld %r4, 1104(%r3)
+	ld %r5, 960(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3200(%r3)
+	ld %r4, 1112(%r3)
+	ld %r5, 968(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3208(%r3)
+	ld %r4, 1120(%r3)
+	ld %r5, 976(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3216(%r3)
+	ld %r4, 1128(%r3)
+	ld %r5, 984(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3224(%r3)
+	ld %r4, 1136(%r3)
+	ld %r5, 992(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3232(%r3)
+	ld %r4, 1144(%r3)
+	ld %r5, 1000(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3240(%r3)
+	ld %r4, 1152(%r3)
+	ld %r5, 1008(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3248(%r3)
+	ld %r4, 1160(%r3)
+	ld %r5, 1016(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3256(%r3)
+	bl {vg_brainpoolp384r1_point_add}
+	ld %r4, 2832(%r3)
 	std %r4, 736(%r3)
-	ld %r4, 2984(%r3)
-	ld %r5, 2840(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2840(%r3)
 	std %r4, 744(%r3)
-	ld %r4, 2992(%r3)
-	ld %r5, 2848(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2848(%r3)
 	std %r4, 752(%r3)
-	ld %r4, 3000(%r3)
-	ld %r5, 2856(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2856(%r3)
 	std %r4, 760(%r3)
-	ld %r4, 3008(%r3)
-	ld %r5, 2864(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2864(%r3)
 	std %r4, 768(%r3)
-	ld %r4, 3016(%r3)
-	ld %r5, 2872(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2872(%r3)
 	std %r4, 776(%r3)
-	ld %r4, 3024(%r3)
-	ld %r5, 2880(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2880(%r3)
 	std %r4, 784(%r3)
-	ld %r4, 3032(%r3)
-	ld %r5, 2888(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2888(%r3)
 	std %r4, 792(%r3)
-	ld %r4, 3040(%r3)
-	ld %r5, 2896(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2896(%r3)
 	std %r4, 800(%r3)
-	ld %r4, 3048(%r3)
-	ld %r5, 2904(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2904(%r3)
 	std %r4, 808(%r3)
-	ld %r4, 3056(%r3)
-	ld %r5, 2912(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2912(%r3)
 	std %r4, 816(%r3)
-	ld %r4, 3064(%r3)
-	ld %r5, 2920(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2920(%r3)
 	std %r4, 824(%r3)
-	ld %r4, 3072(%r3)
-	ld %r5, 2928(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2928(%r3)
 	std %r4, 832(%r3)
-	ld %r4, 3080(%r3)
-	ld %r5, 2936(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2936(%r3)
 	std %r4, 840(%r3)
-	ld %r4, 3088(%r3)
-	ld %r5, 2944(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2944(%r3)
 	std %r4, 848(%r3)
-	ld %r4, 3096(%r3)
-	ld %r5, 2952(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2952(%r3)
 	std %r4, 856(%r3)
-	ld %r4, 3104(%r3)
-	ld %r5, 2960(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2960(%r3)
 	std %r4, 864(%r3)
-	ld %r4, 3112(%r3)
-	ld %r5, 2968(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
+	ld %r4, 2968(%r3)
 	std %r4, 872(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 212b
-	li %r4, 1168
-	li %r5, 2032
-	li %r6, 736
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1216
-	li %r5, 2080
-	li %r6, 784
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1264
-	li %r5, 1840
-	li %r6, 832
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1312
-	li %r5, 2032
-	li %r6, 2080
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1360
-	li %r5, 736
-	li %r6, 784
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1312
-	li %r5, 1312
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1360
-	li %r5, 1168
-	li %r6, 1216
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1312
-	li %r5, 1312
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 1360
-	li %r5, 2032
-	li %r6, 1840
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1408
-	li %r5, 736
-	li %r6, 832
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1360
-	li %r5, 1360
-	li %r6, 1408
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1408
-	li %r5, 1168
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1360
-	li %r5, 1360
-	li %r6, 1408
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 1408
-	li %r5, 2080
-	li %r6, 1840
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 880
-	li %r5, 784
-	li %r6, 832
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1408
-	li %r5, 1408
-	li %r6, 880
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 880
-	li %r5, 1216
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1408
-	li %r5, 1408
-	li %r6, 880
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 976
-	li %r5, 352
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 880
-	li %r5, 400
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 976
-	li %r5, 880
-	li %r6, 976
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 880
-	li %r5, 1216
-	li %r6, 976
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 976
-	li %r5, 1216
-	li %r6, 976
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 928
-	li %r5, 880
-	li %r6, 976
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1216
-	li %r5, 1168
-	li %r6, 1168
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1216
-	li %r5, 1216
-	li %r6, 1168
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1264
-	li %r5, 352
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1360
-	li %r5, 400
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1216
-	li %r5, 1216
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1264
-	li %r5, 1168
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 1264
-	li %r5, 352
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 1360
-	li %r5, 1360
-	li %r6, 1264
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1168
-	li %r5, 1216
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 928
-	li %r5, 928
-	li %r6, 1168
-	bl {vg_brainpoolp384r1_add_mod_p}
-	li %r4, 1168
-	li %r5, 1408
-	li %r6, 1360
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 880
-	li %r5, 1312
-	li %r6, 880
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 880
-	li %r5, 880
-	li %r6, 1168
-	bl {vg_brainpoolp384r1_sub_mod_p}
-	li %r4, 1168
-	li %r5, 1312
-	li %r6, 1216
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 976
-	li %r5, 1408
-	li %r6, 976
-	bl {vg_brainpoolp384r1_mul_mod_p}
-	li %r4, 976
-	li %r5, 976
-	li %r6, 1168
-	bl {vg_brainpoolp384r1_add_mod_p}
-	ld %r4, 880(%r3)
-	std %r4, 736(%r3)
-	ld %r4, 888(%r3)
-	std %r4, 744(%r3)
-	ld %r4, 896(%r3)
-	std %r4, 752(%r3)
-	ld %r4, 904(%r3)
-	std %r4, 760(%r3)
-	ld %r4, 912(%r3)
-	std %r4, 768(%r3)
-	ld %r4, 920(%r3)
-	std %r4, 776(%r3)
-	ld %r4, 928(%r3)
-	std %r4, 784(%r3)
-	ld %r4, 936(%r3)
-	std %r4, 792(%r3)
-	ld %r4, 944(%r3)
-	std %r4, 800(%r3)
-	ld %r4, 952(%r3)
-	std %r4, 808(%r3)
-	ld %r4, 960(%r3)
-	std %r4, 816(%r3)
-	ld %r4, 968(%r3)
-	std %r4, 824(%r3)
-	ld %r4, 976(%r3)
-	std %r4, 832(%r3)
-	ld %r4, 984(%r3)
-	std %r4, 840(%r3)
-	ld %r4, 992(%r3)
-	std %r4, 848(%r3)
-	ld %r4, 1000(%r3)
-	std %r4, 856(%r3)
-	ld %r4, 1008(%r3)
-	std %r4, 864(%r3)
-	ld %r4, 1016(%r3)
-	std %r4, 872(%r3)
+	bne %cr0, 211b
 	ld %r4, 304(%r3)
 	std %r4, 1456(%r3)
 	ld %r4, 312(%r3)
@@ -2586,7 +2432,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	ld %r4, 344(%r3)
 	std %r4, 1496(%r3)
 	li %r31, 384
-213:
+212:
 	addi %r31, %r31, -1
 	li %r4, 1456
 	li %r5, 1456
@@ -2637,7 +2483,7 @@ vg_ecdsa_brainpoolp384r1_verify:
 	xor %r4, %r4, %r5
 	std %r4, 1496(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 213b
+	bne %cr0, 212b
 	li %r4, 1696
 	li %r5, 736
 	li %r6, 1456

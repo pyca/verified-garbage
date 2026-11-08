@@ -89,114 +89,28 @@ bl {vg_p192_mul_mod_n}
 29:
 .base64 "////OxT6g3xwA4SIJB/lexQqo3wBAOA4ODiGfAAQxZhC+IZ4ODjGfAEQxZiC8IZ4ODjGfAIQxZjC6IZ4ODjGfAMQxZgC4YZ4ODjGfAQQxZhC2YZ4ODjGfAUQxZiC0YZ4ODjGfAYQxZjCyYZ4ODjGfAcQxZgAAD8o"
 bne %cr0, 29b
-.base64 "AAGD6PgNg/gIAYPoAA6D+BABg+gIDoP4GAGD6BAOg/ggAYPoGA6D+CgBg+ggDoP4uACD6CgOg/jAAIPoMA6D+MgAg+g4DoP40ACD6EAOg/jYAIPoSA6D+OAAg+hQDoP46ACD6FgOg/jwAIPoYA6D+PgAg+hoDoP4wADgOw=="
+.base64 "GADgOw=="
 210:
-.base64 "////O5ABg+iwDYP4mAGD6LgNg/igAYPowA2D+KgBg+jIDYP4sAGD6NANg/i4AYPo2A2D+MABg+jgDYP4yAGD6OgNg/jQAYPo8A2D+A=="
-bl {vg_p192_point_double}
-.base64 "aA2D6LANg/hwDYPouA2D+HgNg+jADYP4gA2D6MgNg/iIDYPo0A2D+JANg+jYDYP4mA2D6OANg/igDYPo6A2D+KgNg+jwDYP4"
-bl {vg_p192_point_add}
-.base64 "FPqDfAAQhIgAAKA4UChEfbANg+hoDaPoeCKlfDhQpXx4KoR8kAGD+LgNg+hwDaPoeCKlfDhQpXx4KoR8mAGD+MANg+h4DaPoeCKlfDhQpXx4KoR8oAGD+MgNg+iADaPoeCKlfDhQpXx4KoR8qAGD+NANg+iIDaPoeCKlfDhQpXx4KoR8sAGD+NgNg+iQDaPoeCKlfDhQpXx4KoR8uAGD+OANg+iYDaPoeCKlfDhQpXx4KoR8wAGD+OgNg+igDaPoeCKlfDhQpXx4KoR8yAGD+PANg+ioDaPoeCKlfDhQpXx4KoR80AGD+AAAPyg="
+.base64 "////OxT6g3yIA4SIJB/lexQqo3wBAOA4ODiGfEASxZhC+IZ4ODjGfEESxZiC8IZ4ODjGfEISxZjC6IZ4ODjGfEMSxZgC4YZ4ODjGfEQSxZhC2YZ4ODjGfEUSxZiC0YZ4ODjGfEYSxZjCyYZ4ODjGfEcSxZgAAD8o"
 bne %cr0, 210b
-.base64 "kAGD6BgEg/iYAYPoIASD+KABg+goBIP4qAGD6DAEg/iwAYPoOASD+LgBg+hABIP4wAGD6LgDg/jIAYPowAOD+NABg+jIA4P4AABgPQAAa2GQAWORAABgPQAAa2GUAWORAABgPQAAa2GYAWORAABgPQAAa2GcAWORAABgPQAAa2GgAWORAABgPQAAa2GkAWORAABgPQEAa2GoAWORAABgPQAAa2GsAWORAABgPQEAa2GwAWORAABgPQAAa2G0AWORAABgPQAAa2G4AWORAABgPQAAa2G8AWORAABgPQAAa2HAAWORAABgPQAAa2HEAWORAABgPQAAa2HIAWORAABgPQAAa2HMAWORAABgPQAAa2HQAWORAABgPQAAa2HUAWORGADgOw=="
+.base64 "0ACD6EAOg/jYAIPoSA6D+OAAg+hQDoP46ACD6FgOg/jwAIPoYA6D+PgAg+hoDoP4AAGD6LANg/gIAYPouA2D+BABg+jADYP4GAGD6MgNg/ggAYPo0A2D+CgBg+jYDYP4uACD6OANg/jAAIPo6A2D+MgAg+jwDYP40AOD6PgNg/jYA4PoAA6D+OADg+gIDoP4SASD6BAOg/hQBIPoGA6D+FgEg+ggDoP4uACD6CgOg/jAAIPoMA6D+MgAg+g4DoP4"
+bl {vg_p192_point_add}
+.base64 "aA2D6CgDg/hwDYPoMAOD+HgNg+g4A4P4gA2D6EADg/iIDYPoSAOD+JANg+hQA4P4mA2D6FgDg/igDYPoYAOD+KgNg+hoA4P4AABgPQAAa2GQAWORAABgPQAAa2GUAWORAABgPQAAa2GYAWORAABgPQAAa2GcAWORAABgPQAAa2GgAWORAABgPQAAa2GkAWORAABgPQEAa2GoAWORAABgPQAAa2GsAWORAABgPQEAa2GwAWORAABgPQAAa2G0AWORAABgPQAAa2G4AWORAABgPQAAa2G8AWORAABgPQAAa2HAAWORAABgPQAAa2HEAWORAABgPQAAa2HIAWORAABgPQAAa2HMAWORAABgPQAAa2HQAWORAABgPQAAa2HUAWORwADgOw=="
 211:
-.base64 "////OxT6g3yIA4SIJB/lexQqo3wBAOA4ODiGfAAQxZhC+IZ4ODjGfAEQxZiC8IZ4ODjGfAIQxZjC6IZ4ODjGfAMQxZgC4YZ4ODjGfAQQxZhC2YZ4ODjGfAUQxZiC0YZ4ODjGfAYQxZjCyYZ4ODjGfAcQxZgAAD8o"
-bne %cr0, 211b
-.base64 "0AOD6PgNg/jYA4PoAA6D+OADg+gIDoP4SASD6BAOg/hQBIPoGA6D+FgEg+ggDoP4uACD6CgOg/jAAIPoMA6D+MgAg+g4DoP40ACD6EAOg/jYAIPoSA6D+OAAg+hQDoP46ACD6FgOg/jwAIPoYA6D+PgAg+hoDoP4wADgOw=="
-212:
 .base64 "////O5ABg+iwDYP4mAGD6LgNg/igAYPowA2D+KgBg+jIDYP4sAGD6NANg/i4AYPo2A2D+MABg+jgDYP4yAGD6OgNg/jQAYPo8A2D+A=="
 bl {vg_p192_point_double}
-.base64 "aA2D6LANg/hwDYPouA2D+HgNg+jADYP4gA2D6MgNg/iIDYPo0A2D+JANg+jYDYP4mA2D6OANg/igDYPo6A2D+KgNg+jwDYP4"
+.base64 "aA2D6LANg/hwDYPouA2D+HgNg+jADYP4gA2D6MgNg/iIDYPo0A2D+JANg+jYDYP4mA2D6OANg/igDYPo6A2D+KgNg+jwDYP4FPqDfAAQhIgAAKA4UChEfYgAg+gAAaPoeCKlfDhQpXx4KoR8IAKD+JAAg+gIAaPoeCKlfDhQpXx4KoR8KAKD+JgAg+gQAaPoeCKlfDhQpXx4KoR8MAKD+LgAg+gYAaPoeCKlfDhQpXx4KoR8OAKD+MAAg+ggAaPoeCKlfDhQpXx4KoR8QAKD+MgAg+goAaPoeCKlfDhQpXx4KoR8SAKD+IgAg+i4AKPoeCKlfDhQpXx4KoR8UAKD+JAAg+jAAKPoeCKlfDhQpXx4KoR8WAKD+JgAg+jIAKPoeCKlfDhQpXx4KoR8YAKD+NADg+goA6PoeCKlfDhQpXx4KoR82AGD+NgDg+gwA6PoeCKlfDhQpXx4KoR84AGD+OADg+g4A6PoeCKlfDhQpXx4KoR86AGD+EgEg+hAA6PoeCKlfDhQpXx4KoR88AGD+FAEg+hIA6PoeCKlfDhQpXx4KoR8+AGD+FgEg+hQA6PoeCKlfDhQpXx4KoR8AAKD+LgAg+hYA6PoeCKlfDhQpXx4KoR8CAKD+MAAg+hgA6PoeCKlfDhQpXx4KoR8EAKD+MgAg+hoA6PoeCKlfDhQpXx4KoR8GAKD+BT6g3xAEoSIAACgOFAoRH0gAoPo2AGj6HgipXw4UKV8eCqEfPgNg/goAoPo4AGj6HgipXw4UKV8eCqEfAAOg/gwAoPo6AGj6HgipXw4UKV8eCqEfAgOg/g4AoPo8AGj6HgipXw4UKV8eCqEfBAOg/hAAoPo+AGj6HgipXw4UKV8eCqEfBgOg/hIAoPoAAKj6HgipXw4UKV8eCqEfCAOg/hQAoPoCAKj6HgipXw4UKV8eCqEfCgOg/hYAoPoEAKj6HgipXw4UKV8eCqEfDAOg/hgAoPoGAKj6HgipXw4UKV8eCqEfDgOg/g="
 bl {vg_p192_point_add}
-.base64 "FPqDfAAQhIgAAKA4UChEfbANg+hoDaPoeCKlfDhQpXx4KoR8kAGD+LgNg+hwDaPoeCKlfDhQpXx4KoR8mAGD+MANg+h4DaPoeCKlfDhQpXx4KoR8oAGD+MgNg+iADaPoeCKlfDhQpXx4KoR8qAGD+NANg+iIDaPoeCKlfDhQpXx4KoR8sAGD+NgNg+iQDaPoeCKlfDhQpXx4KoR8uAGD+OANg+iYDaPoeCKlfDhQpXx4KoR8wAGD+OgNg+igDaPoeCKlfDhQpXx4KoR8yAGD+PANg+ioDaPoeCKlfDhQpXx4KoR80AGD+AAAPyg="
-bne %cr0, 212b
-.base64 "aAKAOBgEoDiQAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "gAKAODAEoDioAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "mAKAOLgDoDjAAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "sAKAOBgEoDgwBMA4"
-bl {vg_p192_add_mod_p}
-.base64 "yAKAOJABoDioAcA4"
-bl {vg_p192_add_mod_p}
-.base64 "sAKAOLACoDjIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "yAKAOGgCoDiAAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "sAKAOLACoDjIAsA4"
-bl {vg_p192_sub_mod_p}
-.base64 "yAKAOBgEoDi4A8A4"
-bl {vg_p192_add_mod_p}
-.base64 "4AKAOJABoDjAAcA4"
-bl {vg_p192_add_mod_p}
-.base64 "yAKAOMgCoDjgAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "4AKAOGgCoDiYAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "yAKAOMgCoDjgAsA4"
-bl {vg_p192_sub_mod_p}
-.base64 "4AKAODAEoDi4A8A4"
-bl {vg_p192_add_mod_p}
-.base64 "2AGAOKgBoDjAAcA4"
-bl {vg_p192_add_mod_p}
-.base64 "4AKAOOACoDjYAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "2AGAOIACoDiYAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "4AKAOOACoDjYAcA4"
-bl {vg_p192_sub_mod_p}
-.base64 "CAKAONAAoDjIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "2AGAOOgAoDiYAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "CAKAONgBoDgIAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "2AGAOIACoDgIAsA4"
-bl {vg_p192_sub_mod_p}
-.base64 "CAKAOIACoDgIAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "8AGAONgBoDgIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "gAKAOGgCoDhoAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "gAKAOIACoDhoAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "mAKAONAAoDiYAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "yAKAOOgAoDjIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "gAKAOIACoDiYAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "mAKAOGgCoDiYAsA4"
-bl {vg_p192_sub_mod_p}
-.base64 "mAKAONAAoDiYAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "yAKAOMgCoDiYAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "aAKAOIACoDjIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "8AGAOPABoDhoAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "aAKAOOACoDjIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "2AGAOLACoDjYAcA4"
-bl {vg_p192_mul_mod_p}
-.base64 "2AGAONgBoDhoAsA4"
-bl {vg_p192_sub_mod_p}
-.base64 "aAKAOLACoDiAAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "CAKAOOACoDgIAsA4"
-bl {vg_p192_mul_mod_p}
-.base64 "CAKAOAgCoDhoAsA4"
-bl {vg_p192_add_mod_p}
-.base64 "2AGD6JABg/jgAYPomAGD+OgBg+igAYP48AGD6KgBg/j4AYPosAGD+AACg+i4AYP4CAKD6MABg/gQAoPoyAGD+BgCg+jQAYP4uACD6PgCg/jAAIPoAAOD+MgAg+gIA4P4wADgOw=="
-213:
+.base64 "aA2D6JABg/hwDYPomAGD+HgNg+igAYP4gA2D6KgBg/iIDYPosAGD+JANg+i4AYP4mA2D6MABg/igDYPoyAGD+KgNg+jQAYP4AAA/KA=="
+bne %cr0, 211b
+.base64 "uACD6PgCg/jAAIPoAAOD+MgAg+gIA4P4wADgOw=="
+212:
 .base64 "////O/gCgDj4AqA4+ALAOA=="
 bl {vg_p192_mul_mod_p}
 .base64 "EAOAOPgCoDjAAcA4"
 bl {vg_p192_mul_mod_p}
 .base64 "FPqDfMAQhIgAAKA4UChEffgCg+gQA6PoeCKlfDhQpXx4KoR8+AKD+AADg+gYA6PoeCKlfDhQpXx4KoR8AAOD+AgDg+ggA6PoeCKlfDhQpXx4KoR8CAOD+AAAPyg="
-bne %cr0, 213b
+bne %cr0, 212b
 .base64 "cAOAOJABoDj4AsA4"
 bl {vg_p192_mul_mod_p}
 .base64 "iAOAOHADoDigAMA4"
@@ -210,8 +124,8 @@ bl {vg_p192_sub_mod_n}
         vg_p192_add_mod_p = sym super::ec_p192::vg_p192_add_mod_p::vg_p192_add_mod_p,
         vg_p192_sub_mod_p = sym super::ec_p192::vg_p192_sub_mod_p::vg_p192_sub_mod_p,
         vg_p192_mul_mod_n = sym super::ecdsa_p192::vg_p192_mul_mod_n::vg_p192_mul_mod_n,
-        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
         vg_p192_point_add = sym super::ec_p192::vg_p192_point_add::vg_p192_point_add,
+        vg_p192_point_double = sym super::ec_p192::vg_p192_point_double::vg_p192_point_double,
         vg_p192_sub_mod_n = sym super::ecdsa_p192::vg_p192_sub_mod_n::vg_p192_sub_mod_n,
     )
 }
