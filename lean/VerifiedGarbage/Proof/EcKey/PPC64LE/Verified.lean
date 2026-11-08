@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 public import VerifiedGarbage.Spec.EcKey.P256
 import VerifiedGarbage.Proof.EcKey.PPC64LE.Lit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
-import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Contract
 meta import VerifiedGarbage.Impl.EcKey.P256.PPC64LE
@@ -70,9 +70,8 @@ def satState : State where
   rd := [⟨0x2000, 32⟩]
   wr := [⟨0x1000, 65⟩, ⟨0x8000, 8192⟩]
 
-theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) :
-    Verified PPC64LE.target Impl.EcKey.PPC64LE.publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract PPC64LE.abi) :=
-  Verified.of_correct (pk_ppc hL) pk_ct
+/-- The contract as the proof states it implies the public key's. -/
+theorem pkPPC_implies : pkPPC.Implies (Spec.EcKey.P256.inst.publicKeyContract PPC64LE.abi) :=
     { pre := by
         sig_implies_pre [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
           Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
@@ -94,5 +93,9 @@ theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) :
         sig_implies_sat [Spec.EcKey.P256.inst, Spec.EcKey.Instance.publicKeyContract,
           Spec.EcKey.Instance.publicKeySig, Spec.P256.curve, Spec.EcKey.scratchWords, pkPPC, pk, PPC64LE.abi,
           PPC64LE.argRegs] [satState] using satState }
+
+theorem pk_verified (hL : Weierstrass.Law Spec.P256.curve) :
+    Verified PPC64LE.target Impl.EcKey.PPC64LE.publicKeyP256 (Spec.EcKey.P256.inst.publicKeyContract PPC64LE.abi) :=
+  Verified.of_correct (pk_ppc hL) pk_ct pkPPC_implies
 
 end VG.Proof.EcKey.PPC64LE
