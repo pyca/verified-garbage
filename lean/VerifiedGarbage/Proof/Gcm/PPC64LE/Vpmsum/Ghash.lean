@@ -347,18 +347,153 @@ theorem bulk_loop_ok {s₀ s : State} (hp : Pre s₀) {h : BitVec 128} {start : 
 
 theorem bulk_ok {s₀ s : State} (hp : Pre s₀) {start : Nat}
     (hpos : start+8 ≤ nb s₀) (hs : Inv s₀ start s) :
-    WP isa Impl.Gcm.PPC64LE.Vpmsum.bulk s fun t => ∃ j, j ≤ nb s₀ ∧ Inv s₀ j t := by
+    WP isa Impl.Gcm.PPC64LE.Vpmsum.bulk s fun t =>
+      ∃ j, j ≤ nb s₀ ∧ Inv s₀ j t ∧ PairKeys (t.vpr H) t := by
   unfold Impl.Gcm.PPC64LE.Vpmsum.bulk
   refine WP.seq (WP.mono (prepare_bulk_ok hs) fun u hu => ?_)
   refine WP.seq (WP.mono (bulk_loop_ok hp hs.key hpos hu) fun v ⟨j,hj,_,hv⟩ => ?_)
   refine WP.mono (recoverKey_ok (s.vpr H) v hv.keys) fun t ⟨hh,ht⟩ => ?_
-  refine ⟨j,hj,hv.cfg.keep ht (by decide) (by decide) (by decide),
+  refine ⟨j,hj,⟨hv.cfg.keep ht (by decide) (by decide) (by decide),
     hv.stable.keep ht, (congrFun ht.gpr .r5).trans hv.r5,
-    (congrFun ht.gpr .r6).trans hv.r6, ?_, ?_⟩
+    (congrFun ht.gpr .r6).trans hv.r6, ?_, ?_⟩, ?_⟩
   · rw [hh]
     exact hs.key
   · rw [ht.v Y (by decide)]
     exact hv.y
+  · rw [hh]
+    have hk := hv.keys.pair
+    exact ⟨(ht.v (keyLow 3) (by decide)).trans hk.1, (ht.v (keyHigh 3) (by decide)).trans hk.2⟩
+
+/-! ## Two blocks per reduction -/
+
+theorem pair_step_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i+2 ≤ nb s₀) (hs : Inv s₀ i s)
+    (hk : PairKeys (s.vpr H) s) :
+    WP isa (.block Impl.Gcm.PPC64LE.Vpmsum.pairBody) s fun t =>
+      Inv s₀ (i+2) t ∧ PairKeys (t.vpr H) t := by
+  have hr : ∀ k < 2, InRegions (s.rd ++ s.wr) (s.gpr .r5+BitVec.ofNat 64 (16*k)) 16 := by
+    intro k hk
+    rw [hs.stable.rd, hs.stable.wr, hs.r5, blkAddr, Offset.add_add]
+    refine ⟨dR s₀, by simp [hp.rd], contains_offset (by omega) (by have := hp.nb_lt; omega)⟩
+  have hr0 := hr 0 (by decide)
+  have hr1 := hr 1 (by decide)
+  simp only [Nat.mul_zero, BitVec.add_zero, Nat.mul_one] at hr0 hr1
+  refine WP.mono (pairBody_ok (s.vpr H) s hs.cfg hk hr0 hr1) fun t ⟨hy,hf⟩ => ?_
+  have hH : t.vpr H = s.vpr H := by
+    rw [hf.v H (by decide), vpr_write, vpr_write]
+  have hy' : ρ (t.vpr Y) = φ (ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i+2))) := by
+    rw [hs.key, hs.y] at hy
+    have hld : ∀ j, ρ (loadedAt s (16*j)) =
+        φ (Spec.Gcm.blockAt s₀.mem (dp s₀+BitVec.ofNat 64 (16*(i+j)))) := by
+      intro j
+      rw [loadedAt, ρ_ext8_self, hs.stable.mem, hs.r5, blkAddr, Offset.add_add, ← Nat.mul_add]
+    simp_rw [hld] at hy
+    rw [← hashField_ghash] at hy
+    exact hy
+  have hc : Config ((s.write .r5 (s.gpr .r5+32)).write .r6 (s.gpr .r6-2)) := by
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.cfg.zero
+    · simpa only [vpr_write] using hs.cfg.c
+    · simpa only [vpr_write] using hs.cfg.mask
+    · simpa only [vpr_write] using hs.cfg.z
+  refine ⟨⟨hc.keep hf (by decide) (by decide) (by decide), ⟨?_, ?_, ?_, ?_⟩, ?_, ?_, ?_, hy'⟩, ?_⟩
+  · rw [hf.gpr]
+    simpa only [RegUpd.gpr_write, reduceCtorEq, ite_false] using hs.stable.yptr
+  · rw [hf.mem]
+    simpa only [RegUpd.mem_write] using hs.stable.mem
+  · rw [hf.rd]
+    simpa only [RegUpd.rd_write] using hs.stable.rd
+  · rw [hf.wr]
+    simpa only [RegUpd.wr_write] using hs.stable.wr
+  · rw [hf.gpr]
+    simp only [RegUpd.gpr_write, reduceCtorEq, ite_false, ite_true, hs.r5, blkAddr]
+    change dp s₀+BitVec.ofNat 64 (16*i)+BitVec.ofNat 64 32 = _
+    rw [Offset.add_add, show 16*i+32=16*(i+2) by omega]
+  · rw [hf.gpr]
+    simp only [RegUpd.gpr_write_self, hs.r6]
+    change BitVec.ofNat 64 (nb s₀-i)-BitVec.ofNat 64 2 = _
+    rw [Offset.ofNat_sub_ofNat (by omega), Nat.sub_sub]
+  · rw [hH]
+    exact hs.key
+  · rw [hH]
+    refine ⟨?_, ?_⟩
+    · rw [hf.v (keyLow 3) (by decide), vpr_write, vpr_write]
+      exact hk.1
+    · rw [hf.v (keyHigh 3) (by decide), vpr_write, vpr_write]
+      exact hk.2
+
+theorem pairLoop_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start+2 ≤ nb s₀)
+    (hs : Inv s₀ start s) (hk : PairKeys (s.vpr H) s) :
+    WP isa Impl.Gcm.PPC64LE.Vpmsum.pairLoop s fun t => ∃ j, j ≤ nb s₀ ∧ Inv s₀ j t := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.pairLoop
+  let J : Nat → State → Prop := fun j t => Inv s₀ j t ∧ PairKeys (t.vpr H) t
+  have step : ∀ j t, j+2 ≤ nb s₀ → J j t →
+      WP isa (.block (Impl.Gcm.PPC64LE.Vpmsum.pairBody ++ ([.lsr .d .r10 .r6 1] : List Instr))) t
+        fun u => J (j+2) u ∧ u.gpr .r10 = BitVec.ofNat 64 (nb s₀-(j+2)) >>> 1 := by
+    intro j t hj ⟨ht, htk⟩
+    rw [WP.block_append_iff]
+    refine WP.mono (pair_step_ok hp hj ht htk) fun u ⟨hu, huk⟩ => ?_
+    refine WP.mono (probe_ok 1 (by decide) u) fun v hv => ?_
+    subst v
+    refine ⟨⟨hu.write10 _, ?_⟩, by rw [RegUpd.gpr_write_self, hu.r6]⟩
+    simpa only [PairKeys, vpr_write] using huk
+  refine WP.loop (M := isa)
+    (fun m t => ∃ j, m = nb s₀-j ∧ j+2 ≤ nb s₀ ∧ J j t)
+    (fun m t ht => ?_) (nb s₀-start) s ⟨start,rfl,hpos,hs,hk⟩
+  obtain ⟨j,rfl,hj,ht⟩ := ht
+  refine WP.mono (step j t hj ht) fun u hu => ?_
+  have hz : u.gpr .r10 = 0 ↔ nb s₀-(j+2) < 2 := by
+    rw [hu.2]
+    exact quotient_zero (by have := hp.nb_lt; omega) 1
+  have hev : eval (.nonzero .d .r10) u = some (u.gpr .r10 != 0) := by
+    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
+  by_cases hlast : nb s₀-(j+2) < 2
+  · left
+    rw [hz.mpr hlast] at hev
+    exact ⟨hev.trans (by decide), j+2, hj, hu.1.1⟩
+  · right
+    have hne : u.gpr .r10 ≠ 0 := fun he => hlast (hz.mp he)
+    exact ⟨hev.trans (by simpa using hne), nb s₀-(j+2), by omega, j+2, rfl, by omega, hu.1⟩
+
+theorem paired_ok {s₀ s : State} (hp : Pre s₀) {start : Nat} (hpos : start+2 ≤ nb s₀)
+    (hs : Inv s₀ start s) :
+    WP isa Impl.Gcm.PPC64LE.Vpmsum.paired s fun t => ∃ j, j ≤ nb s₀ ∧ Inv s₀ j t := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.paired
+  refine WP.seq ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (powers_ok 2 (by decide) (by decide) s hs.cfg.c hs.cfg.z) fun u ⟨hpw,hu⟩ => ?_
+  refine WP.mono (pairKeys_ok (s.vpr H) u (hpw 1 (by decide)) (hpw 0 (by decide))) fun v ⟨hk,hv⟩ => ?_
+  have hf := hu.trans hv
+  have hH : v.vpr H = s.vpr H := hf.v H (by decide)
+  refine pairLoop_ok hp hpos ⟨hs.cfg.keep hf (by decide) (by decide) (by decide), hs.stable.keep hf,
+    (congrFun hf.gpr .r5).trans hs.r5, (congrFun hf.gpr .r6).trans hs.r6, by rw [hH]; exact hs.key,
+    (congrArg ρ (hf.v Y (by decide))).trans hs.y⟩ (by rw [hH]; exact hk)
+
+/-- `pairsIf sh pairs`, for `pairs` correct from any state with at least
+`2^sh` (at least two) blocks left. -/
+theorem pairsIf_ok {s₀ s : State} (hp : Pre s₀) {pairs : Prog isa} {sh : Nat} (hsh : 1 ≤ sh)
+    (hsh64 : sh < 64) {i : Nat} (hi : i ≤ nb s₀) (hs : Inv s₀ i s)
+    (hpairs : i+2 ≤ nb s₀ → WP isa pairs (s.write .r10 (s.gpr .r6 >>> sh)) fun u =>
+      ∃ j, j ≤ nb s₀ ∧ Inv s₀ j u) :
+    WP isa (Impl.Gcm.PPC64LE.Vpmsum.pairsIf sh pairs) s fun u => ∃ j, j ≤ nb s₀ ∧ Inv s₀ j u := by
+  unfold Impl.Gcm.PPC64LE.Vpmsum.pairsIf
+  refine WP.seq (WP.mono (probe_ok sh hsh64 s) fun v hv => ?_)
+  subst v
+  have hinv := hs.write10 (s.gpr .r6 >>> sh)
+  have hev : eval (.zero .d .r10) (s.write .r10 (s.gpr .r6 >>> sh)) = some ((s.gpr .r6 >>> sh) == 0) := by
+    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write_self]
+  refine WP.ite ((s.gpr .r6 >>> sh) == 0) hev (fun _ => ?_) (fun hn => ?_)
+  · apply WP.of_runBlock
+    simp only [runBlock_nil, Option.some.injEq, exists_eq_left']
+    exact ⟨i, hi, hinv⟩
+  · have hne : s.gpr .r6 >>> sh ≠ 0 := by simpa only [beq_eq_false_iff_ne] using hn
+    have h2 : ¬ nb s₀-i < 2^sh := by
+      intro hlt
+      rw [hs.r6] at hne
+      exact hne ((quotient_zero (by have := hp.nb_lt; omega) sh).mpr hlt)
+    have h22 : 2 ≤ 2^sh := by
+      calc 2 = 2^1 := rfl
+        _ ≤ 2^sh := Nat.pow_le_pow_right (by decide) hsh
+    exact hpairs (by omega)
 
 theorem finish_ok {s₀ s : State} (hp : Pre s₀) {i : Nat} (hi : i ≤ nb s₀) (hs : Inv s₀ i s) :
     WP isa Impl.Gcm.PPC64LE.Vpmsum.finish s (Proof.Gcm.ghashPPC64LE.post s₀) := by
@@ -407,18 +542,18 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
         some ((u.gpr .r6 >>> 4) == 0) := by
       simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, RegUpd.gpr_write_self]
     refine WP.ite ((u.gpr .r6 >>> 4) == 0) hev' (fun _ => ?_) (fun hn => ?_)
-    · have hpos : 0 < nb s₀ := by
-        have hn : s₀.gpr .r6 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using he
-        exact Nat.pos_of_ne_zero fun hz => hn (BitVec.eq_of_toNat_eq (by simpa using hz))
-      unfold Impl.Gcm.PPC64LE.Vpmsum.serial
-      exact WP.seq (WP.mono (loop_ok hp hpos hinv) fun t ht => epilogue_ok hp ht)
+    · unfold Impl.Gcm.PPC64LE.Vpmsum.short
+      exact WP.seq (WP.mono (pairsIf_ok hp (sh := 2) (by decide) (by decide) (Nat.zero_le _) hinv fun h2 => paired_ok hp h2 (hinv.write10 _))
+        fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
     · have hne : u.gpr .r6 >>> 4 ≠ 0 := by simpa only [beq_eq_false_iff_ne] using hn
       rw [hu.r6] at hne
       have h16 : ¬ nb s₀ < 16 := by
         intro hlt
         exact hne ((quotient_zero (by have := hp.nb_lt; omega) 4).mpr hlt)
-      exact WP.seq (WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
-
+      refine WP.seq (WP.mono (bulk_ok hp (by omega) hinv) fun t ⟨j,hj,ht,htk⟩ => ?_)
+      refine WP.seq (WP.mono (pairsIf_ok hp (sh := 1) (by decide) (by decide) hj ht fun h2 => pairLoop_ok hp h2 (ht.write10 _) ?_)
+        fun t ⟨j,hj,ht⟩ => finish_ok hp hj ht)
+      simpa only [PairKeys, vpr_write] using htk
 
 def written : List Reg := [.r0, .r5, .r6, .r8, .r9, .r10]
 
