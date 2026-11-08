@@ -305,7 +305,7 @@ impl Key {
         if !buffer.len().is_multiple_of(16) {
             return Err(IncompleteBlock);
         }
-        let mut scratch = [0; 272];
+        let mut scratch = Scratch([0; 272]);
         // SAFETY: `rounds` is 10, 12 or 14 and the schedule holds its key
         // schedule; the buffer holds `len / 16` whole blocks, and it, the
         // chaining value, the schedule and the scratch space are separate
@@ -318,7 +318,7 @@ impl Key {
                 iv,
                 buffer.as_mut_ptr().cast(),
                 buffer.len() / 16,
-                &mut scratch,
+                &mut scratch.0,
             );
         }
         // The scratch space may hold the key schedule, the data and our
@@ -335,7 +335,7 @@ impl Key {
             target_arch = "x86"
         )))]
         if scratch_written != 0 {
-            zeroize(&mut scratch[..scratch_written.div_ceil(8)]);
+            zeroize(&mut scratch.0[..scratch_written.div_ceil(8)]);
         }
         #[cfg(any(
             target_arch = "aarch64",
@@ -346,6 +346,13 @@ impl Key {
         Ok(())
     }
 }
+
+/// The scratch space of the CBC functions, aligned to a cache line: the
+/// implementations read what they keep there (round keys, the inverse key
+/// schedule) for every block, and at the alignment of `[u64; 272]` some of
+/// those reads would cross cache lines, depending on the caller's stack.
+#[repr(C, align(64))]
+struct Scratch([u64; 272]);
 
 /// The signature of `vg_aes_cbc_encrypt` and `vg_aes_cbc_decrypt`.
 #[cfg(target_arch = "x86_64")]
