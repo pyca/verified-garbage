@@ -4,6 +4,7 @@
 //! dispatchers ask too, and its tests are here, which CI runs with the
 //! library's.
 
+#[cfg(test)]
 pub(crate) use verified_garbage_cpu::detected;
 
 #[cfg(test)]
