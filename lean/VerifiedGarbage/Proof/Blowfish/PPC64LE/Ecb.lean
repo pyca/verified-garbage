@@ -161,7 +161,7 @@ theorem ecb_step {S D : Addr} {n : Nat} {up : Bool} {s₀ : State} (L : LoopEnv 
       simp only [List.mem_singleton] at hr; subst hr; exact L.keyData
   have Ku₁ : Keep loopRegs s₀ u₁ := (I.keep.trans k₁).mono (by decide)
   have E : LookEnv u₁ := by
-    refine ⟨fun o ho => ?_, by rw [Ku₁.gpr (by decide)]; exact L.r0⟩
+    refine ⟨fun o n ho => ?_, by rw [Ku₁.gpr (by decide)]; exact L.r0⟩
     rw [Ku₁.gpr (by decide), L.r3, Ku₁.2.1, Ku₁.2.2]
     exact ⟨_, L.key, Offset.contains_base S ho (by omega_arith)⟩
   apply WP.seq
