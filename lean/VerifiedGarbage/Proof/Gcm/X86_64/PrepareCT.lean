@@ -182,36 +182,6 @@ theorem prepare16_ct : ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-- `vg_aes_gcm_prepare` on 256-bit registers, under `Proof.Gcm.preparePowersContract`'s
-register contract. -/
-theorem prepare_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
-    VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.Prepare16.prepare := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
-/-- `vg_aes_gcm_prepare` on 128-bit registers, under `Proof.Gcm.preparePowersContract`'s
-register contract. -/
-theorem prepareAvx_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
-    VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepare := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
-/-- `vg_aes_gcm_prepare` on SSE registers, under `Proof.Gcm.preparePowersContract`'s register
-contract. -/
-theorem prepareSse_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
-    VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepareSse := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ h
-  refine Taint.agree_ofRegs fun r hr => ?_
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  subst hr; exact h
-
 theorem prepare16Avx_ct :
     ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepare16 := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) ?_ (by taint_decide)

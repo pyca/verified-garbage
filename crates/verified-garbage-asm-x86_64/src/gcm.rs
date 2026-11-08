@@ -7328,7 +7328,7 @@ jmp 237f
 229:
 224:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared16_aesni_pclmul_avx}
+call {vg_aes_gcm_open_prepared_aesni_pclmul_avx}
 .base64 "hcA="
 je 239f
 jmp 240f
@@ -7346,7 +7346,7 @@ jmp 242f
 jmp 21b
 .p2align 6"#,
         vg_aes_gcm_open_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_aesni_pclmul_avx,
-        vg_aes_gcm_open_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_open_prepared16_aesni_pclmul_avx::vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_open_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_open_prepared_aesni_pclmul_avx,
     )
 }
 
@@ -8556,7 +8556,7 @@ jmp 2145f
 2144:
 2145:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
 .base64 "WFhY"
 2127:
 276:
@@ -8601,7 +8601,7 @@ jmp 2159f
 2158:
 2159:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared16_aesni_pclmul_avx}
+call {vg_aes_gcm_seal_prepared_aesni_pclmul_avx}
 .base64 "WFhY"
 270:
 jmp 268f
@@ -8637,7 +8637,7 @@ jmp 21b
         vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx::vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_split_prepared16_aesni_pclmul_avx,
-        vg_aes_gcm_seal_prepared16_aesni_pclmul_avx = sym super::aes::vg_aes_gcm_seal_prepared16_aesni_pclmul_avx::vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
+        vg_aes_gcm_seal_prepared_aesni_pclmul_avx = sym super::gcm::vg_aes_gcm_seal_prepared_aesni_pclmul_avx,
     )
 }
 
@@ -20212,7 +20212,7 @@ jmp 239f
 231:
 226:
 .base64 "xfh3SIt8JFBIi3QkSEiLVCRASItMJDhMi0QkMEyLTCQoSItEJHBIiQQkSItEJGhIiUQkCEiLhCSAAAAASIlEJBBIi4QkiAAAAEiJRCQY"
-call {vg_aes_gcm_open_prepared16_vaes_vpclmul}
+call {vg_aes_gcm_open_prepared_vaes_vpclmul}
 .base64 "hcA="
 je 241f
 jmp 242f
@@ -20249,7 +20249,7 @@ jmp 249f
 jmp 224b
 .p2align 6"#,
         vg_aes_gcm_open_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_vaes_vpclmul,
-        vg_aes_gcm_open_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_prepared16_vaes_vpclmul::vg_aes_gcm_open_prepared16_vaes_vpclmul,
+        vg_aes_gcm_open_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_open_prepared_vaes_vpclmul,
         vg_aes_gcm_open_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_open_split_prepared16_vaes_vpclmul::vg_aes_gcm_open_split_prepared16_vaes_vpclmul,
     )
 }
@@ -21460,7 +21460,7 @@ jmp 2145f
 2144:
 2145:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
 .base64 "WFhY"
 2127:
 276:
@@ -21505,7 +21505,7 @@ jmp 2159f
 2158:
 2159:
 .base64 "TItcJDBJiztJi3MISYtTaEmLS3BNi0MQTYtLGEmLQzBNi1MoTYtbIFBBUkFT"
-call {vg_aes_gcm_seal_prepared16_vaes_vpclmul}
+call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
 .base64 "WFhY"
 270:
 jmp 268f
@@ -21541,7 +21541,7 @@ jmp 21b
         vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul::vg_aes_gcm_stream_encrypt_to_prepared16_vaes_vpclmul,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         vg_aes_gcm_seal_split_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul::vg_aes_gcm_seal_split_prepared16_vaes_vpclmul,
-        vg_aes_gcm_seal_prepared16_vaes_vpclmul = sym super::aes::vg_aes_gcm_seal_prepared16_vaes_vpclmul::vg_aes_gcm_seal_prepared16_vaes_vpclmul,
+        vg_aes_gcm_seal_prepared_vaes_vpclmul = sym super::gcm::vg_aes_gcm_seal_prepared_vaes_vpclmul,
     )
 }
 
