@@ -4,6 +4,10 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.NttLanes
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Ntt
 public import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Proof.MlKem.Ntt
+import VerifiedGarbage.Proof.MlKem.Arith
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
 /-!
 # ML-KEM on PPC64LE: the vector butterfly, word by word
@@ -193,5 +197,141 @@ theorem vbfly_ok {s : State} (h : BIn s) :
   · rw [minq (by rw [BitVec.toNat_sub, BitVec.toNat_add, hm, show Q32.toNat = 3329 from rfl]; omega), by',
       BitVec.toNat_sub, BitVec.toNat_add, hm, show Q32.toNat = 3329 from rfl]
     exact congrArg (BitVec.ofNat 32) (by omega)
+
+/-! ## Rows of four coefficients -/
+
+section
+open VG.Proof.MlKem VG.Spec.MlKem
+
+theorem xor1 : ∀ d < 4, d ^^^ 1 < 4 ∧ (d ^^^ 1) ^^^ 1 = d := by decide
+
+theorem coeffAddr_add (F : Addr) (j q : Nat) :
+    coeffAddr F j + BitVec.ofNat 64 (4 * q) = coeffAddr F (j + q) := by
+  rw [coeffAddr, coeffAddr, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.mul_add]
+
+/-- The words of a row of coefficients loaded by `lxvd2x`: `1, 0, 3, 2`. -/
+theorem row_lane {m : Mem} {F : Addr} {f : Poly} (h : PolyIs m F f) {j : Nat} (hj : j + 4 ≤ 256) {p : Nat}
+    (hp : p < 4) : vword (swapDwords (m.read (coeffAddr F j) 16)) p = BitVec.ofNat 32 (f[j + (p ^^^ 1)]!).val := by
+  rw [vword_row _ _ hp, coeffAddr_add, ← coeffAt_eq]
+  exact polyIs_coeffAt h (by have := (xor1 p hp).1; rw [n_eq]; omega)
+
+theorem sub_toNat (F : Addr) (i t : Nat) {j : Nat} (hj : j < 256) :
+    (F + BitVec.ofNat 64 (4 * i) + BitVec.ofNat 64 t - (F + BitVec.ofNat 64 (4 * j))).toNat =
+      (4 * i + t + (2 ^ 64 - 4 * j)) % 2 ^ 64 := by
+  have := F.isLt
+  simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat]
+  omega
+
+/-- A coefficient after `stxvd2x` of a row from `j`. -/
+theorem coeffAt_row (m : Mem) (F : Addr) (j : Nat) (v : BitVec 128) {i : Nat} (hi : i < 256)
+    (hj : j + 4 ≤ 256) :
+    coeffAt (m.write (coeffAddr F j) 16 (swapDwords v)) F i =
+      if j ≤ i ∧ i < j + 4 then vword v ((i - j) ^^^ 1) else coeffAt m F i := by
+  apply ext_bytes32
+  intro t ht
+  rw [coeffAt, ← Mem.readW_byte _ _ ht]
+  simp only [Mem.write, coeffAddr]
+  rw [sub_toNat F i t (by omega)]
+  by_cases hr : j ≤ i ∧ i < j + 4
+  · rw [ite_eq_left (by omega), ite_eq_left hr, show (4 * i + t + (2 ^ 64 - 4 * j)) % 2 ^ 64 = 4 * (i - j) + t by
+      omega, store_byte _ (by omega), show (4 * (i - j) + t) / 4 = i - j by omega,
+      show (4 * (i - j) + t) % 4 = t by omega]
+  · rw [ite_eq_right (by omega), ite_eq_right hr, coeffAt, ← Mem.readW_byte _ _ ht]
+
+/-- Two rows stored over a polynomial. -/
+theorem polyIs_rows {m : Mem} {F : Addr} {f g : Poly} (h : PolyIs m F f) {j₁ j₂ : Nat}
+    (h1 : j₁ + 4 ≤ 256) (h2 : j₂ + 4 ≤ 256) {A B : BitVec 128}
+    (hA : ∀ p < 4, vword A p = BitVec.ofNat 32 (g[j₁ + (p ^^^ 1)]!).val)
+    (hB : ∀ p < 4, vword B p = BitVec.ofNat 32 (g[j₂ + (p ^^^ 1)]!).val)
+    (hf : ∀ i < 256, ¬ (j₁ ≤ i ∧ i < j₁ + 4) → ¬ (j₂ ≤ i ∧ i < j₂ + 4) → g[i]! = f[i]!) :
+    PolyIs ((m.write (coeffAddr F j₁) 16 (swapDwords A)).write (coeffAddr F j₂) 16 (swapDwords B)) F g := by
+  refine polyIs_of_coeffAt fun i hi => ?_
+  rw [n_eq] at hi
+  rw [coeffAt_row _ _ _ _ hi h2, coeffAt_row _ _ _ _ hi h1]
+  by_cases r2 : j₂ ≤ i ∧ i < j₂ + 4
+  · obtain ⟨l, e⟩ := xor1 (i - j₂) (by omega)
+    rw [ite_eq_left r2, hB _ l, e, Nat.add_sub_cancel' r2.1]
+  rw [ite_eq_right r2]
+  by_cases r1 : j₁ ≤ i ∧ i < j₁ + 4
+  · obtain ⟨l, e⟩ := xor1 (i - j₁) (by omega)
+    rw [ite_eq_left r1, hA _ l, e, Nat.add_sub_cancel' r1.1]
+  rw [ite_eq_right r1, polyIs_coeffAt h (by rw [n_eq]; exact hi), hf i hi r1 r2]
+
+theorem toNat_val32 (a : Zq) : (BitVec.ofNat 32 a.val).toNat = a.val := by
+  rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by have := val_lt a; omega)
+
+theorem bx_val (a b z : Zq) :
+    bx (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) (BitVec.ofNat 32 z.val) = BitVec.ofNat 32 (a + z * b).val := by
+  rw [bx, toNat_val32, toNat_val32, toNat_val32, val_add', val_mul, Nat.mul_comm z.val]
+
+theorem by'_val (a b z : Zq) :
+    by' (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) (BitVec.ofNat 32 z.val) = BitVec.ofNat 32 (a - z * b).val := by
+  rw [by', toNat_val32, toNat_val32, toNat_val32, val_sub', val_mul, Nat.mul_comm z.val]
+  have := Nat.mod_lt (b.val * z.val) (show 0 < 3329 by decide)
+  congr 2; show _ = a.val + (3329 - b.val * z.val % 3329); omega
+
+end
+
+/-! ## The body of the inner loop -/
+
+/-- What a step of the inner loop keeps. -/
+structure Kept (s s' : State) : Prop where
+  g : ∀ r, r ≠ .r5 → r ≠ .r6 → r ≠ .r10 → s'.gpr r = s.gpr r
+  v : ∀ v, v ≠ .v6 → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 → s'.vpr v = s.vpr v
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  lr : s'.lr = s.lr
+
+theorem body_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r5) 16)
+    (ib : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r6) 16)
+    (oa : InRegions s.wr (s.gpr .r3 + s.gpr .r5) 16) (ob : InRegions s.wr (s.gpr .r3 + s.gpr .r6) 16)
+    (hx : ∀ i < 4, (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r5) 16)) i).toNat < 3329)
+    (hy : ∀ i < 4, (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r6) 16)) i).toNat < 3329)
+    (hw : ∀ i < 4, (vword (s.vpr .v4) i).toNat < 3329)
+    (hw' : ∀ i < 4, (vword (s.vpr .v5) i).toNat = (vword (s.vpr .v4) i).toNat * 2 ^ 32 / 3329)
+    (hq : s.vpr .v0 = qVec) (hc : s.vpr .v1 = ctlHi) :
+    WP isa (.block vbflyBody) s fun s' => ∃ A B : BitVec 128,
+      (∀ i < 4, vword A i = bx (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r5) 16)) i)
+        (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r6) 16)) i) (vword (s.vpr .v4) i)) ∧
+      (∀ i < 4, vword B i = by' (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r5) 16)) i)
+        (vword (swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r6) 16)) i) (vword (s.vpr .v4) i)) ∧
+      s'.mem = (s.mem.write (s.gpr .r3 + s.gpr .r5) 16 (swapDwords A)).write (s.gpr .r3 + s.gpr .r6) 16
+        (swapDwords B) ∧
+      s'.gpr .r5 = s.gpr .r5 + 16 ∧ s'.gpr .r6 = s.gpr .r6 + 16 ∧ s'.gpr .r10 = s.gpr .r10 - 1 ∧
+      Kept s s' := by
+  rw [vbflyBody, WP.block_append_iff, WP.block_append_iff]
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_lxvd2x .v6 .r3 .r5 s (by decide) ia, runStep_some, runBlock_cons,
+    exec_lxvd2x .v7 .r3 .r6 _ (by decide) (by exact ib), runStep_some, runBlock_nil]
+  refine ⟨_, rfl, ?_⟩
+  refine WP.mono (vbfly_ok ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, ?_, ?_⟩)
+    fun s₂ ⟨h6, h7, hv⟩ => ?_
+  · simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]; exact hx i hi
+  · simp only [vpr_writeV, ite_true]; exact hy i hi
+  · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hw i hi
+  · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hw' i hi
+  · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hq
+  · simp only [vpr_writeV, reduceCtorEq, ite_false]; exact hc
+  have g₂ : s₂.gpr = s.gpr := hv.gpr
+  have oa' : InRegions s₂.wr (s₂.gpr .r3 + s₂.gpr .r5) 16 := by rw [hv.wr, g₂]; exact oa
+  have ob' : InRegions s₂.wr (s₂.gpr .r3 + s₂.gpr .r6) 16 := by rw [hv.wr, g₂]; exact ob
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_stxvd2x .v6 .r3 .r5 s₂ (by decide) oa', runStep_some, runBlock_cons,
+    exec_stxvd2x .v7 .r3 .r6 _ (by decide) (by exact ob'), runStep_some, runBlock_cons,
+    exec_addi (by decide) (by decide), runStep_some, runBlock_cons, exec_addi (by decide) (by decide), runStep_some,
+    runBlock_cons, exec_subi (by decide) (by decide), runStep_some, runBlock_nil]
+  refine ⟨_, rfl, s₂.vpr .v6, s₂.vpr .v7, fun i hi => ?_, fun i hi => ?_, ?_, ?_, ?_, ?_, ⟨fun r h5 h6' h10 => ?_,
+    fun v n6 n7 n8 n9 n10 => ?_, hv.rd, hv.wr, hv.sp, hv.lr⟩⟩
+  · rw [h6 i hi]; simp only [vpr_writeV, mem_writeV, gpr_writeV, reduceCtorEq, ite_true, ite_false]
+  · rw [h7 i hi]; simp only [vpr_writeV, mem_writeV, gpr_writeV, reduceCtorEq, ite_true, ite_false]
+  · simp only [State.write, hv.mem, g₂, mem_writeV]
+  · simp only [RegUpd.gpr_write, g₂, ite_true, ite_false, reduceCtorEq]; rfl
+  · simp only [RegUpd.gpr_write, g₂, ite_true, ite_false, reduceCtorEq]; rfl
+  · simp only [RegUpd.gpr_write, g₂, ite_true]; rfl
+  · simp only [RegUpd.gpr_write, g₂, h5, h6', h10, ite_false]
+  · show s₂.vpr v = s.vpr v
+    rw [hv.v v (by simp [n6, n7, n8, n9, n10])]
+    simp only [vpr_writeV, n6, n7, ite_false]
 
 end VG.Proof.MlKem.PPC64LE.VBfly
