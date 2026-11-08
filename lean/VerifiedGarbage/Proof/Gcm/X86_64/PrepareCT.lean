@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
+meta import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareAvx
 public import VerifiedGarbage.Impl.Gcm.X86_64.PrepareZ
 import VerifiedGarbage.Proof.Framework.X86_64.Taint
@@ -115,7 +117,7 @@ theorem prepare_correct {c : Prog isa}
   obtain ⟨t, s', he, h⟩ := correct hok hs
   exact ⟨t, s', he, abiPreserved_of_exec hx he h.1, h.2⟩
 
-/-- A state meeting `prepareContract`'s precondition. -/
+/-- A state meeting `Proof.Gcm.preparePowersContract`'s precondition. -/
 def satState : State where
   gpr r := match r with
     | .rdi => 0x1000 | .rsp => 0x5000 | _ => 0
@@ -133,9 +135,9 @@ theorem verified_of (c : Prog isa)
     (hok : ∀ s₀, InRegions s₀.wr (s₀.gpr .rdi) 1024 → (s₀.gpr .rdi).toNat + 1024 ≤ 2 ^ 64 → WP isa c s₀ (PrepOk s₀))
     (hx : c.allInstrs (fun i => !loadsMxcsr i) = true)
     (hct : ConstantTime isa prepareX86_64.pre prepareX86_64.pub c) :
-    Verified X86_64.target c (Spec.Gcm.prepareContract X86_64.abi) :=
+    Verified X86_64.target c (Proof.Gcm.preparePowersContract X86_64.abi) :=
   Verified.of_correct (prepare_correct hok hx) hct (by
-    sig_implies [Spec.Gcm.prepareContract, Spec.Gcm.prepareSig, Spec.Gcm.preparePost, prepareX86_64,
+    sig_implies [Proof.Gcm.preparePowersContract, Spec.Gcm.prepare16Sig, Proof.Gcm.preparePowersPost, prepareX86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 end VG.Proof.Gcm.X86_64.Prepare
@@ -163,7 +165,7 @@ theorem prepare16_ct : ConstantTime isa prepare16X86_64.pre prepare16X86_64.pub 
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-- `vg_aes_gcm_prepare` on 256-bit registers, under `prepareContract`'s
+/-- `vg_aes_gcm_prepare` on 256-bit registers, under `Proof.Gcm.preparePowersContract`'s
 register contract. -/
 theorem prepare_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
     VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.Prepare16.prepare := by
@@ -173,7 +175,7 @@ theorem prepare_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-- `vg_aes_gcm_prepare` on 128-bit registers, under `prepareContract`'s
+/-- `vg_aes_gcm_prepare` on 128-bit registers, under `Proof.Gcm.preparePowersContract`'s
 register contract. -/
 theorem prepareAvx_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
     VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepare := by
@@ -183,7 +185,7 @@ theorem prepareAvx_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr; exact h
 
-/-- `vg_aes_gcm_prepare` on SSE registers, under `prepareContract`'s register
+/-- `vg_aes_gcm_prepare` on SSE registers, under `Proof.Gcm.preparePowersContract`'s register
 contract. -/
 theorem prepareSse_ct : ConstantTime isa VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pre
     VG.Proof.Gcm.X86_64.Prepare.prepareX86_64.pub Impl.Gcm.X86_64.PrepareAvx.prepareSse := by
@@ -257,12 +259,12 @@ theorem verified_ofW (c : Prog isa)
   Verified.of_correct (fun s hs => by
       obtain ⟨t, s', he, h⟩ := correctW hok hs
       exact ⟨t, s', he, abiPreserved_of_exec hx he h.1, h.2⟩) hct (by
-    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepare16Sig, Spec.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 
 theorem implies16 : prepare16X86_64.Implies (Spec.Gcm.prepare16Contract X86_64.abi) := by
-  sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepareSig, Spec.Gcm.prepare16Post, prepare16X86_64,
+  sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepare16Sig, Spec.Gcm.prepare16Post, prepare16X86_64,
     X86_64.abi, X86_64.argRegs] [satState] using satState
 
 /-- A run that writes nothing of the context but its bytes 256–511 (the 16
@@ -273,13 +275,13 @@ theorem written16 {c : Prog isa}
       WP isa c s₀ fun s => Frame [⟨s₀.gpr .rdi + BitVec.ofNat 64 256, 256⟩] s₀.mem s.mem)
     (s : State) (t : List Leak) (s' : State) (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s)
     (he : Exec isa c s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepareSig [("ctx", 512)] s s' := by
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepare16Sig [("ctx", 512)] s s' := by
   obtain ⟨_, hwr, hwrap, _⟩ := implies16.pre s hs
   have hw : InRegions s.wr (s.gpr .rdi) 1024 := by
     rw [hwr]; exact ⟨_, List.mem_singleton_self _, Region.contains_self _ _⟩
   obtain ⟨t', s'', he', hf⟩ := hok s hw hwrap
   obtain ⟨-, rfl⟩ := Exec.det he he'
-  simp [Sig.writtenWithin, X86_64.abi, X86_64.argRegs, Abi.withConsts, Spec.Gcm.prepareSig,
+  simp [Sig.writtenWithin, X86_64.abi, X86_64.argRegs, Abi.withConsts, Spec.Gcm.prepare16Sig,
     Sig.words, Sig.arrays, Param.words, ArgWord.bits]
   intro i h1 h2
   have h2' : i < 1024 := by simpa [Elem.size] using h2

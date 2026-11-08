@@ -707,17 +707,14 @@ struct Prepared {
     written: usize,
 }
 
-/// `vg_aes_gcm_prepare`.
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type Prepare = unsafe extern "sysv64" fn(*mut Ctx);
-
 /// The types of the `_prepared` instances on x86-64, on the key context
-/// with the powers, `Ctx`.
+/// `$ctx`: `Ctx` for the `_prepared` ones, and the 1024 bytes the
+/// `_prepared16` ones read.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-mod prepared_types {
-    use super::Ctx;
+macro_rules! prepared_types {
+    ($ctx:ty) => {
     pub(super) type SealPrepared = unsafe extern "sysv64" fn(
-        *const Ctx,
+        *const $ctx,
         usize,
         *const u8,
         usize,
@@ -728,7 +725,7 @@ mod prepared_types {
         *mut [u8; 16],
     );
     pub(super) type OpenPrepared = unsafe extern "sysv64" fn(
-        *const Ctx,
+        *const $ctx,
         usize,
         *const u8,
         usize,
@@ -740,7 +737,7 @@ mod prepared_types {
         usize,
     ) -> u32;
     pub(super) type OpenToPrepared = unsafe extern "sysv64" fn(
-        *const Ctx,
+        *const $ctx,
         usize,
         *const u8,
         usize,
@@ -754,7 +751,7 @@ mod prepared_types {
         usize,
     ) -> u32;
     pub(super) type SealGatherPrepared = unsafe extern "sysv64" fn(
-        *const Ctx,
+        *const $ctx,
         usize,
         *const u8,
         usize,
@@ -766,17 +763,46 @@ mod prepared_types {
         usize,
         *mut [u8; 16],
     );
+        pub(super) type StreamPrepared =
+            unsafe extern "sysv64" fn(*const $ctx, usize, *mut [u64; 10], u64, u64, *mut u8, usize);
+        pub(super) type Prepare = unsafe extern "sysv64" fn(*mut $ctx);
+    };
 }
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-use prepared_types::{OpenPrepared, OpenToPrepared, SealGatherPrepared, SealPrepared};
-/// The powers of the hash subkey: on x86-64, in a key context of 1024 bytes
-/// (`VG.Spec.Gcm.PreparedPowersRepr`), which the `_prepared` instances read
-/// alone, and which begins with the key context of `vg_aes_gcm_init`; on
+mod prepared_types {
+    use super::Ctx;
+    prepared_types!(Ctx);
+}
+/// Those of the `_prepared16` instances, on the first 1024 bytes of `Ctx`.
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+mod prepared16_types {
+    prepared_types!([u64; 128]);
+}
+
+/// A `_prepared16` instance, which reads only the first 1024 bytes of the
+/// context, as a function on `Ctx`, which begins with them: raw pointers to
+/// sized types are ABI-compatible, so calling the function through the
+/// converted pointer is calling it (Rust reference, "Function pointer ABI
+/// compatibility").
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+macro_rules! on_ctx16 {
+    ($f:expr, $t:ident) => {
+        // SAFETY: as above; the two types differ only in the pointee type of
+        // the first argument.
+        unsafe { core::mem::transmute::<prepared16_types::$t, prepared_types::$t>($f) }
+    };
+}
+
+#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
+use prepared_types::{OpenPrepared, OpenToPrepared, Prepare, SealGatherPrepared, SealPrepared, StreamPrepared};
+/// The powers of the hash subkey: on x86-64, in a prepared key context of
+/// 1088 bytes (`VG.Spec.Gcm.PreparedRepr`), which the `_prepared` instances
+/// read alone, and which begins with the key context of `vg_aes_gcm_init`; on
 /// AArch64, in 128 bytes (`VG.Spec.Gcm.Powers8Repr`), which the
 /// `_with_powers` instances read next to the key context of
 /// `vg_aes_gcm_init`.
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type Ctx = [u64; 128];
+type Ctx = [u64; 136];
 #[cfg(target_arch = "aarch64")]
 type Ctx = [u64; 16];
 /// The `_with_powers` instances of `seal`, `open` and `open_to`:
@@ -827,10 +853,6 @@ type OpenToPrepared = unsafe extern "C" fn(
 ) -> u32;
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
-type StreamPrepared =
-    unsafe extern "sysv64" fn(*const [u64; 128], usize, *mut [u64; 10], u64, u64, *mut u8, usize);
-
-#[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES,
     seal: vg_aes_gcm_seal_prepared_vaes_vpclmul_avx512,
@@ -846,26 +868,26 @@ static PREPARED_VAES_VPCLMUL_AVX512: Prepared = Prepared {
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_VAES_VPCLMUL: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE16_VPCLMUL_FEATURES,
-    seal: vg_aes_gcm_seal_prepared16_vaes_vpclmul,
-    open: vg_aes_gcm_open_prepared16_vaes_vpclmul,
-    open_to: vg_aes_gcm_open_to_prepared16_vaes_vpclmul,
-    seal_gather: vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul,
-    prepare: vg_aes_gcm_prepare16_vpclmul,
+    seal: on_ctx16!(vg_aes_gcm_seal_prepared16_vaes_vpclmul, SealPrepared),
+    open: on_ctx16!(vg_aes_gcm_open_prepared16_vaes_vpclmul, OpenPrepared),
+    open_to: on_ctx16!(vg_aes_gcm_open_to_prepared16_vaes_vpclmul, OpenToPrepared),
+    seal_gather: on_ctx16!(vg_aes_gcm_seal_gather_prepared16_vaes_vpclmul, SealGatherPrepared),
+    stream_encrypt: on_ctx16!(vg_aes_gcm_stream_encrypt_prepared16_vaes_vpclmul, StreamPrepared),
+    stream_decrypt: on_ctx16!(vg_aes_gcm_stream_decrypt_prepared16_vaes_vpclmul, StreamPrepared),
+    prepare: on_ctx16!(vg_aes_gcm_prepare16_vpclmul, Prepare),
     written: VG_AES_GCM_PREPARE16_VPCLMUL_CTX_WRITTEN,
 };
 
 #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
 static PREPARED_AESNI_PCLMUL_AVX: Prepared = Prepared {
     features: VG_AES_GCM_PREPARE16_PCLMUL_AVX_FEATURES,
-    seal: vg_aes_gcm_seal_prepared16_aesni_pclmul_avx,
-    open: vg_aes_gcm_open_prepared16_aesni_pclmul_avx,
-    open_to: vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx,
-    seal_gather: vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx,
-    stream_encrypt: vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx,
-    stream_decrypt: vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx,
-    prepare: vg_aes_gcm_prepare16_pclmul_avx,
+    seal: on_ctx16!(vg_aes_gcm_seal_prepared16_aesni_pclmul_avx, SealPrepared),
+    open: on_ctx16!(vg_aes_gcm_open_prepared16_aesni_pclmul_avx, OpenPrepared),
+    open_to: on_ctx16!(vg_aes_gcm_open_to_prepared16_aesni_pclmul_avx, OpenToPrepared),
+    seal_gather: on_ctx16!(vg_aes_gcm_seal_gather_prepared16_aesni_pclmul_avx, SealGatherPrepared),
+    stream_encrypt: on_ctx16!(vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx, StreamPrepared),
+    stream_decrypt: on_ctx16!(vg_aes_gcm_stream_decrypt_prepared16_aesni_pclmul_avx, StreamPrepared),
+    prepare: on_ctx16!(vg_aes_gcm_prepare16_pclmul_avx, Prepare),
     written: VG_AES_GCM_PREPARE16_PCLMUL_AVX_CTX_WRITTEN,
 };
 
@@ -1079,7 +1101,12 @@ impl AesGcm {
     /// context, with `fns.prepare`.
     #[cfg(all(target_arch = "x86_64", feature = "alloc"))]
     fn prepare(&mut self, prepare: Prepare) {
-        // SAFETY: `self.ctx` is valid for reads and writes of 1024 bytes,
+        // The word after the powers says whether they are absent
+        // (`VG.Spec.Gcm.PreparedRepr`): zero, as a `prepare` that computes
+        // them does not write it.
+        // SAFETY: `self.ctx` is valid for writes of `size_of::<Ctx>()` bytes.
+        unsafe { self.ctx.as_mut_ptr().cast::<[u64; 8]>().add(16).write([0; 8]) };
+        // SAFETY: `self.ctx` is valid for reads and writes of 1088 bytes,
         // and overlaps nothing on the stack; its first 256 bytes are the key
         // context of `vg_aes_gcm_init` (`VG.Spec.Gcm.KeyRepr`), which
         // `vg_aes_gcm_prepare` keeps. The CPU has its features
@@ -2807,7 +2834,7 @@ mod tests {
                 {
                     assert!(k.fns.prepare.is_some());
                     assert_eq!(k.clone().written_ctx(), k.written_ctx());
-                    let mut want_powers = [0; 128];
+                    let mut want_powers = [0; 136];
                     want_powers[..32].copy_from_slice(base.key());
                     // SAFETY: as in `AesGcm::prepare`.
                     unsafe { (b.prepared(detected()).unwrap().prepare)(&mut want_powers) };
