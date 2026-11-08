@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
+public import VerifiedGarbage.Impl.Dsa.PPC64LE.DivN
 public import VerifiedGarbage.Impl.Dsa.PPC64LE.Common
 public import VerifiedGarbage.Impl.MlKem.PPC64LE.Top
 public import VerifiedGarbage.Impl.MdStream.PPC64LE
@@ -288,7 +289,7 @@ def eBytes (pLen qLen : Nat) : Nat := pLen - qLen + 1
 array `aE` and to `sE`. -/
 def pArith (pLen qLen : Nat) : Prog isa := seqs [
   seqs [.block (ksRegs pLen), ksSetup, loadS aQt sX pLen, loadS aX sX pLen, loadS aDv sQ qLen],
-  VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt,
+  VG.Impl.Dsa.PPC64LE.DivN.div aQt aRm aDv aDt (qLen / 4),
   seqs [sub3 aT aX aRm, .block (bitOf slOdd aQt), sel aS aZero aDv slOdd, sub3 aPm1 aT aS],
   seqs [copy aP aPm1, .block (orOne aP), copy aE aQt, .block (clrLow aE), storeS aP sPBE pLen,
     storeS aE sE (eBytes pLen qLen)]]

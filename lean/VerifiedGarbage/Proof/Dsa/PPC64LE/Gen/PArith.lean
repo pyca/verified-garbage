@@ -124,13 +124,24 @@ theorem pLoads_vp {xb qb : List Byte}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl <;> simp [aDv, aX, aQt, aOne, aZero]
 
-theorem pDivide_vp {x q : Nat} (hpos : 0 < q) :
-    VP (fun σ s => KSt G (cL c x q) X σ s ∧ TopAll G s.mem) (VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt)
-      (KSt G (cD c x q) X) := by
-  refine (div_vp ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
-    (VG.Impl.Rsa.PPC64LE.Div.div aQt aRm aDv aDt), by kernel_rfl⟩ (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp)
-    (by simp [aDt, aDv, aX, aQt, aOne, aZero]) (by arr_simp; exact hpos)).mono (fun _ _ h => h) fun σ s ⟨⟨h, x⟩, kr⟩ => ⟨⟨h.mono
+theorem pDivide_vp {x q : Nat} (hpos : 0 < q)
+    (hlq : (G.pLen = 128 ∧ G.qLen = 20) ∨ (G.pLen = 256 ∧ G.qLen = 32) ∨ (G.pLen = 384 ∧ G.qLen = 32))
+    (hqlt : q < 2 ^ (8 * G.qLen)) :
+    VP (fun σ s => KSt G (cL c x q) X σ s ∧ TopAll G s.mem)
+      (VG.Impl.Dsa.PPC64LE.DivN.div aQt aRm aDv aDt (G.qLen / 4)) (KSt G (cD c x q) X) := by
+  have cert : CertK (VG.Impl.Dsa.PPC64LE.DivN.div aQt aRm aDv aDt (G.qLen / 4)) := by
+    rcases hlq with ⟨_, e⟩ | ⟨_, e⟩ | ⟨_, e⟩ <;> rw [e]
+    · exact ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
+        (VG.Impl.Dsa.PPC64LE.DivN.div aQt aRm aDv aDt (20 / 4)), by kernel_rfl⟩
+    all_goals exact ⟨VG.Taint.hintOfSize VG.PPC64LE.taint 64 (Taint.ofRegs [.r28, .r29, .r30, .r31])
+        (VG.Impl.Dsa.PPC64LE.DivN.div aQt aRm aDv aDt (32 / 4)), by kernel_rfl⟩
+  have hv : G.qLen / 4 + 1 < G.w := by simp only [GP.w]; omega_arith
+  have hDv : q < 2 ^ (32 * (G.qLen / 4)) := by
+    rwa [show 32 * (G.qLen / 4) = 8 * G.qLen by omega_arith]
+  refine (div_vp cert (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by simp) (by simp)
+    (by simp [aDt, aDv, aX, aQt, aOne, aZero]) (by arr_simp; exact hpos) hv (by arr_simp; exact hDv)).mono
+    (fun _ _ h => h.1) fun σ s ⟨⟨h, x⟩, kr⟩ => ⟨⟨h.mono
     (fun o ho => ⟨ho, rfl⟩) (fun y hy => hy) (fun j hj => ?_) (fun d hd => ⟨hd, rfl⟩), x⟩, kr⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hj
   rcases hj with rfl | rfl | rfl | rfl | rfl | rfl <;> exact ⟨by simp [aQt, aRm, aDv, aX, aOne, aZero], by arr_simp⟩
@@ -236,7 +247,10 @@ theorem pArith_vp {xb qb : List Byte}
     have := VG.Proof.Dsa.decodeBE_lt xb
     rwa [hxl, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
   have hpos : 0 < Spec.Dsa.decodeBE qb := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) hqlo
-  exact VP.seq (pLoads_vp hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos)
+  have hqlt : Spec.Dsa.decodeBE qb < 2 ^ (8 * G.qLen) := by
+    have := VG.Proof.Dsa.decodeBE_lt qb
+    rwa [hql, show (256 : Nat) = 2 ^ 8 from rfl, ← Nat.pow_mul] at this
+  exact VP.seq (pLoads_vp hlq hx hxl hqc hql) (VP.seq (pDivide_vp hpos hlq hqlt)
     (VP.seq pPm1_vp (pTail_vp hqlo hlq hxlt hrest)))
 
 end
