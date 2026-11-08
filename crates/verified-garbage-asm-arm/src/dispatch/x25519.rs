@@ -34,7 +34,9 @@ pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES) }
+            || cpu.contains(crate::x25519::VG_X25519_EXCHANGE_UMAAL_FEATURES)
+        {
             return crate::x25519::vg_x25519_exchange_umaal;
         }
         crate::x25519::vg_x25519_exchange

@@ -30,10 +30,14 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHANI_FEATURES)
+        {
             return crate::sha1::vg_sha1_update_shani;
         }
-        if cpu.contains(crate::sha1::VG_SHA1_UPDATE_AVX_BMI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_UPDATE_AVX_BMI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_UPDATE_AVX_BMI_FEATURES)
+        {
             return crate::sha1::vg_sha1_update_avx_bmi;
         }
         crate::sha1::vg_sha1_update
@@ -79,10 +83,14 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHANI_FEATURES)
+        {
             return crate::sha1::vg_sha1_digest_shani;
         }
-        if cpu.contains(crate::sha1::VG_SHA1_DIGEST_AVX_BMI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_DIGEST_AVX_BMI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_DIGEST_AVX_BMI_FEATURES)
+        {
             return crate::sha1::vg_sha1_digest_avx_bmi;
         }
         crate::sha1::vg_sha1_digest
@@ -129,10 +137,14 @@ pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHANI_FEATURES)
+        {
             return crate::sha1::vg_sha1_finalize_shani;
         }
-        if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_AVX_BMI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_FINALIZE_AVX_BMI_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_FINALIZE_AVX_BMI_FEATURES)
+        {
             return crate::sha1::vg_sha1_finalize_avx_bmi;
         }
         crate::sha1::vg_sha1_finalize

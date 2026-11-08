@@ -32,13 +32,19 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul;
         }
         crate::aes_gcm_siv::vg_aes_gcm_siv_seal
@@ -92,13 +98,19 @@ pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul;
         }
         crate::aes_gcm_siv::vg_aes_gcm_siv_open

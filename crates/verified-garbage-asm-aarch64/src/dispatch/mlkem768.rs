@@ -28,10 +28,15 @@ pub unsafe fn vg_mlkem768_keygen_auto(seed: *const [u8; 64], ek: *mut [u8; 1184]
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES))
+        {
             return crate::mlkem768::vg_mlkem768_keygen_x2_sha3_keccak_sha3;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_keygen_x2_sha3;
         }
         crate::mlkem768::vg_mlkem768_keygen
@@ -83,10 +88,15 @@ pub unsafe fn vg_mlkem768_encaps_auto(ek: *const [u8; 1184], m: *const [u8; 32],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+        {
             return crate::mlkem768::vg_mlkem768_encaps_x2_sha3_keccak_sha3;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_x2_sha3;
         }
         crate::mlkem768::vg_mlkem768_encaps
@@ -136,10 +146,15 @@ pub unsafe fn vg_mlkem768_decaps_auto(dk: *const [u8; 2400], ct: *const [u8; 108
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+        {
             return crate::mlkem768::vg_mlkem768_decaps_x2_sha3_keccak_sha3;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_decaps_x2_sha3;
         }
         crate::mlkem768::vg_mlkem768_decaps
@@ -199,10 +214,15 @@ pub unsafe fn vg_mlkem768_encaps_h_auto(ek: *const [u8; 1184], h: *const [u8; 32
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES)) && cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES))
+        {
             return crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3_keccak_sha3;
         }
-        if cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES)
+        {
             return crate::mlkem768::vg_mlkem768_encaps_h_x2_sha3;
         }
         crate::mlkem768::vg_mlkem768_encaps_h

@@ -25,7 +25,9 @@ pub unsafe fn vg_ed25519_verify_auto(pk: *const [u8; 32], message: *const u8, le
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_VERIFY_SHA512_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_VERIFY_SHA512_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_verify_sha512;
         }
         crate::ed25519::vg_ed25519_verify
@@ -74,7 +76,9 @@ pub unsafe fn vg_ed25519_key_pair_auto(out: *mut [u8; 32], expanded: *mut [u8; 6
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA512_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_KEY_PAIR_SHA512_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_key_pair_sha512;
         }
         crate::ed25519::vg_ed25519_key_pair
@@ -124,7 +128,9 @@ pub unsafe fn vg_ed25519_sign_expanded_auto(out: *mut [u8; 64], expanded: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA512_FEATURES) }
+            || cpu.contains(crate::ed25519::VG_ED25519_SIGN_EXPANDED_SHA512_FEATURES)
+        {
             return crate::ed25519::vg_ed25519_sign_expanded_sha512;
         }
         crate::ed25519::vg_ed25519_sign_expanded

@@ -28,7 +28,9 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(schedule: *const [u8; 240], rounds: usi
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_AES_FEATURES)
+        {
             return crate::aes_cfb::vg_aes_cfb128_encrypt_aes;
         }
         crate::aes_cfb::vg_aes_cfb128_encrypt
@@ -78,7 +80,9 @@ pub unsafe fn vg_aes_cfb128_decrypt_auto(schedule: *const [u8; 240], rounds: usi
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_AES_FEATURES)
+        {
             return crate::aes_cfb::vg_aes_cfb128_decrypt_aes;
         }
         crate::aes_cfb::vg_aes_cfb128_decrypt
@@ -128,7 +132,9 @@ pub unsafe fn vg_aes_cfb128_encrypt_final_auto(schedule: *const [u8; 240], round
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_ENCRYPT_FINAL_AES_FEATURES)
+        {
             return crate::aes_cfb::vg_aes_cfb128_encrypt_final_aes;
         }
         crate::aes_cfb::vg_aes_cfb128_encrypt_final
@@ -178,7 +184,9 @@ pub unsafe fn vg_aes_cfb128_decrypt_final_auto(schedule: *const [u8; 240], round
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_AES_FEATURES) }
+            || cpu.contains(crate::aes_cfb::VG_AES_CFB128_DECRYPT_FINAL_AES_FEATURES)
+        {
             return crate::aes_cfb::vg_aes_cfb128_decrypt_final_aes;
         }
         crate::aes_cfb::vg_aes_cfb128_decrypt_final

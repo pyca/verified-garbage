@@ -30,7 +30,9 @@ pub unsafe fn vg_aes_xts_encrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_ENCRYPT_UNIT_AES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_encrypt_unit_aes;
         }
         crate::aes_xts::vg_aes_xts_encrypt_unit
@@ -82,7 +84,9 @@ pub unsafe fn vg_aes_xts_decrypt_unit_auto(schedule: *const [u8; 240], tweak_sch
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES) }
+            || cpu.contains(crate::aes_xts::VG_AES_XTS_DECRYPT_UNIT_AES_FEATURES)
+        {
             return crate::aes_xts::vg_aes_xts_decrypt_unit_aes;
         }
         crate::aes_xts::vg_aes_xts_decrypt_unit

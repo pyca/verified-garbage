@@ -48,7 +48,9 @@ pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_SIGN_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_UMAAL_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_sign_umaal;
         }
         crate::rsa_pss::vg_rsa_pss_sign
@@ -113,7 +115,9 @@ pub unsafe fn vg_rsa_pss_verify_precomputed_auto(n: *const u8, n_len: usize, e: 
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_verify_precomputed_umaal;
         }
         crate::rsa_pss::vg_rsa_pss_verify_precomputed

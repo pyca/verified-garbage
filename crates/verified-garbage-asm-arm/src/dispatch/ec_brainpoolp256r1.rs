@@ -27,7 +27,9 @@ pub unsafe fn vg_ec_brainpoolp256r1_public_key_auto(out: *mut [u8; 65], d: *cons
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_brainpoolp256r1::VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_brainpoolp256r1::VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_brainpoolp256r1::VG_EC_BRAINPOOLP256R1_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key_umaal;
         }
         crate::ec_brainpoolp256r1::vg_ec_brainpoolp256r1_public_key

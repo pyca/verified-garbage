@@ -44,7 +44,9 @@ pub unsafe fn vg_dsa_parameter_search_auto(out: *mut u8, out_len: usize, used: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES) }
+            || cpu.contains(crate::dsa::VG_DSA_PARAMETER_SEARCH_SHA1_SHA2_SHA256_SHA2_FEATURES)
+        {
             return crate::dsa::vg_dsa_parameter_search_sha1_sha2_sha256_sha2;
         }
         crate::dsa::vg_dsa_parameter_search

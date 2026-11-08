@@ -36,7 +36,9 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_DIGEST_SHA2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHA2_FEATURES)
+        {
             return crate::sha256::vg_sha224_digest_sha2;
         }
         crate::sha256::vg_sha224_digest
@@ -82,7 +84,9 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_UPDATE_SHA2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHA2_FEATURES)
+        {
             return crate::sha256::vg_sha256_update_sha2;
         }
         crate::sha256::vg_sha256_update
@@ -128,7 +132,9 @@ pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_DIGEST_SHA2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHA2_FEATURES)
+        {
             return crate::sha256::vg_sha256_digest_sha2;
         }
         crate::sha256::vg_sha256_digest
@@ -175,7 +181,9 @@ pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_FINALIZE_SHA2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHA2_FEATURES)
+        {
             return crate::sha256::vg_sha224_finalize_sha2;
         }
         crate::sha256::vg_sha224_finalize
@@ -222,7 +230,9 @@ pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_FINALIZE_SHA2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHA2_FEATURES)
+        {
             return crate::sha256::vg_sha256_finalize_sha2;
         }
         crate::sha256::vg_sha256_finalize

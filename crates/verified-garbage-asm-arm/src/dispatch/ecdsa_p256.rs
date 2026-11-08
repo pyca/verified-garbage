@@ -32,7 +32,9 @@ pub unsafe fn vg_ecdsa_p256_sign_auto(out: *mut [u8; 64], d: *const [u8; 32], di
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_SIGN_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_p256::VG_ECDSA_P256_SIGN_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_SIGN_UMAAL_FEATURES)
+        {
             return crate::ecdsa_p256::vg_ecdsa_p256_sign_umaal;
         }
         crate::ecdsa_p256::vg_ecdsa_p256_sign
@@ -82,7 +84,9 @@ pub unsafe fn vg_ecdsa_p256_verify_auto(public: *const [u8; 65], digest: *const 
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdsa_p256::VG_ECDSA_P256_VERIFY_UMAAL_FEATURES)
+        {
             return crate::ecdsa_p256::vg_ecdsa_p256_verify_umaal;
         }
         crate::ecdsa_p256::vg_ecdsa_p256_verify

@@ -26,10 +26,14 @@ pub unsafe fn vg_pbkdf2_hmac_sha512_224_auto(password: *const u8, password_len: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_SHANI_FEATURES) }
+            || cpu.contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_SHANI_FEATURES)
+        {
             return crate::pbkdf2_sha512_224::vg_pbkdf2_hmac_sha512_224_shani;
         }
-        if cpu.contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_AVX2_FEATURES) }
+            || cpu.contains(crate::pbkdf2_sha512_224::VG_PBKDF2_HMAC_SHA512_224_AVX2_FEATURES)
+        {
             return crate::pbkdf2_sha512_224::vg_pbkdf2_hmac_sha512_224_avx2;
         }
         crate::pbkdf2_sha512_224::vg_pbkdf2_hmac_sha512_224

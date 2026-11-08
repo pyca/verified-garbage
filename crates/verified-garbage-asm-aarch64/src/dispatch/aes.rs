@@ -26,7 +26,9 @@ pub unsafe fn vg_aes_expand_key_auto(key: *const u8, key_len: usize, schedule: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes::VG_AES_EXPAND_KEY_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes::VG_AES_EXPAND_KEY_AES_FEATURES) }
+            || cpu.contains(crate::aes::VG_AES_EXPAND_KEY_AES_FEATURES)
+        {
             return crate::aes::vg_aes_expand_key_aes;
         }
         crate::aes::vg_aes_expand_key
@@ -75,7 +77,9 @@ pub unsafe fn vg_aes_encrypt_blocks_auto(schedule: *const [u8; 240], rounds: usi
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes::VG_AES_ENCRYPT_BLOCKS_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes::VG_AES_ENCRYPT_BLOCKS_AES_FEATURES) }
+            || cpu.contains(crate::aes::VG_AES_ENCRYPT_BLOCKS_AES_FEATURES)
+        {
             return crate::aes::vg_aes_encrypt_blocks_aes;
         }
         crate::aes::vg_aes_encrypt_blocks
@@ -124,7 +128,9 @@ pub unsafe fn vg_aes_decrypt_blocks_auto(schedule: *const [u8; 240], rounds: usi
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes::VG_AES_DECRYPT_BLOCKS_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes::VG_AES_DECRYPT_BLOCKS_AES_FEATURES) }
+            || cpu.contains(crate::aes::VG_AES_DECRYPT_BLOCKS_AES_FEATURES)
+        {
             return crate::aes::vg_aes_decrypt_blocks_aes;
         }
         crate::aes::vg_aes_decrypt_blocks

@@ -25,10 +25,14 @@ pub unsafe fn vg_hmac_sha256_init_auto(inner: *mut [u8; 96], outer: *mut [u8; 96
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_SHANI_FEATURES) }
+            || cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_SHANI_FEATURES)
+        {
             return crate::hmac_sha256::vg_hmac_sha256_init_shani;
         }
-        if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_AVX2_FEATURES) }
+            || cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_INIT_AVX2_FEATURES)
+        {
             return crate::hmac_sha256::vg_hmac_sha256_init_avx2;
         }
         crate::hmac_sha256::vg_hmac_sha256_init
@@ -76,10 +80,14 @@ pub unsafe fn vg_hmac_sha256_finalize_auto(inner: *mut [u8; 96], outer: *const [
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES) }
+            || cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_SHANI_FEATURES)
+        {
             return crate::hmac_sha256::vg_hmac_sha256_finalize_shani;
         }
-        if cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_AVX2_FEATURES) }
+            || cpu.contains(crate::hmac_sha256::VG_HMAC_SHA256_FINALIZE_AVX2_FEATURES)
+        {
             return crate::hmac_sha256::vg_hmac_sha256_finalize_avx2;
         }
         crate::hmac_sha256::vg_hmac_sha256_finalize

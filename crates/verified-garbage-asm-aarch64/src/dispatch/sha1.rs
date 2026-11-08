@@ -30,7 +30,9 @@ pub unsafe fn vg_sha1_update_auto(state: *mut [u8; 84], count: u64, data: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_UPDATE_SHA2_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_UPDATE_SHA2_FEATURES)
+        {
             return crate::sha1::vg_sha1_update_sha2;
         }
         crate::sha1::vg_sha1_update
@@ -76,7 +78,9 @@ pub unsafe fn vg_sha1_digest_auto(data: *const u8, len: usize, out: *mut [u8; 20
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_DIGEST_SHA2_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_DIGEST_SHA2_FEATURES)
+        {
             return crate::sha1::vg_sha1_digest_sha2;
         }
         crate::sha1::vg_sha1_digest
@@ -123,7 +127,9 @@ pub unsafe fn vg_sha1_finalize_auto(state: *mut [u8; 84], count: u64, out: *mut 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHA2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha1::VG_SHA1_FINALIZE_SHA2_FEATURES) }
+            || cpu.contains(crate::sha1::VG_SHA1_FINALIZE_SHA2_FEATURES)
+        {
             return crate::sha1::vg_sha1_finalize_sha2;
         }
         crate::sha1::vg_sha1_finalize

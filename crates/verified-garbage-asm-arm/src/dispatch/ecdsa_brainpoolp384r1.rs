@@ -32,7 +32,9 @@ pub unsafe fn vg_ecdsa_brainpoolp384r1_sign_auto(out: *mut [u8; 96], d: *const [
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_SIGN_UMAAL_FEATURES)
+        {
             return crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign_umaal;
         }
         crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_sign
@@ -82,7 +84,9 @@ pub unsafe fn vg_ecdsa_brainpoolp384r1_verify_auto(public: *const [u8; 97], dige
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdsa_brainpoolp384r1::VG_ECDSA_BRAINPOOLP384R1_VERIFY_UMAAL_FEATURES)
+        {
             return crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify_umaal;
         }
         crate::ecdsa_brainpoolp384r1::vg_ecdsa_brainpoolp384r1_verify

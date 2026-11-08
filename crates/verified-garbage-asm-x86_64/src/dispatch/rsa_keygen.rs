@@ -32,10 +32,14 @@ pub unsafe fn vg_rsa_generate_auto(key: *mut u8, key_len: usize, used: *mut [u64
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_IFMA_FEATURES)
+        {
             return crate::rsa_keygen::vg_rsa_generate_ifma;
         }
-        if cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_keygen::VG_RSA_GENERATE_ADX_FEATURES)
+        {
             return crate::rsa_keygen::vg_rsa_generate_adx;
         }
         crate::rsa_keygen::vg_rsa_generate

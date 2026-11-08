@@ -1620,9 +1620,12 @@ requirements then hold for each) and how much of its arrays it writes (the
 largest bound of each array that every implementation bounds,
 `Artifact.written`). It needs no CPU feature: it calls an implementation
 that needs features only if the CPU has them, as the generated condition
-checks with `verified_garbage_cpu::detected()`, which detects the features
-the CPU and operating system support (`crates/verified-garbage-cpu/`), of
-which a `Features` constant names the bits (`featuresConst`):
+checks: first, in a `const` block, whether the compilation target enables
+them (`verified_garbage_cpu::target_contains`, of `COMPILED`, whose
+`target_feature`s every CPU running the code has), and otherwise with
+`verified_garbage_cpu::detected()`, which detects the features the CPU and
+operating system support (`crates/verified-garbage-cpu/`), of which a
+`Features` constant names the bits (`featuresConst`):
 
 It chooses once, on its first call, and calls the implementation it chose
 from then on through a pointer to it, without choosing again: a call is a
@@ -1641,7 +1644,9 @@ pub unsafe fn <base>_auto(<the signature>) {
     type Impl = unsafe extern "<abi>" fn<the signature>;
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::<module>::<NAME>_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::<module>::<NAME>_FEATURES) }
+            || cpu.contains(crate::<module>::<NAME>_FEATURES)
+        {
             return crate::<module>::<name>;
         }
         …
@@ -1670,6 +1675,15 @@ The dispatchers of a module's functions are in a file of their own,
 it would be without them: a change to one implementation changes the
 dispatchers' file only where it changes what a dispatcher calls.
 
+Where the compilation target enables every feature an implementation's
+condition asks for, its `const` block is `true`, so the compiler sees that
+`select` returns it, and nothing refers to the implementations after it,
+which are then not linked: built for `x86-64-v3`, a function with an AVX2
+implementation links neither its baseline nor anything else ranked after
+that implementation, but still detects the features of those ranked before
+it. This is what the dispatcher would choose anyway, as detection reports
+every feature of `COMPILED` (`VG_CPU_FEATURES` cannot remove them).
+
 Which implementation is best is a matter of speed, never of correctness or
 safety: each is proven against the contract that their common documentation
 states, and each is called only on a CPU with its features. So the ranking
@@ -1686,7 +1700,8 @@ compiled, and its test is not either. An implementation that needs no
 feature is chosen only where detection reports some feature (as it does on
 every CPU but where `VG_CPU_FEATURES` is `none`), so that the tests run the
 base everywhere with `VG_CPU_FEATURES=none` (AArch64's `_neon` code needs
-none: AdvSIMD is part of its baseline). It falls back on the base, which needs
+none: AdvSIMD is part of its baseline), or where the compilation target
+enables some (`COMPILED`). It falls back on the base, which needs
 no feature. An implementation of a function generic over several interfaces
 has a suffix of several parts (`Emit.qualifiedName`, `_<tag><suffix>` for
 each interface whose variant is not the baseline): unless its whole suffix
@@ -1725,7 +1740,9 @@ call, returns the best one the CPU supports:
 #[inline]
 pub fn <table, in lowercase>_auto() -> &'static crate::fn_tables::<Iface> {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::<NAME>_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::<NAME>_FEATURES) }
+        || cpu.contains(crate::fn_tables::<NAME>_FEATURES)
+    {
         return &crate::fn_tables::<NAME>;
     }
     …
@@ -1894,10 +1911,13 @@ def argsOf (sig : Sig) : String :=
     | _ => [n])
 
 /-- The condition under which a dispatcher calls `a`, given the variable
-`cpu` it holds `verified_garbage_cpu::detected()` in. The features it checks are `a`'s (its constant, `featuresConst`) and
-its ranking's `extra` ones; for one that needs none, that detection reports
-some feature. -/
-def condOf (a : Arm) : String :=
+`cpu` it holds `verified_garbage_cpu::detected()` in, whose lines after its
+first start with `ind` and four spaces, as `rustfmt` would break them. The features it checks are `a`'s (its constant, `featuresConst`) and
+its ranking's `extra` ones, first, in a `const` block, among those the
+compilation target enables (`verified_garbage_cpu::target_contains`), then
+among those detected; for one that needs none, that the target enables
+some (`COMPILED`) or detection reports some. -/
+def condOf (ind : String) (a : Arm) : String :=
   let name := s!"crate::{a.impl.module}::{a.impl.name.toUpper}"
   let bits := a.extra.map fun f => s!"verified_garbage_cpu::feature::{featureConst f}"
   let need : Option String := match a.impl.features.isEmpty, bits with
@@ -1908,11 +1928,13 @@ def condOf (a : Arm) : String :=
   let vs := a.vendors.map fun v => match need with
     | none => s!"cfg!(target_vendor = \"{v}\")"
     | some n => s!"(cfg!(target_vendor = \"{v}\") || verified_garbage_cpu::requested({n}))"
-  -- One that needs no feature, only where detection reports some (see above).
-  let has := match need with
-    | none => "cpu.0 != 0"
-    | some n => s!"cpu.contains({n})"
-  " && ".intercalate (vs ++ [has])
+  -- One that needs no feature, only where the target enables some or detection reports some
+  -- (see above).
+  let (target, detected) := match need with
+    | none => ("verified_garbage_cpu::COMPILED.0 != 0", "cpu.0 != 0")
+    | some n => (s!"verified_garbage_cpu::target_contains({n})", s!"cpu.contains({n})")
+  let has := s!"const \{ {target} }\n{ind}    || {detected}"
+  if vs.isEmpty then has else " && ".intercalate vs ++ s!"\n{ind}    && ({has})"
 
 /-- The paragraph of a dispatcher's documentation saying what it runs. -/
 def dispatchNote (base : String) (arms : List Arm) : String :=
@@ -1942,7 +1964,7 @@ def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
   (if arms.isEmpty then "" else s!"{ind}let cpu = verified_garbage_cpu::detected();\n") ++
   String.join (arms.map fun a =>
     String.join (a.impl.gate.map fun p => s!"{ind}#[cfg({p})]\n") ++
-    s!"{ind}if {condOf a} " ++ "{\n" ++
+    s!"{ind}if {condOf ind a}\n{ind}" ++ "{\n" ++
     s!"{ind}    return crate::{a.impl.module}::{a.impl.name};\n" ++
     s!"{ind}" ++ "}\n") ++
   s!"{ind}crate::{b.module}::{b.name}\n"
@@ -2113,7 +2135,7 @@ def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List S
     (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
     String.join (arms.map fun a =>
       String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-      s!"    if {condOf a} " ++ "{\n" ++
+      s!"    if {condOf "    " a}\n    " ++ "{\n" ++
       s!"        return &crate::fn_tables::{a.impl.name};\n" ++
       "    }\n") ++
     s!"    &crate::fn_tables::{b.name}\n" ++

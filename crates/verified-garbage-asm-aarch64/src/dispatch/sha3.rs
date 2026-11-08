@@ -27,7 +27,10 @@ pub unsafe fn vg_sha3_224_update_auto(state: *mut [u64; 25], pos: usize, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_224_UPDATE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_224_update_sha3;
         }
         crate::sha3::vg_sha3_224_update
@@ -76,7 +79,10 @@ pub unsafe fn vg_sha3_256_update_auto(state: *mut [u64; 25], pos: usize, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_256_UPDATE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_256_update_sha3;
         }
         crate::sha3::vg_sha3_256_update
@@ -125,7 +131,10 @@ pub unsafe fn vg_sha3_384_update_auto(state: *mut [u64; 25], pos: usize, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_384_UPDATE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_384_update_sha3;
         }
         crate::sha3::vg_sha3_384_update
@@ -174,7 +183,10 @@ pub unsafe fn vg_sha3_512_update_auto(state: *mut [u64; 25], pos: usize, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_512_UPDATE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_512_update_sha3;
         }
         crate::sha3::vg_sha3_512_update
@@ -223,7 +235,10 @@ pub unsafe fn vg_shake128_update_auto(state: *mut [u64; 25], pos: usize, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE128_UPDATE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_shake128_update_sha3;
         }
         crate::sha3::vg_shake128_update
@@ -270,7 +285,10 @@ pub unsafe fn vg_shake128_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE128_SQUEEZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_shake128_squeeze_sha3;
         }
         crate::sha3::vg_shake128_squeeze
@@ -317,7 +335,10 @@ pub unsafe fn vg_shake256_squeeze_auto(state: *mut [u64; 25], pos: usize, out: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE256_SQUEEZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_shake256_squeeze_sha3;
         }
         crate::sha3::vg_shake256_squeeze
@@ -365,7 +386,10 @@ pub unsafe fn vg_sha3_224_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_224_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_224_finalize_sha3;
         }
         crate::sha3::vg_sha3_224_finalize
@@ -413,7 +437,10 @@ pub unsafe fn vg_sha3_256_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_256_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_256_finalize_sha3;
         }
         crate::sha3::vg_sha3_256_finalize
@@ -461,7 +488,10 @@ pub unsafe fn vg_sha3_384_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_384_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_384_finalize_sha3;
         }
         crate::sha3::vg_sha3_384_finalize
@@ -509,7 +539,10 @@ pub unsafe fn vg_sha3_512_finalize_auto(state: *mut [u64; 25], pos: usize, out: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHA3_512_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_sha3_512_finalize_sha3;
         }
         crate::sha3::vg_sha3_512_finalize
@@ -554,7 +587,10 @@ pub unsafe fn vg_shake128_finalize_auto(state: *mut [u64; 25], pos: usize) {
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE128_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_shake128_finalize_sha3;
         }
         crate::sha3::vg_shake128_finalize
@@ -599,7 +635,10 @@ pub unsafe fn vg_shake256_finalize_auto(state: *mut [u64; 25], pos: usize) {
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES)) && cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES) }
+            || cpu.contains(crate::sha3::VG_SHAKE256_FINALIZE_SHA3_FEATURES))
+        {
             return crate::sha3::vg_shake256_finalize_sha3;
         }
         crate::sha3::vg_shake256_finalize

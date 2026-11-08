@@ -36,10 +36,14 @@ pub unsafe fn vg_sha224_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_DIGEST_SHANI_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_DIGEST_SHANI_FEATURES)
+        {
             return crate::sha256::vg_sha224_digest_shani;
         }
-        if cpu.contains(crate::sha256::VG_SHA224_DIGEST_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_DIGEST_AVX2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_DIGEST_AVX2_FEATURES)
+        {
             return crate::sha256::vg_sha224_digest_avx2;
         }
         crate::sha256::vg_sha224_digest
@@ -85,10 +89,14 @@ pub unsafe fn vg_sha256_update_auto(state: *mut [u8; 96], count: u64, data: *con
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_UPDATE_SHANI_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_UPDATE_SHANI_FEATURES)
+        {
             return crate::sha256::vg_sha256_update_shani;
         }
-        if cpu.contains(crate::sha256::VG_SHA256_UPDATE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_UPDATE_AVX2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_UPDATE_AVX2_FEATURES)
+        {
             return crate::sha256::vg_sha256_update_avx2;
         }
         crate::sha256::vg_sha256_update
@@ -134,10 +142,14 @@ pub unsafe fn vg_sha256_digest_auto(data: *const u8, len: usize, out: *mut [u8; 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_DIGEST_SHANI_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_DIGEST_SHANI_FEATURES)
+        {
             return crate::sha256::vg_sha256_digest_shani;
         }
-        if cpu.contains(crate::sha256::VG_SHA256_DIGEST_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_DIGEST_AVX2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_DIGEST_AVX2_FEATURES)
+        {
             return crate::sha256::vg_sha256_digest_avx2;
         }
         crate::sha256::vg_sha256_digest
@@ -184,10 +196,14 @@ pub unsafe fn vg_sha224_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_FINALIZE_SHANI_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_FINALIZE_SHANI_FEATURES)
+        {
             return crate::sha256::vg_sha224_finalize_shani;
         }
-        if cpu.contains(crate::sha256::VG_SHA224_FINALIZE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA224_FINALIZE_AVX2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA224_FINALIZE_AVX2_FEATURES)
+        {
             return crate::sha256::vg_sha224_finalize_avx2;
         }
         crate::sha256::vg_sha224_finalize
@@ -234,10 +250,14 @@ pub unsafe fn vg_sha256_finalize_auto(state: *mut [u8; 96], count: u64, out: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHANI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_FINALIZE_SHANI_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_FINALIZE_SHANI_FEATURES)
+        {
             return crate::sha256::vg_sha256_finalize_shani;
         }
-        if cpu.contains(crate::sha256::VG_SHA256_FINALIZE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::sha256::VG_SHA256_FINALIZE_AVX2_FEATURES) }
+            || cpu.contains(crate::sha256::VG_SHA256_FINALIZE_AVX2_FEATURES)
+        {
             return crate::sha256::vg_sha256_finalize_avx2;
         }
         crate::sha256::vg_sha256_finalize

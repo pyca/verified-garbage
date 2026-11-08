@@ -29,7 +29,9 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(key: *const [u8; 32], nonce: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_seal
@@ -80,7 +82,9 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(key: *const [u8; 32], nonce: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_ssse3;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_open
@@ -134,7 +138,9 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(key: *const [u8; 32], nonce: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_open_to_ssse3;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_open_to
@@ -188,7 +194,9 @@ pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(key: *const [u8; 32], nonce:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES) }
+            || cpu.contains(crate::chacha20poly1305::VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES)
+        {
             return crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather_ssse3;
         }
         crate::chacha20poly1305::vg_chacha20_poly1305_seal_gather

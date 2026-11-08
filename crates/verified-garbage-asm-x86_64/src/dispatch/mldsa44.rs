@@ -30,10 +30,14 @@ pub unsafe fn vg_mldsa44_sign_auto(sk: *const [u8; 2560], mu: *const [u8; 64], r
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_avx2;
         }
         crate::mldsa44::vg_mldsa44_sign
@@ -89,10 +93,14 @@ pub unsafe fn vg_mldsa44_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 1312],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_keygen_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_KEYGEN_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_keygen_avx2;
         }
         crate::mldsa44::vg_mldsa44_keygen
@@ -141,10 +149,14 @@ pub unsafe fn vg_mldsa44_verify_auto(pk: *const [u8; 1312], mu: *const [u8; 64],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_avx2;
         }
         crate::mldsa44::vg_mldsa44_verify
@@ -197,10 +209,14 @@ pub unsafe fn vg_mldsa44_sign_message_auto(sk: *const [u8; 2560], msg: *const u8
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_message_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_message_avx2;
         }
         crate::mldsa44::vg_mldsa44_sign_message
@@ -249,7 +265,9 @@ pub unsafe fn vg_mldsa44_prepare_signing_key_auto(sk: *const [u8; 2560], prepare
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_prepare_signing_key_avx2;
         }
         crate::mldsa44::vg_mldsa44_prepare_signing_key
@@ -297,7 +315,9 @@ pub unsafe fn vg_mldsa44_prepare_verifying_key_auto(pk: *const [u8; 1312], prepa
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_prepare_verifying_key_avx2;
         }
         crate::mldsa44::vg_mldsa44_prepare_verifying_key
@@ -351,10 +371,14 @@ pub unsafe fn vg_mldsa44_sign_message_prepared_auto(sk: *const [u8; 14848], msg:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_message_prepared_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_sign_message_prepared_avx2;
         }
         crate::mldsa44::vg_mldsa44_sign_message_prepared
@@ -406,10 +430,14 @@ pub unsafe fn vg_mldsa44_verify_message_cached_auto(pk: *const [u8; 1312], msg: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_message_cached_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_message_cached_avx2;
         }
         crate::mldsa44::vg_mldsa44_verify_message_cached
@@ -462,10 +490,14 @@ pub unsafe fn vg_mldsa44_verify_message_prepared_auto(pk: *const [u8; 5408], msg
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_message_prepared_avx512;
         }
-        if cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES) }
+            || cpu.contains(crate::mldsa44::VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES)
+        {
             return crate::mldsa44::vg_mldsa44_verify_message_prepared_avx2;
         }
         crate::mldsa44::vg_mldsa44_verify_message_prepared

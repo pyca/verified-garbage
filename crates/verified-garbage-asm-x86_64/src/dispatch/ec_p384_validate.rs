@@ -25,7 +25,9 @@ pub unsafe fn vg_ec_p384_validate_public_key_auto(public: *const [u8; 97], scrat
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ec_p384_validate::VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_p384_validate::VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES) }
+            || cpu.contains(crate::ec_p384_validate::VG_EC_P384_VALIDATE_PUBLIC_KEY_ADX_FEATURES)
+        {
             return crate::ec_p384_validate::vg_ec_p384_validate_public_key_adx;
         }
         crate::ec_p384_validate::vg_ec_p384_validate_public_key

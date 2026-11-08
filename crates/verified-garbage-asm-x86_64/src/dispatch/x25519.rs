@@ -26,10 +26,14 @@ pub unsafe fn vg_x25519_base_auto(out: *mut [u8; 32], scalar: *const [u8; 32], s
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::x25519::VG_X25519_BASE_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_BASE_IFMA_FEATURES) }
+            || cpu.contains(crate::x25519::VG_X25519_BASE_IFMA_FEATURES)
+        {
             return crate::x25519::vg_x25519_base_ifma;
         }
-        if cpu.contains(crate::x25519::VG_X25519_BASE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_BASE_ADX_FEATURES) }
+            || cpu.contains(crate::x25519::VG_X25519_BASE_ADX_FEATURES)
+        {
             return crate::x25519::vg_x25519_base_adx;
         }
         crate::x25519::vg_x25519_base
@@ -78,10 +82,14 @@ pub unsafe fn vg_x25519_exchange_auto(out: *mut [u8; 32], scalar: *const [u8; 32
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_EXCHANGE_IFMA_FEATURES) }
+            || cpu.contains(crate::x25519::VG_X25519_EXCHANGE_IFMA_FEATURES)
+        {
             return crate::x25519::vg_x25519_exchange_ifma;
         }
-        if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES) }
+            || cpu.contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES)
+        {
             return crate::x25519::vg_x25519_exchange_adx;
         }
         crate::x25519::vg_x25519_exchange

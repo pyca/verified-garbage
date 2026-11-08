@@ -30,13 +30,19 @@ pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES) }
+            || cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_IFMA_FEATURES)
+        {
             return crate::poly1305::vg_poly1305_update_ifma;
         }
-        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES) }
+            || cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX512_FEATURES)
+        {
             return crate::poly1305::vg_poly1305_update_avx512;
         }
-        if cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES) }
+            || cpu.contains(crate::poly1305::VG_POLY1305_UPDATE_AVX2_FEATURES)
+        {
             return crate::poly1305::vg_poly1305_update_avx2;
         }
         crate::poly1305::vg_poly1305_update

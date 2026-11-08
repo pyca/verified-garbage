@@ -30,43 +30,69 @@ pub unsafe fn vg_aes_gcm_siv_seal_auto(schedule: *const [u8; 240], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul_avx;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vaes_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AESNI_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_aesni;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_vpclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_SEAL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_seal_avx2;
         }
         crate::aes_gcm_siv::vg_aes_gcm_siv_seal
@@ -118,43 +144,69 @@ pub unsafe fn vg_aes_gcm_siv_open_auto(schedule: *const [u8; 240], rounds: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_pclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul_avx;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vaes_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AESNI_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_aesni;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_vpclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul_avx2;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_pclmul;
         }
-        if cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES) }
+            || cpu.contains(crate::aes_gcm_siv::VG_AES_GCM_SIV_OPEN_AVX2_FEATURES)
+        {
             return crate::aes_gcm_siv::vg_aes_gcm_siv_open_avx2;
         }
         crate::aes_gcm_siv::vg_aes_gcm_siv_open

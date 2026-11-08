@@ -30,7 +30,10 @@ pub unsafe fn vg_poly1305_update_auto(state: *mut [u64; 16], count: u64, data: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON))) && cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) {
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)))
+            && (const { verified_garbage_cpu::target_contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)) }
+            || cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::NEON)))
+        {
             return crate::poly1305::vg_poly1305_update_neon;
         }
         crate::poly1305::vg_poly1305_update

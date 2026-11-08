@@ -31,10 +31,14 @@ pub unsafe fn vg_triple_des_cfb64_decrypt_auto(schedule: *const [u8; 384], iv: *
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES) }
+            || cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX512_FEATURES)
+        {
             return crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx512;
         }
-        if cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES) }
+            || cpu.contains(crate::triple_des_cfb::VG_TRIPLE_DES_CFB64_DECRYPT_AVX2_FEATURES)
+        {
             return crate::triple_des_cfb::vg_triple_des_cfb64_decrypt_avx2;
         }
         crate::triple_des_cfb::vg_triple_des_cfb64_decrypt

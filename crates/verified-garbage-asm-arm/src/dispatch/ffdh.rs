@@ -36,7 +36,9 @@ pub unsafe fn vg_ffdh_exchange_auto(out: *mut u8, out_len: usize, domain: *const
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_EXCHANGE_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_exchange_umaal;
         }
         crate::ffdh::vg_ffdh_exchange
@@ -87,7 +89,9 @@ pub unsafe fn vg_ffdh_check_domain_auto(domain: *const u8, domain_len: usize, p_
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_domain_umaal;
         }
         crate::ffdh::vg_ffdh_check_domain
@@ -141,7 +145,9 @@ pub unsafe fn vg_ffdh_check_public_auto(domain: *const u8, domain_len: usize, p_
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_public_umaal;
         }
         crate::ffdh::vg_ffdh_check_public
@@ -197,7 +203,9 @@ pub unsafe fn vg_ffdh_check_private_auto(domain: *const u8, domain_len: usize, p
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_private_umaal;
         }
         crate::ffdh::vg_ffdh_check_private
@@ -253,7 +261,9 @@ pub unsafe fn vg_ffdh_derive_public_auto(y: *mut u8, y_len: usize, domain: *cons
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_derive_public_umaal;
         }
         crate::ffdh::vg_ffdh_derive_public
@@ -311,7 +321,9 @@ pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, use
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_parameters_umaal;
         }
         crate::ffdh::vg_ffdh_generate_parameters
@@ -367,7 +379,9 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_cached_umaal;
         }
         crate::ffdh::vg_ffdh_generate_key_cached
@@ -419,7 +433,9 @@ pub unsafe fn vg_ffdh_generate_key_precompute_auto(ctx: *mut u64, ctx_len: usize
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_precompute_umaal;
         }
         crate::ffdh::vg_ffdh_generate_key_precompute
@@ -484,7 +500,9 @@ pub unsafe fn vg_ffdh_generate_key_search_cached_auto(x: *mut u8, x_len: usize, 
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_UMAAL_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_search_cached_umaal;
         }
         crate::ffdh::vg_ffdh_generate_key_search_cached

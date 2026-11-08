@@ -42,7 +42,9 @@ pub unsafe fn vg_rsa_public_precompute_auto(pre: *mut u64, pre_len: usize, n: *c
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES) }
+            || cpu.contains(crate::rsa::VG_RSA_PUBLIC_PRECOMPUTE_UMAAL_FEATURES)
+        {
             return crate::rsa::vg_rsa_public_precompute_umaal;
         }
         crate::rsa::vg_rsa_public_precompute

@@ -30,7 +30,9 @@ pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], r
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_sign_sha3;
         }
         crate::mldsa87::vg_mldsa87_sign
@@ -78,7 +80,9 @@ pub unsafe fn vg_mldsa87_pk_tr_auto(pk: *const [u8; 2592], tr: *mut [u8; 64], sc
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_PK_TR_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_PK_TR_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_PK_TR_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_pk_tr_sha3;
         }
         crate::mldsa87::vg_mldsa87_pk_tr
@@ -128,7 +132,9 @@ pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_KEYGEN_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_keygen_sha3;
         }
         crate::mldsa87::vg_mldsa87_keygen
@@ -177,7 +183,9 @@ pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64],
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_verify_sha3;
         }
         crate::mldsa87::vg_mldsa87_verify
@@ -230,7 +238,9 @@ pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_sign_message_sha3;
         }
         crate::mldsa87::vg_mldsa87_sign_message
@@ -296,7 +306,9 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg:
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_sign_message_prepared_sha3;
         }
         crate::mldsa87::vg_mldsa87_sign_message_prepared
@@ -348,7 +360,9 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_verify_message_cached_sha3;
         }
         crate::mldsa87::vg_mldsa87_verify_message_cached
@@ -401,7 +415,9 @@ pub unsafe fn vg_mldsa87_verify_message_prepared_auto(pk: *const [u8; 10784], ms
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_SHA3_FEATURES)
+        {
             return crate::mldsa87::vg_mldsa87_verify_message_prepared_sha3;
         }
         crate::mldsa87::vg_mldsa87_verify_message_prepared

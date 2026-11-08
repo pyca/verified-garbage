@@ -27,7 +27,9 @@ pub unsafe fn vg_ec_brainpoolp256r1_compress_public_key_auto(out: *mut [u8; 33],
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_COMPRESS_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_brainpoolp256r1_compressed::vg_ec_brainpoolp256r1_compress_public_key_umaal;
         }
         crate::ec_brainpoolp256r1_compressed::vg_ec_brainpoolp256r1_compress_public_key
@@ -76,7 +78,9 @@ pub unsafe fn vg_ec_brainpoolp256r1_decompress_public_key_auto(out: *mut [u8; 65
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES) }
+            || cpu.contains(crate::ec_brainpoolp256r1_compressed::VG_EC_BRAINPOOLP256R1_DECOMPRESS_PUBLIC_KEY_UMAAL_FEATURES)
+        {
             return crate::ec_brainpoolp256r1_compressed::vg_ec_brainpoolp256r1_decompress_public_key_umaal;
         }
         crate::ec_brainpoolp256r1_compressed::vg_ec_brainpoolp256r1_decompress_public_key

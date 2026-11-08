@@ -26,7 +26,9 @@ pub unsafe fn vg_pbkdf2_hmac_sha512_256_auto(password: *const u8, password_len: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::pbkdf2_sha512_256::VG_PBKDF2_HMAC_SHA512_256_SHA512_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::pbkdf2_sha512_256::VG_PBKDF2_HMAC_SHA512_256_SHA512_FEATURES) }
+            || cpu.contains(crate::pbkdf2_sha512_256::VG_PBKDF2_HMAC_SHA512_256_SHA512_FEATURES)
+        {
             return crate::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256_sha512;
         }
         crate::pbkdf2_sha512_256::vg_pbkdf2_hmac_sha512_256

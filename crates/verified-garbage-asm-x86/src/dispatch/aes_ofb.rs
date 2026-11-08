@@ -28,7 +28,9 @@ pub unsafe fn vg_aes_ofb_auto(schedule: *const [u8; 240], rounds: usize, iv: *mu
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ofb::VG_AES_OFB_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ofb::VG_AES_OFB_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ofb::VG_AES_OFB_AESNI_FEATURES)
+        {
             return crate::aes_ofb::vg_aes_ofb_aesni;
         }
         crate::aes_ofb::vg_aes_ofb
@@ -78,7 +80,9 @@ pub unsafe fn vg_aes_ofb_final_auto(schedule: *const [u8; 240], rounds: usize, i
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ofb::VG_AES_OFB_FINAL_AESNI_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ofb::VG_AES_OFB_FINAL_AESNI_FEATURES) }
+            || cpu.contains(crate::aes_ofb::VG_AES_OFB_FINAL_AESNI_FEATURES)
+        {
             return crate::aes_ofb::vg_aes_ofb_final_aesni;
         }
         crate::aes_ofb::vg_aes_ofb_final

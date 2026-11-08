@@ -30,7 +30,9 @@ pub unsafe fn vg_aes_ccm_seal_auto(schedule: *const [u8; 240], rounds: usize, no
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ccm::VG_AES_CCM_SEAL_AES_FEATURES) }
+            || cpu.contains(crate::aes_ccm::VG_AES_CCM_SEAL_AES_FEATURES)
+        {
             return crate::aes_ccm::vg_aes_ccm_seal_aes;
         }
         crate::aes_ccm::vg_aes_ccm_seal
@@ -82,7 +84,9 @@ pub unsafe fn vg_aes_ccm_open_auto(schedule: *const [u8; 240], rounds: usize, no
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AES_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::aes_ccm::VG_AES_CCM_OPEN_AES_FEATURES) }
+            || cpu.contains(crate::aes_ccm::VG_AES_CCM_OPEN_AES_FEATURES)
+        {
             return crate::aes_ccm::vg_aes_ccm_open_aes;
         }
         crate::aes_ccm::vg_aes_ccm_open

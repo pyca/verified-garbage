@@ -47,10 +47,14 @@ pub unsafe fn vg_rsa_pss_sign_auto(out: *mut u8, out_len: usize, n: *const u8, n
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_IFMA_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_sign_crt_ifma;
         }
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_SIGN_CRT_ADX_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_sign_crt_adx;
         }
         crate::rsa_pss::vg_rsa_pss_sign
@@ -114,10 +118,14 @@ pub unsafe fn vg_rsa_pss_verify_precomputed_auto(n: *const u8, n_len: usize, e: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_IFMA_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_ifma;
         }
-        if cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES) }
+            || cpu.contains(crate::rsa_pss::VG_RSA_PSS_VERIFY_PRECOMPUTED_RSA_ADX_FEATURES)
+        {
             return crate::rsa_pss::vg_rsa_pss_verify_precomputed_rsa_adx;
         }
         crate::rsa_pss::vg_rsa_pss_verify_precomputed

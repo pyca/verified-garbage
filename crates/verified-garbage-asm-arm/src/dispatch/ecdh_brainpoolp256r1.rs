@@ -28,7 +28,9 @@ pub unsafe fn vg_ecdh_brainpoolp256r1_auto(out: *mut [u8; 32], d: *const [u8; 32
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
         #[cfg(any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd"))]
-        if cpu.contains(crate::ecdh_brainpoolp256r1::VG_ECDH_BRAINPOOLP256R1_UMAAL_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ecdh_brainpoolp256r1::VG_ECDH_BRAINPOOLP256R1_UMAAL_FEATURES) }
+            || cpu.contains(crate::ecdh_brainpoolp256r1::VG_ECDH_BRAINPOOLP256R1_UMAAL_FEATURES)
+        {
             return crate::ecdh_brainpoolp256r1::vg_ecdh_brainpoolp256r1_umaal;
         }
         crate::ecdh_brainpoolp256r1::vg_ecdh_brainpoolp256r1

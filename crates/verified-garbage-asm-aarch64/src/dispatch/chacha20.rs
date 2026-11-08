@@ -30,10 +30,14 @@ pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SVE2_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::chacha20::VG_CHACHA20_APPLY_SVE2_FEATURES) }
+            || cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_SVE2_FEATURES)
+        {
             return crate::chacha20::vg_chacha20_apply_sve2;
         }
-        if cpu.0 != 0 {
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
             return crate::chacha20::vg_chacha20_apply_neon;
         }
         crate::chacha20::vg_chacha20_apply

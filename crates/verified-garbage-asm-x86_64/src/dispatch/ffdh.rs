@@ -35,13 +35,19 @@ pub unsafe fn vg_ffdh_exchange_auto(out: *mut u8, out_len: usize, domain: *const
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_exchange_mr_adx_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_exchange_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_EXCHANGE_MR_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_exchange_mr_adx;
         }
         crate::ffdh::vg_ffdh_exchange
@@ -94,13 +100,19 @@ pub unsafe fn vg_ffdh_check_public_auto(domain: *const u8, domain_len: usize, p_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_public_mr_adx_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_public_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PUBLIC_MR_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_public_mr_adx;
         }
         crate::ffdh::vg_ffdh_check_public
@@ -150,13 +162,19 @@ pub unsafe fn vg_ffdh_check_domain_auto(domain: *const u8, domain_len: usize, p_
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_domain_mr_adx_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_domain_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_DOMAIN_MR_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_domain_mr_adx;
         }
         crate::ffdh::vg_ffdh_check_domain
@@ -211,13 +229,19 @@ pub unsafe fn vg_ffdh_check_private_auto(domain: *const u8, domain_len: usize, p
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_private_mr_adx_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_private_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_CHECK_PRIVATE_MR_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_check_private_mr_adx;
         }
         crate::ffdh::vg_ffdh_check_private
@@ -272,13 +296,19 @@ pub unsafe fn vg_ffdh_derive_public_auto(y: *mut u8, y_len: usize, domain: *cons
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_derive_public_mr_adx_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_derive_public_exp_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_DERIVE_PUBLIC_MR_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_derive_public_mr_adx;
         }
         crate::ffdh::vg_ffdh_derive_public
@@ -339,7 +369,9 @@ pub unsafe fn vg_ffdh_generate_key_cached_auto(x: *mut u8, x_len: usize, y: *mut
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_CACHED_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_cached_adx;
         }
         crate::ffdh::vg_ffdh_generate_key_cached
@@ -390,10 +422,14 @@ pub unsafe fn vg_ffdh_generate_parameters_auto(out: *mut u8, out_len: usize, use
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_parameters_ifma;
         }
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_PARAMETERS_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_parameters_adx;
         }
         crate::ffdh::vg_ffdh_generate_parameters
@@ -444,7 +480,9 @@ pub unsafe fn vg_ffdh_generate_key_precompute_auto(ctx: *mut u64, ctx_len: usize
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_PRECOMPUTE_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_precompute_adx;
         }
         crate::ffdh::vg_ffdh_generate_key_precompute
@@ -508,7 +546,9 @@ pub unsafe fn vg_ffdh_generate_key_search_cached_auto(x: *mut u8, x_len: usize, 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES) {
+        if const { verified_garbage_cpu::target_contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES) }
+            || cpu.contains(crate::ffdh::VG_FFDH_GENERATE_KEY_SEARCH_CACHED_ADX_FEATURES)
+        {
             return crate::ffdh::vg_ffdh_generate_key_search_cached_adx;
         }
         crate::ffdh::vg_ffdh_generate_key_search_cached

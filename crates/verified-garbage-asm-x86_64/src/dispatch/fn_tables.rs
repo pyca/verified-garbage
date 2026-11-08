@@ -18,10 +18,14 @@ pub fn vg_hmac_md5_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA1_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA1_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA1_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA1_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA1_AVX_BMI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA1_AVX_BMI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA1_AVX_BMI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA1_AVX_BMI;
     }
     &crate::fn_tables::VG_HASH_SHA1
@@ -31,10 +35,14 @@ pub fn vg_hash_sha1_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hmac_sha1_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA1_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA1_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA1_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA1_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA1_AVX_BMI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA1_AVX_BMI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA1_AVX_BMI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA1_AVX_BMI;
     }
     &crate::fn_tables::VG_HMAC_SHA1
@@ -44,10 +52,14 @@ pub fn vg_hmac_sha1_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hash_sha224_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA224_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA224
@@ -57,10 +69,14 @@ pub fn vg_hash_sha224_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hash_sha256_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA256_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA256
@@ -70,10 +86,14 @@ pub fn vg_hash_sha256_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hash_sha384_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA384_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA384_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA384_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA384_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA384_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA384_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA384_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA384_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA384
@@ -83,10 +103,14 @@ pub fn vg_hash_sha384_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hash_sha512_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA512
@@ -96,10 +120,14 @@ pub fn vg_hash_sha512_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA224_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA224
@@ -109,10 +137,14 @@ pub fn vg_hmac_sha224_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA256_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA256
@@ -122,10 +154,14 @@ pub fn vg_hmac_sha256_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA384_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA384_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA384_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA384_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA384_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA384_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA384
@@ -135,10 +171,14 @@ pub fn vg_hmac_sha384_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hmac_sha512_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA512
@@ -154,10 +194,14 @@ pub fn vg_md_hash_md5_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha1_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA1_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_AVX_BMI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA1_AVX_BMI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA1_AVX_BMI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA1_AVX_BMI;
     }
     &crate::fn_tables::VG_MD_HASH_SHA1
@@ -167,10 +211,14 @@ pub fn vg_md_hash_sha1_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha224_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA224_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA224
@@ -180,10 +228,14 @@ pub fn vg_md_hash_sha224_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha256_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA256_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA256
@@ -193,10 +245,14 @@ pub fn vg_md_hash_sha256_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha384_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA384_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA384_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA384_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA384_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA384_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA384
@@ -206,10 +262,14 @@ pub fn vg_md_hash_sha384_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha512_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA512
@@ -219,10 +279,14 @@ pub fn vg_md_hash_sha512_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_224_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA512_224
@@ -232,10 +296,14 @@ pub fn vg_hash_sha512_224_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HASH_SHA512_256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HASH_SHA512_256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HASH_SHA512_256_AVX2;
     }
     &crate::fn_tables::VG_HASH_SHA512_256
@@ -245,10 +313,14 @@ pub fn vg_hash_sha512_256_auto() -> &'static crate::fn_tables::Hash {
 #[inline]
 pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_224_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA512_224
@@ -258,10 +330,14 @@ pub fn vg_hmac_sha512_224_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_HMAC_SHA512_256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_HMAC_SHA512_256_AVX2;
     }
     &crate::fn_tables::VG_HMAC_SHA512_256
@@ -271,10 +347,14 @@ pub fn vg_hmac_sha512_256_auto() -> &'static crate::fn_tables::Hmac {
 #[inline]
 pub fn vg_md_hash_sha512_224_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_224_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_224_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_224_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_224_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_224_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_224_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_224_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_224_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA512_224
@@ -284,10 +364,14 @@ pub fn vg_md_hash_sha512_224_auto() -> &'static crate::fn_tables::MdHash {
 #[inline]
 pub fn vg_md_hash_sha512_256_auto() -> &'static crate::fn_tables::MdHash {
     let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_256_SHANI_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_256_SHANI_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_256_SHANI_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_256_SHANI;
     }
-    if cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_256_AVX2_FEATURES) {
+    if const { verified_garbage_cpu::target_contains(crate::fn_tables::VG_MD_HASH_SHA512_256_AVX2_FEATURES) }
+        || cpu.contains(crate::fn_tables::VG_MD_HASH_SHA512_256_AVX2_FEATURES)
+    {
         return &crate::fn_tables::VG_MD_HASH_SHA512_256_AVX2;
     }
     &crate::fn_tables::VG_MD_HASH_SHA512_256
