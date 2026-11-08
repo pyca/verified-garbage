@@ -38,7 +38,7 @@ on `n`.
 namespace VG.Impl.AesXts.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.AesCbc.PPC64LE (mov xorInto callArgs advance whole encCall decCall slot advance8 batched)
+open VG.Impl.AesCbc.PPC64LE (xorInto callArgs advance encCall decCall slot advance8 batched vsetup xorSlots)
 
 /-- The tweak at `r16` times `α`. -/
 def mulA : List Instr :=
@@ -76,19 +76,6 @@ from the tweak at `r16`, and the next tweak stored back there. -/
 def tweaks8 : List Instr :=
   [.load .d .r9 .r16 0, .load .d .r10 .r16 8] ++ (List.range 8).flatMap tweakReg ++
     [.store .d .r9 .r16 0, .store .d .r10 .r16 8]
-
-/-- The block-function registers: the schedule, the rounds and the blocks
-(`r6`), and the byte-order mask. -/
-def vsetup : List Instr :=
-  [mov .r3 .r14, mov .r4 .r15, mov .r6 .r17] ++ Impl.Aes.PPC64LE.Crypto.setup
-
-/-- Slot `j` XORed into `breg j`, through `v9` and `r7`. -/
-def xorSlot (j : Nat) : List Instr :=
-  [.addi .r7 .r19 (slot j)] ++ Impl.Aes.PPC64LE.Crypto.load Impl.Aes.PPC64LE.Crypto.data .r7 ++
-    [.vop (.logic .xor (Impl.Aes.PPC64LE.Crypto.breg j) (Impl.Aes.PPC64LE.Crypto.breg j)
-      Impl.Aes.PPC64LE.Crypto.data)]
-
-def xorSlots : List Instr := (List.range 8).flatMap xorSlot
 
 /-- The eight blocks at `r17` read, XORed with their tweaks, enciphered
 (`inverse = false`) or deciphered, XORed with their tweaks again and stored
