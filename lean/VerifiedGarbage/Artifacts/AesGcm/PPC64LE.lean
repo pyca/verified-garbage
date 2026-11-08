@@ -28,42 +28,52 @@ def artifacts : List Artifact := [
     stack := 2592
     verified := init_framed },
   Spec.Gcm.streamInitApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r7 Impl.AesGcm.PPC64LE.streamInit
     stack := 2592
     verified := streamInit_framed },
   Spec.Gcm.streamAadApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r8 Impl.AesGcm.PPC64LE.streamAad
     stack := 2592
     verified := streamAad_framed },
   Spec.Gcm.streamEncryptApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamEncrypt
     stack := 2592
     verified := Proof.AesGcm.streamEncrypt_keyed streamEncrypt_framed },
   Spec.Gcm.streamDecryptApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamDecrypt
     stack := 2592
     verified := Proof.AesGcm.streamDecrypt_keyed streamDecrypt_framed },
   Spec.Gcm.streamFinishApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r9 Impl.AesGcm.PPC64LE.streamFinish
     stack := 2592
     verified := Proof.AesGcm.streamFinish_keyed streamFinish_framed },
   Spec.Gcm.streamVerifyApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratch 2592 .r10 Impl.AesGcm.PPC64LE.streamVerify
     stack := 2592
     verified := Proof.AesGcm.streamVerify_keyed streamVerify_framed },
   Spec.Gcm.sealApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2672 1 Impl.AesGcm.PPC64LE.SealFused.seal
     stack := 2672
     verified := Proof.AesGcm.seal_keyed seal_framed },
   Spec.Gcm.openApi.artifact PPC64LE.target {
+    select := true
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesGcm.PPC64LE.open
     stack := 2688
     verified := Proof.AesGcm.open_keyed open_framed },
   Spec.Gcm.sealGatherApi.artifact PPC64LE.target {
+    select := true
     code := Impl.AesGcm.PPC64LE.GatherSplit.sealGather
     stack := 2960
     verified := Proof.AesGcm.sealGather_keyed GatherSplit.verified },
   Spec.Gcm.openToApi.artifact PPC64LE.target {
+    select := true
     code := Impl.AesGcm.PPC64LE.OpenTo.openTo
     stack := 2720
     verified := Proof.AesGcm.openTo_keyed OpenTo.openTo_verified }]

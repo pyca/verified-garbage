@@ -57,6 +57,7 @@ def artifacts (n : GhashName) : List Artifact :=
   let v : GcmImpl := { ctr := Proof.Aes.X86.Ctr32Impl.scalar, gh := n.impl }
   [
   Spec.Gcm.streamAadApi.artifact X86.target {
+    select := true
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86.withStackScratch 2592 6 (Impl.AesGcm.X86.streamAad v.callees)
     stack := 2616
@@ -64,6 +65,7 @@ def artifacts (n : GhashName) : List Artifact :=
     spSafe := withStackScratch_spSafe (streamAad_spSafe v)
     features := v.gh.features },
   Spec.Gcm.streamInitApi.artifact X86.target {
+    select := true
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86.withStackScratch 2584 4 (Impl.AesGcm.X86.streamInit v.callees)
     stack := 2608

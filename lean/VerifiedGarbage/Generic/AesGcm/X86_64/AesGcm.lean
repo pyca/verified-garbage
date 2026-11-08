@@ -25,6 +25,7 @@ open VG.Proof.AesGcm.X86_64
 48 prepared powers: by the flag, those or the ones on the key context. -/
 def artifactsR (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := sealCodeF v
     stack := 2624
@@ -32,6 +33,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := sealCodeF_spAll v
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := openCodeF v
     stack := 2632
@@ -39,6 +41,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := openCodeF_spAll v
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
     stack := openToStackF v
@@ -46,6 +49,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := openToCodeR_onFlag_spAll v
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := streamEncryptCodeF v
     stack := 2608
@@ -53,6 +57,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     spSafe := streamEncryptCodeF_spAll v
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
@@ -67,6 +72,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
       (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
     features := v.impl.features },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5
@@ -83,6 +89,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 key context. -/
 def artifactsW (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)
     stack := 2624
@@ -90,6 +97,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB)
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)
     stack := 2632
@@ -97,6 +105,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB)
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := openToCode v
     stack := openToStack v
@@ -104,6 +113,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := openToCode_spAll v
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
     stack := 2608
@@ -111,6 +121,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl)
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees)
     stack := 2608
@@ -118,6 +129,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)
     features := v.impl.features },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
         (Impl.AesGcm.X86_64.SealGather.sealGather (shortFn v).quick (shortFn v).fast (shortFn v).test
@@ -132,6 +144,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
 prepared powers: by the count, those or the ones on the key context. -/
 def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := sealCodeF16 v
     stack := 2624
@@ -139,6 +152,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := sealCodeF16_spAll v
     features := v.impl.features },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := openCodeF16 v
     stack := 2632
@@ -146,6 +160,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := openCodeF16_spAll v
     features := v.impl.features },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
     stack := openToStackF16 v
@@ -153,6 +168,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := openToCodeR16_onFlag_spAll v r
     features := v.impl.features },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := streamEncryptCodeF16 v
     stack := 2608
@@ -161,6 +177,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := streamEncryptCodeF16_spAll v
     features := v.impl.features },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16
       (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
@@ -175,6 +192,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
       (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
     features := v.impl.features },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
+    select := true
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16 (sealGatherCodeF16 v r)
       (Impl.StackScratch.X86_64.withStackArgScratch 240 5

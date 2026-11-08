@@ -25,6 +25,7 @@ def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact :=
       gh := n.impl }
   [
   Spec.Gcm.streamFinishApi.artifact X86_64.target {
+    select := true
     suffix := c.suffix ++ n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
     stack := 2584
@@ -32,6 +33,7 @@ def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact :=
     spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v)
     features := (v.ctr.features ++ v.gh.features).dedup },
   Spec.Gcm.streamVerifyApi.artifact X86_64.target {
+    select := true
     suffix := c.suffix ++ n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
     stack := 2592

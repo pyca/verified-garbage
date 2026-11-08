@@ -54,6 +54,7 @@ open VG.Proof.AesGcm.X86
 /-- The artifacts calling the implementations `v`. -/
 def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Gcm.streamEncryptApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamEncrypt v.callees)
     stack := 2632
@@ -61,6 +62,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (streamEncrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamDecrypt v.callees)
     stack := 2632
@@ -68,6 +70,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (streamDecrypt_spSafe v)
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2600 8 (Impl.AesGcm.X86.streamFinish v.callees)
     stack := 2628
@@ -75,6 +78,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (streamFinish_spSafe v)
     features := v.features },
   Spec.Gcm.streamVerifyApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.streamVerify v.callees)
     stack := 2632
@@ -82,6 +86,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (streamVerify_spSafe v)
     features := v.features },
   Spec.Gcm.sealApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2604 9 (Impl.AesGcm.X86.«seal» v.callees)
     stack := 2632
@@ -89,6 +94,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     spSafe := withStackScratch_spSafe (seal_spSafe v)
     features := v.features },
   Spec.Gcm.openApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesGcm.X86.«open» v.callees)
     stack := 2636
@@ -99,6 +105,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
   Spec.Gcm.sealGatherApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.AesGcm.X86.SealGather.sealGather (Gather.sealFn v).name (Gather.sealFn v).code
     stack := 2684
@@ -109,6 +116,7 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
 /-- `vg_aes_gcm_open_to`, calling `vg_aes_ctr32_to` of the implementations `v`. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact X86.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2616 12 (Impl.AesGcm.X86.Open.openTo v.callees (OpenTo.toFn v))
     stack := 2692

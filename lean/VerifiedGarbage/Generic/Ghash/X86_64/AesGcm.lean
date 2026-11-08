@@ -22,6 +22,7 @@ def artifacts (n : GhashName) : List Artifact :=
   let v : GcmImpl := { ctr := Ctr32Impl.scalar, key := KeyImpl.scalar, gh := n.impl }
   [
   Spec.Gcm.streamInitApi.artifact X86_64.target {
+    select := true
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r8
       (Impl.AesGcm.X86_64.streamInit v.callees)
@@ -30,6 +31,7 @@ def artifacts (n : GhashName) : List Artifact :=
     spSafe := X86_64.withStackScratch_spSafe_of (streamInit_spSafe v)
     features := v.gh.features },
   Spec.Gcm.streamAadApi.artifact X86_64.target {
+    select := true
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.AesGcm.X86_64.streamAad v.callees)

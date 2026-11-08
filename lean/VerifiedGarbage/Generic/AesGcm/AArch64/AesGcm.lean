@@ -128,30 +128,35 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.open_keyed (openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)
     features := v.features },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
     stack := 2560
     verified := streamInit_framed v
     features := v.gh.features },
   Spec.Gcm.streamAadApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
     stack := 2560
     verified := streamAad_framed v
     features := v.gh.features },
   Spec.Gcm.streamEncryptApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
     stack := 2560
     verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
     features := v.features },
   Spec.Gcm.streamDecryptApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
     stack := 2560
     verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
     features := v.features },
   Spec.Gcm.streamFinishApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
       (Impl.AesGcm.AArch64.streamFinish v.callees)
@@ -159,6 +164,7 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
     features := v.features },
   Spec.Gcm.streamVerifyApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
       (Impl.AesGcm.AArch64.streamVerify v.callees)
@@ -178,6 +184,7 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
 /-- `vg_aes_gcm_open_to`, calling the instance of `vg_aes_gcm_open` of the implementations `v`. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
   Spec.Gcm.openToApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.AesGcm.AArch64.OpenTo.openTo 2 (Proof.AesGcm.AArch64.openFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2624
@@ -190,12 +197,14 @@ calling that instance of `vg_aes_gcm_open_with_powers` (and, with the
 interleaved loops, `vg_aes_gcm_open_split_with_powers` in one pass). -/
 def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g)
     stack := 2592
     verified := Proof.AesGcm.sealWithPowers_keyed (sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
     features := v.stitchFeatures },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
@@ -226,12 +235,14 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
 implementations without code that reads the powers: their `seal` and `open`. -/
 def basePwArtifacts (v : GcmImpl) : List Artifact :=
   [Spec.Gcm.sealWithPowersApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     stack := 2576
     verified := sealBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
     features := v.features },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
+    select := true
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
