@@ -72,7 +72,8 @@ theorem decodeCheck_ok {s : State} (hc : VCtx b s) {x v u : Fe} (hx : FS s.mem b
   simp only [outZero, copy, List.append_assoc, List.cons_append, List.nil_append]
   have hc1 : VCtx b s1 := hc.of_rest h1.stp.rest (by decide) (by decide)
   -- `v x² - u` into `X2`.
-  refine WP.append (subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (subS (o := X2) (x := DTMP) (y := DU) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)
     h1.ctx h1.slots) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
   have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
   have e2 : FS s2.mem b X2 = v * (x * x) - u := by
