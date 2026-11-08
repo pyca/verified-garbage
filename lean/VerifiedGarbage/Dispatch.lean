@@ -31,7 +31,10 @@ def ranking : Rust.Ranking := [
       [{ suffix := g ++ "_avx2", modules := ["aes_gcm_siv"] }] ++
         if g.isEmpty then [] else [{ suffix := g, modules := ["aes_gcm_siv"] }]) ++
     { suffix := "_vaes_avx512" } ::
-    (gcmX86_64.flatMap fun g => { suffix := g } ::
+    -- AES-CBC's AES-NI code that wipes its scratch with `vg_zeroize_avx`.
+    (gcmX86_64.flatMap fun g =>
+      (if g == "_aesni" then [{ suffix := "_aesni_avx", modules := ["aes_cbc"] }] else []) ++
+      { suffix := g } ::
       -- `vg_aes_gcm_prepare`'s 128-bit AVX code, after its 256-bit code.
       if g == "_vpclmul" then [{ suffix := "_pclmul_avx", modules := ["gcm"] }] else []) ++ [
     -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
