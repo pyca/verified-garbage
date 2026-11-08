@@ -203,6 +203,7 @@ theorem cp_correct (s : State) (h : cpContract.pre s) :
         ((k3.gpr .r21 (by decide)).trans a21) ((k3.gpr .r26 (by decide)).trans a26)
         ((k3.gpr .r27 (by decide)).trans a27) ((k3.gpr .r28 (by decide)).trans a28) hwd.symm hk hk' hLk.2
         (by rw [p3]; omega) (by rw [p3]; exact hv'.1.1.1)
+        (by rw [p3]; exact top_of_valid hv (by omega) (by omega))
         (fun i hi => by rw [k13.rd, k13.wr]; exact rdY i hi) sepY
         (fun _ i hi => by rw [k13.rd, k13.wr, off_off']; exact rdD _ (by omega))
         (fun _ i hi => by rw [off_off']; exact sepD _ (by omega)))

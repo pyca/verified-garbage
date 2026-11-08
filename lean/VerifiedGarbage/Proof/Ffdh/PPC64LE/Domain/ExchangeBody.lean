@@ -91,20 +91,6 @@ def exPowPost (B Y X : Addr) (w k xl : Nat) (s t : State) : Prop :=
       arr s.mem B w 0 ∧ arr t.mem B w 0 = arr s.mem B w 0 ∧ Body B w s.mem t.mem ∧
     t.gpr .r10 = off B (slot w 0)
 
-/-- A valid modulus of `k` octets is above `2^(64 (w - 1))` for `w = ⌈k / 8⌉`
-(at least 2): its first octet is not zero, and it is odd. -/
-theorem top_of_valid {p k w : Nat} (h : Spec.Rsa.modulusValid p k = true) (hw : 8 * w ≤ k + 7)
-    (hw2 : 2 ≤ w) : 2 ^ (64 * (w - 1)) < p := by
-  simp only [Spec.Rsa.modulusValid, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq] at h
-  obtain ⟨⟨⟨hodd, _⟩, _⟩, hk⟩ := h
-  have e : (256 : Nat) ^ (k - 1) = 2 ^ (8 * (k - 1)) := by rw [Nat.pow_mul]
-  have hle : 2 ^ (64 * (w - 1)) ≤ p :=
-    Nat.le_trans (Nat.pow_le_pow_right (by decide) (by omega)) (e ▸ hk)
-  have hev : 2 ^ (64 * (w - 1)) % 2 = 0 := by
-    obtain ⟨j, hj⟩ : ∃ j, 64 * (w - 1) = j + 1 := ⟨64 * (w - 1) - 1, by omega⟩
-    rw [hj, Nat.pow_succ, Nat.mul_mod_left]
-  omega
-
 /-- `exPre`, with the registers it leaves for the power, and then the power:
 y's `k` octets (at `r9`) into array 4, then `y^x mod p` there, for x's `xl`
 octets at `X`, whose address and length are in the header's words 8 and 9. -/
