@@ -6,9 +6,9 @@ public import VerifiedGarbage.Impl.BrainpoolP384r1.CombTable7
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
 public import VerifiedGarbage.Impl.EcKey.PPC64LE
 
-/-! # brainpoolBrainpoolP384r1r1's generator by the signed seven-bit comb on PPC64LE
+/-! # brainpoolP384r1's generator by the signed seven-bit comb on PPC64LE
 
-The comb of `Impl/Weierstrass/PPC64LE/TComb.lean` with brainpoolBrainpoolP384r1r1's tables
+The comb of `Impl/Weierstrass/PPC64LE/TComb.lean` with brainpoolP384r1's tables
 (`Impl/BrainpoolP384r1/CombTable7.lean`, the other targets'), and public keys with it in
 place of the ladder for `[d]G`, and signatures with it for `[k]G`. -/
 
@@ -16,7 +16,7 @@ place of the ladder for `[d]G`, and signatures with it for `[k]G`. -/
 
 namespace VG.Impl.Weierstrass.PPC64LE
 
-/-- brainpoolBrainpoolP384r1r1's comb, on the signature's layout: its ladder's `R`, `a`, `3b` and
+/-- brainpoolP384r1's comb, on the signature's layout: its ladder's `R`, `a`, `3b` and
 table of the scalar's bits, zero at `ZERO` and `-y` in the ladder's `T`. -/
 def brainpoolp384r1Comb : TCombCfg :=
   let c := VG.Impl.Ecdsa.PPC64LE.brainpoolp384r1

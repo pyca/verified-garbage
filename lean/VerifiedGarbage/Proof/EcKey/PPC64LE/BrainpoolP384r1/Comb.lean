@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
-# brainpoolBrainpoolP384r1r1 public keys by the comb on PPC64LE: `Verified`
+# brainpoolP384r1 public keys by the comb on PPC64LE: `Verified`
 
 `vg_ec_brainpoolp384r1_public_key` with `[d]G` by the seven-bit comb, whose table is a
 read-only constant (`Abi.withConsts`): `combPk_ok`, from `publicKeyWith_ok`
