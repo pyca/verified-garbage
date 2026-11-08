@@ -665,6 +665,10 @@ pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes;
 pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes_pclmul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vaes_vpclmul;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_decrypt_blocks_to_vpclmul.rs"]
 pub(crate) mod vg_aes_gcm_decrypt_blocks_to_vpclmul;
 
@@ -841,12 +845,12 @@ pub(crate) mod vg_aes_gcm_open_split_vaes;
 pub(crate) mod vg_aes_gcm_open_split_vaes_pclmul;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_open_split_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_open_split_vpclmul;
+#[path = "internal/vg_aes_gcm_open_split_vaes_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vaes_vpclmul;
 
 #[rustfmt::skip]
-#[path = "internal/vg_aes_gcm_open_vaes_vpclmul.rs"]
-pub(crate) mod vg_aes_gcm_open_vaes_vpclmul;
+#[path = "internal/vg_aes_gcm_open_split_vpclmul.rs"]
+pub(crate) mod vg_aes_gcm_open_split_vpclmul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_vaes_vpclmul_avx512.rs"]
