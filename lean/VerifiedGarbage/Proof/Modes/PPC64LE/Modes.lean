@@ -32,7 +32,7 @@ theorem append_ok {P : Op → Prop} {os os' : List Op} (h : ∀ o ∈ os, P o) (
 theorem chunksAt_one (m : Mem) (p : Addr) (n : Nat) : chunksAt 1 m p n = bytesSteps (bytesAt m p n) := by
   simp [chunksAt, bytesSteps, bytesAt]
 
-theorem blk_bounds {c : Core} {st : Nat} (hst : st = 4 * c.bw) (l : Loc) : 4 * c.bw ≤ lens c st l := by
+theorem blk_bounds {c : Core} {st : Nat} (hst : st = 4 * c.bw) (l : Loc) : 4 * c.bw ≤ lens c st (4 * c.bw) l := by
   cases l <;> simp [lens, hst]
 
 section

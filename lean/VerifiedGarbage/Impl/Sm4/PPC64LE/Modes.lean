@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Modes.PPC64LE.Seq
+public import VerifiedGarbage.Impl.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Prepared
 
@@ -13,8 +13,10 @@ encryption, OFB and CFB, decryption's for CBC decryption. It calls ECB's two
 halves (`Prepared.lean`): `prepare` calls `vg_sm4_prepare_keys`, which sets
 the masks and builds the table of bitsliced round keys, once; `crypt` calls
 `vg_sm4_crypt_prepared`, which transforms the sixteen blocks of the tail
-buffer in place, of which the modes use the first (they take one step at a
-time).
+buffer in place: the serial modes use the first, one step at a time; CBC and
+CFB decryption and the counter modes (`Ctr.lean`, `Ctr32.lean`) take
+sixteen blocks a step while sixteen are left, then one
+(`Impl/Modes/PPC64LE/Wide.lean`).
 
 The core's slots are the functions' 402 (`slots`), the modes' six after
 them: 408 in all (`[u64; 408]`). Neither function writes `r5` (`sb`) or `r7`,
@@ -55,14 +57,16 @@ def dirCore (d : Dir) : Modes.PPC64LE.Core where
   slots := slots
   total := slots + 6
   buf := tailSlot
-  G := 1
+  G := 16
   bw := 4
 
 /-- `vg_sm4_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
-/-- `vg_sm4_cbc_decrypt_chained`, with its scratch buffer as the fifth argument. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).seq (Modes.Mode.cbcDecChained 4)
+/-- `vg_sm4_cbc_decrypt_chained`, with its scratch buffer as the fifth
+argument: sixteen blocks a step, then one. -/
+def cbcDecryptChained : Prog isa :=
+  (dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
 
 /-- `vg_sm4_ofb`, with its scratch buffer as the fifth argument. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
@@ -70,7 +74,9 @@ def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
 /-- `vg_sm4_cfb128_encrypt`, with its scratch buffer as the fifth argument. -/
 def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
 
-/-- `vg_sm4_cfb128_decrypt`, with its scratch buffer as the fifth argument. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbDec 4)
+/-- `vg_sm4_cfb128_decrypt`, with its scratch buffer as the fifth argument:
+sixteen blocks a step, then one. -/
+def cfbDecrypt : Prog isa :=
+  (dirCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 16) (Modes.Mode.cfbDecEarly 4) 4
 
 end VG.Impl.Sm4.PPC64LE

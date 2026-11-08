@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesFrame
 public import VerifiedGarbage.Proof.Sm4.Scratch
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr
 public import VerifiedGarbage.Spec.Sm4.Ctr
-import VerifiedGarbage.Proof.Modes.PPC64LE.Ctr
+import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Sm4.PPC64LE.CtrLit
@@ -29,7 +29,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 /-!
 # SM4-CTR on PPC64LE meets its contract
 
-`ctr_verified`: the counter mode of `Proof/Modes/PPC64LE/Ctr.lean` over
+`ctr_verified`: the counter mode of `Proof/Modes/PPC64LE/Wide.lean` over
 SM4's core (`dirCoreSpec .encrypt`), with the working space as the fifth
 argument (`modeContract`), meets the contract with a scratch buffer of 408
 words (`Proof.Sm4.ctrScratchContract`), and constant time as the other modes
@@ -56,10 +56,10 @@ theorem ctr_constantTime {post : State → State → Prop} :
 
 theorem ctr_correct (s : State) (hs : (modeContract 16 ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctrPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ctr_wp (dirCoreSpec .encrypt) rfl
-    (seqPre_of .encrypt (M := Mode.ctr) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.ctr) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
+  WP.mono (Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide) (by decide)
+    (seqPre_of .encrypt (M := Mode.ctrEarly) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.ctrEarly) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ctr_verified : Verified target ctr (Proof.Sm4.ctrScratchContract abi (slots + 6)) := by
   refine Verified.of_correct ctr_correct ctr_constantTime ?_

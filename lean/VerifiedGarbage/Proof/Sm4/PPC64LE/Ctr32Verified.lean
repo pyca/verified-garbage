@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Sm4.Ctr32Scratch
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ctr32
 public import VerifiedGarbage.Spec.Sm4.Gcm
 public import VerifiedGarbage.Proof.Sm4.Contract
-import VerifiedGarbage.Proof.Modes.PPC64LE.Ctr32
+import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.Modes.Ctr32
 import VerifiedGarbage.Proof.Framework.PPC64LE.StackScratchWipe
 import VerifiedGarbage.Proof.Framework.Contract
@@ -36,7 +36,7 @@ public import VerifiedGarbage.Proof.Sm4.SboxTable
 # SM4's counter mode with GCM's `inc₃₂` on PPC64LE meets its contract
 
 `ctr32_correct` and `ctr32_constantTime`: the counter mode of
-`Proof/Modes/PPC64LE/Ctr32.lean` over SM4's core (`dirCoreSpec .encrypt`),
+`Proof/Modes/PPC64LE/Wide.lean` over SM4's core (`dirCoreSpec .encrypt`),
 with the working space as the fifth argument (`modeContract`), is correct
 (`ctr32Post`) and constant time as the other modes are
 (`ModesConstantTime.lean`).
@@ -65,10 +65,10 @@ theorem ctr32_constantTime {post : State → State → Prop} :
 
 theorem ctr32_correct (s : State) (hs : (modeContract 16 ctr32Post).pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctr32Post).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ctr32_wp (dirCoreSpec .encrypt) rfl
-    (seqPre_of .encrypt (M := Mode.ctr32) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.ctr32) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by
+  WP.mono (Proof.Modes.PPC64LE.ctr32Wide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide) (by decide)
+    (seqPre_of .encrypt (M := Mode.ctr32Early) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.ctr32Early) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by
       simp only [cipher_enc] at h2 h3
       refine ⟨h1, ?_, h3⟩
       rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]

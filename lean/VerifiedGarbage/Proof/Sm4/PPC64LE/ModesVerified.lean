@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sm4.CbcScratch
 public import VerifiedGarbage.Proof.Sm4.FbScratch
 public import VerifiedGarbage.Proof.Sm4.PPC64LE.ModeCore
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
+import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
 import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Proof.Framework.Contract
@@ -103,10 +104,10 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 16 cbcEncPost)
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 16 cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcDecChained_wp (dirCoreSpec .decrypt)
+  WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 4) (by decide) (by decide) (by decide)
     (seqPre_of .decrypt (M := Mode.cbcDecChained 4) rfl hs)
     (keyArgs_of .decrypt (M := Mode.cbcDecChained 4) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ofb_correct (s : State) (hs : (modeContract 16 ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ofbPost).post s s' :=
@@ -124,10 +125,10 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract 16 cfbEncPost).pre s)
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract 16 cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDec_wp (dirCoreSpec .encrypt)
-    (seqPre_of .encrypt (M := Mode.cfbDec 4) rfl hs)
-    (keyArgs_of .encrypt (M := Mode.cfbDec 4) rfl hs))
-    fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
+  WP.mono (Proof.Modes.PPC64LE.cfbDecWide_wp (dirCoreSpec .encrypt) (lg := 4) (by decide) (by decide) (by decide)
+    (seqPre_of .encrypt (M := Mode.cfbDecEarly 4) rfl hs)
+    (keyArgs_of .encrypt (M := Mode.cfbDecEarly 4) rfl hs))
+    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
 
 /-! ## The contracts -/
 

@@ -82,3 +82,37 @@ fn errors() {
     decryptor.decrypt(&mut buffer).unwrap();
     assert_eq!(buffer, [0x5a; 32]);
 }
+
+/// Many blocks at once, at lengths around multiples of sixteen blocks (the
+/// groups decryption deciphers together), agree with one at a time and with
+/// the message decrypted in two pieces, and encryption undoes decryption.
+#[test]
+fn batches() {
+    // Generated inputs test agreement between lengths, not known answers.
+    let (key, iv) = ([7; 16], [9; 16]);
+    let input = crate::bytes::pattern(16 * 50, 1, 0);
+    for blocks in [1, 15, 16, 17, 31, 32, 33, 50] {
+        let input = &input[..16 * blocks];
+        let mut whole = input.to_vec();
+        SeedCbcDecryptor::new(&key, &iv)
+            .unwrap()
+            .decrypt(&mut whole)
+            .unwrap();
+        let mut single = input.to_vec();
+        let mut decryptor = SeedCbcDecryptor::new(&key, &iv).unwrap();
+        for block in single.chunks_mut(16) {
+            decryptor.decrypt(block).unwrap();
+        }
+        assert_eq!(whole, single);
+        let mut rest = input.to_vec();
+        let mut decryptor = SeedCbcDecryptor::new(&key, &iv).unwrap();
+        decryptor.decrypt(&mut rest[..16 * blocks - 16]).unwrap();
+        decryptor.decrypt(&mut rest[16 * blocks - 16..]).unwrap();
+        assert_eq!(rest, single);
+        SeedCbcEncryptor::new(&key, &iv)
+            .unwrap()
+            .encrypt(&mut whole)
+            .unwrap();
+        assert_eq!(whole, input);
+    }
+}
