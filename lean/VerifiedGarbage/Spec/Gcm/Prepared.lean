@@ -7,21 +7,21 @@ public import VerifiedGarbage.Spec.Gcm.OutOfPlace
 
 **Trusted.** A separate 1032-byte key-context format for implementations that
 consume powers directly in a carry-less multiplication representation.
-The first 256 bytes are the existing `KeyRepr`; the next 768 bytes hold
-24 pairs, with the even power first and the odd power second, each encoded
-by `preparedPower` and stored little-endian; the 64-bit word at byte 1024
-is 1 when the powers are absent (`PreparedRepr`), so that a `prepare`
-whose CPU's functions do not read them need not compute them. This is a
-storage convention, not a change to GCM's field arithmetic (NIST SP 800-38D
-§6.3).
+The first 256 bytes are the existing `KeyRepr`; the next 768 bytes hold up
+to 24 pairs, with the even power first and the odd power second, each
+encoded by `preparedPower` and stored little-endian; the 64-bit word at byte
+1024 counts the powers present (`PreparedRepr`): 48 (24 pairs), 16 (the
+first 8 pairs, bytes 256 through 511) or 0, so that a `prepare` computes only
+the powers its CPU's functions read. This is a storage convention, not a
+change to GCM's field arithmetic (NIST SP 800-38D §6.3).
 
 These APIs have the existing GCM postconditions, memory bounds, disjointness
 and secrecy guarantees. Their prepared-power precondition differs from
 `PowersRepr`, so they have distinct names: a prepared context must never be
 passed to a `*_precomputed` API, or vice versa. The APIs that read only the
 first 256 bytes (stream initialization, AAD, finish and verify) remain usable.
-The functions on a prepared context may leak whether its powers are absent
-(`flagLeak`), which says only which code ran, nothing of the key.
+The functions on a prepared context may leak how many of its powers are
+present (`flagLeak`), which says only which code ran, nothing of the key.
 Existing specifications and contracts are unchanged.
 -/
 
@@ -47,22 +47,39 @@ def PreparedPowersRepr (m : Mem) (p : Addr) : Prop :=
     m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
       preparedPower (hpow (ctxH m p) (2 * k + 1))
 
-/-- A prepared key context: its powers are absent (the word at byte 1024 is
-1) or present (`PreparedPowersRepr`). -/
-def PreparedRepr (m : Mem) (p : Addr) : Prop :=
-  m.readW (p + 1024) 64 = 1 ∨ PreparedPowersRepr m p
+/-- The first 8 pairs of `PreparedPowersRepr`, bytes 256 through 511: the
+first 16 powers. -/
+def PreparedPowers16Repr (m : Mem) (p : Addr) : Prop :=
+  ∀ k < 8,
+    m.readW (p + BitVec.ofNat 64 (256 + 32 * k)) 128 =
+      preparedPower (hpow (ctxH m p) (2 * k + 2)) ∧
+    m.readW (p + BitVec.ofNat 64 (272 + 32 * k)) 128 =
+      preparedPower (hpow (ctxH m p) (2 * k + 1))
 
-/-- What a function on the prepared key context at `p` may leak of it:
-whether its powers are absent. -/
-def flagLeak (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 1 else 0
+/-- The count of powers of the prepared key context at `p`: the 64-bit word
+at byte 1024. -/
+def powerCount (m : Mem) (p : Addr) : Nat := (m.readW (p + 1024) 64).toNat
+
+/-- A prepared key context: if its count is at least 16, the first 16 powers
+are present (`PreparedPowers16Repr`), and if it is at least 48, all 48
+(`PreparedPowersRepr`). -/
+def PreparedRepr (m : Mem) (p : Addr) : Prop :=
+  (16 ≤ powerCount m p → PreparedPowers16Repr m p) ∧
+    (48 ≤ powerCount m p → PreparedPowersRepr m p)
+
+/-- What a function on the prepared key context at `p` may leak of it: which
+of the counts that tell its functions apart it has (at least 48, at least 16,
+or fewer). -/
+def flagLeak (m : Mem) (p : Addr) : Nat :=
+  if 48 ≤ powerCount m p then 2 else if 16 ≤ powerCount m p then 1 else 0
 
 /-- A 1032-byte context, whose first 256 bytes are a key context. -/
 def prepareSig : Sig where
   params := [("ctx", .array true .u64 129)]
 
 /-- Keeps the first 256 bytes, and makes the context a prepared key context of
-the hash subkey in its bytes 240–255 (`ctxH`): either writes its 48 prepared
-powers or says that they are absent. With those bytes a key context
+the hash subkey in its bytes 240–255 (`ctxH`): writes 48, 16 or none of its
+prepared powers, and their count. With those bytes a key context
 (`KeyRepr`, as `vg_aes_gcm_init` writes it), the result is the prepared key
 context of the same key (`KeyRepr` and `PreparedRepr`). -/
 def preparePost (pb : Nat) : prepareSig.Post pb := fun ctx m m' _ =>
@@ -82,10 +99,11 @@ def prepareApi : Api where
   contracts := some fun A stack => prepareContract A stack
   summary := "Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of \
     `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first \
-    256 bytes and either, at byte `256 + 32*k`, for `k` from 0 to 23, stores \
+    256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores \
     `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian \
-    128-bit words, `H` being the hash subkey in its bytes 240–255, or stores 1 in the \
-    64-bit word at byte 1024, saying the powers are absent. Use only the \
+    128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the \
+    64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other \
+    functions read. Use only the \
     `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. \
     Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context \
     satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not \
@@ -97,19 +115,20 @@ def wipePreparedSig : Sig where
   params := [("ctx", .array true .u64 129)]
 
 /-- How many bytes of the prepared key context at `p` hold secrets: the key
-context and the powers (1024) if the flag word is not 1, the key context
-alone (256) if it is. -/
-def wipePreparedLen (m : Mem) (p : Addr) : Nat := if m.readW (p + 1024) 64 = 1 then 256 else 1024
+context and the powers its count says are present, 48 (1024 bytes in all),
+16 (512) or none (256). -/
+def wipePreparedLen (m : Mem) (p : Addr) : Nat :=
+  if 48 ≤ powerCount m p then 1024 else if 16 ≤ powerCount m p then 512 else 256
 
-/-- Zeroes the first `wipePreparedLen` bytes, as the flag word was on entry. -/
+/-- Zeroes the first `wipePreparedLen` bytes, as the count was on entry. -/
 def wipePreparedPost (pb : Nat) : wipePreparedSig.Post pb := fun ctx m m' _ =>
   Aes.bytesAt m' ctx (wipePreparedLen m ctx) = List.replicate (wipePreparedLen m ctx) 0
 
-/-- What `wipe` may leak: whether the powers are absent. -/
+/-- What `wipe` may leak: `flagLeak`. -/
 def wipePreparedLeak (pb : Nat) : Curry (wipePreparedSig.words pb) (Mem → List Nat) :=
   fun ctx m => [flagLeak m ctx]
 
-/-- No precondition: the flag word says how much to zero, whatever it is. -/
+/-- No precondition: the count says how much to zero, whatever it is. -/
 def wipePreparedContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   wipePreparedSig.contract A (post := wipePreparedPost A.ptrBits) (writeArgs := true)
     (stack := stack) (leak := some (wipePreparedLeak A.ptrBits))
@@ -122,11 +141,11 @@ def wipePreparedApi : Api where
   writeArgs := true
   contracts := some fun A stack => wipePreparedContract A stack
   summary := "Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: \
-    sets to zero its first 1024 bytes, the key context and the powers, if the 64-bit word \
-    at byte 1024 is not 1, and its first 256 bytes, the key context, if it is (the powers \
-    are absent, and the bytes after the key context were not written). \
+    sets to zero the key context and the powers its count (the 64-bit word at byte 1024) \
+    says are present: its first 1024 bytes if the count is at least 48, 512 if it is at \
+    least 16, and 256 otherwise (the bytes after them were not written). \
     Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and \
-    whether the powers are absent may affect timing, not the bytes wiped."
+    which of those the count is may affect timing, not the bytes wiped."
   safety := []
 
 /-- Prepared-context validity, in addition to each API's existing safety requirements. -/
@@ -137,8 +156,8 @@ def preparedSafety : String :=
 def preparedSummary (name contract : String) : String :=
   "`" ++ name ++ "` with a 1032-byte context from `vg_aes_gcm_prepare`. " ++
   "Computes the same result, using the AES key schedule and hash subkey in its first " ++
-  "256 bytes, and may read the 48 prepared powers if they are present. The powers remain " ++
-  "secret; whether they are absent may affect timing; all other memory, aliasing and " ++
+  "256 bytes, and may read the prepared powers its count says are present. The powers remain " ++
+  "secret; how many are present may affect timing; all other memory, aliasing and " ++
   "constant-time requirements are unchanged. Contract: `VG.Spec.Gcm." ++ contract ++ "`."
 
 /-- The existing signature with a prepared 1032-byte context. -/
@@ -205,24 +224,24 @@ def openToPreparedPre (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → P
     (rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14) ∧
       dstLen.toNat = len.toNat ∧ PreparedRepr m ctx
 
-/-- What `seal` may leak: whether the powers are absent. -/
+/-- What `seal` may leak: how many powers are present. -/
 def sealPreparedLeak (pb : Nat) : Curry (sealPreparedSig.words pb) (Mem → List Nat) :=
   fun ctx _rounds _nonce _nonceLen _aad _aadLen _data _len _tag m => [flagLeak m ctx]
 
-/-- What `open` may leak: whether the powers are absent, and `openLeak`. -/
+/-- What `open` may leak: how many powers are present, and `openLeak`. -/
 def openPreparedLeak (pb : Nat) : Curry (openPreparedSig.words pb) (Mem → List Nat) :=
   fun ctx rounds nonce nonceLen aad aadLen data len tag tagLen m =>
     flagLeak m ctx :: openLeak pb ctx rounds nonce nonceLen aad aadLen data len tag tagLen m
 
-/-- What the streams may leak: whether the powers are absent. -/
+/-- What the streams may leak: how many powers are present. -/
 def streamCryptPreparedLeak (pb : Nat) : Curry (streamCryptPreparedSig.words pb) (Mem → List Nat) :=
   fun ctx _rounds _state _aadLen _textLen _data _len m => [flagLeak m ctx]
 
-/-- What `seal_gather` may leak: whether the powers are absent. -/
+/-- What `seal_gather` may leak: how many powers are present. -/
 def sealGatherPreparedLeak (pb : Nat) : Curry (sealGatherPreparedSig.words pb) (Mem → List Nat) :=
   fun ctx _rounds _nonce _nonceLen _aad _aadLen _src _srcCount _dst _len _tag m => [flagLeak m ctx]
 
-/-- What `open_to` may leak: whether the powers are absent, and `openToLeak`. -/
+/-- What `open_to` may leak: how many powers are present, and `openToLeak`. -/
 def openToPreparedLeak (pb : Nat) : Curry (openToPreparedSig.words pb) (Mem → List Nat) :=
   fun ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m =>
     flagLeak m ctx :: openToLeak pb ctx rounds nonce nonceLen aad aadLen src len dst dstLen tag tagLen m

@@ -136,7 +136,7 @@ theorem openSpecR_pre {s : State} (h : openPreK CtxMode.prepared s) :
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.prepared, CtxMode.preparedN,
-    VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+    VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
   all_goals first
     | with_reducible assumption
     | omega
@@ -148,9 +148,9 @@ theorem openSpecR16_pre {s : State} (h : openPreK CtxMode.prepared16 s) :
   have a₂₈ := h
   clear h
   sig_pre [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
+    Proof.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret,
     X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
@@ -182,7 +182,7 @@ theorem openSpecR16_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
   sig_post [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
-    Spec.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
+    Proof.Gcm.openPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.openRoundsPost] at h
   sig_reduce [Proof.AesGcm.openPrepared16RoundsContract, Spec.Gcm.openPrecomputedSig, Spec.Gcm.openPrecomputedSig,
     X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h
   exact h hR
@@ -282,12 +282,12 @@ theorem openSpecF_pre {s : State} (h : openPreK CtxMode.flagged s) :
   sig_and_intros
   all_goals simp only [Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, VG.X86_64.below, Nat.mul_one, Proof.AesGcm.rounds, CtxMode.flagged, Spec.Gcm.PreparedRepr,
-    VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr] at *
+    VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowersRepr, Spec.Gcm.PreparedPowers16Repr] at *
   all_goals first
     | with_reducible assumption
     | omega
-    | exact Or.inr a₂₈
-    | exact Or.inr a₂₈.2
+    | exact ⟨fun _ k hk => a₂₈ k (by omega), fun _ => a₂₈⟩
+    | exact ⟨fun _ k hk => a₂₈.2 k (by omega), fun _ => a₂₈.2⟩
 theorem openSpecF_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).post s s') :
     Proof.AesGcm.openX86_64.post s s' := by
@@ -299,10 +299,10 @@ theorem openSpecF_post {s s' : State} (hR : rounds s)
 theorem openSpecF_pub {s₁ s₂ : State} (h : openPubK s₁ s₂)
     (o₁ : CtxMode.flagged.ok s₁.mem (s₁.gpr .rdi)) (o₂ : CtxMode.flagged.ok s₂.mem (s₂.gpr .rdi)) :
     (Proof.AesGcm.Flag.openRoundsContract X86_64.abi 2632).pub s₁ s₂ := by
-  have f₁ : Spec.Gcm.flagLeak s₁.mem (s₁.gpr .rdi) = 0 := by
-    simp only [Spec.Gcm.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₁.1
-  have f₂ : Spec.Gcm.flagLeak s₂.mem (s₂.gpr .rdi) = 0 := by
-    simp only [Spec.Gcm.flagLeak]; exact ite_eq_right_iff.mpr fun h => absurd h o₂.1
+  have f₁ : Spec.Gcm.flagLeak s₁.mem (s₁.gpr .rdi) = 2 := by
+    simp only [Spec.Gcm.flagLeak, Spec.Gcm.powerCount, o₁.1, ↓reduceIte]
+  have f₂ : Spec.Gcm.flagLeak s₂.mem (s₂.gpr .rdi) = 2 := by
+    simp only [Spec.Gcm.flagLeak, Spec.Gcm.powerCount, o₂.1, ↓reduceIte]
   obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
@@ -317,7 +317,7 @@ theorem openSpecF_pub {s₁ s₂ : State} (h : openPubK s₁ s₂)
     X86_64.stackArgAddr] at b₀ b₁ b₂ b₃ a₉
   sig_and_intros
   all_goals try simp only [f₁, f₂]
-  all_goals first | with_reducible assumption | trivial | exact congrArg (List.cons 0) a₉ |
+  all_goals first | with_reducible assumption | trivial | exact congrArg (List.cons 2) a₉ |
     (intro r hr; simp at hr)
 
 /-- `vg_aes_gcm_open_prepared` from its contract on the prepared key context,

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Rounds
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepared.Context
@@ -39,9 +39,9 @@ theorem sealSpecR16_pre {s : State} (h : sealPreK CtxMode.prepared16 s) :
     a₂₈ a₂₉ a₃₀ a₃₁
   have a₃₂ := h
   clear h
-  sig_pre [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrepared16Pre,
+  sig_pre [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
     X86_64.abi, X86_64.argRegs]
-  sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrepared16Pre,
+  sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
   sig_and_intros
@@ -52,7 +52,7 @@ theorem sealSpecR16_pre {s : State} (h : sealPreK CtxMode.prepared16 s) :
 theorem sealSpecR16_post {s s' : State} (hR : rounds s)
     (h : (Proof.AesGcm.sealPrepared16RoundsContract X86_64.abi 2624).post s s') :
     Proof.AesGcm.sealX86_64.post s s' := by
-  sig_post [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrepared16Pre,
+  sig_post [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.sealRoundsPost] at h
   sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Spec.Gcm.sealPrecomputedSig, Spec.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop] at h

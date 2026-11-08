@@ -397,8 +397,8 @@ theorem prepare16_ok {s₀ : State} (hw : InRegions s₀.wr (s₀.gpr .rdi) 1024
 
 /-- It writes none of the context from byte 512 on. -/
 theorem prepare16_written (s : State) (t : List Leak) (s' : State)
-    (hs : (Spec.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
-    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Gcm.prepare16Sig [("ctx", 512)] s s' :=
+    (hs : (Proof.Gcm.prepare16Contract X86_64.abi).pre s) (he : Exec isa prepare16 s t s') :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Proof.Gcm.prepare16Sig [("ctx", 512)] s s' :=
   written16 (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => h.2.1) s t s' hs he
 
 theorem correct16 {s₀ : State} (hp : prepare16X86_64.pre s₀) :
@@ -436,9 +436,9 @@ theorem prepare16_correct (s : State) (hs : prepare16X86_64.pre s) :
   exact ⟨t, s', he, abiPreserved_of_exec (by decide +kernel) he h.1, h.2⟩
 
 theorem prepare16_verified :
-    Verified X86_64.target prepare16 (Spec.Gcm.prepare16Contract X86_64.abi) :=
+    Verified X86_64.target prepare16 (Proof.Gcm.prepare16Contract X86_64.abi) :=
   Verified.of_correct prepare16_correct prepare16_ct (by
-    sig_implies [Spec.Gcm.prepare16Contract, Spec.Gcm.prepare16Sig, Spec.Gcm.prepare16Post, prepare16X86_64,
+    sig_implies [Proof.Gcm.prepare16Contract, Proof.Gcm.prepare16Sig, Proof.Gcm.prepare16Post, prepare16X86_64,
       X86_64.abi, X86_64.argRegs] [satState] using satState)
 
 /-! ## `vg_aes_gcm_prepare`: the 48 powers -/
@@ -465,10 +465,14 @@ theorem prepare_verified : Verified X86_64.target prepare (Proof.Gcm.preparePowe
   Prepare.verified_of prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
     Prepare16.prepare_ct
 
-/-- `prepare` after setting the flag word to 0, on the prepared key context. -/
+/-- `prepare16` after setting the count to 16, on the prepared key context. -/
 theorem prepareFlagged_verified :
-    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged prepare) (Spec.Gcm.prepareContract X86_64.abi) :=
-  Prepare.flagged_verified prepare (fun _ hw hwrap => prepare_ok hw hwrap) (by decide +kernel)
-    Prepare.flagged16_ct
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged 16 prepare16) (Spec.Gcm.prepareContract X86_64.abi) :=
+  Prepare.flagged_verified (Or.inl rfl) prepare16
+    (fun _ hw hwrap => WP.mono (prepare16_ok hw hwrap) fun _ h => ⟨h.1, Frame.sub h.2.1 fun r hr => by
+        obtain rfl := List.mem_singleton.mp hr
+        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩,
+      fun r h₁ _ => h.2.2.1 r h₁, h.2.2.2⟩)
+    (by decide +kernel) Prepare.flagged16_ct
 
 end VG.Proof.Gcm.X86_64.Prepare16
