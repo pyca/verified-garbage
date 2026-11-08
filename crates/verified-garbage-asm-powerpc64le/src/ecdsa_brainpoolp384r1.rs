@@ -210,7 +210,7 @@ bl {vg_brainpoolp384r1_sub_mod_n}
         vg_brainpoolp384r1_add_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_add_mod_p::vg_brainpoolp384r1_add_mod_p,
         vg_brainpoolp384r1_sub_mod_p = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_p::vg_brainpoolp384r1_sub_mod_p,
         vg_brainpoolp384r1_mul_mod_n = sym super::ecdsa_brainpoolp384r1::vg_brainpoolp384r1_mul_mod_n::vg_brainpoolp384r1_mul_mod_n,
-        vg_brainpoolp384r1_point_double = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
+        vg_brainpoolp384r1_point_double = sym super::ecdh_brainpoolp384r1::vg_brainpoolp384r1_point_double::vg_brainpoolp384r1_point_double,
         vg_brainpoolp384r1_point_add = sym super::ec_brainpoolp384r1::vg_brainpoolp384r1_point_add::vg_brainpoolp384r1_point_add,
         vg_brainpoolp384r1_sub_mod_n = sym super::ecdsa_brainpoolp384r1::vg_brainpoolp384r1_sub_mod_n::vg_brainpoolp384r1_sub_mod_n,
     )
