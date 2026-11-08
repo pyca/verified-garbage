@@ -623,99 +623,9 @@ theorem sealGather_onFlag16 {c₁ c₂ : Prog isa}
 def toSatF : State :=
   { OpenTo.toSat with rd := [⟨0x1000, 1032⟩, ⟨0x2000, 0⟩, ⟨0x3000, 0⟩, ⟨0x4000, 0⟩, ⟨0x6000, 0⟩, ⟨0x9008, 48⟩] }
 
-theorem openTo_satF : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPreparedPre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPreparedPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | (intro _
-       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
-    | (intro _
-       refine preparedPowers16Repr_of ?_
-       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPowersPre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | (exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
-
-theorem openTo_satpow16 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPrepared16Pre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | (refine preparedPowers16Repr_of ?_
-       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
-
-
-theorem openTo_satbase : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2728 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Spec.Gcm.openToPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-
-
-/-- From the key context. -/
-theorem openTo_of_base {c : Prog isa}
-    (h : Verified target c (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target c (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) openTo_satF) (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-
-/-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem openTo_onFlag {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (Proof.AesGcm.openToPreparedRoundsContract abi 2728))
-    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
-    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow)
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    openTo_satF
-
-/-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
-context. -/
-theorem openTo_onFlag16 {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (Proof.AesGcm.openToPrepared16RoundsContract abi 2728))
-    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
-    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow16)
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    openTo_satF
 
 theorem openTo_satF2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPreparedPre 64)
     (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
@@ -734,31 +644,6 @@ theorem openTo_satF2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.
        exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
-theorem openTo_satpow2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPowersPre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPowersPre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | (exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
-
-
-theorem openTo_satpow162776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Proof.Gcm.openToPrepared16Pre 64)
-    (Proof.AesGcm.openToRoundsPost 64) true 2776 none).pre s := by
-  refine ⟨toSatF, ?_⟩
-  sig_pre [Spec.Gcm.openToPreparedSig, Proof.Gcm.openToPrepared16Pre, Spec.Gcm.PreparedRepr, Proof.AesGcm.openToRoundsPost, OpenTo.stackArgs_six, List.append_eq, stackArg, stackArgAddr, Mem.readW, Mem.read, X86_64.abi,
-    X86_64.argRegs, toSatF, OpenTo.toSat]
-  sig_and_intros
-  all_goals first
-    | rfl
-    | decide
-    | exact Region.disjoint_of_sep (by decide)
-    | (refine preparedPowers16Repr_of ?_
-       exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false])
 
 
 theorem openTo_satbase2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Spec.Gcm.openToPre 64)
@@ -773,64 +658,12 @@ theorem openTo_satbase2776 : ∃ s, (Spec.Gcm.openToPreparedSig.contract abi (Sp
     | exact Region.disjoint_of_sep (by decide)
 
 
-/-- `open_to` on the key context, with the larger stack of the prepared
-code that splits. -/
-theorem openTo_satK2776 : ∃ s, (Proof.AesGcm.openToRoundsContract abi 2776).pre s := by
-  sig_implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre, X86_64.abi,
-    X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq] [OpenTo.toSat, stackArg, stackArgAddr, Mem.readW,
-    Mem.read] using OpenTo.toSat
-
 /-- From the key context. -/
 theorem openTo_of_base2776 {c : Prog isa}
     (h : Verified target c (Proof.AesGcm.openToRoundsContract abi 2776)) :
     Verified target c (AesGcm.Flag.openToRoundsContract abi 2776) :=
   Verified.leak_flag (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h
     (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => ⟨h.1, h.2.1⟩) openTo_satF2776) (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-
-/-- By the flag: `c₁` on the prepared powers, `c₂` on the key context. -/
-theorem openTo_onFlag2776 {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (Proof.AesGcm.openToPreparedRoundsContract abi 2776))
-    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 48 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (Or.inr rfl) (by decide)
-    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow2776)
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.2 hf⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    openTo_satF2776
-
-/-- By the flag: `c₁` on the first sixteen prepared powers, `c₂` on the key
-context. -/
-theorem openTo_onFlag162776 {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (Proof.AesGcm.openToPrepared16RoundsContract abi 2776))
-    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2776)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag 16 c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2776) :=
-  Verified.of_onFlagCtx (Or.inl rfl) (by decide)
-    (VG.X86_64.Verified.widenFirstArray (n := 128) (n' := 129) (by decide) h₁
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satpow162776)
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase2776)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, h.2.2.1 hf⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    openTo_satF2776
-
-/-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
-context. -/
-theorem openTo_onFlagF {t : Nat} (ht : t = 16 ∨ t = 48) {c₁ c₂ : Prog isa}
-    (h₁ : Verified target c₁ (AesGcm.Flag.openToFlaggedRoundsContract t abi 2728))
-    (h₂ : Verified target c₂ (Proof.AesGcm.openToRoundsContract abi 2728)) :
-    Verified target (Impl.Gcm.X86_64.Flag.onFlag t c₁ c₂) (AesGcm.Flag.openToRoundsContract abi 2728) :=
-  Verified.of_onFlagCtx ht (by decide) h₁
-    (VG.X86_64.Verified.widenFirstArray (n := 32) (n' := 129) (by decide) h₂
-      (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h => h) openTo_satbase)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1, hf, h.2.2⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ h _ => ⟨h.1, h.2.1⟩)
-    (fun _ _ _ _ _ _ _ _ _ _ _ _ _ => rfl)
-    openTo_satF
 
 /-- By the flag: `c₁` on a context whose powers are present, `c₂` on the key
 context, with the stack of the code that splits. -/
