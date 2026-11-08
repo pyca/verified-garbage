@@ -65,6 +65,10 @@ pub mod aes_ctr;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod aes_ecb;
+
+#[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
+#[rustfmt::skip]
 pub mod aes_gcm_siv;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]

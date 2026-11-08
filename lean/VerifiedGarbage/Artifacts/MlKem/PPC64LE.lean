@@ -11,9 +11,7 @@ public import VerifiedGarbage.Proof.MlKem.PPC64LE.Decode12
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CheckEk
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.CompressEncode
 public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.KeyGenCT
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.EncapsCT
-public import VerifiedGarbage.Proof.MlKem.PPC64LE.DecapsCT
+public import VerifiedGarbage.Proof.MlKem.PPC64LE.CallWipe
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
@@ -25,21 +23,21 @@ namespace VG.Artifacts.MlKem.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.keygen
-    stack := 48
-    verified := Proof.MlKem.PPC64LE.KeyGen.verified },
+    code := Impl.MlKem.PPC64LE.Wipe.keyGen
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.encaps
-    stack := 48
-    verified := Proof.MlKem.PPC64LE.Encaps.verified },
+    code := Impl.MlKem.PPC64LE.Wipe.encaps
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.encapsH
-    stack := 48
-    verified := Proof.MlKem.PPC64LE.Encaps.verifiedH },
+    code := Impl.MlKem.PPC64LE.Wipe.encapsH
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact PPC64LE.target {
-    code := Impl.MlKem.PPC64LE.decaps
-    stack := 48
-    verified := Proof.MlKem.PPC64LE.Decaps.verified },
+    code := Impl.MlKem.PPC64LE.Wipe.decaps
+    stack := 96
+    verified := Proof.MlKem.PPC64LE.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact PPC64LE.target {
     code := Impl.MlKem.PPC64LE.checkEk
     verified := Proof.MlKem.PPC64LE.CheckEk.verified }]
