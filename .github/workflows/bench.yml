@@ -20,6 +20,10 @@ name: Benchmarks
 on:
   workflow_dispatch:
     inputs:
+      keccak_experiment:
+        description: Run the isolated unproven C Keccak experiment on native RISC-V
+        type: boolean
+        default: false
       base_commit:
         description: The commit to compare against, as a full or abbreviated SHA, a branch or a tag (empty to run the branch alone, next to OpenSSL and aws-lc-rs)
         required: false
@@ -61,6 +65,7 @@ env:
 
 jobs:
   arches:
+    if: ${{ !inputs.keccak_experiment }}
     name: Choose architectures
     runs-on: ubuntu-26.04
     timeout-minutes: 5
@@ -113,7 +118,7 @@ jobs:
 
   compare:
     needs: arches
-    if: ${{ needs.arches.outputs.matrix != '[]' }}
+    if: ${{ !inputs.keccak_experiment && needs.arches.outputs.matrix != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -291,3 +296,34 @@ jobs:
           path: bench-compare/**/new/*.json
           retention-days: 14
           if-no-files-found: ignore
+
+  keccak-experiment:
+    if: ${{ inputs.keccak_experiment }}
+    name: Native RISC-V Keccak C experiments
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /experiments/riscv-keccak/
+            /lean/VerifiedGarbage/Impl/Sha3/RISCV64.lean
+            /crates/verified-garbage-asm-riscv64/assembly/
+      - name: Correctness and interleaved native measurements
+        run: experiments/riscv-keccak/run.sh
+      - name: Results
+        if: always()
+        run: |
+          for path in experiments/riscv-keccak/out/*summary.md; do
+            if [ -f "$path" ]; then cat "$path" >> "$GITHUB_STEP_SUMMARY"; fi
+          done
+          for path in experiments/riscv-keccak/out/*checks.txt; do
+            if [ -f "$path" ]; then cat "$path"; fi
+          done
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: always()
+        with:
+          name: riscv-keccak-experiments
+          path: experiments/riscv-keccak/out/
