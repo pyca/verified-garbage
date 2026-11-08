@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Weierstrass.Env
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.MontFnG
 import VerifiedGarbage.Proof.Mont.AArch64.P256Square.Core
+import VerifiedGarbage.Proof.Mont.AArch64.P521Linear
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall521
 import VerifiedGarbage.Proof.Weierstrass.AArch64.MontCall
 import VerifiedGarbage.Proof.Framework.Block
@@ -180,6 +181,62 @@ theorem mulOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {
     exact ⟨hk.toOpKeep hn, by simpa only [hn] using hlt, by simpa only [hn] using he⟩
   · exact mul_ok hs hM hA ho ha hb ho8 ha8 hb8 hB
 
+private theorem linearKeep {M : Mod} {base : Addr} {o : Nat} {s t : State}
+    (hn : M.n = 9) (k : KeepRegs (clob 9) s t) (O : Outside base o 72 s.mem t.mem) :
+    OpKeep M base o s t :=
+  ⟨fun r hr => k.gpr r (by simpa only [hn] using hr),k.rd,k.wr,k.sp,
+    fun x hx _ => O x (by simpa only [hn] using hx)⟩
+
+theorem addOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkA M size m s.mem base) (hA : ModA M) {o a b : Nat}
+    (ho : o+8*M.n ≤ size) (ha : a+8*M.n ≤ size) (hb : b+8*M.n ≤ size)
+    (ho8 : o%8 = 0) (ha8 : a%8 = 0) (hb8 : b%8 = 0)
+    (hAB : wordsVal s.mem base a M.n+wordsVal s.mem base b M.n < 2*m) :
+    WP isa (.block (opCode M (.add o a b))) s fun t => OpKeep M base o s t ∧
+      wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+wordsVal s.mem base b M.n)%m := by
+  rw [opCode]
+  split
+  · rename_i h
+    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
+    simp only [hn] at ho ha hb hAB ⊢
+    refine WP.mono (P521Linear.add_ok hs ho ha hb ho8 ha8 hb8 hm hAB)
+      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
+  · exact add_ok hs hM hA ho ha hb ho8 ha8 hb8 hAB
+
+theorem subOp_ok {s : State} {base : Addr} {size : Nat} (hs : Scr s base size) {M : Mod} {m : Nat}
+    (hM : ModOkA M size m s.mem base) (hMA : ModA M) {o a b : Nat}
+    (ho : o+8*M.n ≤ size) (ha : a+8*M.n ≤ size) (hb : b+8*M.n ≤ size)
+    (ho8 : o%8 = 0) (ha8 : a%8 = 0) (hb8 : b%8 = 0)
+    (hA : wordsVal s.mem base a M.n < m) (hB : wordsVal s.mem base b M.n < m) :
+    WP isa (.block (opCode M (.sub o a b))) s fun t => OpKeep M base o s t ∧
+      wordsVal t.mem base o M.n = (wordsVal s.mem base a M.n+m-wordsVal s.mem base b M.n)%m := by
+  rw [opCode]
+  split
+  · rename_i h
+    obtain ⟨hn,hm⟩ := P521Linear.supported_mod h hM.red
+    simp only [hn] at ho ha hb hA hB ⊢
+    refine WP.mono (P521Linear.sub_ok hs ho ha hb ho8 ha8 hb8 hm hA hB)
+      fun t ⟨he,_,hk,O⟩ => ⟨linearKeep hn hk O,he⟩
+  · exact sub_ok hs hM hMA ho ha hb ho8 ha8 hb8 hA hB
+
+/-- Hand-composed negation blocks use the general subtraction directly. -/
+theorem subRaw_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop}
+    (hL : Lay M size Sl) (hAl : Aligned M Sl) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (hI : Inv M base size m Sl V E s) {o a b : Nat}
+    (hS : ∀ x ∈ (FOp.sub o a b).out::(FOp.sub o a b).ins, Sl x)
+    (hR : ∀ x ∈ (FOp.sub o a b).ins, x ∈ V) :
+    WP isa (.block (VG.Impl.Mont.AArch64.sub M o a b)) s fun t =>
+      OpKeep M base o s t ∧ Inv M base size m Sl (o::V) ((FOp.sub o a b).run E) t := by
+  simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false,
+    forall_eq_or_imp,forall_eq] at hS hR
+  have hA := hI.lt a hR.1
+  have hB := hI.lt b hR.2
+  refine WP.mono (sub_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1)
+    (hL.le b hS.2.2) (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB)
+    fun t ⟨hk,he⟩ => ⟨hk,hI.update hL hS.1 hk ?_ ?_⟩
+  · rw [he]; exact Nat.mod_lt _ (by omega_arith)
+  · rw [he,toM_sub (by omega_arith),hI.val a hR.1,hI.val b hR.2]
+
 /-- One operation. -/
 theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → Prop} (hL : Lay M size Sl)
     (hAl : Aligned M Sl) (hm : UnitMod m (2 ^ (64 * M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
@@ -199,7 +256,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (add_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (addOp_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) (by omega_arith)) fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega_arith)
     · rw [heq, toM_add, hI.val a hR.1, hI.val b hR.2]
@@ -208,7 +265,7 @@ theorem fop_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m] {Sl : Nat → P
       forall_eq_or_imp, forall_eq] at hS hR
     have hA := hI.lt a hR.1
     have hB := hI.lt b hR.2
-    refine WP.mono (sub_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
+    refine WP.mono (subOp_ok hI.scr hI.mod hAl.mod (hL.le o hS.1) (hL.le a hS.2.1) (hL.le b hS.2.2)
       (hAl.sl o hS.1) (hAl.sl a hS.2.1) (hAl.sl b hS.2.2) hA hB)
       fun s' ⟨hk, heq⟩ => ⟨hk, hI.update hL hS.1 hk ?_ ?_⟩
     · rw [heq]; exact Nat.mod_lt _ (by omega_arith)

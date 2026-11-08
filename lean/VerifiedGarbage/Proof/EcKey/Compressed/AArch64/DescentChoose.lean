@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
 import VerifiedGarbage.Proof.Ecdsa.AArch64.SlotOps
@@ -46,7 +47,7 @@ theorem descentChoose_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have hOlt : sv c base s ONEP < c.C.p := by rw [hOne]; exact Nat.mod_lt _ (by omega)
   rw [Impl.EcKey.Compressed.AArch64.descentChoose, List.append_assoc, List.append_assoc,
     WP.block_append_iff]
-  refine WP.mono (sub_ok hs hM (MP'_A c) hW hT hO (sl_mod8 c W0) (sl_mod8 c T3) (sl_mod8 c ONEP) ht hOlt)
+  refine WP.mono (subOp_ok hs hM (MP'_A c) hW hT hO (sl_mod8 c W0) (sl_mod8 c T3) (sl_mod8 c ONEP) ht hOlt)
     fun s₁ ⟨k₁, e₁⟩ => ?_
   change sv c base s₁ W0 = (sv c base s T3 + c.C.p - sv c base s ONEP) % c.C.p at e₁
   have hs₁ := k₁.scr hs

@@ -162,7 +162,7 @@ def EntryPair (K : WinCfg) (C : Curve) (base : Addr) (size : Nat) (V : List Nat)
 
 /-- The entry of a nonzero digit, negated for a negative one. -/
 theorem signedEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat}
-    (hL : NafLay K size) (hm : UnitMod C.p (2^(64*K.M.n))) (hc : DigitChecks K)
+    (hL : NafLay K size) (_hm : UnitMod C.p (2^(64*K.M.n))) (hc : DigitChecks K)
     {P : Point C} {s₀ t₀ : State} (hF₁ : NafFixed K C base s₀ P k) (hF₂ : NafFixed K C base t₀ P k)
     (hj : j < 64 * K.M.n + 1) (hm0 : Naf5.magnitude k j ≠ 0)
     {V : List Nat} (hV : ∀ x ∈ winRo K ++ winTblSlots K, x ∈ V) {E : Nat → Fe C} :
@@ -293,7 +293,7 @@ theorem signedEntry_relCT {K : WinCfg} {C : Curve} {base : Addr} {size k j : Nat
           (.block (VG.Impl.Mont.AArch64.sub K.M K.E.y K.zero K.E.y))
           (FieldPair K.M base size C.p (· ∈ winSlots K) (K.E.y :: (entryW K ++ V))
             ((FOp.sub K.E.y K.zero K.E.y).run E')) :=
-        fieldWP_relCT hc.neg fun s hi => WP.mono (fop_ok hW.lay hL.al.al hm hi hS hR)
+        fieldWP_relCT hc.neg fun s hi => WP.mono (subRaw_ok hW.lay hL.al.al hi hS hR)
           fun _ ⟨hk, it⟩ => ⟨it, hk.sp⟩
       have hx3 : ∀ {a : State}, a.gpr .x3 = BitVec.ofNat 64 (nafNegative (Naf5.byte k j)).toNat →
           eval (.nonzero .x .x3) a = some (nafNegative (Naf5.byte k j)) := by
