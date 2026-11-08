@@ -12,8 +12,8 @@ meta import VerifiedGarbage.Artifacts.Poly1305.AArch64
 
 How a dispatcher reads and ranks its implementations' suffixes, and what it
 is for Poly1305 on AArch64: `vg_poly1305_update` and its `_neon` variant,
-which the ranking chooses only on Apple's targets (or where
-`VG_CPU_FEATURES` names its features), and only with the `neon` feature
+which its registration lets the dispatcher choose only on Apple's targets
+(or where `VG_CPU_FEATURES` names its features), and only with the `neon` feature
 detected; `vg_poly1305_init` and `vg_poly1305_finalize`, its only
 implementations, whose dispatchers are other names of them.
 -/
@@ -55,7 +55,7 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 #guard has file "pub use crate::poly1305::vg_poly1305_init as vg_poly1305_init_auto;\n"
 #guard has file "pub use crate::poly1305::vg_poly1305_finalize as vg_poly1305_finalize_auto;\n"
 
--- `vg_poly1305_update`: `_neon` where the ranking chooses it, else the base,
+-- `vg_poly1305_update`: `_neon` where its registration lets it be chosen, else the base,
 -- chosen by `select` on the first call (`first`) and called through `CHOSEN`
 -- from then on.
 #guard has file
@@ -93,23 +93,24 @@ def has (text part : String) : Bool := (text.splitOn part).length > 1
 
 /-! ## A registration's `extra` features and `vendor` (`Artifact.extra`, `Artifact.vendor`) -/
 
-/-- The ranking without its rule for Poly1305's `_neon`, which ranks `_neon` alone. -/
+/-- The ranking without any rule for Poly1305 alone. -/
 def plainRanking : Rust.Ranking :=
   Dispatch.ranking.map fun (t, rs) => (t, rs.filter fun r => !r.modules.contains "poly1305")
 
-/-- The files of Poly1305 on AArch64 under `rk`, with `f` applied to `_neon`. -/
+/-- The files of Poly1305 on AArch64 under `rk`, with `f` applied to `_neon`
+without its registration's `extra` features and `vendor`. -/
 def neonOut (rk : Rust.Ranking) (f : Artifact → Artifact) : Except String (List (String × String)) :=
   Rust.files (Artifacts.Poly1305.AArch64.artifacts.map fun a =>
-    if a.name == "vg_poly1305_update_neon" then f a else a) rk
+    if a.name == "vg_poly1305_update_neon" then f { a with extra := [], vendor := none } else a) rk
 
--- The ranking's rule, given by the registration instead: the same files.
+-- The registration's choice: the same files.
 #guard match neonOut plainRanking fun a => { a with vendor := some "apple", extra := ["neon"] } with
   | .ok fs => fs == out
   | .error _ => false
 
--- Either may give each, and they combine.
-#guard match neonOut (Dispatch.ranking.map fun (t, rs) => (t, rs.map fun r =>
-      if r.modules.contains "poly1305" then { r with extra := [] } else r))
+-- The ranking and the registration may each give some of it, and they combine.
+#guard match neonOut (plainRanking.map fun (t, rs) => (t, if t == "aarch64" then
+      { suffix := "_neon", modules := ["poly1305"], vendor := some "apple" } :: rs else rs))
     fun a => { a with extra := ["neon"] } with
   | .ok fs => fs == out
   | .error _ => false

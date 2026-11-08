@@ -25,6 +25,12 @@ def artifacts : List Artifact := [
     verified := Proof.Poly1305.AArch64.Radix64.update_framed },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     suffix := "_neon"
+    -- Faster on Apple's cores (about twice as fast), slower on Neoverse N2. It
+    -- needs no feature (AdvSIMD is part of the AArch64 baseline): `neon`,
+    -- which detection reports, lets `VG_CPU_FEATURES=neon` choose it
+    -- elsewhere for the tests.
+    extra := ["neon"]
+    vendor := some "apple"
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
     stack := 128
     verified := Proof.Poly1305.AArch64.Vector.update_framed },
