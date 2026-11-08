@@ -222,12 +222,22 @@ impl Fns {
     /// process; a call that comes while another selects them waits for it.
     #[inline]
     fn get() -> &'static Fns {
+        if SELECTED.state.load(Ordering::Acquire) != READY {
+            Fns::init();
+        }
+        // SAFETY: `state` is `READY`, so `fns` was written (as in
+        // `Selected`'s `Sync`) and is never written again.
+        unsafe { (*SELECTED.fns.get()).assume_init_ref() }
+    }
+
+    /// Writes `SELECTED.fns` if no other call has, and returns once it is
+    /// written.
+    #[cold]
+    fn init() {
         loop {
             let state = SELECTED.state.load(Ordering::Acquire);
             if state == READY {
-                // SAFETY: `state` is `READY`, so `fns` was written (as in
-                // `Selected`'s `Sync`) and is never written again.
-                return unsafe { (*SELECTED.fns.get()).assume_init_ref() };
+                return;
             }
             if state == UNSET
                 && SELECTED
