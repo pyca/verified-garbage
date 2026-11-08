@@ -35,6 +35,38 @@ call {vg_zeroize_avx}
     )
 }
 
+/// The CPU features `vg_aes_cbc_decrypt_aesni_avx` requires (`Artifact.features`).
+pub const VG_AES_CBC_DECRYPT_AESNI_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` and `avx` target features.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_cbc_decrypt_aesni_avx(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJPBMiUwkCA=="
+call {vg_aes_cbc_decrypt_unwiped_aesni}
+.base64 "SIkEJEiLfCQIvuAAAAA="
+call {vg_zeroize_avx}
+.base64 "SIsEJEiNZCQQww=="
+.p2align 6"#,
+        vg_aes_cbc_decrypt_unwiped_aesni = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_aesni::vg_aes_cbc_decrypt_unwiped_aesni,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+    )
+}
+
 /// The CPU features `vg_aes_cbc_encrypt_aesni` requires (`Artifact.features`).
 pub const VG_AES_CBC_ENCRYPT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -123,6 +155,70 @@ call {vg_zeroize}
 .p2align 6"#,
         vg_aes_cbc_decrypt_unwiped_aesni = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_aesni::vg_aes_cbc_decrypt_unwiped_aesni,
         vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// The CPU features `vg_aes_cbc_encrypt_avx` requires (`Artifact.features`).
+pub const VG_AES_CBC_ENCRYPT_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
+
+/// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
+///
+/// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` target feature.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_cbc_encrypt_avx(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJPBMiUwkCA=="
+call {vg_aes_cbc_encrypt_unwiped}
+.base64 "SIkEJEiLfCQIvoAIAAA="
+call {vg_zeroize_avx}
+.base64 "SIsEJEiNZCQQww=="
+.p2align 6"#,
+        vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+    )
+}
+
+/// The CPU features `vg_aes_cbc_decrypt_avx` requires (`Artifact.features`).
+pub const VG_AES_CBC_DECRYPT_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` target feature.
+#[unsafe(naked)]
+pub unsafe extern "sysv64" fn vg_aes_cbc_decrypt_avx(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJPBMiUwkCA=="
+call {vg_aes_cbc_decrypt_unwiped}
+.base64 "SIkEJEiLfCQIvoAIAAA="
+call {vg_zeroize_avx}
+.base64 "SIsEJEiNZCQQww=="
+.p2align 6"#,
+        vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
 

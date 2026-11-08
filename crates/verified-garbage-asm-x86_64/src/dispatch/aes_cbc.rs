@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_encrypt_aesni` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_encrypt_aesni` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AESNI_FEATURES`); `vg_aes_cbc_encrypt_avx` if the CPU supports its features (`VG_AES_CBC_ENCRYPT_AVX_FEATURES`); or else `vg_aes_cbc_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -27,6 +27,11 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
         // has the features it needs.
         return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_aesni(schedule, rounds, iv, data, n, scratch) };
     }
+    if cpu.contains(crate::aes_cbc::VG_AES_CBC_ENCRYPT_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cbc_encrypt_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cbc::vg_aes_cbc_encrypt_avx(schedule, rounds, iv, data, n, scratch) };
+    }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::aes_cbc::vg_aes_cbc_encrypt(schedule, rounds, iv, data, n, scratch) }
 }
@@ -35,7 +40,7 @@ pub unsafe fn vg_aes_cbc_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
 ///
 /// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_decrypt_vaes_avx512` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES`); `vg_aes_cbc_decrypt_vaes` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_FEATURES`); `vg_aes_cbc_decrypt_aesni` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cbc_decrypt_vaes_avx512` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES`); `vg_aes_cbc_decrypt_vaes` if the CPU supports its features (`VG_AES_CBC_DECRYPT_VAES_FEATURES`); `vg_aes_cbc_decrypt_aesni_avx` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_AVX_FEATURES`); `vg_aes_cbc_decrypt_aesni` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AESNI_FEATURES`); `vg_aes_cbc_decrypt_avx` if the CPU supports its features (`VG_AES_CBC_DECRYPT_AVX_FEATURES`); or else `vg_aes_cbc_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -61,10 +66,20 @@ pub unsafe fn vg_aes_cbc_decrypt_auto(schedule: *const [u8; 240], rounds: usize,
         // has the features it needs.
         return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_vaes(schedule, rounds, iv, data, n, scratch) };
     }
+    if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AESNI_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_aesni_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_aesni_avx(schedule, rounds, iv, data, n, scratch) };
+    }
     if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AESNI_FEATURES) {
         // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_aesni`'s, and the CPU
         // has the features it needs.
         return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_aesni(schedule, rounds, iv, data, n, scratch) };
+    }
+    if cpu.contains(crate::aes_cbc::VG_AES_CBC_DECRYPT_AVX_FEATURES) {
+        // SAFETY: the caller's obligations, which are `vg_aes_cbc_decrypt_avx`'s, and the CPU
+        // has the features it needs.
+        return unsafe { crate::aes_cbc::vg_aes_cbc_decrypt_avx(schedule, rounds, iv, data, n, scratch) };
     }
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::aes_cbc::vg_aes_cbc_decrypt(schedule, rounds, iv, data, n, scratch) }
