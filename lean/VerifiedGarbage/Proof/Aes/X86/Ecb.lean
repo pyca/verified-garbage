@@ -16,7 +16,7 @@ A group of `blocks` loads two blocks of the data (or the last one, into
 both halves) into slots `0 … 7`, runs a transformation of two blocks
 (`encrypt2` or `decrypt2`, whose proofs give `CryptOk`), and stores the
 results back in place. The data pointer and the count stay in the scratch
-buffer between the phases, as in `vg_aes_ctr32` (`Group.lean`). The data's
+buffer between the phases, as in `vg_aes_ctr32_to` (`Group.lean`). The data's
 invariant (`EcbInv`) says that the first `k` blocks hold the transformation
 of the original ones, and the others are still the original ones.
 -/

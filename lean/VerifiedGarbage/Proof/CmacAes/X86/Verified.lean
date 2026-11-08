@@ -26,7 +26,7 @@ section
 
 The code before the call is checked by the taint analysis from `esp` and the
 stack arguments (which nothing writes, `argTaint`), the call of
-`vg_aes_ctr32`, in its frame, is constant time by its own proof (`ctr_rel`),
+`vg_aes_ctr32_to`, in its frame, is constant time by its own proof (`ctr_rel`),
 and the code after it by the taint analysis again, from `esp`, the stack
 arguments and `ebx` (the subkeys, which the correctness proof pins).
 -/
@@ -76,7 +76,7 @@ structure SPost (s₀ : State) (s : State) : Prop where
 
 theorem spost_wp {s₀ : State} (hp : SPre s₀) {s : State} (h : SAfter s₀ s) : WP isa (ctrCall v.callee) s (SPost s₀) :=
   WP.mono (ctr_call v h.pre) fun s' hc => by
-    have hb : below (s.gpr .esp) 28 = stkR s₀ := by rw [h.esp]; exact hp.below_eq
+    have hb : below (s.gpr .esp) 32 = stkR s₀ := by rw [h.esp]; exact hp.below_eq
     have fr := hc.frame
     rw [hb, hp.cA, h.mem] at fr
     have big : Frame (SBig s₀) s₀.mem s'.mem := (sbig_of (sPreMem_frame s₀)).trans (fr.sub fun r hr => by
@@ -127,8 +127,8 @@ end
 # AES-CMAC on x86: `Verified`
 
 Correctness and constant time, a state satisfying each precondition, and the
-shared contracts of `Spec/Cmac/Contract.lean`, with 28 bytes of stack: each
-call of `vg_aes_ctr32` pushes its six arguments and the return address.
+shared contracts of `Spec/Cmac/Contract.lean`, with 32 bytes of stack: each
+call of `vg_aes_ctr32_to` pushes its seven arguments and the return address.
 -/
 
 namespace VG.Proof.CmacAes.X86
@@ -149,7 +149,7 @@ theorem subkeys_nosp : NoSp (subkeys v.callee) := by
   simp only [subkeys, ctrCall, Code.allInstrs, callee_nosp_all v]
   decide +kernel
 
-theorem subkeys_stack : stackUse (subkeys v.callee) = 28 := by
+theorem subkeys_stack : stackUse (subkeys v.callee) = 32 := by
   simp only [subkeys, ctrCall, stackUse, v.stack]
   decide +kernel
 
@@ -162,7 +162,7 @@ theorem update_nosp : NoSp (update v.callee) := by
   simp only [update, body, ctrCall, Code.allInstrs, callee_nosp_all v]
   decide +kernel
 
-theorem update_stack : stackUse (update v.callee) = 28 := by
+theorem update_stack : stackUse (update v.callee) = 32 := by
   simp only [update, body, ctrCall, stackUse, v.stack]
   decide +kernel
 
@@ -175,7 +175,7 @@ theorem finalize_nosp : NoSp (finalize v.callee) := by
   simp only [finalize, finPre, partialBlock, copy, ctrCall, Code.allInstrs, callee_nosp_all v]
   decide +kernel
 
-theorem finalize_stack : stackUse (finalize v.callee) = 28 := by
+theorem finalize_stack : stackUse (finalize v.callee) = 32 := by
   simp only [finalize, finPre, partialBlock, copy, ctrCall, stackUse, v.stack]
   decide +kernel
 

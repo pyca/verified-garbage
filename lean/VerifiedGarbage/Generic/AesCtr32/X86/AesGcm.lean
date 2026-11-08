@@ -51,14 +51,14 @@ namespace VG.Generic.AesCtr32.X86.AesGcm
 
 open VG.Proof.AesGcm.X86
 
-/-- The artifacts calling the implementation `c` of `vg_aes_ctr32`, and no GHASH. -/
+/-- The artifacts calling the implementation `c` of `vg_aes_ctr32_to`, and no GHASH. -/
 def artifacts (c : Proof.Aes.X86.Ctr32Impl) : List Artifact :=
   let v : GcmImpl := { ctr := c, gh := GhashName.scalar.impl }
   [
   Spec.Gcm.initApi.artifact X86.target {
     suffix := c.suffix
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesGcm.X86.init v.callees)
-    stack := 2608
+    stack := 2612
     verified := init_framed v
     spSafe := withStackScratch_spSafe (init_spSafe v)
     features := (v.ctr.features) }]

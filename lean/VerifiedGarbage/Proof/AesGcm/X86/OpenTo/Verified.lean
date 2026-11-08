@@ -66,7 +66,7 @@ def toMode (vg : GcmImpl) : OMode vg where
   out_mem := fun _ _ _ _ h => by simp only [outTo, h]
   bad := wipe
   fail := wipe
-  dec := decTo vg.callees ⟨vg.ctr.calleeTo.name, vg.ctr.calleeTo.code⟩
+  dec := decTo vg.callees ⟨vg.ctr.callee.name, vg.ctr.callee.code⟩
   hbad := fun q _ => wipeBad_pc q
   hfail := fun q hf => wipeFail_pc q hf
   hdec := fun q ht => decTo_pc vg q ht
@@ -84,7 +84,7 @@ def toPre (s : State) : Prop :=
   let scr : Region := ⟨(arg s 12).setWidth 64, 2560⟩
   let args : Region := ⟨argAddr s 0, 52⟩
   let ret : Region := ⟨(s.gpr .esp).setWidth 64, 4⟩
-  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 76, 76⟩
+  let stack : Region := ⟨(s.gpr .esp).setWidth 64 - 80, 80⟩
   s.rd = [ctx, nonce, aad, src, tag] ∧ s.wr = [dst, scr, args] ∧
   ctx.Disjoint dst ∧ ctx.Disjoint scr ∧ nonce.Disjoint dst ∧ nonce.Disjoint scr ∧ aad.Disjoint dst ∧
   aad.Disjoint scr ∧ src.Disjoint dst ∧ src.Disjoint scr ∧ dst.Disjoint tag ∧ dst.Disjoint scr ∧
@@ -96,7 +96,7 @@ def toPre (s : State) : Prop :=
   (arg s 0).toNat + 256 ≤ 2 ^ 32 ∧ (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32 ∧
   (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32 ∧ (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32 ∧
   (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧ (arg s 10).toNat + (arg s 11).toNat ≤ 2 ^ 32 ∧
-  (arg s 12).toNat + 2560 ≤ 2 ^ 32 ∧ 76 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 56 ≤ 2 ^ 32 ∧
+  (arg s 12).toNat + 2560 ≤ 2 ^ 32 ∧ 80 ≤ (s.gpr .esp).toNat ∧ (s.gpr .esp).toNat + 56 ≤ 2 ^ 32 ∧
   roundsOk s 1 ∧ (arg s 9).toNat = (arg s 7).toNat
 
 /-- What `open_to` computes. -/
@@ -117,11 +117,11 @@ def toX86 : Contract isa where
   pub s₁ s₂ := pubN 13 s₁ s₂ ∧ (toRes s₁).isSome = (toRes s₂).isSome
 
 /-- What the frame of `withStackScratch` needs of the code: the shared contract
-with the working space as a last argument, whatever it holds, and 76 bytes of
-stack (the frame of 48 and the calls' 28). -/
+with the working space as a last argument, whatever it holds, and 80 bytes of
+stack (the frame of 48 and the calls' 32). -/
 abbrev toScratchK : Contract isa :=
   Sig.scratchContract X86.abi Spec.Gcm.openToSig "work" .u64 320 (Spec.Gcm.openToPre X86.abi.ptrBits)
-    (Proof.AesGcm.openToRoundsPost X86.abi.ptrBits) true 76 (some (Spec.Gcm.openToLeak X86.abi.ptrBits))
+    (Proof.AesGcm.openToRoundsPost X86.abi.ptrBits) true 80 (some (Spec.Gcm.openToLeak X86.abi.ptrBits))
 
 theorem to_pre : ∀ s, toScratchK.pre s → toX86.pre s := by
   sig_implies_pre [toScratchK, Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app,
@@ -260,13 +260,13 @@ structure TP (s : State) : Prop where
   t_g : (⟨w64 (arg s 8), (arg s 7).toNat⟩ : Region).Disjoint ⟨w64 (arg s 10), (arg s 11).toNat⟩
   t_w : (⟨w64 (arg s 8), (arg s 7).toNat⟩ : Region).Disjoint ⟨w64 (arg s 12), 2560⟩
   g_w : (⟨w64 (arg s 10), (arg s 11).toNat⟩ : Region).Disjoint ⟨w64 (arg s 12), 2560⟩
-  k_c : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 0), 256⟩
-  k_n : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
-  k_a : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
-  k_d : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
-  k_t : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 8), (arg s 7).toNat⟩
-  k_g : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 10), (arg s 11).toNat⟩
-  k_w : (below (s.gpr .esp) 76).Disjoint ⟨w64 (arg s 12), 2560⟩
+  k_c : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 0), 256⟩
+  k_n : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
+  k_a : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
+  k_d : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
+  k_t : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 8), (arg s 7).toNat⟩
+  k_g : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 10), (arg s 11).toNat⟩
+  k_w : (below (s.gpr .esp) 80).Disjoint ⟨w64 (arg s 12), 2560⟩
   r_t : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 8), (arg s 7).toNat⟩
   r_w : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 12), 2560⟩
   r_a : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨argAddr s 0, 52⟩
@@ -277,7 +277,7 @@ structure TP (s : State) : Prop where
   ft : (arg s 8).toNat + (arg s 7).toNat ≤ 2 ^ 32
   fg : (arg s 10).toNat + (arg s 11).toNat ≤ 2 ^ 32
   fw : (arg s 12).toNat + 2560 ≤ 2 ^ 32
-  sp : 76 ≤ (s.gpr .esp).toNat
+  sp : 80 ≤ (s.gpr .esp).toNat
   hi : (s.gpr .esp).toNat + 56 ≤ 2 ^ 32
   rounds : roundsOk s 1
 
@@ -313,18 +313,18 @@ theorem argOf {j : Nat} {v : BitVec 32}
 
 /-- The frame and the words in it, within the stack below `esp`. -/
 theorem frame_sub {d n : Nat} (hd : d + n ≤ 48) :
-    Region.Sub ⟨w64 (Pf s) + BitVec.ofNat 64 d, n⟩ (below (s.gpr .esp) 76) :=
+    Region.Sub ⟨w64 (Pf s) + BitVec.ofNat 64 d, n⟩ (below (s.gpr .esp) 80) :=
   region_sub_trans (Offset.sub_base _ hd) (below_sub (by decide) h.sp)
 
-theorem frame_sub0 {n : Nat} (hn : n ≤ 48) : Region.Sub ⟨w64 (Pf s), n⟩ (below (s.gpr .esp) 76) :=
+theorem frame_sub0 {n : Nat} (hn : n ≤ 48) : Region.Sub ⟨w64 (Pf s), n⟩ (below (s.gpr .esp) 80) :=
   region_sub_trans (Region.sub_prefix hn) (below_sub (by decide) h.sp)
 
 /-- The stack the body's calls use, within ours. -/
-theorem stk_sub : Region.Sub (below (Pf s) 28) (below (s.gpr .esp) 76) :=
+theorem stk_sub : Region.Sub (below (Pf s) 32) (below (s.gpr .esp) 80) :=
   below_inner (by decide) h.sp
 
 /-- A region apart from the stack below `esp` is apart from the frame. -/
-theorem frameDisj {X : Region} (hX : (below (s.gpr .esp) 76).Disjoint X) :
+theorem frameDisj {X : Region} (hX : (below (s.gpr .esp) 80).Disjoint X) :
     ∀ r ∈ [(⟨w64 (Pf s), 48⟩ : Region)], X.Disjoint r := fun r hr => by
   simp only [List.mem_singleton] at hr; subst hr; exact (hX.sub_left (h.frame_sub0 (Nat.le_refl _))).symm
 
@@ -430,11 +430,11 @@ theorem bodyTo : BodyTo e := by
     show w64 (e.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)) = _; rw [esp]; exact aP hP (by decide)
   have fr : ∀ {d n : Nat}, d + n ≤ 48 → Covers [⟨w64 (Pf s) + BitVec.ofNat 64 d, n⟩] (e.rd ++ e.wr) :=
     fun hd => covers_off (covers_of_mem he.frameIn) hd (by decide)
-  have kS : ∀ {X : Region}, (below (s.gpr .esp) 76).Disjoint X → (below (e.gpr .esp) 28).Disjoint X :=
+  have kS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (below (e.gpr .esp) 32).Disjoint X :=
     fun hX => by rw [esp]; exact hX.sub_left h.stk_sub
-  have rS : ∀ {X : Region}, (below (s.gpr .esp) 76).Disjoint X → (⟨w64 (e.gpr .esp), 4⟩ : Region).Disjoint X :=
+  have rS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → (⟨w64 (e.gpr .esp), 4⟩ : Region).Disjoint X :=
     fun hX => by rw [esp]; exact hX.sub_left (h.frame_sub0 (by decide))
-  have aS : ∀ {X : Region}, (below (s.gpr .esp) 76).Disjoint X → X.Disjoint ⟨argAddr e 0, 4 * 11⟩ :=
+  have aS : ∀ {X : Region}, (below (s.gpr .esp) 80).Disjoint X → X.Disjoint ⟨argAddr e 0, 4 * 11⟩ :=
     fun hX => by rw [eA0]; exact (hX.sub_left (h.frame_sub (d := 4) (n := 44) (by decide))).symm
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, aS (by rw [a6, a7]; exact h.k_d), aS (by rw [a10]; exact h.k_w),
     rS (by rw [a6, a7]; exact h.k_d), rS (by rw [a10]; exact h.k_w), kS (by rw [a0]; exact h.k_c),
@@ -515,7 +515,7 @@ section
 variable (vg : GcmImpl)
 
 /-- `vg_aes_ctr32_to`, of the implementations `vg`. -/
-abbrev toFn : Fn := ⟨vg.ctr.calleeTo.name, vg.ctr.calleeTo.code⟩
+abbrev toFn : Fn := ⟨vg.ctr.callee.name, vg.ctr.callee.code⟩
 
 theorem body_noEsp :
     (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg))).allInstrs (fun i => !Taint.clobbers i .esp) =
@@ -523,15 +523,15 @@ theorem body_noEsp :
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush,
     ghCall, ghash1, j0, j0hash, lens, oneAad, oneEntry, oneTag, recv, tag, tagLenOk, openBody, decTo, wholeTo,
-    ctrToCall, wipe, wipeLoop, Code.allInstrs, GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.nospTo,
+    ctrToCall, wipe, wipeLoop, Code.allInstrs, GcmImpl.callees, noEsp_of vg.ctr.nosp,
     noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp, Bool.true_and, Bool.and_true]
   decide +kernel
 
-theorem body_stackUse : stackUse (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg))) ≤ 28 := by
+theorem body_stackUse : stackUse (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg))) ≤ 32 := by
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush,
     ghCall, ghash1, j0, j0hash, lens, oneAad, oneEntry, oneTag, recv, tag, tagLenOk, openBody, decTo, wholeTo,
-    ctrToCall, wipe, wipeLoop, stackUse, GcmImpl.callees, vg.ctr.stack, vg.ctr.toStack, vg.ctr.expandStack,
+    ctrToCall, wipe, wipeLoop, stackUse, GcmImpl.callees, vg.ctr.stack, vg.ctr.expandStack,
     vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons, List.length_nil, Nat.zero_le, true_and, and_true]
   decide +kernel
 
@@ -575,7 +575,7 @@ theorem openTo_pc (q : OQ) :
     NoSp.of_all (body_noEsp vg)
   refine Pc.mono (Pc.lift (Pc.frameSp (openBody_pc (toMode vg) q) hsp fun s₀ s ⟨hb, _, hs⟩ => by
       have := hb.op.sp
-      have : stackUse (openBody vg.callees (toMode vg).bad (toMode vg).fail (toMode vg).dec) ≤ 28 :=
+      have : stackUse (openBody vg.callees (toMode vg).bad (toMode vg).fail (toMode vg).dec) ≤ 32 :=
         body_stackUse vg
       rw [hs]; omega)
       (fun _ e => e) fun a e ⟨ha, hq, he⟩ => ⟨he.bodyTo (TP.of ha), ?_, rfl⟩) (fun _ _ h => h)
@@ -604,7 +604,7 @@ theorem openTo_pc (q : OQ) :
     · exact T.r_w
     · exact T.r_a
     · rw [he.esp]
-      exact (ret_below (k := 76) T.sp).sub_right (region_sub_trans
+      exact (ret_below (k := 80) T.sp).sub_right (region_sub_trans
         (below_sub (body_stackUse vg) (by rw [T.pN]; have := T.sp; omega)) T.stk_sub)
   refine ⟨⟨fun r hr => ?_, by rw [freed_mem, ret₂, ret₁]⟩, ?_⟩
   · simp only [calleeSaved, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hr
@@ -857,7 +857,7 @@ end
 working space: its twelve argument slots at `0x8004`. -/
 def toFrameSat : State := { toSat with wr := [⟨0x3100, 0⟩, ⟨0x8004, 48⟩] }
 
-theorem toFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract X86.abi 2692).pre s := by
+theorem toFrameSat_pre : ∃ s, (Proof.AesGcm.openToRoundsContract X86.abi 2696).pre s := by
   implies_sat [Proof.AesGcm.openToRoundsContract, Spec.Gcm.openToSig, Spec.Gcm.openToPre,
     Proof.AesGcm.openToRoundsPost, Spec.Gcm.openToLeak, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [toFrameSat, toSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using toFrameSat
@@ -871,18 +871,18 @@ theorem openTo_noEsp : (Open.openTo vg.callees (toFn vg)).allInstrs (fun i => !T
   rw [body_noEsp vg]
   decide
 
-theorem openTo_stackUse : stackUse (Open.openTo vg.callees (toFn vg)) ≤ 76 := by
+theorem openTo_stackUse : stackUse (Open.openTo vg.callees (toFn vg)) ≤ 80 := by
   have := body_stackUse vg
-  show max 0 (stackUse (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg)))) + 48 ≤ 76
+  show max 0 (stackUse (openBody vg.callees wipe wipe (decTo vg.callees (toFn vg)))) + 48 ≤ 80
   omega
 
 /-- `open_to` in its frame of 2616 bytes, holding its working space. -/
 theorem openTo_framed :
     Verified X86.target (Impl.StackScratch.X86.withStackScratch 2616 12 (Open.openTo vg.callees (toFn vg)))
-      (Proof.AesGcm.openToRoundsContract X86.abi 2692) :=
+      (Proof.AesGcm.openToRoundsContract X86.abi 2696) :=
   X86.Verified.stackScratch (sig := Spec.Gcm.openToSig) (nm := "work") (e := .u64) (n := 320)
     (pre := Spec.Gcm.openToPre X86.abi.ptrBits) (post := Proof.AesGcm.openToRoundsPost X86.abi.ptrBits)
-    (wa := true) (stack := 76) (leak := some (Spec.Gcm.openToLeak X86.abi.ptrBits)) (bytes := 2616)
+    (wa := true) (stack := 80) (leak := some (Spec.Gcm.openToLeak X86.abi.ptrBits)) (bytes := 2616)
     (openTo_verified vg) (by decide) (openTo_noEsp vg) (openTo_stackUse vg) (openToPre_local _)
     (openToRoundsPost_local _) toFrameSat_pre (hleak := openToLeak_local _)
 
@@ -891,7 +891,7 @@ theorem body_spSafe :
   simp only [absorb, absorbHead, absorbWhole, absorbTail, cmp, cmpTail, copyLoop, crypt,
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush,
     ghCall, ghash1, j0, j0hash, lens, oneAad, oneEntry, oneTag, recv, tag, tagLenOk, openBody, decTo, wholeTo,
-    ctrToCall, wipe, wipeLoop, Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.spSafeTo, vg.ctr.expandSpSafe,
+    ctrToCall, wipe, wipeLoop, Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe,
     vg.gh.spSafe, Bool.true_and, Bool.and_true]
   decide +kernel
 

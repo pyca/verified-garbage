@@ -10,7 +10,7 @@ public import VerifiedGarbage.Impl.Aes.X86.AesNi
 `[esp + 20]`), with the contracts of `vg_aes_encrypt_blocks` and
 `vg_aes_decrypt_blocks` (`Spec/Aes/Contract.lean`), for CPUs with AES-NI.
 
-As `vg_aes_ctr32_aesni` (`AesNi.lean`) does: six blocks at a time
+As `vg_aes_ctr32_to_aesni` (`AesNi.lean`) does: six blocks at a time
 (`xmm0`–`xmm5`), each round key loaded once into `xmm6` and applied to all
 six, then the remaining blocks one at a time, with a branch on the public
 `rounds` around rounds 10–13; here each group of blocks is loaded from the

@@ -12,7 +12,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86.Loops
 
 Untrusted: everything here is checked by Lean. The branches of `ctr` are on
 the length of the data, and the addresses on `ebp` and the data's address
-(pinned where the XOR uses them); the calls of `vg_aes_ctr32` are constant
+(pinned where the XOR uses them); the calls of `vg_aes_ctr32_to` are constant
 time by their contract.
 -/
 

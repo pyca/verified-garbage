@@ -7,14 +7,14 @@ public import VerifiedGarbage.Impl.AesGcm.X86
 
 `vg_aes_gcm_siv_seal` and `vg_aes_gcm_siv_open` (`Spec/GcmSiv/Contract.lean`),
 cdecl (every argument on the stack), composed of calls of the verified
-`vg_aes_ctr32`, `vg_aes_expand_key` and `vg_ghash`, and generic over their
+`vg_aes_ctr32_to`, `vg_aes_expand_key` and `vg_ghash`, and generic over their
 implementations as AES-GCM is (`Impl.AesGcm.X86.Callees`). The algorithm is
 ARMv7's (`Impl/AesGcmSiv/Arm.lean`), on 32-bit words; the conventions are
 x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
 
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
   for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), each by
-  `vg_aes_ctr32` on a zero block, of which the first 8 bytes are kept, one
+  `vg_aes_ctr32_to` on a zero block, of which the first 8 bytes are kept, one
   after the other from `W + 16` (`derive`): the authentication key at
   `W + 16`, the encryption key at `W + 32`; the encryption key is expanded
   by `vg_aes_expand_key`, for the same number of rounds (`expand`).
@@ -25,9 +25,9 @@ x86's AES-GCM's (`Impl/AesGcm/X86.lean`):
   with zeros, and the lengths block are put in the block at `W + 224` and
   absorbed the same way (`absorb`, `lens`); the result is read back
   reversed (`tagIn`).
-* The tag is `vg_aes_ctr32` of the tag input on a zero block (`tag`).
+* The tag is `vg_aes_ctr32_to` of the tag input on a zero block (`tag`).
 * Counter mode (§4) increments the first 4 bytes of the counter block, as a
-  little-endian number, which `vg_aes_ctr32` (which increments the last 4,
+  little-endian number, which `vg_aes_ctr32_to` (which increments the last 4,
   big-endian) does not: each block is encrypted by a call of its own from a
   copy of the counter block, which is then incremented (`cryptBlock`); the
   last bytes are XORed with a keystream block computed as a tag is
@@ -54,7 +54,7 @@ the stack (`Proof/AesGcmSiv/X86/Frame.lean`).
   `iO`); `[224, 240)`: a block; `[240, 256)`: the tag `open` computes;
 * `[512, 752)`: the encryption key's schedule; `[768, 1792)`: the reversed
   blocks; `[1792, 2048)`: `vg_ghash`'s working space; `[768, 2816)`:
-  `vg_aes_ctr32`'s, and `vg_aes_expand_key`'s at its start, over the last
+  `vg_aes_ctr32_to`'s, and `vg_aes_expand_key`'s at its start, over the last
   two, which are used only within POLYVAL, which calls neither.
 
 ## Registers
@@ -63,9 +63,9 @@ the stack (`Proof/AesGcmSiv/X86/Frame.lean`).
 on a string keep their pointer in `esi`, which the functions called also
 preserve, and the number of bytes left at `W + nO`. Everything else is
 reloaded from `W`. Each call pushes its arguments in a frame of its own
-(AES-GCM's `ctrCall`, `ghCall`, `keyCall`): `vg_aes_ctr32` six,
-`vg_ghash` five and `vg_aes_expand_key` four, with the return address 28
-bytes of stack at most. The callee's working space is passed in `ebp`,
+(AES-GCM's `ctrCall`, `ghCall`, `keyCall`): `vg_aes_ctr32_to` seven (in
+place, the data twice), `vg_ghash` five and `vg_aes_expand_key` four, with
+the return address 32 bytes of stack at most. The callee's working space is passed in `ebp`,
 moved there before the frame and back after it.
 
 Only the pointers, the lengths and `rounds` (and for `open`, whether the tag
@@ -116,7 +116,7 @@ def copy16 (s d : Nat) : List Instr :=
 section
 variable (c : Callees)
 
-/-- `vg_aes_ctr32`, with the working space at `W + 768`. -/
+/-- `vg_aes_ctr32_to`, with the working space at `W + 768`. -/
 def callCtr : Prog isa :=
   .seq (.block [.alu .add .ebp (imm scrO)]) (.seq (ctrCall c) (.block [.alu .sub .ebp (imm scrO)]))
 
@@ -128,7 +128,7 @@ def callGh : Prog isa :=
 def callKey : Prog isa :=
   .seq (.block [.alu .add .ebp (imm scrO)]) (.seq (keyCall c) (.block [.alu .sub .ebp (imm scrO)]))
 
-/-- The arguments of `vg_aes_ctr32` for one block at `W + o`: the
+/-- The arguments of `vg_aes_ctr32_to` for one block at `W + o`: the
 encryption key's schedule, the rounds and the copy of the counter block at
 `W + 112`. -/
 def ctrArgs (o : Nat) : List Instr :=
@@ -138,7 +138,7 @@ def ctrArgs (o : Nat) : List Instr :=
 /-! ## The keys -/
 
 /-- `little_endian_uint32(i) ‖ nonce` at `W + 112` (the nonce loaded
-first), a zero block at `W + 224`, and the arguments of `vg_aes_ctr32` with
+first), a zero block at `W + 224`, and the arguments of `vg_aes_ctr32_to` with
 the key-generating key's schedule. -/
 def deriveBlock : List Instr :=
   ([.mov .eax (slot nonceO), .mov .ecx (.mem (at_ .eax 0)), .mov .edx (.mem (at_ .eax 4)),
@@ -298,7 +298,7 @@ def cryptHead : List Instr :=
    .mov .eax (slot (tagO + 8)), .store (at_ .ebp (cbO + 8)) .eax, .mov .eax (slot (tagO + 12)),
    .alu .or .eax (imm 0x80000000), .store (at_ .ebp (cbO + 12)) .eax] : List Instr) ++ onStr dataO lenO ++ wholeLeft
 
-/-- The arguments of `vg_aes_ctr32` for the block at `esi`. -/
+/-- The arguments of `vg_aes_ctr32_to` for the block at `esi`. -/
 def blockArgs : List Instr :=
   copy16 cbO ccO ++ ([.mov .eax (.reg .ebp), .alu .add .eax (imm skO), .mov .ecx (slot roundsO),
     .mov .edx (.reg .ebp), .alu .add .edx (imm ccO), .mov .ebx (.reg .esi), .mov .edi (imm 1)] : List Instr)

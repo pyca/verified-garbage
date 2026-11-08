@@ -68,7 +68,7 @@ structure OTIn (p : BitVec 32 × (Nat → BitVec 32)) (s₀ s : State) : Prop wh
 tag at `W + o`, the working space and the stack. -/
 abbrev oT (p : BitVec 32 × (Nat → BitVec 32)) (o : Nat) : List Region :=
   [⟨w64 (p.2 8) + BitVec.ofNat 64 16, 48⟩, ⟨w64 (p.2 8) + BitVec.ofNat 64 96, 16⟩,
-    ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩, wsR (p.2 8), below p.1 28]
+    ⟨w64 (p.2 8) + BitVec.ofNat 64 o, 16⟩, wsR (p.2 8), below p.1 32]
 
 section
 variable {p : BitVec 32 × (Nat → BitVec 32)} (G : OL p)
@@ -78,7 +78,7 @@ omit G in
 theorem pslot_oF {m m' : Mem} (f : Frame [pslotR (p.2 8)] m m') : Frame (oF p) m m' :=
   f.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact pslot_sub_oF
 
-theorem crFrame_oF : ∀ r ∈ crFrame (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 6) (p.2 7).toNat,
+theorem crFrame_oF : ∀ r ∈ crFrame (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 6) (p.2 7).toNat,
     ∃ r' ∈ ⟨w64 (p.2 6), (p.2 7).toNat⟩ :: oF p, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -91,12 +91,12 @@ theorem crFrame_oF : ∀ r ∈ crFrame (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 6) (p.
 
 /-- The data, readable. -/
 theorem dataOk_of {s₀ s : State} (h : OEnv p s₀ s) :
-    DataOk (stOf (p.2 8)) (p.2 8) p.1 28 s (p.2 6) (p.2 7).toNat :=
+    DataOk (stOf (p.2 8)) (p.2 8) p.1 32 s (p.2 6) (p.2 7).toNat :=
   ⟨h.dIn, G.fd, G.d_w.sub_right (by rw [stOf_w64 G.L.fw]; exact Lay.wSub (by decide)), G.d_w, G.k_d⟩
 
 /-- The data, writable, for `crypt`. -/
 theorem dataW_of (D : OLD p) {s₀ s : State} (h : OEnv p s₀ s) (hw : Covers [⟨w64 (p.2 6), (p.2 7).toNat⟩] s.wr) :
-    DataW (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28 s (p.2 6) (p.2 7).toNat :=
+    DataW (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32 s (p.2 6) (p.2 7).toNat :=
   ⟨dataOk_of G h, hw, D.c_d⟩
 
 theorem oneCrypt_pc (D : OLD p) (icb : State → Block) :
@@ -106,11 +106,11 @@ theorem oneCrypt_pc (D : OLD p) (icb : State → Block) :
       (fun b s' => OEnv p b.1 s' ∧
         bytesAt s'.mem (w64 (p.2 6)) (p.2 7).toNat =
           xorKs (ctxCiph b.1.mem (w64 (p.2 0)) (p.2 1).toNat) (icb b.1) 0 (bytesAt b.2.mem (w64 (p.2 6)) (p.2 7).toNat) ∧
-        Frame (crFrame (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 6) (p.2 7).toNat) b.2.mem s'.mem) := by
+        Frame (crFrame (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 6) (p.2 7).toNat) b.2.mem s'.mem) := by
   have L := G.L
   rw [oneCrypt_eq]
   refine Pc.seq (Q := fun b s₁ => OEnv p b.1 s₁ ∧
-      CrIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 1).toNat (p.2 6) (p.2 7).toNat 0 s₁ ∧
+      CrIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 1).toNat (p.2 6) (p.2 7).toNat 0 s₁ ∧
       CtrS s₁.mem (stOf (p.2 8)) (ctxCiph b.1.mem (w64 (p.2 0)) (p.2 1).toNat) (icb b.1) 0 ∧
       Frame [pslotR (p.2 8)] b.2.mem s₁.mem)
     (Pc.taint [.ebp] (fun b s ⟨⟨h, hc, hw⟩, hs⟩ => ?_) (fun _ _ s₁ s₂ ⟨⟨h₁, _⟩, _⟩ ⟨⟨h₂, _⟩, _⟩ r hr => by
@@ -181,7 +181,7 @@ theorem pslot_oT {o : Nat} {m m' : Mem} (f : Frame [pslotR (p.2 8)] m m') : Fram
   f.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact ⟨wsR (p.2 8), by simp, pslot_ws _⟩
 
-theorem absFrame_oT {o : Nat} : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r' ∈ oT p o, Region.Sub r r' := by
+theorem absFrame_oT {o : Nat} : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 32 16, ∃ r' ∈ oT p o, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -190,7 +190,7 @@ theorem absFrame_oT {o : Nat} : ∀ r ∈ absFrame (stOf (p.2 8)) (p.2 8) p.1 28
   · exact ⟨_, by simp, fun _ h => h⟩
   · exact ⟨_, by simp, fun _ h => h⟩
 
-theorem tFrame_oT {o : Nat} : ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 28 16, ∃ r' ∈ oT p o, Region.Sub r r' := by
+theorem tFrame_oT {o : Nat} : ∀ r ∈ tFrame (stOf (p.2 8)) (p.2 8) p.1 32 16, ∃ r' ∈ oT p o, Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -252,7 +252,7 @@ theorem oneTag_pc {o : Nat} (ho : o = 0 ∨ o = 112) :
   rw [oneTag_eq]
   -- The data's arguments.
   refine Pc.seq (Q := fun b s₁ => OTIn p b.1 s₁ ∧
-      AbsIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28 (p.2 6) (p.2 7).toNat 0 s₁ ∧
+      AbsIn (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32 (p.2 6) (p.2 7).toNat 0 s₁ ∧
       Frame [pslotR (p.2 8)] b.2.mem s₁.mem)
     (Pc.taint [.ebp] (fun b s ⟨h, hs⟩ => ?_) (fun _ _ s₁ s₂ ⟨h₁, _⟩ ⟨h₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by taint_decide)) ?_

@@ -50,17 +50,17 @@ structure OP (nA w : Nat) (s : State) : Prop where
   w_a : (⟨w64 (arg s w), 2560⟩ : Region).Disjoint ⟨argAddr s 0, 4 * nA⟩
   r_d : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
   r_w : (⟨w64 (s.gpr .esp), 4⟩ : Region).Disjoint ⟨w64 (arg s w), 2560⟩
-  k_c : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 0), 256⟩
-  k_n : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
-  k_a : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
-  k_d : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
-  k_w : (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s w), 2560⟩
+  k_c : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 0), 256⟩
+  k_n : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 2), (arg s 3).toNat⟩
+  k_a : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 4), (arg s 5).toNat⟩
+  k_d : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 6), (arg s 7).toNat⟩
+  k_w : (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s w), 2560⟩
   fc : (arg s 0).toNat + 256 ≤ 2 ^ 32
   fn : (arg s 2).toNat + (arg s 3).toNat ≤ 2 ^ 32
   fa : (arg s 4).toNat + (arg s 5).toNat ≤ 2 ^ 32
   fd : (arg s 6).toNat + (arg s 7).toNat ≤ 2 ^ 32
   fw : (arg s w).toNat + 2560 ≤ 2 ^ 32
-  sp : 28 ≤ (s.gpr .esp).toNat
+  sp : 32 ≤ (s.gpr .esp).toNat
   fg : (s.gpr .esp).toNat + 4 + 4 * nA ≤ 2 ^ 32
   rounds : roundsOk s 1
 
@@ -123,7 +123,7 @@ theorem opd_of_open {s : State} (h : openPre s) : OPD s := by
 theorem openPre_tag {s : State} (h : openPre s) :
     Covers [⟨w64 (arg s 8), (arg s 9).toNat⟩] (s.rd ++ s.wr) ∧ (arg s 8).toNat + (arg s 9).toNat ≤ 2 ^ 32 ∧
       (⟨w64 (arg s 8), (arg s 9).toNat⟩ : Region).Disjoint ⟨w64 (arg s 10), 2560⟩ ∧
-      (below (s.gpr .esp) 28).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩ := by
+      (below (s.gpr .esp) 32).Disjoint ⟨w64 (arg s 8), (arg s 9).toNat⟩ := by
   simp only [openPre] at h
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, -, -, -, -, t_w, -, -, -, -, -, -, -, -, -, -, -, -, -, k_t, -, -, -, -, -,
     -, ft, -, sp, -, -⟩ := h
@@ -135,15 +135,15 @@ theorem stOf_w64 {W : BitVec 32} (hw : W.toNat + 2560 ≤ 2 ^ 32) : w64 (stOf W)
 
 /-- The layout of `seal` and `open`, for the public data `p`. -/
 structure OL (p : BitVec 32 × (Nat → BitVec 32)) : Prop where
-  L : Lay (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 28
+  L : Lay (p.2 0) (stOf (p.2 8)) (p.2 8) p.1 32
   n_w : (⟨w64 (p.2 2), (p.2 3).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
   a_w : (⟨w64 (p.2 4), (p.2 5).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
   d_w : (⟨w64 (p.2 6), (p.2 7).toNat⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
   r_d : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
   r_w : (⟨w64 p.1, 4⟩ : Region).Disjoint ⟨w64 (p.2 8), 2560⟩
-  k_n : (below p.1 28).Disjoint ⟨w64 (p.2 2), (p.2 3).toNat⟩
-  k_a : (below p.1 28).Disjoint ⟨w64 (p.2 4), (p.2 5).toNat⟩
-  k_d : (below p.1 28).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
+  k_n : (below p.1 32).Disjoint ⟨w64 (p.2 2), (p.2 3).toNat⟩
+  k_a : (below p.1 32).Disjoint ⟨w64 (p.2 4), (p.2 5).toNat⟩
+  k_d : (below p.1 32).Disjoint ⟨w64 (p.2 6), (p.2 7).toNat⟩
   fn : (p.2 2).toNat + (p.2 3).toNat ≤ 2 ^ 32
   fa : (p.2 4).toNat + (p.2 5).toNat ≤ 2 ^ 32
   fd : (p.2 6).toNat + (p.2 7).toNat ≤ 2 ^ 32
@@ -188,7 +188,7 @@ theorem OPD.old {nA : Nat} (h9 : 8 < nA) {s : State} (h : OPD s) {p : BitVec 32 
 /-- The regions of `W` and the stack the pieces write (but the tag at `W`). -/
 abbrev oF (p : BitVec 32 × (Nat → BitVec 32)) : List Region :=
   [⟨w64 (p.2 8) + BitVec.ofNat 64 16, 112⟩, ⟨w64 (p.2 8) + BitVec.ofNat 64 auxO, 4⟩, ⟨w64 (p.2 8) + BitVec.ofNat 64 rO, 16⟩, wsR (p.2 8),
-    below p.1 28]
+    below p.1 32]
 
 /-- Those and the first block of `W`: what `OEnv` survives (`OEnv.frame`); and
 the data, when it is written in place (`OEnv.frameD`). -/
@@ -352,7 +352,7 @@ theorem ws_sub_oF : ∃ r' ∈ oF p, Region.Sub (wsR (p.2 8)) r' :=
   ⟨_, by simp, fun _ h => h⟩
 
 omit G in
-theorem stk_sub_oF : ∃ r' ∈ oF p, Region.Sub (below p.1 28) r' :=
+theorem stk_sub_oF : ∃ r' ∈ oF p, Region.Sub (below p.1 32) r' :=
   ⟨_, by simp, fun _ h => h⟩
 
 omit G in

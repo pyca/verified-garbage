@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # Bitslicing the round keys, on x86 (32-bit)
 
-The key loop of `vg_aes_ctr32` bitslices each round key (loaded as two
+The key loop of `vg_aes_ctr32_to` bitslices each round key (loaded as two
 identical blocks) with `ortho` and stores it in the scratch buffer. The
 loads and stores are checked by evaluation over the naming domain
 (`Bitslice.names`), `ortho` by its proof (`Linear.lean`), and the address

@@ -674,9 +674,12 @@ def ctrSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x8004, 24⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 0⟩, ⟨0x4000, 2048⟩]
 
+/-- `vg_aes_ctr32_to` in place. -/
 theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32X86.pre s) :
-    ∃ t s', Exec isa Impl.Aes.X86.ctr32 s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32X86.post s s' :=
-  (correct (CPre.of hs).gpre).imp fun _ ⟨s', he, h⟩ => ⟨s', he, h⟩
+    ∃ t s', Exec isa Impl.Aes.X86.ctr32To s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32X86.post s s' :=
+  have hp := CPre.of hs
+  (correct hp.gpre).imp fun _ ⟨s', he, h, h₂, h₃⟩ =>
+    ⟨s', he, h, by simpa only [ctrPost, dstP, ↓reduceIte, hp.same] using h₂, h₃⟩
 
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToX86.pre s) :
     ∃ t s', Exec isa Impl.Aes.X86.ctr32To s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToX86.post s s' :=

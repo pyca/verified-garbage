@@ -312,7 +312,7 @@ theorem mac_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP)
 
 /-! ## The tag -/
 
-/-- The arguments of the call of `vg_aes_ctr32` making the tag: `Ctr₀` at
+/-- The arguments of the call of `vg_aes_ctr32_to` making the tag: `Ctr₀` at
 `W + 64`. -/
 theorem tagArgs_ok {K W SP : BitVec 32} {s : State} (L : Lay K W SP) (E : Env K W SP s) {R : Nat}
     (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R)
@@ -389,7 +389,7 @@ theorem tag_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K W SP)
     {nonce : List Byte} (h7 : 7 ≤ nonce.length) (h13 : nonce.length ≤ 13)
     (hc0 : bytesAt s.mem (w64 W + BitVec.ofNat 64 48) 16 = Spec.Ccm.ctrBlock nonce 0) {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (tag v.callee y) s fun s' => Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 56] s.mem s'.mem ∧
+      Frame [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 60] s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 y) 16 =
         xorFrom (Spec.Ccm.ctxCiph s.mem (w64 K) R) nonce 0 (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16) := by
   obtain ⟨s₃, run₃, f₃, hc₃, hax, hcx, hdx, hbx, hdi, hbp₃, hsp₃, hrd₃, hwr₃⟩ :=

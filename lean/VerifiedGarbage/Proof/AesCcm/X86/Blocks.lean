@@ -199,7 +199,7 @@ theorem updBlock_ok (v : Ctr32Impl) {K W SP : BitVec 32} {s : State} (L : Lay K 
     (hR : R = 10 ∨ R = 12 ∨ R = 14) (hK : slotv s.mem W ctxO = K) (hRo : slotv s.mem W roundsO = BitVec.ofNat 32 R)
     {y : Nat} (hy : y = 0 ∨ y = 96) :
     WP isa (updBlock v.callee v.suffix y) s fun s' => Env K W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 384, 2176⟩, below SP 56] s.mem s'.mem ∧
+      Frame [⟨w64 W + BitVec.ofNat 64 y, 16⟩, ⟨w64 W + BitVec.ofNat 64 384, 2176⟩, below SP 60] s.mem s'.mem ∧
       bytesAt s'.mem (w64 W + BitVec.ofNat 64 y) 16 =
         Spec.Cmac.chain (Spec.Ccm.ctxCiph s.mem (w64 K) R) (bytesAt s.mem (w64 W + BitVec.ofNat 64 y) 16)
           [bytesAt s.mem (w64 W + BitVec.ofNat 64 32) 16] := by

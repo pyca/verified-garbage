@@ -18,7 +18,7 @@ working space (2816 bytes at `W`), the nonce (12 bytes at `N`), the
 additional data (`al` bytes at `A`), the data (`n` bytes at `D`), the tag
 (16 bytes at `T`), the stack
 pointer and the number of rounds, all 32-bit; how their regions lie, apart
-from each other and from the 28 bytes below `SP` that the calls use
+from each other and from the 32 bytes below `SP` that the calls use
 (`Lay`); what a state may access (`Perm`); and `W` in `ebp`, the stack
 pointer, and the arguments the entry keeps in `W` (`Env`). The pieces
 write only the parts of `W` in `mutR` (and the data, and the stack below
@@ -73,7 +73,7 @@ structure Prm where
   n : Nat
 
 /-- The stack the calls use. -/
-abbrev stk (p : Prm) : Region := below p.SP 28
+abbrev stk (p : Prm) : Region := below p.SP 32
 
 /-- How the regions lie. -/
 structure Lay (p : Prm) : Prop where
@@ -83,7 +83,7 @@ structure Lay (p : Prm) : Prop where
   aw : p.A.toNat + p.al ≤ 2 ^ 32
   dw : p.D.toNat + p.n ≤ 2 ^ 32
   tw : p.T.toNat + 16 ≤ 2 ^ 32
-  sp : 28 ≤ p.SP.toNat
+  sp : 32 ≤ p.SP.toNat
   k_w : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
   k_d : (⟨w64 p.K, 240⟩ : Region).Disjoint ⟨w64 p.D, p.n⟩
   n_w : (⟨w64 p.N, 12⟩ : Region).Disjoint ⟨w64 p.W, 2816⟩
@@ -174,8 +174,8 @@ theorem d_w' {d k : Nat} (hd : d + k ≤ 2816) :
 theorem bw' {d k : Nat} (hd : d + k ≤ 2816) : (stk p).Disjoint ⟨w64 p.W + BitVec.ofNat 64 d, k⟩ :=
   L.bw.sub_right (wSub hd)
 
-/-- The stack below `SP` that a call uses, within the 28 bytes. -/
-theorem stkSub {k : Nat} (hk : k ≤ 28) : Region.Sub (below p.SP k) (stk p) := VG.X86.below_sub hk L.sp
+/-- The stack below `SP` that a call uses, within the 32 bytes. -/
+theorem stkSub {k : Nat} (hk : k ≤ 32) : Region.Sub (below p.SP k) (stk p) := VG.X86.below_sub hk L.sp
 
 theorem rounds_le : 16 * (p.R + 1) ≤ 240 := by rcases L.rounds with h | h <;> rw [h] <;> decide
 

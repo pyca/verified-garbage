@@ -38,7 +38,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Call
 # AES-GCM one-shot encryption out of place, from a list of slices, x86: `Verified`
 
 Untrusted: everything here is checked by Lean. The shared contract of
-`vg_aes_gcm_seal_gather`, with the 2684 bytes of stack below the stack
+`vg_aes_gcm_seal_gather`, with the 2688 bytes of stack below the stack
 pointer that its frame and its call use (`Proof.AesGcm.sealGatherRoundsContract`),
 implies the one the proof is written against (`gatherX86`,
 `gather_implies`), and so the code, calling an instance of
@@ -81,7 +81,7 @@ theorem pairFacts_ro_w (l : List Region) (a : Region) :
       Function.comp_def, Bool.false_or, Sig.conj_append, ih, List.forall_mem_cons]
     simp [List.filterMap_cons, Sig.conj, Sig.conj_cons, filterMap_none']
 
-theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684).pre s) : gatherPre s := by
+theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s) : gatherPre s := by
   sig_pre [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi] at h
   sig_split h
   simp only [List.filter_map, List.map_map, List.filterMap_map, List.map_nil, Function.comp_def,
@@ -101,13 +101,13 @@ theorem gatherPre_of_spec {s : State} (h : (Proof.AesGcm.sealGatherRoundsContrac
     by omega, hR, h⟩
 
 theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
-    (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684).post s s' := by
+    (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).post s s' := by
   sig_post [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Proof.AesGcm.sealGatherRoundsPost, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
     Nat.reduceMul, sw32, toNat_w64]
   exact fun _ _ => h
 
-theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684).pub s₁ s₂) :
+theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
   sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre, X86.abi, argVal,
     ↓reduceIte, Nat.reduceEqDiff, argBytes, Nat.reduceDiv, List.sum_cons, List.sum_nil, Nat.reduceAdd,
@@ -133,16 +133,16 @@ def gatherSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x4000, 0⟩, ⟨0x5000, 16⟩, ⟨0x8004, 44⟩]
 
-theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684).pre s := by
+theorem gatherSat_pre : ∃ s, (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688).pre s := by
   implies_sat [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     [gatherSat, X86.arg, X86.argAddr, Mem.readW, Mem.read] using gatherSat
 
-theorem gather_implies : gatherX86.Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684) :=
+theorem gather_implies : gatherX86.Implies (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
   ⟨fun _ h => gatherPre_of_spec h, fun _ _ _ h => gatherPost_of h, fun _ _ _ _ h => gatherPub_of h, gatherSat_pre⟩
 
 theorem sealGather_verified (F : SealFn) :
-    Verified X86.target (sealGather F.name F.code) (Proof.AesGcm.sealGatherRoundsContract X86.abi 2684) :=
+    Verified X86.target (sealGather F.name F.code) (Proof.AesGcm.sealGatherRoundsContract X86.abi 2688) :=
   Verified.of_correct (k := gatherX86) (sealGather_correct F) (sealGather_ct F) gather_implies
 
 open VG.Impl.AesGcm.X86 VG.Impl.StackScratch.X86 in

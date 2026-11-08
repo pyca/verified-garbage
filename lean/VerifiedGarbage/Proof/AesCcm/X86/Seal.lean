@@ -36,19 +36,19 @@ open VG.Proof.AesGcm.X86 (w64 slotv SavedAt exit_ok ofNat_toNat32 length_bytesAt
 
 /-- What `tag y` writes, in `mutR`. -/
 theorem inMut_tag (W SP D : BitVec 32) (n : Nat) {y : Nat} (hy : y = 0 ∨ y = 96) :
-    InMut W SP D n [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 56] := by
+    InMut W SP D n [⟨w64 W + BitVec.ofNat 64 64, 16⟩, ⟨w64 W + BitVec.ofNat 64 y, 16⟩, wC W, below SP 60] := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨wA W, by simp, Offset.sub_base _ (by decide)⟩
   · exact ⟨wA W, by simp, by rcases hy with rfl | rfl <;> exact Offset.sub_base _ (by decide)⟩
   · exact ⟨wC W, by simp, fun _ h => h⟩
-  · exact ⟨below SP 56, by simp, fun _ h => h⟩
+  · exact ⟨below SP 60, by simp, fun _ h => h⟩
 
 /-- A buffer apart from `W` and the stack keeps its bytes across a frame of
 parts of `W` and the stack. -/
 theorem buf_kept' {W SP : BitVec 32} {s : State} {P : BitVec 32} {len : Nat} (hP : Buf W SP s P len)
-    {rs : List Region} (hrs : ∀ r ∈ rs, Region.Sub r ⟨w64 W, 2560⟩ ∨ r = below SP 56) {m m' : Mem}
+    {rs : List Region} (hrs : ∀ r ∈ rs, Region.Sub r ⟨w64 W, 2560⟩ ∨ r = below SP 60) {m m' : Mem}
     (hf : Frame rs m m') : bytesAt m' (w64 P) len = bytesAt m (w64 P) len :=
   Proof.AesGcm.X86.bytesAt_frame hf (fun r hr => by
     rcases hrs r hr with h | rfl

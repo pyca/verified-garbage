@@ -31,7 +31,7 @@ theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
     · exact hp.b_scr.symm.sub_left (UPre.scr_sub (by omega))) (by decide)
 
 theorem UPre.ret_stk {s₀ : State} (_hp : UPre s₀) : (retR s₀).Disjoint (stkR s₀) := by
-  have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 28) (a := 0) (l := 4) (by decide)
+  have := Offset.disjoint_below_above ((E s₀).setWidth 64) (m := 32) (a := 0) (l := 4) (by decide)
   rw [add0] at this
   exact this.symm
 

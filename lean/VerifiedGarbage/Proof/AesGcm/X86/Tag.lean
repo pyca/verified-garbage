@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Aes.X86.AesNi.Context
 
 Untrusted: everything here is checked by Lean. `tag o …` absorbs the
 lengths block (`lens 16`), copies the accumulator to `W + o` and encrypts
-it there with `vg_aes_ctr32` from the counter block `J₀` (at the state's
+it there with `vg_aes_ctr32_to` from the counter block `J₀` (at the state's
 first block): `GHASH ⊕ CIPH_K(J₀)` (`tag_pc`).
 -/
 
@@ -53,7 +53,7 @@ theorem bytesAt16 (m : Mem) (p : Addr) : bytesAt m p 16 = bytesAt m p 4 ++ bytes
 
 /-- The regions `tag o` writes. -/
 abbrev tagFrame (St W SP : BitVec 32) (o : Nat) : List Region :=
-  [⟨w64 St, 32⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, ⟨w64 W + BitVec.ofNat 64 o, 16⟩, wsR W, below SP 28]
+  [⟨w64 St, 32⟩, ⟨w64 W + BitVec.ofNat 64 96, 16⟩, ⟨w64 W + BitVec.ofNat 64 o, 16⟩, wsR W, below SP 32]
 
 /-- Before `tag o al ah tl th`. -/
 structure TagIn (Ctx St W SP : BitVec 32) (R : Nat) (al ah tl th : Nat) (alo ahi tlo thi : BitVec 32) (s : State) :
@@ -81,11 +81,11 @@ structure TagMid (Ctx St W SP : BitVec 32) (R o aN tN : Nat) (m₀ : Mem) (s : S
   frame : Frame (tagFrame St W SP o) m₀ s.mem
 
 section
-variable {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 28)
+variable {Ctx St W SP : BitVec 32} (L : Lay Ctx St W SP 32)
 include L
 
 omit L in
-theorem t_tagFrame {o : Nat} {m m' : Mem} (h : Frame (tFrame St W SP 28 16) m m') :
+theorem t_tagFrame {o : Nat} {m m' : Mem} (h : Frame (tFrame St W SP 32 16) m m') :
     Frame (tagFrame St W SP o) m m' :=
   h.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -93,9 +93,9 @@ theorem t_tagFrame {o : Nat} {m m' : Mem} (h : Frame (tFrame St W SP 28 16) m m'
     · exact ⟨_, List.mem_cons_self .., Offset.sub_base (w64 St) (show 16 + 16 ≤ 32 by decide)⟩
     · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
     · exact ⟨wsR W, by simp, fun _ h => h⟩
-    · exact ⟨below SP 28, by simp, fun _ h => h⟩
+    · exact ⟨below SP 32, by simp, fun _ h => h⟩
 
-/-- The copy of the accumulator to `W + o`, and the arguments of `vg_aes_ctr32`. -/
+/-- The copy of the accumulator to `W + o`, and the arguments of `vg_aes_ctr32_to`. -/
 theorem tagCopy_ok {R o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : State}
     (he : Env Ctx St W SP s) (hR : RoundsAt s.mem W R)
     (hacc : blockAt s.mem (w64 St + BitVec.ofNat 64 16) =
@@ -170,7 +170,7 @@ theorem tagCopy_ok {R o aN tN : Nat} (ho : o = 0 ∨ o = 112) {m₀ : Mem} {s : 
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩)
 
-theorem kept_tFrame : ∀ r ∈ tFrame St W SP 28 16, (keptR W).Disjoint r := by
+theorem kept_tFrame : ∀ r ∈ tFrame St W SP 32 16, (keptR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -179,7 +179,7 @@ theorem kept_tFrame : ∀ r ∈ tFrame St W SP 28 16, (keptR W).Disjoint r := by
   · exact Lay.w_w (.inl (by decide)) (by decide) (by decide)
   · exact (L.stk_w (by decide)).symm
 
-theorem ctx_tFrame' : ∀ r ∈ tFrame St W SP 28 16, (⟨w64 Ctx, 256⟩ : Region).Disjoint r := by
+theorem ctx_tFrame' : ∀ r ∈ tFrame St W SP 32 16, (⟨w64 Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
@@ -194,7 +194,7 @@ theorem tag_pc {R o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 
       (TagOut Ctx St W SP R o (val64 alo ahi) (val64 tlo thi) ·) := by
   refine Pc.seq (Pc.lift (lens_pc L hc) (fun m₀ _ => m₀) fun m₀ s ⟨h, hm⟩ => ⟨⟨h.env, h.sl⟩, hm⟩) ?_
   have hw : ∀ (m₀ : Mem) s', (∃ s, (TagIn Ctx St W SP R al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr) →
+      LensOut Ctx St W SP 32 16 (val64 alo ahi) (val64 tlo thi) m₀ s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr) →
       WP isa (.block [.mov .eax (.mem (at_ .esi 16)), .mov .ecx (.mem (at_ .esi 20)), .mov .edx (.mem (at_ .esi 24)),
         .mov .ebx (.mem (at_ .esi 28)), .store (at_ .ebp o) .eax, .store (at_ .ebp (o + 4)) .ecx,
         .store (at_ .ebp (o + 8)) .edx, .store (at_ .ebp (o + 12)) .ebx, .mov .ebx (.reg .ebp),
@@ -214,9 +214,9 @@ theorem tag_pc {R o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 
       exact tagCopy_ok L ho lo.env (rounds_frame lo.frame (kept_tFrame L) h.rounds) lo.out hj
         (ciph_frame lo.frame (ctx_tFrame' L) h.rounds.2) (t_tagFrame lo.frame)
   have hr : ∀ (m₀ m₁ : Mem) s₁ s₂, (∃ s, (TagIn Ctx St W SP R al ah tl th alo ahi tlo thi s ∧ s.mem = m₀) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₀ s₁ ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) →
+      LensOut Ctx St W SP 32 16 (val64 alo ahi) (val64 tlo thi) m₀ s₁ ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) →
       (∃ s, (TagIn Ctx St W SP R al ah tl th alo ahi tlo thi s ∧ s.mem = m₁) ∧
-      LensOut Ctx St W SP 28 16 (val64 alo ahi) (val64 tlo thi) m₁ s₂ ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr) →
+      LensOut Ctx St W SP 32 16 (val64 alo ahi) (val64 tlo thi) m₁ s₂ ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr) →
       ∀ r ∈ [Reg.esi, .ebp], s₁.gpr r = s₂.gpr r := fun _ _ s₁ s₂ ⟨_, _, h₁, _⟩ ⟨_, _, h₂, _⟩ r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -244,7 +244,7 @@ theorem tag_pc {R o al ah tl th : Nat} (ho : o = 0 ∨ o = 112) (hc : LensAt 16 
   · exact ⟨_, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩
   · exact ⟨wsR W, by simp, Offset.sub _ (by decide) (by decide)⟩
-  · exact ⟨below SP 28, by simp, fun _ h => h⟩
+  · exact ⟨below SP 32, by simp, fun _ h => h⟩
 
 end
 

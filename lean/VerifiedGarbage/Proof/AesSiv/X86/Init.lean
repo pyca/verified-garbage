@@ -61,7 +61,7 @@ abbrev iscR : Region := ⟨(iSc s₀).setWidth 64, 2560⟩
 abbrev iaR : Region := ⟨argAddr s₀ 0, 16⟩
 
 /-- Where the code writes: the context, the scratch buffer and the stack. -/
-abbrev IBig : List Region := [ictR s₀, iscR s₀, below (iE s₀) 48]
+abbrev IBig : List Region := [ictR s₀, iscR s₀, below (iE s₀) 52]
 
 end
 
@@ -79,14 +79,14 @@ structure IPre (s₀ : State) : Prop where
   ret_c : (⟨(iE s₀).setWidth 64, 4⟩ : Region).Disjoint (ictR s₀)
   ret_s : (⟨(iE s₀).setWidth 64, 4⟩ : Region).Disjoint (iscR s₀)
   ret_a : (⟨(iE s₀).setWidth 64, 4⟩ : Region).Disjoint (iaR s₀)
-  b_k' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (ikR s₀)
-  b_c' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (ictR s₀)
-  b_s' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (iscR s₀)
-  b_a' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 48, 48⟩ : Region).Disjoint (iaR s₀)
+  b_k' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (ikR s₀)
+  b_c' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (ictR s₀)
+  b_s' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (iscR s₀)
+  b_a' : (⟨(iE s₀).setWidth 64 - BitVec.ofNat 64 52, 52⟩ : Region).Disjoint (iaR s₀)
   fK : (iKp s₀).toNat + iKL s₀ ≤ 2 ^ 32
   fC : (iCt s₀).toNat + 512 ≤ 2 ^ 32
   fS : (iSc s₀).toNat + 2560 ≤ 2 ^ 32
-  esp48 : 48 ≤ (iE s₀).toNat
+  esp52 : 52 ≤ (iE s₀).toNat
   espfit : (iE s₀).toNat + 20 ≤ 2 ^ 32
   klen : iKL s₀ = 32 ∨ iKL s₀ = 48 ∨ iKL s₀ = 64
 
@@ -98,9 +98,9 @@ namespace IPre
 variable {s₀ : State} (hp : IPre s₀)
 include hp
 
-theorem b_k : (below (iE s₀) 48).Disjoint (ikR s₀) := by rw [below_eq hp.esp48]; exact hp.b_k'
-theorem b_c : (below (iE s₀) 48).Disjoint (ictR s₀) := by rw [below_eq hp.esp48]; exact hp.b_c'
-theorem b_s : (below (iE s₀) 48).Disjoint (iscR s₀) := by rw [below_eq hp.esp48]; exact hp.b_s'
+theorem b_k : (below (iE s₀) 52).Disjoint (ikR s₀) := by rw [below_eq hp.esp52]; exact hp.b_k'
+theorem b_c : (below (iE s₀) 52).Disjoint (ictR s₀) := by rw [below_eq hp.esp52]; exact hp.b_c'
+theorem b_s : (below (iE s₀) 52).Disjoint (iscR s₀) := by rw [below_eq hp.esp52]; exact hp.b_s'
 
 theorem fit : (s₀.gpr .esp).toNat + 4 + 4 * 4 ≤ 2 ^ 32 := by have := hp.espfit; omega_arith
 
@@ -115,7 +115,7 @@ theorem keep {m : Mem} (hf : Frame (IBig s₀) s₀.mem m) {i : Nat} (hi : i < 4
     rcases hr with rfl | rfl | rfl
     · exact hp.c_a.symm.sub_left (arg_sub hp.fit hi)
     · exact hp.s_a.symm.sub_left (arg_sub hp.fit hi)
-    · exact (args_below hp.fit (by decide) hp.esp48).symm.sub_left (arg_sub hp.fit hi)
+    · exact (args_below hp.fit (by decide) hp.esp52).symm.sub_left (arg_sub hp.fit hi)
 
 theorem argsOut : ArgsOut 4 s₀ := by
   refine ⟨by have := hp.espfit; omega_arith, ?_⟩
@@ -160,7 +160,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s�
   have fS := hp.fS
   have fC := hp.fC
   have fK := hp.fK
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   have kl := hp.klen
   rw [initPre_eq]
   refine wp_arg (s₀ := s₀) rfl (hp.arg_in (by decide)) rfl fun s₁ u₁ => ?_
@@ -195,7 +195,7 @@ theorem initPre_wp {s₀ : State} (hp : IPre s₀) : WP isa (.block initPre) s�
       u₃.other _ (by decide), esp₂]
   have rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, rd₂']
   have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, wr₂']
-  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 48) := below_sub (by decide) e48
+  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 52) := below_sub (by decide) e52
   have hk : Region.Sub ⟨(iKp s₀).setWidth 64, iKL s₀ / 2⟩ (ikR s₀) := Region.sub_prefix (by omega_arith)
   refine ⟨?_, esp₇, by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, hm₂], rd₇, wr₇⟩
   exact
@@ -250,7 +250,7 @@ theorem IMid₁.after {s₀ s s' : State} (hp : IPre s₀) (h : IMid₁ s₀ s)
   rcases hr with rfl | rfl | rfl
   · exact ⟨ictR s₀, by simp, Region.sub_prefix (by decide)⟩
   · exact ⟨iscR s₀, by simp, Region.sub_prefix (by decide)⟩
-  · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) hp.esp48⟩
+  · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) hp.esp52⟩
 
 /-! ## Between the first two calls -/
 
@@ -263,7 +263,7 @@ theorem initMid₁_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
     WP isa (.block initMid₁) s fun s' => IMid₂ s₀ s' ∧ s'.mem = s.mem := by
   have fS := hp.fS
   have fC := hp.fC
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   have rw₀ : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have av : ∀ i < 4, s.mem.readW (argAddr s₀ i) 32 = arg s₀ i := fun i hi => hp.keep h.frame hi
   refine wp_arg (s₀ := s₀) h.esp (by rw [rw₀]; exact hp.arg_in (by decide)) (av 2 (by decide)) fun s₁ u₁ => ?_
@@ -301,7 +301,7 @@ theorem initMid₁_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
         u₂.other _ (by decide), u₁.gpr]
     ebx := u₇.gpr
     rounds := hR
-    esp := by rw [esp₇]; exact e48
+    esp := by rw [esp₇]; exact e52
     wk := by
       rw [add_setWidth (by omega_arith)]; exact Offset.base_disjoint _ (by decide) (by omega_arith)
     ws := (hp.c_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide))
@@ -336,7 +336,7 @@ theorem IMid₂.after {s₀ s s' : State} (hp : IPre s₀) (h : IMid₂ s₀ s)
   · refine ⟨ictR s₀, by simp, ?_⟩
     rw [add_setWidth (by omega_arith)]; exact Offset.sub_base _ (by decide)
   · exact ⟨iscR s₀, by simp, Region.sub_prefix (by decide)⟩
-  · exact ⟨below (iE s₀) 48, by simp, fun _ h => h⟩
+  · exact ⟨below (iE s₀) 52, by simp, fun _ h => h⟩
 
 /-! ## Between the last two calls -/
 
@@ -350,7 +350,7 @@ theorem initMid₂_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
   have fS := hp.fS
   have fC := hp.fC
   have fK := hp.fK
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   have kl := hp.klen
   have rw₀ : s.rd ++ s.wr = s₀.rd ++ s₀.wr := by rw [h.rd, h.wr]
   have av : ∀ i < 4, s.mem.readW (argAddr s₀ i) 32 = arg s₀ i := fun i hi => hp.keep h.frame hi
@@ -377,7 +377,7 @@ theorem initMid₂_wp {s₀ s : State} (hp : IPre s₀) (h : IAft s₀ s) :
   have m₇ : s₇.mem = s.mem := by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   have rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, h.rd]
   have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, h.wr]
-  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 48) := below_sub (by decide) e48
+  have b20 : Region.Sub (below (iE s₀) 20) (below (iE s₀) 52) := below_sub (by decide) e52
   have aK : (iKp s₀ + BitVec.ofNat 32 (iKL s₀ / 2)).setWidth 64 =
       (iKp s₀).setWidth 64 + BitVec.ofNat 64 (iKL s₀ / 2) := add_setWidth (by omega_arith)
   have aC : (iCt s₀ + BitVec.ofNat 32 272).setWidth 64 = (iCt s₀).setWidth 64 + BitVec.ofNat 64 272 :=
@@ -433,7 +433,7 @@ theorem IMid₃.after {s₀ s s' : State} (hp : IPre s₀) (h : IMid₃ s₀ s)
   · refine ⟨ictR s₀, by simp, ?_⟩
     rw [add_setWidth (by omega_arith)]; exact Offset.sub_base _ (by decide)
   · exact ⟨iscR s₀, by simp, Region.sub_prefix (by decide)⟩
-  · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) hp.esp48⟩
+  · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) hp.esp52⟩
 
 /-! ## The whole code -/
 
@@ -449,7 +449,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
   have fC := hp.fC
   have fK := hp.fK
   have kl := hp.klen
-  have e48 := hp.esp48
+  have e52 := hp.esp52
   rw [initCore_eq]
   refine WP.seq (WP.mono (initPre_wp hp) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono ((ek_call v) h₁.args) fun s₂ h₂ => ?_)
@@ -464,7 +464,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     fun d hd => add_setWidth (by omega_arith)
   have aK : (iKp s₀ + BitVec.ofNat 32 (iKL s₀ / 2)).setWidth 64 =
       (iKp s₀).setWidth 64 + BitVec.ofNat 64 (iKL s₀ / 2) := add_setWidth (by omega_arith)
-  have f₂ : Frame [⟨(iCt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩, below (iE s₀) 48] s₁.mem s₂.mem := by
+  have f₂ : Frame [⟨(iCt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩, below (iE s₀) 52] s₁.mem s₂.mem := by
     have := h₂.frame
     rw [h₁.esp] at this
     refine this.sub fun r hr => ?_
@@ -472,12 +472,12 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) e48⟩
+    · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) e52⟩
   have f₄ : Frame [⟨(iCt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩,
-      below (iE s₀) 48] s₂.mem s₄.mem := by
+      below (iE s₀) 52] s₂.mem s₄.mem := by
     have := h₄.frame; rw [h₃.aft.esp, m₃, aC 240 (by decide)] at this; exact this
   have f₆ : Frame [⟨(iCt s₀).setWidth 64 + BitVec.ofNat 64 272, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩,
-      below (iE s₀) 48] s₄.mem s₆.mem := by
+      below (iE s₀) 52] s₄.mem s₆.mem := by
     have := h₆.frame
     rw [h₅.aft.esp, m₅, aC 272 (by decide)] at this
     refine this.sub fun r hr => ?_
@@ -485,10 +485,10 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (iE s₀) 48, by simp, below_sub (by decide) e48⟩
+    · exact ⟨below (iE s₀) 52, by simp, below_sub (by decide) e52⟩
   -- The saved registers.
   have dSlot : ∀ d, 2176 ≤ d → d + 4 ≤ 2192 → ∀ r ∈ [⟨(iCt s₀).setWidth 64, 240⟩, ⟨(iSc s₀).setWidth 64, 512⟩,
-      below (iE s₀) 48, ⟨(iCt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩,
+      below (iE s₀) 52, ⟨(iCt s₀).setWidth 64 + BitVec.ofNat 64 240, 32⟩, ⟨(iSc s₀).setWidth 64, 2176⟩,
       ⟨(iCt s₀).setWidth 64 + BitVec.ofNat 64 272, 240⟩],
       (⟨(iSc s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
     have sub : Region.Sub ⟨(iSc s₀).setWidth 64 + BitVec.ofNat 64 d, 4⟩ (iscR s₀) := Offset.sub_base _ (by omega_arith)
@@ -527,7 +527,7 @@ theorem init_wp {s₀ : State} (h0 : initX86.pre s₀) :
     rcases hr with rfl | rfl | rfl
     · exact hp.ret_c
     · exact hp.ret_s
-    · exact ret_below e48
+    · exact ret_below e52
   -- The key context.
   show Spec.Siv.KeyRepr s₇.mem ((iCt s₀).setWidth 64) (Spec.Aes.bytesAt s₀.mem ((iKp s₀).setWidth 64) (iKL s₀))
   have hKL : ∀ {m : Mem}, Frame (IBig s₀) s₀.mem m → ∀ {d n : Nat}, d + n ≤ iKL s₀ →
