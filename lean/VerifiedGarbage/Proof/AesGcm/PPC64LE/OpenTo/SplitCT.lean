@@ -29,7 +29,7 @@ stack, at a public address, and the destination apart from the source.
 addresses are then on the source, the destination and the length
 (`oneCryptTo_ct`): the whole blocks by a call of `vg_aes_ctr32_to` with the
 same arguments in both runs (`to_rel`), the copy of the last bytes by the
-taint analysis, and the last bytes by `open`'s `cryptTail_ct`.
+taint analysis, and the last bytes by `open`'s tail (`cryptTailWith_ct`).
 -/
 
 @[expose] public section
@@ -54,7 +54,14 @@ theorem wholeTo_ct : CT (ToI c st w sp R S D n) wholeTo := by
     V .r28 = BitVec.ofNat 64 R ∧ Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ DataOk (V .r30) (V .r31) s S n ∧
     DataW (V .r29) (V .r30) (V .r31) s D n ∧ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ ∧
     s.gpr .r6 = S ∧ s.gpr .r7 = BitVec.ofNat 64 (n / 16) ∧ s.gpr .r10 = D
-  refine CT.seq (J := J₁) ?_ (fun s ⟨V, h29, h30, h31, hs⟩ => ?_) ?_
+  let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
+    Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ DataOk (V .r30) (V .r31) s S n ∧
+    DataW (V .r29) (V .r30) (V .r31) s D n ∧ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ ∧
+    s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧ s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧
+    s.gpr .r6 = S ∧ s.gpr .r7 = BitVec.ofNat 64 (n / 16) ∧ s.gpr .r8 = D
+  refine wholeWith_ct (J₁ := J₁) (J₂ := J₂) ?_ (fun s ⟨V, h29, h30, h31, hs⟩ => ?_)
+    (fun s ⟨_, _, _, _, _, _, _, _, hd, _, _, h7, _⟩ => ⟨h7, by have := hd.ok.lt; omega⟩) ?_
+    (fun s ⟨V, h29, h30, h31, h28, he, hR, hsr, hd, hsd, h6, h7, h10⟩ => ?_) fun _ => ?_
   · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r26]) (.block splitTo)
         h).isSome = true := ⟨_, by taint_decide⟩
     refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, h₁⟩ ⟨_, _, _, _, h₂⟩ =>
@@ -69,35 +76,27 @@ theorem wholeTo_ct : CT (ToI c st w sp R S D n) wholeTo := by
       (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr, hs.rounds,
       hs.src.of_eq hk₁.rd hk₁.wr, hs.dst.of_eq hk₁.rd hk₁.wr, hs.sd, h6, h7, h10⟩
-  · refine CT.ite (decide (n / 16 = 0)) (fun s ⟨_, _, _, _, _, _, _, _, hd, _, _, h7, _⟩ =>
-      eval_zero h7 (by have := hd.ok.lt; omega)) (fun _ => CT.skip) fun _ => ?_
-    let J₂ : State → Prop := fun s => ∃ V : Reg → BitVec 64, V .r29 = c ∧ V .r30 = st ∧ V .r31 = w ∧
-      Env V sp s ∧ (R = 10 ∨ R = 12 ∨ R = 14) ∧ DataOk (V .r30) (V .r31) s S n ∧
-      DataW (V .r29) (V .r30) (V .r31) s D n ∧ (⟨S, n⟩ : Region).Disjoint ⟨D, n⟩ ∧
-      s.gpr .r3 = V .r29 ∧ s.gpr .r4 = BitVec.ofNat 64 R ∧ s.gpr .r5 = V .r30 + BitVec.ofNat 64 48 ∧
-      s.gpr .r6 = S ∧ s.gpr .r7 = BitVec.ofNat 64 (n / 16) ∧ s.gpr .r8 = D
-    refine CT.seq (J := J₂) ?_ (fun s ⟨V, h29, h30, h31, h28, he, hR, hsr, hd, hsd, h6, h7, h10⟩ => ?_) ?_
-    · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r10, .r28, .r29, .r30, .r31])
-          (.block toArgs) h).isSome = true := ⟨_, by taint_decide⟩
-      refine CT.taint _ (fun s₁ s₂ ⟨_, a29, a30, a31, a28, e₁, _, _, _, _, _, _, a10⟩
-        ⟨_, b29, b30, b31, b28, e₂, _, _, _, _, _, _, b10⟩ => ⟨e₁.sp.trans e₂.sp.symm, fun r hr => ?_⟩) hc
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | hr
-      · rw [a10, b10]
-      · exact pinK e₁ e₂ (a28.trans b28.symm) (a29.trans b29.symm) (a30.trans b30.symm) (a31.trans b31.symm)
-          (by simpa only [List.mem_cons, List.not_mem_nil, or_false] using hr)
-    · refine WP.mono (toArgs_ok he h28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_
-      exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hR, hsr.of_eq hk₂.rd hk₂.wr,
-        hd.of_eq hk₂.rd hk₂.wr, hsd, a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6],
-        by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7], by rw [a8, h10]⟩
-    · refine to_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, _, he₁, hR, hs₁, hd₁, hsd₁, a3, a4, a5, a6, a7, a8⟩,
-        ⟨V₂, b29, b30, _, he₂, _, hs₂, hd₂, hsd₂, b3, b4, b5, b6, b7, b8⟩⟩ => ?_
-      have g₁ := toCall_mk he₁ a3 a4 a5 a6 a7 a8 hR hs₁ hd₁ hsd₁
-      have g₂ := toCall_mk he₂ b3 b4 b5 b6 b7 b8 hR hs₂ hd₂ hsd₂
-      rw [a29, a30] at g₁
-      rw [b29, b30] at g₂
-      exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
+  · obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r10, .r28, .r29, .r30, .r31])
+        (.block toArgs) h).isSome = true := ⟨_, by taint_decide⟩
+    refine CT.taint _ (fun s₁ s₂ ⟨_, a29, a30, a31, a28, e₁, _, _, _, _, _, _, a10⟩
+      ⟨_, b29, b30, b31, b28, e₂, _, _, _, _, _, _, b10⟩ => ⟨e₁.sp.trans e₂.sp.symm, fun r hr => ?_⟩) hc
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | hr
+    · rw [a10, b10]
+    · exact pinK e₁ e₂ (a28.trans b28.symm) (a29.trans b29.symm) (a30.trans b30.symm) (a31.trans b31.symm)
+        (by simpa only [List.mem_cons, List.not_mem_nil, or_false] using hr)
+  · refine WP.mono (toArgs_ok he h28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_
+    exact ⟨V, h29, h30, h31, he.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
+      (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr, hR, hsr.of_eq hk₂.rd hk₂.wr,
+      hd.of_eq hk₂.rd hk₂.wr, hsd, a3, a4, a5, by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h6],
+      by rw [hg₂ _ (by decide) (by decide) (by decide) (by decide), h7], by rw [a8, h10]⟩
+  · refine to_rel fun s₁ s₂ ⟨⟨V₁, a29, a30, _, he₁, hR, hs₁, hd₁, hsd₁, a3, a4, a5, a6, a7, a8⟩,
+      ⟨V₂, b29, b30, _, he₂, _, hs₂, hd₂, hsd₂, b3, b4, b5, b6, b7, b8⟩⟩ => ?_
+    have g₁ := toCall_mk he₁ a3 a4 a5 a6 a7 a8 hR hs₁ hd₁ hsd₁
+    have g₂ := toCall_mk he₂ b3 b4 b5 b6 b7 b8 hR hs₂ hd₂ hsd₂
+    rw [a29, a30] at g₁
+    rw [b29, b30] at g₂
+    exact ⟨_, _, _, _, _, _, g₁, g₂, he₁.sp.trans he₂.sp.symm⟩
 
 theorem cryptTo_ct (L : Lay c st w) : CT (ToI c st w sp R S D n) cryptTo := by
   refine CT.ite (decide (n = 0)) (fun s ⟨_, _, _, _, hs⟩ => eval_zero hs.r25 hs.dst.ok.lt)
@@ -106,18 +105,9 @@ theorem cryptTo_ct (L : Lay c st w) : CT (ToI c st w sp R S D n) cryptTo := by
     ToIn V sp R S D n s₀ ∧ WholeOut V sp R S D n s₀ s
   refine CT.seq (J := W₁) wholeTo_ct (fun s ⟨V, h29, h30, h31, hs⟩ =>
     WP.mono (wholeTo_ok hs) fun s' h => ⟨V, s, h29, h30, h31, hs, h⟩) ?_
-  refine CT.seq (J := CrM c st w sp R D n 0 (16 * (n / 16))) ?_ (fun s ⟨V, s₀, h29, h30, h31, hs, hw⟩ =>
-    WP.mono (copyTail_ok hs hw) fun s' hc =>
-      ⟨V, 0, 0, virt s₀.mem S D n, h29, h30, h31, rfl, copied_mid hs hw hc⟩) (cryptTail_ct L)
-  obtain ⟨_, hc⟩ : ∃ h, (VG.Taint.check VG.PPC64LE.taint (Taint.ofRegs [.r24, .r25, .r26]) copyTail
-      h).isSome = true := ⟨_, by taint_decide⟩
-  refine CT.taint _ (fun s₁ s₂ ⟨_, _, _, _, _, _, h₁⟩ ⟨_, _, _, _, _, _, h₂⟩ =>
-    ⟨h₁.env.sp.trans h₂.env.sp.symm, fun r hr => ?_⟩) hc
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
-  · rw [h₁.r24, h₂.r24]
-  · rw [h₁.r25, h₂.r25]
-  · rw [h₁.r26, h₂.r26]
+  exact (cryptTailWith_ct L (to := true) (S := S + BitVec.ofNat 64 (16 * (n / 16)))
+    (E := D + BitVec.ofNat 64 (16 * (n / 16))) (k := n - 16 * (n / 16))).mono
+    fun _ ⟨V, s₀, h29, h30, h31, hs, hw⟩ => ⟨V, 0, _, _, _, h29, h30, h31, whole_tail (L.v h29 h30 h31) hs hw⟩
 
 /-- Before `oneCryptTo`: the source (`r27`) and its length (`r23`), the
 destination at `sp + 120`. -/
@@ -219,8 +209,7 @@ theorem split_ct [VG.Proof.Gcm.PPC64LE.GhashLaw] :
       WP.mono (oneCryptTo_ok (L₀.v a b d) he e hR (by rw [b, d, j, k]; exact hD')
         (by rw [a, b, d, k]; exact hdw) (by rw [j, k]; exact hsd) hi hv (icb := 0))
         fun s' oc => ⟨by rw [oc.env.r31, d], oc.env.sp⟩)
-    (fun t₀ s₄ ht h4 h19 hok => WP.mono (open_head (HeadPre.of_split ht.1) h4 h19 hok fun _ om =>
-      split_tail ht.1 h4 hok om) fun s' oo => ⟨oo.r31, oo.sp⟩)
+    (fun t₀ s₄ ht h4 h19 hok => WP.mono (split_good ht.1 h4 h19 hok) fun s' oo => ⟨oo.r31, oo.sp⟩)
   obtain ⟨hp, e3, _, _, _, _, _, e9, e10, esp, _, _, ea2, _, ea3⟩ := ht
   have x := split_x hp h4 om
   unfold SplitX at x ⊢

@@ -59,7 +59,7 @@ vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx:
 	mov r8, QWORD PTR [r11+32]
 	mov r9, QWORD PTR [r11+56]
 	push r10
-	call {vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx}
+	call {vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx}
 	pop rax
 	mov r11, QWORD PTR [rsp+32]
 	mov rax, QWORD PTR [r11+72]
@@ -159,7 +159,7 @@ vg_aes_gcm_stream_encrypt_to_prepared16_aesni_pclmul_avx:
 	mov r9, QWORD PTR [r11+56]
 	add r9, rax
 	push r10
-	call {vg_aes_gcm_stream_encrypt_prepared16_aesni_pclmul_avx}
+	call {vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx}
 	pop rax
 	jmp 214f
 213:

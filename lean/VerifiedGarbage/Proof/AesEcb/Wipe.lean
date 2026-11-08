@@ -271,4 +271,117 @@ theorem Verified.ecb_of_unwritten {T : Target} {c : Prog T.isa} {A : Abi T.isa} 
     exact unwritten _ g _ _ _ _ (hlen s vals hv) hq fun b hb hn i hi hl =>
       hW _ (List.mem_singleton_self _) b hb hn i hi hl
 
+
+/-! ## Zeroing the part of `scratch` that is written -/
+
+/-- A buffer whose first `w` bytes are zero and whose others are unchanged
+holds nothing written. -/
+theorem scrubbed_of_prefix {m m' : Mem} {p : Addr} {w len : Nat}
+    (hz : Spec.Zeroize.bytesAt m' p w = Spec.Zeroize.zeros w)
+    (ht : ∀ i, w ≤ i → i < len → m' (p + BitVec.ofNat 64 i) = m (p + BitVec.ofNat 64 i)) :
+    Spec.Zeroize.scrubbed m m' p len := by
+  intro a ha
+  have hi : (a - p).toNat < len := by simp only [Region.Contains] at ha; omega
+  have ea : p + BitVec.ofNat 64 (a - p).toNat = a := by
+    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+  by_cases hw : (a - p).toNat < w
+  · right
+    have he := congrArg (·[(a - p).toNat]?) hz
+    simp only [Spec.Zeroize.bytesAt, Spec.Zeroize.zeros, List.getElem?_map, List.getElem?_range hw,
+      List.getElem?_replicate, hw, ite_true, Option.map_some, Option.some.injEq] at he
+    rwa [ea] at he
+  · left
+    have he := ht _ (Nat.le_of_not_lt hw) hi
+    rwa [ea] at he
+
+/-- The blocks functions' postcondition, with the bytes of `scratch` at
+offset `w` and beyond unchanged. -/
+def postTail (pb : Nat) (g : List Byte → State → State) (w : Nat) : blocksSig.Post pb :=
+  fun schedule rounds data n scratch m m' x =>
+    post pb g schedule rounds data n scratch m m' x ∧
+      ∀ i, w ≤ i → i < 2048 → m' (scratch + BitVec.ofNat 64 i) = m (scratch + BitVec.ofNat 64 i)
+
+/-- `postTail` reads the memory on entry only within the buffers. -/
+theorem postTail_local (pb : Nat) (g : List Byte → State → State) (w : Nat) : ∀ vs m₁ m₂ m' x,
+    vs.length = (blocksSig.words pb).length →
+    (∀ b ∈ Sig.bufs blocksSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (blocksSig.words pb) (postTail pb g w) vs m₁ m' x →
+      Curry.apply (blocksSig.words pb) (postTail pb g w) vs m₂ m' x := by
+  intro vs m₁ m₂ m' x hlen hb h
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
+  obtain ⟨hp, ht⟩ := h
+  refine ⟨post_local pb g [a, b, c, d, e] m₁ m₂ m' x hlen hb hp, fun i h1 h2 => ?_⟩
+  rw [bufs_eq] at hb
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hb
+  rw [ht i h1 h2]
+  exact (agree_of hb.2.2 i (by omega)).symm
+
+/-- `postTail` reads the memory on return only within the buffers apart
+from the first `w` bytes of `scratch`. -/
+theorem postTail_out (pb : Nat) (g : List Byte → State → State) {w : Nat} (hw : w ≤ 2048) : ∀ vs m m₁ m₂ x,
+    vs.length = (blocksSig.words pb).length →
+    (Sig.bufs blocksSig.params vs).Pairwise (fun a b => (a.2 || b.2) → a.1.Disjoint b.1) →
+    (∀ b ∈ Sig.bufs blocksSig.params vs, ∀ a, b.1.Contains a 1 →
+      ¬(⟨vs.getD 4 0, w⟩ : Region).Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (blocksSig.words pb) (postTail pb g w) vs m m₁ x →
+      Curry.apply (blocksSig.words pb) (postTail pb g w) vs m m₂ x := by
+  intro vs m m₁ m₂ x hlen hpw hb h
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
+  obtain ⟨hp, ht⟩ := h
+  refine ⟨post_out pb g [a, b, c, d, e] m m₁ m₂ x hlen hpw
+    (fun r hr hrd y hy => hb r hr y hy fun hc => hrd y hy (Region.sub_prefix hw y hc)) hp, fun i h1 h2 => ?_⟩
+  have hc : (⟨e, 2048⟩ : Region).Contains (e + BitVec.ofNat 64 i) 1 :=
+    Offset.contains_base _ (by omega) (by omega)
+  have hn : ¬ (⟨e, w⟩ : Region).Contains (e + BitVec.ofNat 64 i) 1 := by
+    simp only [Region.Contains, BitVec.add_comm e, BitVec.add_sub_cancel, BitVec.toNat_ofNat]
+    omega
+  show m₂ (e + BitVec.ofNat 64 i) = m (e + BitVec.ofNat 64 i)
+  rw [← hb (⟨e, 2048⟩, true) (by rw [bufs_eq]; simp) _ hc hn]
+  exact ht i h1 h2
+
+/-- With the first `w` bytes of `scratch` zero on return, the postcondition
+of ECB. -/
+theorem wipedTail (pb : Nat) (g : List Byte → State → State) (w : Nat) : ∀ vs m m' x,
+    vs.length = (blocksSig.words pb).length →
+    Curry.apply (blocksSig.words pb) (postTail pb g w) vs m m' x →
+    Spec.Zeroize.bytesAt m' (vs.getD 4 0) w = Spec.Zeroize.zeros w →
+      Curry.apply (blocksSig.words pb) (ecbPost pb g) vs m m' x := by
+  intro vs m m' x hlen h hz
+  obtain ⟨a, b, c, d, e, rfl⟩ := vs_eq hlen
+  exact ⟨h.1, scrubbed_of_prefix hz h.2⟩
+
+/-- A proof of the blocks functions' contract is one with `postTail w` for
+code that writes `scratch` only within its first `w` bytes. -/
+theorem Verified.tail_of_written {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack w : Nat}
+    {g : List Byte → State → State}
+    (h : Verified T c (blocksSig.contract A (pre A.ptrBits) (post A.ptrBits g) false stack none))
+    (hw : ∀ s t s', (blocksSig.contract A (pre A.ptrBits) (post A.ptrBits g) false stack none).pre s →
+      Exec T.isa c s t s' → Sig.writtenWithin A blocksSig [("scratch", w)] s s')
+    (hlen : ∀ s vals, A.args ((blocksSig.words A.ptrBits).map (·.bits A.ptrBits)) = some vals →
+      (vals s).length = (blocksSig.words A.ptrBits).length) :
+    Verified T c (blocksSig.contract A (pre A.ptrBits) (postTail A.ptrBits g w) false stack none) := by
+  obtain ⟨hc, hct, hsat⟩ := h
+  refine ⟨fun s hs => ?_, hct, hsat⟩
+  obtain ⟨t, s', he, ha, hq⟩ := hc s hs
+  have hW := hw s t s' hs he
+  refine ⟨t, s', he, ha, ?_⟩
+  revert hs hq hW
+  simp only [Sig.contract, Sig.writtenWithin]
+  split
+  · intro hs; exact hs.elim
+  · rename_i vals hv
+    intro _ hq
+    split
+    · rename_i hv'
+      exact absurd (hv.symm.trans hv') (Option.some_ne_none _)
+    rename_i vals' hv'
+    obtain rfl := Option.some.inj (hv.symm.trans hv')
+    intro hW
+    have hl := hlen s vals hv
+    obtain ⟨a, b, c, d, e, he'⟩ := vs_eq hl
+    rw [he'] at hq hW ⊢
+    refine ⟨hq, fun i h1 h2 => ?_⟩
+    exact hW _ (List.mem_singleton_self _) ("scratch", ⟨e, 2048⟩)
+      (List.mem_cons_of_mem _ (List.mem_singleton_self _)) rfl i h1 h2
+
 end VG.Proof.AesEcb

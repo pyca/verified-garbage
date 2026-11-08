@@ -364,47 +364,47 @@ section
 variable (vg : GcmImpl)
 
 theorem init_spSafe : (init vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamInit_spSafe : (streamInit vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamAad_spSafe : (streamAad vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamEncrypt_spSafe : (streamEncrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamDecrypt_spSafe : (streamDecrypt vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamFinish_spSafe : (streamFinish vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem streamVerify_spSafe : (streamVerify vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem seal_spSafe : («seal» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 
 theorem open_spSafe : («open» vg.callees).all (fun i => !X86.isa.writesSp i) = true := by
-  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
+  simp only [absorb, absorbHead, absorbWhole, crypt, cryptTail, cryptWhole, ctrCall, finTag, firstFlush, flush, ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneTag, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit, streamVerify, tag, textAbsorb, tagOut, «open», openBody, «seal», Code.all, GcmImpl.callees, vg.ctr.spSafe, vg.ctr.expandSpSafe, vg.gh.spSafe,
     Bool.true_and, Bool.and_true]
   decide +kernel
 

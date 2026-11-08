@@ -5,7 +5,10 @@ public import VerifiedGarbage.Impl.Aes.Arm.Linear
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on ARMv7
 
-`vg_aes_ctr32(schedule = r0, rounds = r1, counter = r2, data = r3, n = [sp], scratch = [sp, #4])`.
+`vg_aes_ctr32(schedule = r0, rounds = r1, counter = r2, data = r3, n = [sp], scratch = [sp, #4])`,
+in place, and `vg_aes_ctr32_to(schedule = r0, rounds = r1, counter = r2, src = r3, n = [sp],
+scratch = [sp, #4], dst = [sp, #8])`, from `src` to `dst`: the same code
+(`ctr32Gen`), but for where the XOR stores (`dstReg`).
 
 Constant-time AES in the style of BearSSL's `aes_ct` (Thomas Pornin, MIT
 licence): two blocks at a time, bitsliced in eight 32-bit registers
@@ -28,6 +31,11 @@ licence): two blocks at a time, bitsliced in eight 32-bit registers
   encrypt (the round loop runs `kp` over the round keys until the last but
   one), un-bitslice, and XOR the keystream into the data, two blocks or the
   last one.
+* Out of place, the destination pointer is kept in slot 48 (`dstSlot`),
+  loaded to `kp` (free after the rounds) before the XOR of each group, and
+  stored back advanced after it, whichever the branch (so that it is public
+  in every group: the XOR's stores through `kp` may be anywhere); the XOR
+  loads from `r10` and stores to `kp`.
 * Only the pointers, `rounds`, `n` and what is computed from them (the
   loop counters and the round key and data pointers, in registers or
   stored in the scratch buffer) are public; no address and no branch
@@ -57,6 +65,8 @@ def cNum : Nat := 44
 def dSlot : Nat := 45
 def lSlot : Nat := 46
 def fkSlot : Nat := 47
+/-- Out of place: the slot of the destination pointer. -/
+def dstSlot : Nat := 48
 
 /-- The byte offset of the last round key in the scratch buffer. -/
 def lastKey : Nat := 2016
@@ -97,6 +107,9 @@ def keyBody : List Instr := keyLoad ++ ortho ++ keyStore ++ keyStep
 def keyDone : List Instr :=
   [.dp .add .r12 kp (.imm 32), movR .r10 .r8, .ldrSp .r11 0, .ldrSp sb 4]
 
+/-- Out of place, after `keyDone`: the destination (`[sp, #8]`) to its slot. -/
+def dstSave (to : Bool) : List Instr := if to then [.ldrSp kp 8, stS dstSlot kp] else []
+
 /-- The counter block `c + b` (`b < 2`): word `k` in `q (2k + b)`. -/
 def ctrBlock (b : Nat) : List Instr :=
   [ldS (q b) (cW 0), ldS (q (2 + b)) (cW 1), ldS (q (4 + b)) (cW 2), ldS t0 cNum,
@@ -121,17 +134,28 @@ def encrypt2 : Prog isa :=
   .seq (.block (ortho ++ addRoundKey))
     (.seq (.loop (.block roundBody) .ne) (.block (lastRound ++ ortho)))
 
-/-- XOR the keystream block `b` into data block `b` (at `r10`). -/
-def xorBlock (b : Nat) : List Instr :=
+/-- Where the XOR stores: back to the data (`r10`), or out of place to `kp`. -/
+def dstReg (to : Bool) : Reg := if to then kp else .r10
+
+/-- Out of place, before the XOR: the destination pointer to `kp`. -/
+def dstLoad (to : Bool) : List Instr := if to then [ldS kp dstSlot] else []
+
+/-- Out of place, after the XOR: the destination pointer advanced by two
+blocks, and back to its slot. -/
+def dstStep (to : Bool) : List Instr := if to then [.dp .add kp kp (.imm 32), stS dstSlot kp] else []
+
+/-- XOR the keystream block `b` into data block `b` (at `r10`), stored to
+block `b` at `dstReg to`. -/
+def xorBlockG (to : Bool) (b : Nat) : List Instr :=
   (List.range 4).flatMap fun k =>
-    [.ldr .lr .r10 (16 * b + 4 * k), eorR .lr .lr (q (2 * k + b)), .str .lr .r10 (16 * b + 4 * k)]
+    [.ldr .lr .r10 (16 * b + 4 * k), eorR .lr .lr (q (2 * k + b)), .str .lr (dstReg to) (16 * b + 4 * k)]
 
 /-- Two blocks, and on to the next two. -/
-def xorFull : List Instr :=
-  xorBlock 0 ++ xorBlock 1 ++ ([.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)] : List Instr)
+def xorFullG (to : Bool) : List Instr :=
+  xorBlockG to 0 ++ xorBlockG to 1 ++ ([.dp .add .r10 .r10 (.imm 32), .dp .sub .r11 .r11 (.imm 2)] : List Instr)
 
 /-- The last block (and none left). -/
-def xorTail : List Instr := xorBlock 0 ++ ([.mov .r11 (.imm 0)] : List Instr)
+def xorTailG (to : Bool) : List Instr := xorBlockG to 0 ++ ([.mov .r11 (.imm 0)] : List Instr)
 
 /-- Store the data pointer, the blocks left and the first round key, and
 point `kp` at the first round key. -/
@@ -142,17 +166,25 @@ def groupSave : List Instr :=
 def groupLoad : List Instr := [ldS .r10 dSlot, ldS .r11 lSlot, ldS .r12 fkSlot]
 
 /-- One group of (up to) two blocks. -/
-def group : Prog isa :=
+def groupG (to : Bool) : Prog isa :=
   .seq (.block (groupSave ++ ctrBlocks))
     (.seq encrypt2
-      (.seq (.block (groupLoad ++ ([.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)] : List Instr)))
-        (.seq (.ite .ne (.block xorFull) (.block xorTail)) (.block [.cmp .r11 (.imm 0)]))))
+      (.seq (.block (groupLoad ++ (([.mov kp (lsrOp .r11 1), .cmp kp (.imm 0)] : List Instr) ++ dstLoad to)))
+        (.seq (.ite .ne (.block (xorFullG to)) (.block (xorTailG to)))
+          (.block (dstStep to ++ ([.cmp .r11 (.imm 0)] : List Instr))))))
 
-def ctr32 : Prog isa :=
+/-- Counter mode, in place (`to = false`) or out of place. -/
+def ctr32Gen (to : Bool) : Prog isa :=
   .seq (.block (prologue ++ keySetup))
     (.seq (.loop (.block keyBody) .ne)
-      (.seq (.block (keyDone ++ ([.cmp .r11 (.imm 0)] : List Instr)))
-        (.seq (.ite .eq (.block []) (.loop group .ne))
+      (.seq (.block (keyDone ++ dstSave to ++ ([.cmp .r11 (.imm 0)] : List Instr)))
+        (.seq (.ite .eq (.block []) (.loop (groupG to) .ne))
           (.block (.ldrSp .r12 4 :: restoreRegs .r12)))))
+
+/-- `vg_aes_ctr32`, in place. -/
+def ctr32 : Prog isa := ctr32Gen false
+
+/-- `vg_aes_ctr32_to`, from `src` (`r3`) to `dst` (`[sp, #8]`). -/
+def ctr32To : Prog isa := ctr32Gen true
 
 end VG.Impl.Aes.Arm

@@ -208,7 +208,7 @@ theorem streamFinish_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
@@ -218,7 +218,7 @@ theorem streamFinish_stackUse : stackUse (streamFinish vg.callees) ≤ 28 := by
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
 
@@ -228,7 +228,7 @@ theorem streamVerify_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
@@ -238,7 +238,7 @@ theorem streamVerify_stackUse : stackUse (streamVerify vg.callees) ≤ 28 := by
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le]
   decide +kernel
 
@@ -248,7 +248,7 @@ theorem seal_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
@@ -258,7 +258,7 @@ theorem seal_stackUse : stackUse («seal» vg.callees) ≤ 28 := by
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons,
     List.length_nil, Nat.zero_le, true_and, and_true]
   decide +kernel
@@ -269,7 +269,7 @@ theorem open_noEsp :
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», Code.allInstrs,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, Code.allInstrs,
     GcmImpl.callees, noEsp_of vg.ctr.nosp, noEsp_of vg.ctr.expandNosp, noEsp_of vg.gh.nosp,
     Bool.true_and, Bool.and_true]
   decide +kernel
@@ -279,7 +279,7 @@ theorem open_stackUse : stackUse («open» vg.callees) ≤ 28 := by
     cryptEntry, cryptHead, cryptTail, cryptWhole, ctrCall, finEntry, finTag, firstFlush, flush,
     ghCall, ghash1, init, j0, j0hash, keyCall, lens, oneAad, oneCrypt, oneEntry, oneTag, recv,
     setData, setText, streamAad, streamDecrypt, streamEncrypt, streamFinish, streamInit,
-    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», stackUse, GcmImpl.callees,
+    streamVerify, tag, tagLenOk, tagOut, textAbsorb, «seal», «open», openBody, stackUse, GcmImpl.callees,
     vg.ctr.stack, vg.ctr.expandStack, vg.gh.stack, Nat.max_le, X86.frameBytes, List.length_cons,
     List.length_nil, Nat.zero_le, true_and, and_true]
   decide +kernel

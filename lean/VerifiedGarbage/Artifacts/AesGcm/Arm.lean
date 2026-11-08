@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.Arm.Gather.Verified
-public import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.Arm.OpenTo
 public import VerifiedGarbage.Proof.AesGcm.RoundsTo
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
@@ -56,8 +56,8 @@ def artifacts : List Artifact := [
     stack := 2640
     verified := Proof.AesGcm.sealGather_keyed (Gather.sealGather_verified Gather.sealFn) },
   Spec.Gcm.openToApi.artifact Arm.target {
-    code := Impl.AesGcm.Arm.OpenTo.openTo OpenTo.openFn.name OpenTo.openFn.code
-    stack := 2648
-    verified := Proof.AesGcm.openTo_keyed (OpenTo.openTo_verified OpenTo.openFn) }]
+    code := Impl.StackScratch.Arm.withStackScratch 2608 8 Impl.AesGcm.Arm.openTo
+    stack := 2620
+    verified := Proof.AesGcm.openTo_keyed openTo_framed }]
 
 end VG.Artifacts.AesGcm.Arm

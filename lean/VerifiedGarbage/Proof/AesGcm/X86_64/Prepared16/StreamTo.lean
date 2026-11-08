@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Spec.Gcm.Prepared16
+public import VerifiedGarbage.Proof.Gcm.PreparedPowers
 public import VerifiedGarbage.Proof.Gcm.Prepared16Contract
 public import VerifiedGarbage.Proof.Gcm.PreparedContract
 public import VerifiedGarbage.Proof.Gcm.OutOfPlaceContract
+
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
 import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared16.Verified
 import VerifiedGarbage.Proof.AesGcm.ScratchPreparedTo

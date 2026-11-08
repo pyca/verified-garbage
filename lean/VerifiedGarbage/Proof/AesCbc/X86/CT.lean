@@ -236,14 +236,15 @@ theorem loop_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M
 /-- The registers saved and the arguments set up, `mid` run unless there are
 no blocks, and the registers restored, constant time when two runs of `mid`
 from the invariant after no blocks are (`whole_rel`: `body`'s loop). -/
-theorem ends_rel {M : Mode} {mid : Prog isa}
+theorem ends_rel' {M : Mode} {mid : Prog isa} {epi : List Instr} {he : Taint.Hint taint.T}
+    (hepi : (taint.check (argTaint [] (4 + 4 * 6)) (.block epi) he).isSome = true)
     {s₀ s₀' : State} (h0 : (modeX86 M).pre s₀) (h0' : (modeX86 M).pre s₀')
     (hq : (modeX86 M).pub s₀ s₀')
     (hm : UPre s₀ → UPre s₀' → 0 < N s₀ →
       RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) mid
         fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀')
-      (.seq (.block setup) (.seq (.ite .e (.block []) mid) (.block (restore 5)))) fun _ _ => True := by
+      (.seq (.block setup) (.seq (.ite .e (.block []) mid) (.block epi))) fun _ _ => True := by
   have hp := UPre.of h0
   have hp' := UPre.of h0'
   have hN := pub_N hq
@@ -255,7 +256,9 @@ theorem ends_rel {M : Mode} {mid : Prog isa}
     (c := .block setup) (by taint_decide)).wp
     (F₁ := fun (s : State) => LInv M s₀ 0 s ∧ s.zf = some (decide (N s₀ = 0)))
     (F₂ := fun (s : State) => LInv M s₀' 0 s ∧ s.zf = some (decide (N s₀' = 0)))
-    fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨prologue_wp hp, prologue_wp hp'⟩).mono (fun _ _ h => h)
+    fun a b h => by
+      obtain ⟨rfl, rfl⟩ := h
+      exact ⟨(prologue_wp hp).mono fun _ h => h.1, (prologue_wp hp').mono fun _ h => h.1⟩).mono (fun _ _ h => h)
     fun _ _ h => h.2
   have ev {s : State} (h : s.zf = some (decide (N s₀ = 0))) : isa.eval .e s = some (decide (N s₀ = 0)) := by
     show VG.X86.eval .e s = _; rw [eval_e, h]
@@ -283,8 +286,18 @@ theorem ends_rel {M : Mode} {mid : Prog isa}
       omega
   have epi := RelCT.taint (A := taint) (P := fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b)
     (argTaint [] (4 + 4 * 6)) (fun _ _ h => Pt.agree hq hp hp' (h.1.pt hp) (h.2.pt hp') fun r hr => by simp at hr)
-    (c := .block (restore 5)) (by taint_decide)
+    hepi
   exact pro.seq (mid.seq epi)
+
+theorem ends_rel {M : Mode} {mid : Prog isa}
+    {s₀ s₀' : State} (h0 : (modeX86 M).pre s₀) (h0' : (modeX86 M).pre s₀')
+    (hq : (modeX86 M).pub s₀ s₀')
+    (hm : UPre s₀ → UPre s₀' → 0 < N s₀ →
+      RelCT isa (fun a b => LInv M s₀ 0 a ∧ LInv M s₀' 0 b) mid
+        fun a b => LInv M s₀ (N s₀) a ∧ LInv M s₀' (N s₀') b) :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀')
+      (.seq (.block setup) (.seq (.ite .e (.block []) mid) (.block (restore 5)))) fun _ _ => True :=
+  ends_rel' (epi := restore 5) (by taint_decide) h0 h0' hq hm
 
 theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
     {s₀ s₀' : State} (h0 : (modeX86 M).pre s₀) (h0' : (modeX86 M).pre s₀')
@@ -293,6 +306,18 @@ theorem whole_rel {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt
   ends_rel h0 h0' hq fun hp hp' hn =>
     (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono
       (fun _ _ h => ⟨0, rfl, ⟨hn, h.1⟩, ⟨by rw [← pub_N hq]; exact hn, h.2⟩⟩) fun _ _ h => h
+
+theorem whole_relZ {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body)
+    {s₀ s₀' : State} (h0 : (modeX86 M).pre s₀) (h0' : (modeX86 M).pre s₀')
+    (hq : (modeX86 M).pub s₀ s₀') :
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (wholeZ body) fun _ _ => True :=
+  ends_rel' (epi := restore 5 ++ zeroSaved) (by taint_decide) h0 h0' hq fun hp hp' hn =>
+    (loop_ct hb hc hp hp' hq (N s₀ - 0)).mono
+      (fun _ _ h => ⟨0, rfl, ⟨hn, h.1⟩, ⟨by rw [← pub_N hq]; exact hn, h.2⟩⟩) fun _ _ h => h
+
+theorem wholeZ_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
+    ConstantTime isa (modeX86 M).pre (modeX86 M).pub (wholeZ body) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (whole_relZ hb hc h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 theorem whole_ct {M : Mode} {body : Prog isa} (hb : BodyOk M body) (hc : BodyCt M body) :
     ConstantTime isa (modeX86 M).pre (modeX86 M).pub (whole body) :=

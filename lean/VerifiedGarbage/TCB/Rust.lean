@@ -1686,6 +1686,32 @@ pub use crate::<module>::<base> as <base>_auto;
 A function whose base needs CPU features gets none (there is nothing to fall
 back on), and neither does an implementation that is not a base.
 
+A function the ranking's file lists for its target (`Selected`,
+`VerifiedGarbage/Dispatch.lean`, which is not trusted either: it only says
+which functions get one) also gets a *selector*, `<base>_select`, next to its
+dispatcher (`selector`). It tries the dispatcher's implementations in the
+same order, under the same conditions, but returns the first that applies,
+or the base, as a pointer to it instead of calling it, so that the Rust code
+can choose once and call it as often as it likes without choosing again. It
+is safe to call, since it calls nothing but `detected()`; calling what it
+returns carries exactly the dispatcher's obligations, which are that
+function's:
+
+```rust
+/// <which implementation it returns, and the dispatcher's obligations>
+#[inline]
+pub fn <base>_select() -> unsafe extern "<abi>" fn<the signature> {
+    let cpu = verified_garbage_cpu::detected();
+    if cpu.contains(crate::<module>::<NAME>_FEATURES) {
+        return crate::<module>::<name>;
+    }
+    …
+    crate::<module>::<base>
+}
+```
+
+A function whose base is its only implementation returns it.
+
 A table of functions (`FnTable`) is chosen the same way, by
 `dispatch/fn_tables.rs` (`tableDispatcher`). Its implementations are the
 tables of the same interface and the same words of data whose names are its
@@ -1954,6 +1980,38 @@ def soleDispatcher (g : Group) : String :=
   "#[allow(unused_imports)]\n" ++
   s!"pub use crate::{b.module}::{b.name} as {auto};\n"
 
+/-- The functions that get a selector besides their dispatcher (see above),
+for each target by its name (`Target.name`): their bases' names. -/
+abbrev Selected := List (String × List String)
+
+/-- The name of the selector of the function whose base is `base`. -/
+def selectName (base : String) : String := base ++ "_select"
+
+/-- The selector of the function `g` (see above), given its implementations'
+`arms` (none for a function whose base is its only implementation). -/
+def selector (g : Group) (arms : List Arm) : String :=
+  let b := g.base
+  let auto := autoName b.name
+  let ty := s!"unsafe extern \"{b.target.rustAbi}\" fn{b.sig.rust}"
+  docComment "" (s!"The implementation of `{b.name}` that `{auto}` runs on this CPU, chosen as it \
+      chooses (`VG.Rust.selector`), so that it can be called without choosing again.\n\n\
+    # Safety\n\n\
+    Calling the function it returns carries exactly `{auto}`'s obligations (its `# Safety` \
+      section), which are those of each implementation it may return; calling this function \
+      has none.") ++
+  -- The type is the implementations' signature, as a pointer.
+  "#[allow(clippy::type_complexity)]\n" ++
+  "#[inline]\n" ++
+  s!"pub fn {selectName b.name}() -> {ty} " ++ "{\n" ++
+  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
+  String.join (arms.map fun a =>
+    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
+    s!"    if {condOf a} " ++ "{\n" ++
+    s!"        return crate::{a.impl.module}::{a.impl.name};\n" ++
+    "    }\n") ++
+  s!"    crate::{b.module}::{b.name}\n" ++
+  "}\n"
+
 /-- Each `Rank` of `rs` has a suffix starting with `_` and, if it names a
 vendor, a vendor of lowercase ASCII letters, digits and underscores (the
 text the dispatcher puts in `cfg!(target_vendor = "…")`), and each of its
@@ -1970,19 +2028,25 @@ def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
         throw s!"{t}: the ranked suffix `{r.suffix}` needs the feature `{f}`"
 
 /-- The dispatchers of the artifacts `as` of the module `m` of a target (see
-above), as the text that follows its functions in its file; `names` are the
-names of every artifact of the target, none of which may be a dispatcher's. -/
-def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List Artifact) :
-    Except String String := do
+above), with the selectors of those whose bases `selected` names, as the
+text that follows its functions in its file; `names` are the names of every
+artifact of the target, none of which may be a dispatcher's or a
+selector's. -/
+def dispatchers (rs : List Rank) (names : List String) (m : String) (as : List Artifact)
+    (selected : List String := []) : Except String String := do
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name
     if names.contains auto then
       throw s!"{g.base.target.name}: {auto} is both an artifact and the dispatcher of {g.base.name}"
-    if g.members.isEmpty then return soleDispatcher g
-    match armsOf rs m g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s)) with
-    | .ok arms => return dispatcher g arms
-    | .error e => throw e
+    let sel := selected.contains g.base.name
+    if sel && names.contains (selectName g.base.name) then
+      throw s!"{g.base.target.name}: {selectName g.base.name} is both an artifact and the \
+        selector of {g.base.name}"
+    let arms ← if g.members.isEmpty then pure [] else
+      armsOf rs m g.base.target.name (g.members.map fun (a, s) => (Impl.ofArtifact a, s))
+    let disp := if g.members.isEmpty then soleDispatcher g else dispatcher g arms
+    return disp ++ if sel then "\n" ++ selector g arms else ""
   return String.join (texts.map ("\n" ++ ·))
 
 /-- The tables of functions `ts` of a target, with their implementations: in
@@ -2147,13 +2211,14 @@ code has an instruction its target's printer cannot encode
 `fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
 writable array parameter, at most its size (`checkWritten`), or `ranking`
 (each target's, by its name) does not rank an implementation a dispatcher
-calls (`dispatchers`, `checkRanks`); with each module's dispatchers after its
-functions. Each check of
+calls (`dispatchers`, `checkRanks`), or `selected` names a function of a
+target that has no dispatcher there (`dispatchers`); with each module's
+dispatchers, and the selectors `selected` asks for, after its functions. Each check of
 every artifact runs on `tasks` tasks (`forMPar`), one check after the other,
 so the error is the
 one checking them in order would give; what they read of an artifact more
 than once is computed once, on `tasks` tasks (`Prepared`, `prepareAll`). -/
-def files (as : List Artifact) (ranking : Ranking := []) :
+def files (as : List Artifact) (ranking : Ranking := []) (selected : Selected := []) :
     Except String (List (String × String)) := do
   -- The same artifacts, with equal parts the same value in memory
   -- (`ShareCommon.shareCommon'` returns its argument): the code of every call
@@ -2183,8 +2248,13 @@ def files (as : List Artifact) (ranking : Ranking := []) :
     checkRanks t rs
     let arts := as.filter (·.target.name == t)
     let names := arts.map (·.name)
+    let sel := (selected.lookup t).getD []
+    for n in sel do
+      unless (distinct arts (·.module)).any (fun m => (groupsOf (arts.filter (·.module == m))).any
+          fun g => g.base.name == n && g.base.features.isEmpty) do
+        throw s!"{t}: {n} has a selector (`VG.Dispatch.selected`) but no dispatcher"
     let fns ← (distinct arts (·.module)).mapM fun m => do
-      return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)))
+      return ((t, m), ← dispatchers rs names m (arts.filter (·.module == m)) sel)
     let tps := ps.filter (·.art.target.name == t)
     let rankModule (T : FnTable) : String := match T.fns.head? with
       | none => ""

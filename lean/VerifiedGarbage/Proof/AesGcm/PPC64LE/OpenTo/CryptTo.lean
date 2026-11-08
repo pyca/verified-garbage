@@ -4,8 +4,9 @@ public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Crypt
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.Callee
 public import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneShot
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE.OpenTo
-import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
+public import VerifiedGarbage.Proof.AesGcm.PPC64LE.CryptOk
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Loops
+import VerifiedGarbage.Proof.Gcm.StreamTo
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Absorb
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.Ghash1
 import VerifiedGarbage.Proof.AesGcm.PPC64LE.OneEntry
@@ -22,15 +23,10 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 Untrusted: everything here is checked by Lean. `oneCryptTo` decrypts the
 `len` bytes at the source (`r27`) to the destination (`[sp + 120]`), apart
-from it (`oneCryptTo_ok`): the whole blocks by `vg_aes_ctr32_to`
-(`to_call`), the last bytes copied to the destination and decrypted there by
-`cryptTail`.
-
-The proof of `cryptTail` is `open`'s, in place (`cryptTail_ok`): it is
-stated against an initial memory, which here is the memory as it would be
-had the source been copied to the destination (`virt`). The destination
-then holds, after the whole blocks and the copy, what `crypt` in place
-would have left there at that point (`CrMid`).
+from it (`oneCryptTo_ok`), in one pass: the whole blocks by
+`vg_aes_ctr32_to` (`to_call`), and the last bytes by `open`'s own tail with
+`to` (`cryptTailWith_ok`, from `whole_tail`), which XORs them from the
+source into the destination.
 -/
 
 @[expose] public section
@@ -119,35 +115,6 @@ theorem to_rel {name : String} {P : State → State → Prop}
     h₁.r3, h₁.r4, h₁.r5, h₁.r6, h₁.r7, h₁.r8, h₂.r3, h₂.r4, h₂.r5, h₂.r6, h₂.r7, h₂.r8, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
-/-! ## The memory as if the source had been copied -/
-
-/-- `m`, with the `n` bytes at `S` copied to `D`. -/
-abbrev virt (m : Mem) (S D : Addr) (n : Nat) : Mem := writeBytes m D (bytesAt m S n)
-
-theorem virt_byte (m : Mem) (S D : Addr) {n i : Nat} (hi : i < n) (hn : n < 2 ^ 64) :
-    virt m S D n (D + BitVec.ofNat 64 i) = m (S + BitVec.ofNat 64 i) := by
-  simp only [virt, writeBytes, Offset.add_sub_cancel_left, BitVec.toNat_ofNat,
-    Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega), length_bytesAt, hi, ite_true]
-  simp [bytesAt, List.getD_eq_getElem?_getD, hi]
-
-theorem virt_bytes (m : Mem) (S D : Addr) {n k l : Nat} (hkl : k + l ≤ n) (hn : n < 2 ^ 64) :
-    bytesAt (virt m S D n) (D + BitVec.ofNat 64 k) l = bytesAt m (S + BitVec.ofNat 64 k) l := by
-  simp only [bytesAt]
-  refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  rw [add_ofNat_assoc, add_ofNat_assoc]
-  exact virt_byte m S D (by omega) hn
-
-theorem virt_blocks (m : Mem) (S D : Addr) {n nb : Nat} (h : 16 * nb ≤ n) (hn : n < 2 ^ 64) :
-    blocksAt (virt m S D n) D nb = blocksAt m S nb := by
-  simp only [blocksAt, blockAt]
-  refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  rw [virt_bytes m S D (k := 16 * i) (l := 16) (by omega) hn]
-
-theorem virt_frame (m : Mem) (S D : Addr) (n : Nat) : Frame [⟨D, n⟩] m (virt m S D n) :=
-  writeBytes_frame' m (length_bytesAt _ _ _)
-
 /-! ## The whole blocks -/
 
 /-- The split of the source into whole blocks and the last bytes, and the
@@ -161,14 +128,16 @@ theorem splitTo_ok {s : State} {S D : Addr} {n : Nat} (hn : n < 2 ^ 64)
       s'.gpr .r26 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
       (∀ r, r ≠ .r0 → r ≠ .r6 → r ≠ .r7 → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r24 → r ≠ .r25 →
         r ≠ .r26 → s'.gpr r = s.gpr r) ∧ Keeps s s' := by
-  have hand := and15 (BitVec.ofNat 64 n)
-  rw [toNat64 hn] at hand
-  have hsub : BitVec.ofNat 64 n - BitVec.ofNat 64 (n % 16) = BitVec.ofNat 64 (16 * (n / 16)) := by
-    rw [ofNat_sub64 (Nat.mod_le _ _) hn]; congr 1; omega
-  simp only [splitTo, splitCtr, List.cons_append, List.nil_append]
-  crun [h24, h25, h26, mov, BitVec.or_self, hand, hsub, shr4 hn]
-  refine ⟨by congr 1; omega, fun r a b c d e f g i j => by simp [a, b, c, d, e, f, g, i, j],
-    ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
+  have h24' : s.gpr .r24 = S + BitVec.ofNat 64 0 := by rw [h24]; exact (BitVec.add_zero S).symm
+  have h25' : s.gpr .r25 = BitVec.ofNat 64 (n - 0) := by rw [h25, Nat.sub_zero]
+  rw [splitTo, WP.block_append_iff]
+  refine WP.mono (splitCtr_ok (Nat.zero_le n) hn h24' h25') fun s₁ ⟨h6, h7, h24₁, h25₁, h9, hg₁, hk₁⟩ => ?_
+  have h26₁ : s₁.gpr .r26 = D := by
+    rw [hg₁ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h26]
+  simp only [Nat.sub_zero, Nat.zero_add, BitVec.add_zero] at h6 h7 h24₁ h25₁ h9
+  crun [h26₁, h9, h6, h7, h24₁, h25₁, mov, BitVec.or_self]
+  exact ⟨fun r a b c d e f g i j => by simp [f, j, hg₁ r a b c d e g i],
+    ⟨hk₁.mem, hk₁.rd, hk₁.wr, hk₁.sp, hk₁.lr⟩⟩
 
 /-- Before `cryptTo`: the `n` bytes at `S` (`r24`) to decrypt to `D` (`r26`),
 apart from it, `R` rounds in `r28`. -/
@@ -234,20 +203,18 @@ theorem toCall_mk {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n 
 theorem wholeTo_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n : Nat} {s : State}
     (h : ToIn V sp R S D n s) : WP isa wholeTo s (WholeOut V sp R S D n s) := by
   have hn := h.dst.ok.lt
-  refine WP.seq (WP.mono (splitTo_ok hn h.r24 h.r25 h.r26) fun s₁ ⟨h6, h7, h10, h24, h25, h26, hg₁, hk₁⟩ => ?_)
   have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
-  have he₁ : Env V sp s₁ := h.env.keep (fun r hr => hg₁ r (by revert r; decide) (by revert r; decide)
+  refine wholeWith_ok (nb := n / 16) (by omega) (splitTo_ok hn h.r24 h.r25 h.r26) (fun _ h => h.2.1)
+    (fun s₁ ⟨_, _, _, h24, h25, h26, hg₁, hk₁⟩ h0 => ?_) (fun s₁ ⟨h6, h7, h10, h24, h25, h26, hg₁, hk₁⟩ _ => ?_)
+  all_goals have he₁ : Env V sp s₁ := h.env.keep (fun r hr => hg₁ r (by revert r; decide)
     (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
-    (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
-  refine WP.ite (decide (n / 16 = 0)) (eval_zero h7 (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n / 16 = 0 := by simpa using ht
-    refine WP.block_nil ⟨he₁, h24, h25, h26, hk₁.rd, hk₁.wr, ?_, ?_, ?_⟩
+    (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)) hk₁.sp hk₁.rd hk₁.wr
+  · refine ⟨he₁, h24, h25, h26, hk₁.rd, hk₁.wr, ?_, ?_, ?_⟩
     · simp only [h0, Spec.Gcm.blocksAt, List.range_zero, List.map_nil, Spec.Gcm.ctr32, Spec.Gcm.keystream,
         List.length_nil, List.zipWith_nil_left]
     · rw [h0, hk₁.mem]; rfl
     · rw [hk₁.mem]; exact Frame.refl _ _
-  · have h0 : n / 16 ≠ 0 := by simpa using hf
-    refine WP.seq (WP.mono (toArgs_ok he₁ h.r28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_)
+  · refine WP.seq (WP.mono (toArgs_ok he₁ h.r28) fun s₂ ⟨a3, a4, a5, a8, hg₂, hk₂⟩ => ?_)
     have he₂ : Env V sp s₂ := he₁.keep (fun r hr => hg₂ r (by revert r; decide) (by revert r; decide)
       (by revert r; decide) (by revert r; decide)) hk₂.sp hk₂.rd hk₂.wr
     have hdst := h.dst.of_eq (hk₂.rd.trans hk₁.rd) (hk₂.wr.trans hk₁.wr)
@@ -263,62 +230,6 @@ theorem wholeTo_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n
     · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide), h25]
     · rw [g.saved _ (by decide), hg₂ _ (by decide) (by decide) (by decide) (by decide), h26]
 
-/-! ## The last bytes -/
-
-/-- After the copy of the last bytes, from the state `s` after the whole
-blocks. -/
-structure Copied (V : Reg → BitVec 64) (sp : Addr) (S D : Addr) (n : Nat) (s s' : State) : Prop where
-  env : Env V sp s'
-  r24 : s'.gpr .r24 = D + BitVec.ofNat 64 (16 * (n / 16))
-  r25 : s'.gpr .r25 = BitVec.ofNat 64 (n - 16 * (n / 16))
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  copied : bytesAt s'.mem (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
-    bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16))
-  frame : Frame [⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩] s.mem s'.mem
-
-/-- The last bytes at the source copied to the destination. -/
-theorem copyTail_ok {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n : Nat} {s₀ s : State}
-    (hs : ToIn V sp R S D n s₀) (h : WholeOut V sp R S D n s₀ s) :
-    WP isa copyTail s (Copied V sp S D n s) := by
-  have hn := hs.dst.ok.lt
-  have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
-  have h24 := h.r24; have h25 := h.r25; have h26 := h.r26
-  have h₁ : WP isa (.block [mov .r3 .r24, mov .r4 .r26, mov .r5 .r25, mov .r24 .r26]) s fun s₁ =>
-      s₁.gpr .r3 = S + BitVec.ofNat 64 (16 * (n / 16)) ∧ s₁.gpr .r4 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
-      s₁.gpr .r5 = BitVec.ofNat 64 (n - 16 * (n / 16)) ∧ s₁.gpr .r24 = D + BitVec.ofNat 64 (16 * (n / 16)) ∧
-      (∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r24 → s₁.gpr r = s.gpr r) ∧ Keeps s s₁ := by
-    crun [h24, h25, h26, mov, BitVec.or_self]
-    exact ⟨fun r a b c d => by simp [a, b, c, d], ⟨rfl, rfl, rfl, rfl, rfl⟩⟩
-  refine WP.seq (WP.mono h₁ fun s₁ ⟨a3, a4, a5, a24, g₁, k₁⟩ => ?_)
-  have he₁ : Env V sp s₁ := h.env.keep (fun r hr => g₁ r (by revert r; decide) (by revert r; decide)
-    (by revert r; decide) (by revert r; decide)) k₁.sp k₁.rd k₁.wr
-  have g25 : s₁.gpr .r25 = s.gpr .r25 := g₁ _ (by decide) (by decide) (by decide) (by decide)
-  refine WP.ite (decide (n - 16 * (n / 16) = 0)) (eval_zero a5 (by omega)) (fun ht => ?_) (fun hf => ?_)
-  · have h0 : n - 16 * (n / 16) = 0 := by simpa using ht
-    refine WP.block_nil ⟨he₁, a24, by rw [g25, h25], k₁.rd, k₁.wr, ?_, by rw [k₁.mem]; exact Frame.refl _ _⟩
-    rw [h0]; rfl
-  · have h0 : n - 16 * (n / 16) ≠ 0 := by simpa using hf
-    have lp : LoopPre s₁ (S + BitVec.ofNat 64 (16 * (n / 16))) (D + BitVec.ofNat 64 (16 * (n / 16)))
-        (n - 16 * (n / 16)) := by
-      refine ⟨a3, a4, a5, by omega, by omega, ?_, ?_, ?_⟩
-      · rw [k₁.rd, k₁.wr, h.rd, h.wr]; exact covers_off hs.src.rd (by omega) hn
-      · rw [k₁.wr, h.wr]; exact covers_off hs.dst.wr (by omega) hn
-      · exact (hs.sd.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))
-    refine WP.mono (copyLoop_ok s₁ lp) fun s₂ ⟨hm₂, lo⟩ => ?_
-    rw [k₁.mem] at hm₂
-    refine ⟨he₁.keep (fun r hr => lo.other r (by revert r; decide) (by revert r; decide) (by revert r; decide)
-        (by revert r; decide) (by revert r; decide)) lo.keeps.2.2.1 lo.keeps.1 lo.keeps.2.1,
-      by rw [lo.other _ (by decide) (by decide) (by decide) (by decide) (by decide), a24],
-      by rw [lo.other _ (by decide) (by decide) (by decide) (by decide) (by decide), g25, h25],
-      lo.keeps.1.trans k₁.rd, lo.keeps.2.1.trans k₁.wr, ?_, ?_⟩
-    · have e := bytesAt_writeBytes_self s.mem (D + BitVec.ofNat 64 (16 * (n / 16)))
-        (bytesAt s.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)))
-        (by rw [length_bytesAt]; omega)
-      rw [length_bytesAt] at e
-      rw [hm₂, e]
-    · rw [hm₂]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-
 /-! ## `cryptTo` -/
 
 /-- After `cryptTo`, from `m₀`: the destination holds the source decrypted
@@ -333,96 +244,74 @@ structure ToOut (V : Reg → BitVec 64) (sp : Addr) (R : Nat) (icb : Block) (S D
 section
 variable {V : Reg → BitVec 64} {sp : Addr} {R : Nat} {S D : Addr} {n : Nat} {s₀ : State}
 
-/-- The counter block is not in the destination. -/
-theorem ToIn.virt_cb (hs : ToIn V sp R S D n s₀) {x : Nat} (hx : x + 16 ≤ 80) :
-    blockAt (virt s₀.mem S D n) (V .r30 + BitVec.ofNat 64 x) = blockAt s₀.mem (V .r30 + BitVec.ofNat 64 x) :=
-  blockAt_frame (virt_frame _ _ _ _) fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact (hs.dst.ok.st.sub_right (Lay.stSub hx)).symm
-
-/-- Nor is the key schedule. -/
-theorem ToIn.virt_ciph (hs : ToIn V sp R S D n s₀) :
-    ciphOf (virt s₀.mem S D n) (V .r29) R = ciphOf s₀.mem (V .r29) R :=
-  ciph_frame (virt_frame _ _ _ _) (fun r hr => by
-    simp only [List.mem_singleton] at hr; subst hr; exact hs.dst.ctx) hs.rounds
-
-/-- What the first `n` bytes of the destination would hold. -/
-theorem ToIn.virt_all (hs : ToIn V sp R S D n s₀) : bytesAt (virt s₀.mem S D n) D n = bytesAt s₀.mem S n := by
-  simpa only [BitVec.add_zero] using virt_bytes s₀.mem S D (k := 0) (l := n) (by omega) hs.dst.ok.lt
-
-/-- What the whole blocks and the copy leave is what `crypt` in place would
-have left at that point, with the source copied to the destination. -/
-theorem copied_mid {icb : Block} {s₁ s₂ : State} (hs : ToIn V sp R S D n s₀)
-    (h : WholeOut V sp R S D n s₀ s₁) (hc : Copied V sp S D n s₁ s₂) :
-    CrMid V sp R icb 0 D n (virt s₀.mem S D n) (16 * (n / 16)) s₂ := by
-  have hn := hs.dst.ok.lt
-  have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
-  have vf := virt_frame s₀.mem S D n
-  have hcbv := hs.virt_cb (x := 48) (by decide)
-  have hcv := hs.virt_ciph
-  have hw := fun hc₀ : Ctr (virt s₀.mem S D n) (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64)
-      (ciphOf (virt s₀.mem S D n) (V .r29) R) icb 0 =>
-    Proof.Gcm.ctr_whole hc₀ (by decide) (m' := s₁.mem) (dp := D) (nb := n / 16)
-      (by rw [h.out, hcv, hcbv, virt_blocks s₀.mem S D h16 hn]) (by rw [h.cb, hcbv])
-  have dT : ∀ x, x + 16 ≤ 80 → ∀ r ∈ [(⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ : Region)],
-      (⟨V .r30 + BitVec.ofNat 64 x, 16⟩ : Region).Disjoint r := by
-    intro x hx r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact ((hs.dst.ok.st.sub_left (Offset.sub_base _ (by omega))).sub_right (Lay.stSub hx)).symm
-  have dW : ∀ r ∈ [(⟨D + BitVec.ofNat 64 (16 * (n / 16)), n - 16 * (n / 16)⟩ : Region)],
-      (⟨D, 16 * (n / 16)⟩ : Region).Disjoint r := by
-    intro r hr
-    simp only [List.mem_singleton] at hr; subst hr
-    exact split_disj h16 hn
-  refine ⟨hc.env, h16, hc.r24, hc.r25, hs.r28, hs.rounds, hs.dst.of_eq (hc.rd.trans h.rd) (hc.wr.trans h.wr),
-    ?_, ?_, ?_, .inr (by omega), ?_⟩
-  · intro hc₀
-    exact (hw hc₀).2.congr (blockAt_frame hc.frame (dT 48 (by decide)))
-      (blockAt_frame hc.frame (dT 64 (by decide)))
-  · intro hc₀
-    rw [bytesAt_frame hc.frame dW (by omega)]
-    exact (hw hc₀).1
-  · rw [hc.copied, virt_bytes s₀.mem S D (k := 16 * (n / 16)) (l := n - 16 * (n / 16)) (by omega) hn]
-    refine bytesAt_frame h.frame (fun r hr => ?_) (by omega)
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact (hs.src.st.sub_left (Offset.sub_base _ (by omega))).sub_right (Lay.stSub (by decide))
-    · exact (hs.sd.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix h16)
-  · have f₁ : Frame (crFrame (V .r30) (V .r31) D n) s₀.mem s₁.mem := h.frame.sub fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by decide)⟩
-      · exact ⟨_, List.mem_cons_self .., Region.sub_prefix h16⟩
-    have f₂ : Frame (crFrame (V .r30) (V .r31) D n) s₁.mem s₂.mem := hc.frame.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega)⟩
-    have f₀ : Frame (crFrame (V .r30) (V .r31) D n) s₀.mem (virt s₀.mem S D n) := vf.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
-    have f₀' : Frame (crFrame (V .r30) (V .r31) D n) (virt s₀.mem S D n) s₀.mem := fun x hx => (f₀ x hx).symm
-    exact (f₀'.trans f₁).trans f₂
-
 variable (L : Lay (V .r29) (V .r30) (V .r31))
 include L
 
-/-- `cryptTo`: the source decrypted to the destination. -/
+/-- After the whole blocks, the last bytes to go from the source to the
+destination, `open`'s tail with `to`. -/
+theorem whole_tail {icb : Block} {s₁ : State} (hs : ToIn V sp R S D n s₀) (h : WholeOut V sp R S D n s₀ s₁) :
+    TailIn true V sp R icb (16 * (n / 16)) (S + BitVec.ofNat 64 (16 * (n / 16)))
+      (D + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) (ciphOf s₀.mem (V .r29) R)
+      (blockAt s₀.mem (V .r30 + BitVec.ofNat 64 48) = icb) s₁ := by
+  have hn := hs.dst.ok.lt
+  have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
+  have dC : ∀ r ∈ [(⟨V .r30 + BitVec.ofNat 64 48, 16⟩ : Region), ⟨D, 16 * (n / 16)⟩],
+      (⟨V .r29, 256⟩ : Region).Disjoint r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact L.cs.sub_right (Lay.stSub (by decide))
+    · exact hs.dst.ctx.sub_right (Region.sub_prefix h16)
+  refine ⟨h.env, h.r24, h.r25, fun _ => h.r26, hs.r28, hs.rounds, .inr (by omega),
+    (hs.src.of_eq h.rd h.wr).drop h16, (hs.dst.of_eq h.rd h.wr).drop h16, (fun h => nomatch h),
+    .inr ((hs.sd.sub_left (Offset.sub_base _ (by omega))).sub_right (Offset.sub_base _ (by omega))),
+    ciph_frame h.frame dC hs.rounds, fun hcb => ?_⟩
+  have := (Proof.Gcm.ctr_wholeTo (Proof.Gcm.ctr_zero s₀.mem (V .r30 + BitVec.ofNat 64 48)
+    (V .r30 + BitVec.ofNat 64 64) (ciphOf s₀.mem (V .r29) R) hcb) (by decide) h.out h.cb).2
+  rwa [Nat.zero_add] at this
+
+/-- `cryptTo`: the source decrypted to the destination, in one pass. -/
 theorem cryptTo_ok {icb : Block} (h : ToIn V sp R S D n s₀) :
     WP isa cryptTo s₀ (ToOut V sp R icb S D n s₀.mem) := by
   have hn := h.dst.ok.lt
+  have h16 : 16 * (n / 16) ≤ n := Nat.mul_div_le n 16
   refine WP.ite (decide (n = 0)) (eval_zero h.r25 hn) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
     subst h0
     refine WP.block_nil ⟨h.env, fun _ => ?_, Frame.refl _ _⟩
     rw [Proof.Gcm.gctr_eq]; simp [bytesAt]; rfl
   · refine WP.seq (WP.mono (wholeTo_ok h) fun s₁ hw => ?_)
-    refine WP.seq (WP.mono (copyTail_ok h hw) fun s₂ hc => ?_)
-    have mid := copied_mid (icb := icb) h hw hc
-    refine WP.mono (cryptTail_ok L mid (by omega) (mid.ciph L)) fun s₃ co => ⟨co.env, fun hcb => ?_, ?_⟩
-    · have c0 := Proof.Gcm.ctr_zero (virt s₀.mem S D n) (V .r30 + BitVec.ofNat 64 48) (V .r30 + BitVec.ofNat 64 64)
-        (ciphOf (virt s₀.mem S D n) (V .r29) R) ((h.virt_cb (x := 48) (by decide)).trans hcb)
-      rw [co.out c0, h.virt_ciph, h.virt_all, Proof.Gcm.gctr_eq]
-    · exact ((virt_frame s₀.mem S D n).sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr
-        exact ⟨_, List.mem_cons_self .., fun _ h => h⟩).trans co.frame
+    refine WP.mono (cryptTailWith_ok L (whole_tail L (icb := icb) h hw) (by omega)) fun s₂ o =>
+      ⟨o.env, fun hcb => ?_, ?_⟩
+    · have hcw := (Proof.Gcm.ctr_wholeTo (Proof.Gcm.ctr_zero s₀.mem (V .r30 + BitVec.ofNat 64 48)
+        (V .r30 + BitVec.ofNat 64 64) (ciphOf s₀.mem (V .r29) R) hcb) (by decide) hw.out hw.cb).1
+      have hdone : bytesAt s₂.mem D (16 * (n / 16)) = bytesAt s₁.mem D (16 * (n / 16)) := by
+        refine bytesAt_frame o.frame (fun r hr => ?_) (by omega)
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact split_disj h16 hn
+        · exact (h.dst.ok.st.sub_left (Region.sub_prefix h16)).sub_right (Lay.stSub (by decide))
+        · exact (h.dst.ok.w.sub_left (Region.sub_prefix h16)).sub_right (Lay.wSub (by decide))
+      have hsrc : bytesAt s₁.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) =
+          bytesAt s₀.mem (S + BitVec.ofNat 64 (16 * (n / 16))) (n - 16 * (n / 16)) := by
+        refine bytesAt_frame hw.frame (fun r hr => ?_) (by omega)
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact (h.src.st.sub_left (Offset.sub_base _ (by omega))).sub_right (Lay.stSub (by decide))
+        · exact (h.sd.sub_left (Offset.sub_base _ (by omega))).sub_right (Region.sub_prefix h16)
+      have key := done_appendTo (P := 0) (hdone.trans hcw) (by rw [Nat.zero_add, o.out hcb, hsrc])
+      rw [show 16 * (n / 16) + (n - 16 * (n / 16)) = n by omega] at key
+      rw [Proof.Gcm.gctr_eq]; exact key
+    · refine (hw.frame.sub fun r hr => ?_).trans (o.frame.sub fun r hr => ?_)
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), Region.sub_prefix (by decide)⟩
+        · exact ⟨_, List.mem_cons_self .., Region.sub_prefix h16⟩
+      · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact ⟨_, List.mem_cons_self .., Offset.sub_base _ (by omega)⟩
+        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), fun _ h => h⟩
+        · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)), fun _ h => h⟩
 
 end
 
