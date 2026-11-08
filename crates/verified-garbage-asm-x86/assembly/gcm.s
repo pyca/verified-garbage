@@ -3165,82 +3165,936 @@ vg_aes_gcm_seal_gather_aesni:
 	.p2align 6
 
 vg_aes_gcm_open_to_aesni:
-	lea esp, [esp-48]
-	mov DWORD PTR [esp+40], esi
-	mov DWORD PTR [esp+44], edi
-	mov eax, DWORD PTR [esp+52]
-	mov DWORD PTR [esp], eax
-	mov eax, DWORD PTR [esp+56]
+	lea esp, [esp-2616]
+	mov eax, DWORD PTR [esp+2620]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+60]
+	mov eax, DWORD PTR [esp+2624]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+64]
+	mov eax, DWORD PTR [esp+2628]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+68]
+	mov eax, DWORD PTR [esp+2632]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+72]
+	mov eax, DWORD PTR [esp+2636]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+84]
+	mov eax, DWORD PTR [esp+2640]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+80]
+	mov eax, DWORD PTR [esp+2644]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+92]
+	mov eax, DWORD PTR [esp+2648]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+96]
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
-	mov esi, esp
-	add esi, 76
-	mov edx, DWORD PTR [esp+84]
-	mov edi, DWORD PTR [esi]
-	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
-	cmp ecx, 0
-	je 20f
+	mov eax, DWORD PTR [esp+2656]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+2660]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+2664]
+	mov DWORD PTR [esp+48], eax
+	mov eax, esp
+	add eax, 56
+	mov DWORD PTR [esp+52], eax
+	lea esp, [esp-48]
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+76]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [eax+128], ebx
+	mov DWORD PTR [eax+132], esi
+	mov DWORD PTR [eax+136], edi
+	mov DWORD PTR [eax+140], ebp
+	mov ebp, eax
+	mov esi, ebp
+	add esi, 16
+	mov eax, DWORD PTR [esp+4]
+	mov DWORD PTR [ebp+144], eax
+	mov eax, DWORD PTR [esp+8]
+	mov DWORD PTR [ebp+148], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+192], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [ebp+176], eax
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [ebp+152], eax
+	mov eax, DWORD PTR [esp+28]
+	mov DWORD PTR [ebp+168], eax
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [ebp+172], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [ebp+212], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [ebp+180], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+188], eax
+	mov ecx, 0
+	mov ebx, DWORD PTR [ebp+180]
+	cmp ebx, 4
+	jb 20f
+	cmp ebx, 17
+	jb 22f
+	jmp 23f
 22:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
-	sub ecx, 1
-	jne 22b
+	mov ecx, 1
+23:
 	jmp 21f
 20:
 21:
-	mov ecx, DWORD PTR [esi+4]
-	and ecx, 3
-	je 23f
-25:
+	test ecx, ecx
+	je 24f
+	mov eax, DWORD PTR [ebp+192]
+	cmp eax, 12
+	je 26f
+	mov eax, 0
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], eax
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], eax
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 28f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 210f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 212f
+	jmp 213f
+212:
+	mov ecx, eax
+213:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+214:
 	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
 	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 25b
-	jmp 24f
-23:
-24:
-	call {vg_aes_gcm_open_aesni}
-	test eax, eax
-	je 26f
-	jmp 27f
-26:
-	mov edx, DWORD PTR [esp+84]
-	mov ecx, DWORD PTR [esp+80]
-	mov eax, 0
-	cmp ecx, 0
-	je 28f
+	jne 214b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 215f
+	jmp 216f
+215:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+216:
+	jmp 211f
 210:
+211:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 217f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 218f
+217:
+218:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 219f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+221:
+	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
+	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 210b
+	jne 221b
+	jmp 220f
+219:
+220:
 	jmp 29f
 28:
 29:
+	mov eax, DWORD PTR [ebp+192]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 222f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+224:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 224b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 223f
+222:
+223:
+	mov eax, DWORD PTR [ebp+188]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+192]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 27f
+26:
+	mov edi, DWORD PTR [ebp+272]
+	mov eax, DWORD PTR [edi]
+	mov ecx, DWORD PTR [edi+4]
+	mov edx, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], ecx
+	mov DWORD PTR [esi+8], edx
+	mov eax, 16777216
+	mov DWORD PTR [esi+12], eax
 27:
-	mov esi, DWORD PTR [esp+40]
-	mov edi, DWORD PTR [esp+44]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+12]
+	bswap eax
+	add eax, 1
+	bswap eax
+	mov DWORD PTR [esi+60], eax
+	mov eax, 0
+	mov DWORD PTR [esi+16], eax
+	mov DWORD PTR [esi+20], eax
+	mov DWORD PTR [esi+24], eax
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [ebp+176]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+152]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 225f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 227f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 229f
+	jmp 230f
+229:
+	mov ecx, eax
+230:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+231:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 231b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 232f
+	jmp 233f
+232:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+233:
+	jmp 228f
+227:
+228:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 234f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 235f
+234:
+235:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 236f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+238:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 238b
+	jmp 237f
+236:
+237:
+	jmp 226f
+225:
+226:
+	mov eax, DWORD PTR [ebp+152]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 239f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+241:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 241b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 240f
+239:
+240:
+	mov eax, DWORD PTR [ebp+168]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 242f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 244f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 246f
+	jmp 247f
+246:
+	mov ecx, eax
+247:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+248:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 248b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 249f
+	jmp 250f
+249:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+250:
+	jmp 245f
+244:
+245:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 251f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 252f
+251:
+252:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 253f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+255:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 255b
+	jmp 254f
+253:
+254:
+	jmp 243f
+242:
+243:
+	mov eax, DWORD PTR [ebp+172]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 256f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+258:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 258b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 257f
+256:
+257:
+	mov eax, DWORD PTR [ebp+152]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [esi+16]
+	mov ecx, DWORD PTR [esi+20]
+	mov edx, DWORD PTR [esi+24]
+	mov ebx, DWORD PTR [esi+28]
+	mov DWORD PTR [ebp+112], eax
+	mov DWORD PTR [ebp+116], ecx
+	mov DWORD PTR [ebp+120], edx
+	mov DWORD PTR [ebp+124], ebx
+	mov ebx, ebp
+	add ebx, 112
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, 0
+	mov DWORD PTR [ebp+196], eax
+	mov DWORD PTR [ebp+200], eax
+	mov DWORD PTR [ebp+204], eax
+	mov DWORD PTR [ebp+208], eax
+	mov edi, DWORD PTR [ebp+212]
+	mov edx, ebp
+	add edx, 196
+	mov ecx, DWORD PTR [ebp+180]
+259:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 259b
+	mov eax, 0
+	mov DWORD PTR [ebp+240], eax
+	mov DWORD PTR [ebp+244], eax
+	mov DWORD PTR [ebp+248], eax
+	mov DWORD PTR [ebp+252], eax
+	mov edi, ebp
+	add edi, 112
+	mov edx, ebp
+	add edx, 240
+	mov ecx, DWORD PTR [ebp+180]
+260:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 260b
+	mov eax, DWORD PTR [ebp+240]
+	xor eax, DWORD PTR [ebp+196]
+	mov ecx, DWORD PTR [ebp+244]
+	xor ecx, DWORD PTR [ebp+200]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+248]
+	xor ecx, DWORD PTR [ebp+204]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+252]
+	xor ecx, DWORD PTR [ebp+208]
+	or eax, ecx
+	cmp eax, 1
+	mov eax, 0
+	adc eax, 0
+	mov DWORD PTR [ebp+184], eax
+	test eax, eax
+	je 261f
+	mov ebx, DWORD PTR [ebp+168]
+	mov edi, DWORD PTR [ebp+172]
+	shr edi, 4
+	test edi, edi
+	je 263f
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 264f
+263:
+264:
+	mov ecx, DWORD PTR [ebp+172]
+	and ecx, 15
+	test ecx, ecx
+	je 265f
+	mov eax, 0
+	mov DWORD PTR [esi+64], eax
+	mov DWORD PTR [esi+68], eax
+	mov DWORD PTR [esi+72], eax
+	mov DWORD PTR [esi+76], eax
+	mov ebx, esi
+	add ebx, 64
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, eax
+	and ecx, 15
+	sub eax, ecx
+	mov edx, esi
+	add edx, 64
+	mov edi, DWORD PTR [esp]
+	add edi, eax
+	mov esi, DWORD PTR [ebp+168]
+	add esi, eax
+267:
+	movzx eax, BYTE PTR [edx]
+	movzx ebx, BYTE PTR [esi]
+	xor eax, ebx
+	mov BYTE PTR [edi], al
+	add edi, 1
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 267b
+	mov esi, ebp
+	add esi, 16
+	jmp 266f
+265:
+266:
+	jmp 262f
+261:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 268f
+270:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+262:
+	mov eax, DWORD PTR [ebp+184]
+	jmp 25f
+24:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 271f
+273:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 273b
+	jmp 272f
+271:
+272:
+25:
+	mov ebx, DWORD PTR [ebp+128]
+	mov esi, DWORD PTR [ebp+132]
+	mov edi, DWORD PTR [ebp+136]
+	mov ebp, DWORD PTR [ebp+140]
 	lea esp, [esp+48]
+	lea esp, [esp+2616]
 	ret
 	.p2align 6
 
@@ -6255,82 +7109,936 @@ vg_aes_gcm_seal_gather_aesni_pclmul:
 	.p2align 6
 
 vg_aes_gcm_open_to_aesni_pclmul:
-	lea esp, [esp-48]
-	mov DWORD PTR [esp+40], esi
-	mov DWORD PTR [esp+44], edi
-	mov eax, DWORD PTR [esp+52]
-	mov DWORD PTR [esp], eax
-	mov eax, DWORD PTR [esp+56]
+	lea esp, [esp-2616]
+	mov eax, DWORD PTR [esp+2620]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+60]
+	mov eax, DWORD PTR [esp+2624]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+64]
+	mov eax, DWORD PTR [esp+2628]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+68]
+	mov eax, DWORD PTR [esp+2632]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+72]
+	mov eax, DWORD PTR [esp+2636]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+84]
+	mov eax, DWORD PTR [esp+2640]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+80]
+	mov eax, DWORD PTR [esp+2644]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+92]
+	mov eax, DWORD PTR [esp+2648]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+96]
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
-	mov esi, esp
-	add esi, 76
-	mov edx, DWORD PTR [esp+84]
-	mov edi, DWORD PTR [esi]
-	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
-	cmp ecx, 0
-	je 20f
+	mov eax, DWORD PTR [esp+2656]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+2660]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+2664]
+	mov DWORD PTR [esp+48], eax
+	mov eax, esp
+	add eax, 56
+	mov DWORD PTR [esp+52], eax
+	lea esp, [esp-48]
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+76]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [eax+128], ebx
+	mov DWORD PTR [eax+132], esi
+	mov DWORD PTR [eax+136], edi
+	mov DWORD PTR [eax+140], ebp
+	mov ebp, eax
+	mov esi, ebp
+	add esi, 16
+	mov eax, DWORD PTR [esp+4]
+	mov DWORD PTR [ebp+144], eax
+	mov eax, DWORD PTR [esp+8]
+	mov DWORD PTR [ebp+148], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+192], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [ebp+176], eax
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [ebp+152], eax
+	mov eax, DWORD PTR [esp+28]
+	mov DWORD PTR [ebp+168], eax
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [ebp+172], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [ebp+212], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [ebp+180], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+188], eax
+	mov ecx, 0
+	mov ebx, DWORD PTR [ebp+180]
+	cmp ebx, 4
+	jb 20f
+	cmp ebx, 17
+	jb 22f
+	jmp 23f
 22:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
-	sub ecx, 1
-	jne 22b
+	mov ecx, 1
+23:
 	jmp 21f
 20:
 21:
-	mov ecx, DWORD PTR [esi+4]
-	and ecx, 3
-	je 23f
-25:
+	test ecx, ecx
+	je 24f
+	mov eax, DWORD PTR [ebp+192]
+	cmp eax, 12
+	je 26f
+	mov eax, 0
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], eax
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], eax
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 28f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 210f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 212f
+	jmp 213f
+212:
+	mov ecx, eax
+213:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+214:
 	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
 	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 25b
-	jmp 24f
-23:
-24:
-	call {vg_aes_gcm_open_aesni_pclmul}
-	test eax, eax
-	je 26f
-	jmp 27f
-26:
-	mov edx, DWORD PTR [esp+84]
-	mov ecx, DWORD PTR [esp+80]
-	mov eax, 0
-	cmp ecx, 0
-	je 28f
+	jne 214b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 215f
+	jmp 216f
+215:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+216:
+	jmp 211f
 210:
+211:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 217f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 218f
+217:
+218:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 219f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+221:
+	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
+	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 210b
+	jne 221b
+	jmp 220f
+219:
+220:
 	jmp 29f
 28:
 29:
+	mov eax, DWORD PTR [ebp+192]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 222f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+224:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 224b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 223f
+222:
+223:
+	mov eax, DWORD PTR [ebp+188]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+192]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 27f
+26:
+	mov edi, DWORD PTR [ebp+272]
+	mov eax, DWORD PTR [edi]
+	mov ecx, DWORD PTR [edi+4]
+	mov edx, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], ecx
+	mov DWORD PTR [esi+8], edx
+	mov eax, 16777216
+	mov DWORD PTR [esi+12], eax
 27:
-	mov esi, DWORD PTR [esp+40]
-	mov edi, DWORD PTR [esp+44]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+12]
+	bswap eax
+	add eax, 1
+	bswap eax
+	mov DWORD PTR [esi+60], eax
+	mov eax, 0
+	mov DWORD PTR [esi+16], eax
+	mov DWORD PTR [esi+20], eax
+	mov DWORD PTR [esi+24], eax
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [ebp+176]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+152]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 225f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 227f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 229f
+	jmp 230f
+229:
+	mov ecx, eax
+230:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+231:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 231b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 232f
+	jmp 233f
+232:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+233:
+	jmp 228f
+227:
+228:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 234f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 235f
+234:
+235:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 236f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+238:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 238b
+	jmp 237f
+236:
+237:
+	jmp 226f
+225:
+226:
+	mov eax, DWORD PTR [ebp+152]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 239f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+241:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 241b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 240f
+239:
+240:
+	mov eax, DWORD PTR [ebp+168]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 242f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 244f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 246f
+	jmp 247f
+246:
+	mov ecx, eax
+247:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+248:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 248b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 249f
+	jmp 250f
+249:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+250:
+	jmp 245f
+244:
+245:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 251f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 252f
+251:
+252:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 253f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+255:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 255b
+	jmp 254f
+253:
+254:
+	jmp 243f
+242:
+243:
+	mov eax, DWORD PTR [ebp+172]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 256f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+258:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 258b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 257f
+256:
+257:
+	mov eax, DWORD PTR [ebp+152]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [esi+16]
+	mov ecx, DWORD PTR [esi+20]
+	mov edx, DWORD PTR [esi+24]
+	mov ebx, DWORD PTR [esi+28]
+	mov DWORD PTR [ebp+112], eax
+	mov DWORD PTR [ebp+116], ecx
+	mov DWORD PTR [ebp+120], edx
+	mov DWORD PTR [ebp+124], ebx
+	mov ebx, ebp
+	add ebx, 112
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, 0
+	mov DWORD PTR [ebp+196], eax
+	mov DWORD PTR [ebp+200], eax
+	mov DWORD PTR [ebp+204], eax
+	mov DWORD PTR [ebp+208], eax
+	mov edi, DWORD PTR [ebp+212]
+	mov edx, ebp
+	add edx, 196
+	mov ecx, DWORD PTR [ebp+180]
+259:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 259b
+	mov eax, 0
+	mov DWORD PTR [ebp+240], eax
+	mov DWORD PTR [ebp+244], eax
+	mov DWORD PTR [ebp+248], eax
+	mov DWORD PTR [ebp+252], eax
+	mov edi, ebp
+	add edi, 112
+	mov edx, ebp
+	add edx, 240
+	mov ecx, DWORD PTR [ebp+180]
+260:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 260b
+	mov eax, DWORD PTR [ebp+240]
+	xor eax, DWORD PTR [ebp+196]
+	mov ecx, DWORD PTR [ebp+244]
+	xor ecx, DWORD PTR [ebp+200]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+248]
+	xor ecx, DWORD PTR [ebp+204]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+252]
+	xor ecx, DWORD PTR [ebp+208]
+	or eax, ecx
+	cmp eax, 1
+	mov eax, 0
+	adc eax, 0
+	mov DWORD PTR [ebp+184], eax
+	test eax, eax
+	je 261f
+	mov ebx, DWORD PTR [ebp+168]
+	mov edi, DWORD PTR [ebp+172]
+	shr edi, 4
+	test edi, edi
+	je 263f
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_to_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 264f
+263:
+264:
+	mov ecx, DWORD PTR [ebp+172]
+	and ecx, 15
+	test ecx, ecx
+	je 265f
+	mov eax, 0
+	mov DWORD PTR [esi+64], eax
+	mov DWORD PTR [esi+68], eax
+	mov DWORD PTR [esi+72], eax
+	mov DWORD PTR [esi+76], eax
+	mov ebx, esi
+	add ebx, 64
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_aesni}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, eax
+	and ecx, 15
+	sub eax, ecx
+	mov edx, esi
+	add edx, 64
+	mov edi, DWORD PTR [esp]
+	add edi, eax
+	mov esi, DWORD PTR [ebp+168]
+	add esi, eax
+267:
+	movzx eax, BYTE PTR [edx]
+	movzx ebx, BYTE PTR [esi]
+	xor eax, ebx
+	mov BYTE PTR [edi], al
+	add edi, 1
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 267b
+	mov esi, ebp
+	add esi, 16
+	jmp 266f
+265:
+266:
+	jmp 262f
+261:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 268f
+270:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+262:
+	mov eax, DWORD PTR [ebp+184]
+	jmp 25f
+24:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 271f
+273:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 273b
+	jmp 272f
+271:
+272:
+25:
+	mov ebx, DWORD PTR [ebp+128]
+	mov esi, DWORD PTR [ebp+132]
+	mov edi, DWORD PTR [ebp+136]
+	mov ebp, DWORD PTR [ebp+140]
 	lea esp, [esp+48]
+	lea esp, [esp+2616]
 	ret
 	.p2align 6
 
@@ -9345,82 +11053,936 @@ vg_aes_gcm_seal_gather_pclmul:
 	.p2align 6
 
 vg_aes_gcm_open_to_pclmul:
-	lea esp, [esp-48]
-	mov DWORD PTR [esp+40], esi
-	mov DWORD PTR [esp+44], edi
-	mov eax, DWORD PTR [esp+52]
-	mov DWORD PTR [esp], eax
-	mov eax, DWORD PTR [esp+56]
+	lea esp, [esp-2616]
+	mov eax, DWORD PTR [esp+2620]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+60]
+	mov eax, DWORD PTR [esp+2624]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+64]
+	mov eax, DWORD PTR [esp+2628]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+68]
+	mov eax, DWORD PTR [esp+2632]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+72]
+	mov eax, DWORD PTR [esp+2636]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+84]
+	mov eax, DWORD PTR [esp+2640]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+80]
+	mov eax, DWORD PTR [esp+2644]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+92]
+	mov eax, DWORD PTR [esp+2648]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+96]
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
-	mov esi, esp
-	add esi, 76
-	mov edx, DWORD PTR [esp+84]
-	mov edi, DWORD PTR [esi]
-	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
-	cmp ecx, 0
-	je 20f
+	mov eax, DWORD PTR [esp+2656]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+2660]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+2664]
+	mov DWORD PTR [esp+48], eax
+	mov eax, esp
+	add eax, 56
+	mov DWORD PTR [esp+52], eax
+	lea esp, [esp-48]
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+76]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [eax+128], ebx
+	mov DWORD PTR [eax+132], esi
+	mov DWORD PTR [eax+136], edi
+	mov DWORD PTR [eax+140], ebp
+	mov ebp, eax
+	mov esi, ebp
+	add esi, 16
+	mov eax, DWORD PTR [esp+4]
+	mov DWORD PTR [ebp+144], eax
+	mov eax, DWORD PTR [esp+8]
+	mov DWORD PTR [ebp+148], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+192], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [ebp+176], eax
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [ebp+152], eax
+	mov eax, DWORD PTR [esp+28]
+	mov DWORD PTR [ebp+168], eax
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [ebp+172], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [ebp+212], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [ebp+180], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+188], eax
+	mov ecx, 0
+	mov ebx, DWORD PTR [ebp+180]
+	cmp ebx, 4
+	jb 20f
+	cmp ebx, 17
+	jb 22f
+	jmp 23f
 22:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
-	sub ecx, 1
-	jne 22b
+	mov ecx, 1
+23:
 	jmp 21f
 20:
 21:
-	mov ecx, DWORD PTR [esi+4]
-	and ecx, 3
-	je 23f
-25:
+	test ecx, ecx
+	je 24f
+	mov eax, DWORD PTR [ebp+192]
+	cmp eax, 12
+	je 26f
+	mov eax, 0
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], eax
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], eax
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 28f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 210f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 212f
+	jmp 213f
+212:
+	mov ecx, eax
+213:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+214:
 	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
 	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 25b
-	jmp 24f
-23:
-24:
-	call {vg_aes_gcm_open_pclmul}
-	test eax, eax
-	je 26f
-	jmp 27f
-26:
-	mov edx, DWORD PTR [esp+84]
-	mov ecx, DWORD PTR [esp+80]
-	mov eax, 0
-	cmp ecx, 0
-	je 28f
+	jne 214b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 215f
+	jmp 216f
+215:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+216:
+	jmp 211f
 210:
+211:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 217f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 218f
+217:
+218:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 219f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+221:
+	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
+	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 210b
+	jne 221b
+	jmp 220f
+219:
+220:
 	jmp 29f
 28:
 29:
+	mov eax, DWORD PTR [ebp+192]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 222f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+224:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 224b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 223f
+222:
+223:
+	mov eax, DWORD PTR [ebp+188]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+192]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 27f
+26:
+	mov edi, DWORD PTR [ebp+272]
+	mov eax, DWORD PTR [edi]
+	mov ecx, DWORD PTR [edi+4]
+	mov edx, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], ecx
+	mov DWORD PTR [esi+8], edx
+	mov eax, 16777216
+	mov DWORD PTR [esi+12], eax
 27:
-	mov esi, DWORD PTR [esp+40]
-	mov edi, DWORD PTR [esp+44]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+12]
+	bswap eax
+	add eax, 1
+	bswap eax
+	mov DWORD PTR [esi+60], eax
+	mov eax, 0
+	mov DWORD PTR [esi+16], eax
+	mov DWORD PTR [esi+20], eax
+	mov DWORD PTR [esi+24], eax
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [ebp+176]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+152]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 225f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 227f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 229f
+	jmp 230f
+229:
+	mov ecx, eax
+230:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+231:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 231b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 232f
+	jmp 233f
+232:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+233:
+	jmp 228f
+227:
+228:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 234f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 235f
+234:
+235:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 236f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+238:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 238b
+	jmp 237f
+236:
+237:
+	jmp 226f
+225:
+226:
+	mov eax, DWORD PTR [ebp+152]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 239f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+241:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 241b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 240f
+239:
+240:
+	mov eax, DWORD PTR [ebp+168]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 242f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 244f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 246f
+	jmp 247f
+246:
+	mov ecx, eax
+247:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+248:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 248b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 249f
+	jmp 250f
+249:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+250:
+	jmp 245f
+244:
+245:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 251f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 252f
+251:
+252:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 253f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+255:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 255b
+	jmp 254f
+253:
+254:
+	jmp 243f
+242:
+243:
+	mov eax, DWORD PTR [ebp+172]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 256f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+258:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 258b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 257f
+256:
+257:
+	mov eax, DWORD PTR [ebp+152]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash_pclmul}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [esi+16]
+	mov ecx, DWORD PTR [esi+20]
+	mov edx, DWORD PTR [esi+24]
+	mov ebx, DWORD PTR [esi+28]
+	mov DWORD PTR [ebp+112], eax
+	mov DWORD PTR [ebp+116], ecx
+	mov DWORD PTR [ebp+120], edx
+	mov DWORD PTR [ebp+124], ebx
+	mov ebx, ebp
+	add ebx, 112
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, 0
+	mov DWORD PTR [ebp+196], eax
+	mov DWORD PTR [ebp+200], eax
+	mov DWORD PTR [ebp+204], eax
+	mov DWORD PTR [ebp+208], eax
+	mov edi, DWORD PTR [ebp+212]
+	mov edx, ebp
+	add edx, 196
+	mov ecx, DWORD PTR [ebp+180]
+259:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 259b
+	mov eax, 0
+	mov DWORD PTR [ebp+240], eax
+	mov DWORD PTR [ebp+244], eax
+	mov DWORD PTR [ebp+248], eax
+	mov DWORD PTR [ebp+252], eax
+	mov edi, ebp
+	add edi, 112
+	mov edx, ebp
+	add edx, 240
+	mov ecx, DWORD PTR [ebp+180]
+260:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 260b
+	mov eax, DWORD PTR [ebp+240]
+	xor eax, DWORD PTR [ebp+196]
+	mov ecx, DWORD PTR [ebp+244]
+	xor ecx, DWORD PTR [ebp+200]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+248]
+	xor ecx, DWORD PTR [ebp+204]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+252]
+	xor ecx, DWORD PTR [ebp+208]
+	or eax, ecx
+	cmp eax, 1
+	mov eax, 0
+	adc eax, 0
+	mov DWORD PTR [ebp+184], eax
+	test eax, eax
+	je 261f
+	mov ebx, DWORD PTR [ebp+168]
+	mov edi, DWORD PTR [ebp+172]
+	shr edi, 4
+	test edi, edi
+	je 263f
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_to}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 264f
+263:
+264:
+	mov ecx, DWORD PTR [ebp+172]
+	and ecx, 15
+	test ecx, ecx
+	je 265f
+	mov eax, 0
+	mov DWORD PTR [esi+64], eax
+	mov DWORD PTR [esi+68], eax
+	mov DWORD PTR [esi+72], eax
+	mov DWORD PTR [esi+76], eax
+	mov ebx, esi
+	add ebx, 64
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, eax
+	and ecx, 15
+	sub eax, ecx
+	mov edx, esi
+	add edx, 64
+	mov edi, DWORD PTR [esp]
+	add edi, eax
+	mov esi, DWORD PTR [ebp+168]
+	add esi, eax
+267:
+	movzx eax, BYTE PTR [edx]
+	movzx ebx, BYTE PTR [esi]
+	xor eax, ebx
+	mov BYTE PTR [edi], al
+	add edi, 1
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 267b
+	mov esi, ebp
+	add esi, 16
+	jmp 266f
+265:
+266:
+	jmp 262f
+261:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 268f
+270:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+262:
+	mov eax, DWORD PTR [ebp+184]
+	jmp 25f
+24:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 271f
+273:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 273b
+	jmp 272f
+271:
+272:
+25:
+	mov ebx, DWORD PTR [ebp+128]
+	mov esi, DWORD PTR [ebp+132]
+	mov edi, DWORD PTR [ebp+136]
+	mov ebp, DWORD PTR [ebp+140]
 	lea esp, [esp+48]
+	lea esp, [esp+2616]
 	ret
 	.p2align 6
 
@@ -12435,82 +14997,936 @@ vg_aes_gcm_seal_gather:
 	.p2align 6
 
 vg_aes_gcm_open_to:
-	lea esp, [esp-48]
-	mov DWORD PTR [esp+40], esi
-	mov DWORD PTR [esp+44], edi
-	mov eax, DWORD PTR [esp+52]
-	mov DWORD PTR [esp], eax
-	mov eax, DWORD PTR [esp+56]
+	lea esp, [esp-2616]
+	mov eax, DWORD PTR [esp+2620]
 	mov DWORD PTR [esp+4], eax
-	mov eax, DWORD PTR [esp+60]
+	mov eax, DWORD PTR [esp+2624]
 	mov DWORD PTR [esp+8], eax
-	mov eax, DWORD PTR [esp+64]
+	mov eax, DWORD PTR [esp+2628]
 	mov DWORD PTR [esp+12], eax
-	mov eax, DWORD PTR [esp+68]
+	mov eax, DWORD PTR [esp+2632]
 	mov DWORD PTR [esp+16], eax
-	mov eax, DWORD PTR [esp+72]
+	mov eax, DWORD PTR [esp+2636]
 	mov DWORD PTR [esp+20], eax
-	mov eax, DWORD PTR [esp+84]
+	mov eax, DWORD PTR [esp+2640]
 	mov DWORD PTR [esp+24], eax
-	mov eax, DWORD PTR [esp+80]
+	mov eax, DWORD PTR [esp+2644]
 	mov DWORD PTR [esp+28], eax
-	mov eax, DWORD PTR [esp+92]
+	mov eax, DWORD PTR [esp+2648]
 	mov DWORD PTR [esp+32], eax
-	mov eax, DWORD PTR [esp+96]
+	mov eax, DWORD PTR [esp+2652]
 	mov DWORD PTR [esp+36], eax
-	mov esi, esp
-	add esi, 76
-	mov edx, DWORD PTR [esp+84]
-	mov edi, DWORD PTR [esi]
-	mov ecx, DWORD PTR [esi+4]
-	shr ecx, 2
-	cmp ecx, 0
-	je 20f
+	mov eax, DWORD PTR [esp+2656]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+2660]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+2664]
+	mov DWORD PTR [esp+48], eax
+	mov eax, esp
+	add eax, 56
+	mov DWORD PTR [esp+52], eax
+	lea esp, [esp-48]
+	mov eax, DWORD PTR [esp+84]
+	mov DWORD PTR [esp], eax
+	mov eax, DWORD PTR [esp+52]
+	mov DWORD PTR [esp+4], eax
+	mov eax, DWORD PTR [esp+56]
+	mov DWORD PTR [esp+8], eax
+	mov eax, DWORD PTR [esp+60]
+	mov DWORD PTR [esp+12], eax
+	mov eax, DWORD PTR [esp+64]
+	mov DWORD PTR [esp+16], eax
+	mov eax, DWORD PTR [esp+68]
+	mov DWORD PTR [esp+20], eax
+	mov eax, DWORD PTR [esp+72]
+	mov DWORD PTR [esp+24], eax
+	mov eax, DWORD PTR [esp+76]
+	mov DWORD PTR [esp+28], eax
+	mov eax, DWORD PTR [esp+80]
+	mov DWORD PTR [esp+32], eax
+	mov eax, DWORD PTR [esp+92]
+	mov DWORD PTR [esp+36], eax
+	mov eax, DWORD PTR [esp+96]
+	mov DWORD PTR [esp+40], eax
+	mov eax, DWORD PTR [esp+100]
+	mov DWORD PTR [esp+44], eax
+	mov eax, DWORD PTR [esp+44]
+	mov DWORD PTR [eax+128], ebx
+	mov DWORD PTR [eax+132], esi
+	mov DWORD PTR [eax+136], edi
+	mov DWORD PTR [eax+140], ebp
+	mov ebp, eax
+	mov esi, ebp
+	add esi, 16
+	mov eax, DWORD PTR [esp+4]
+	mov DWORD PTR [ebp+144], eax
+	mov eax, DWORD PTR [esp+8]
+	mov DWORD PTR [ebp+148], eax
+	mov eax, DWORD PTR [esp+12]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [esp+16]
+	mov DWORD PTR [ebp+192], eax
+	mov eax, DWORD PTR [esp+20]
+	mov DWORD PTR [ebp+176], eax
+	mov eax, DWORD PTR [esp+24]
+	mov DWORD PTR [ebp+152], eax
+	mov eax, DWORD PTR [esp+28]
+	mov DWORD PTR [ebp+168], eax
+	mov eax, DWORD PTR [esp+32]
+	mov DWORD PTR [ebp+172], eax
+	mov eax, DWORD PTR [esp+36]
+	mov DWORD PTR [ebp+212], eax
+	mov eax, DWORD PTR [esp+40]
+	mov DWORD PTR [ebp+180], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+188], eax
+	mov ecx, 0
+	mov ebx, DWORD PTR [ebp+180]
+	cmp ebx, 4
+	jb 20f
+	cmp ebx, 17
+	jb 22f
+	jmp 23f
 22:
-	mov eax, DWORD PTR [edi]
-	mov DWORD PTR [edx], eax
-	add edi, 4
-	add edx, 4
-	sub ecx, 1
-	jne 22b
+	mov ecx, 1
+23:
 	jmp 21f
 20:
 21:
-	mov ecx, DWORD PTR [esi+4]
-	and ecx, 3
-	je 23f
-25:
+	test ecx, ecx
+	je 24f
+	mov eax, DWORD PTR [ebp+192]
+	cmp eax, 12
+	je 26f
+	mov eax, 0
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], eax
+	mov DWORD PTR [esi+8], eax
+	mov DWORD PTR [esi+12], eax
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 28f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 210f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 212f
+	jmp 213f
+212:
+	mov ecx, eax
+213:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+214:
 	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
 	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 25b
-	jmp 24f
-23:
-24:
-	call {vg_aes_gcm_open}
-	test eax, eax
-	je 26f
-	jmp 27f
-26:
-	mov edx, DWORD PTR [esp+84]
-	mov ecx, DWORD PTR [esp+80]
-	mov eax, 0
-	cmp ecx, 0
-	je 28f
+	jne 214b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 215f
+	jmp 216f
+215:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+216:
+	jmp 211f
 210:
+211:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 217f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 218f
+217:
+218:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 219f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+221:
+	movzx eax, BYTE PTR [edi]
 	mov BYTE PTR [edx], al
+	add edi, 1
 	add edx, 1
 	sub ecx, 1
-	jne 210b
+	jne 221b
+	jmp 220f
+219:
+220:
 	jmp 29f
 28:
 29:
+	mov eax, DWORD PTR [ebp+192]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 222f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+224:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 224b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 223f
+222:
+223:
+	mov eax, DWORD PTR [ebp+188]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+192]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 0
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 27f
+26:
+	mov edi, DWORD PTR [ebp+272]
+	mov eax, DWORD PTR [edi]
+	mov ecx, DWORD PTR [edi+4]
+	mov edx, DWORD PTR [edi+8]
+	mov DWORD PTR [esi], eax
+	mov DWORD PTR [esi+4], ecx
+	mov DWORD PTR [esi+8], edx
+	mov eax, 16777216
+	mov DWORD PTR [esi+12], eax
 27:
-	mov esi, DWORD PTR [esp+40]
-	mov edi, DWORD PTR [esp+44]
+	mov eax, DWORD PTR [esi]
+	mov DWORD PTR [esi+48], eax
+	mov eax, DWORD PTR [esi+4]
+	mov DWORD PTR [esi+52], eax
+	mov eax, DWORD PTR [esi+8]
+	mov DWORD PTR [esi+56], eax
+	mov eax, DWORD PTR [esi+12]
+	bswap eax
+	add eax, 1
+	bswap eax
+	mov DWORD PTR [esi+60], eax
+	mov eax, 0
+	mov DWORD PTR [esi+16], eax
+	mov DWORD PTR [esi+20], eax
+	mov DWORD PTR [esi+24], eax
+	mov DWORD PTR [esi+28], eax
+	mov eax, DWORD PTR [ebp+176]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+152]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 225f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 227f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 229f
+	jmp 230f
+229:
+	mov ecx, eax
+230:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+231:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 231b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 232f
+	jmp 233f
+232:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+233:
+	jmp 228f
+227:
+228:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 234f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 235f
+234:
+235:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 236f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+238:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 238b
+	jmp 237f
+236:
+237:
+	jmp 226f
+225:
+226:
+	mov eax, DWORD PTR [ebp+152]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 239f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+241:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 241b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 240f
+239:
+240:
+	mov eax, DWORD PTR [ebp+168]
+	mov DWORD PTR [ebp+272], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov DWORD PTR [ebp+276], eax
+	mov eax, 0
+	mov DWORD PTR [ebp+280], eax
+	mov eax, DWORD PTR [ebp+276]
+	test eax, eax
+	je 242f
+	mov eax, DWORD PTR [ebp+280]
+	test eax, eax
+	je 244f
+	mov ecx, 16
+	sub ecx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	cmp eax, ecx
+	jb 246f
+	jmp 247f
+246:
+	mov ecx, eax
+247:
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+	add edx, DWORD PTR [ebp+280]
+	mov eax, DWORD PTR [ebp+276]
+	sub eax, ecx
+	mov DWORD PTR [ebp+276], eax
+	mov eax, DWORD PTR [ebp+280]
+	add eax, ecx
+	mov DWORD PTR [ebp+280], eax
+	mov eax, edi
+	add eax, ecx
+	mov DWORD PTR [ebp+272], eax
+248:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 248b
+	mov eax, DWORD PTR [ebp+280]
+	cmp eax, 16
+	je 249f
+	jmp 250f
+249:
+	mov ebx, esi
+	add ebx, 32
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+250:
+	jmp 245f
+244:
+245:
+	mov ebx, DWORD PTR [ebp+272]
+	mov edi, DWORD PTR [ebp+276]
+	shr edi, 4
+	mov eax, DWORD PTR [ebp+276]
+	mov edx, eax
+	and edx, 15
+	mov DWORD PTR [ebp+276], edx
+	sub eax, edx
+	add eax, ebx
+	mov DWORD PTR [ebp+272], eax
+	test edi, edi
+	je 251f
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 252f
+251:
+252:
+	mov ecx, DWORD PTR [ebp+276]
+	test ecx, ecx
+	je 253f
+	mov edi, DWORD PTR [ebp+272]
+	mov edx, esi
+	add edx, 32
+255:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 255b
+	jmp 254f
+253:
+254:
+	jmp 243f
+242:
+243:
+	mov eax, DWORD PTR [ebp+172]
+	and eax, 15
+	mov DWORD PTR [ebp+280], eax
+	mov ecx, DWORD PTR [ebp+280]
+	test ecx, ecx
+	je 256f
+	mov eax, 0
+	mov DWORD PTR [ebp+96], eax
+	mov DWORD PTR [ebp+100], eax
+	mov DWORD PTR [ebp+104], eax
+	mov DWORD PTR [ebp+108], eax
+	mov edi, esi
+	add edi, 32
+	mov edx, ebp
+	add edx, 96
+258:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 258b
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 257f
+256:
+257:
+	mov eax, DWORD PTR [ebp+152]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+96], ecx
+	mov DWORD PTR [ebp+100], eax
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, DWORD PTR [ebp+188]
+	add ecx, ecx
+	add ecx, ecx
+	add ecx, ecx
+	mov edx, eax
+	shr edx, 29
+	add ecx, edx
+	add eax, eax
+	add eax, eax
+	add eax, eax
+	bswap ecx
+	bswap eax
+	mov DWORD PTR [ebp+104], ecx
+	mov DWORD PTR [ebp+108], eax
+	mov ebx, ebp
+	add ebx, 96
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	add eax, 240
+	mov edx, esi
+	add edx, 16
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push eax
+	call {vg_ghash}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [esi+16]
+	mov ecx, DWORD PTR [esi+20]
+	mov edx, DWORD PTR [esi+24]
+	mov ebx, DWORD PTR [esi+28]
+	mov DWORD PTR [ebp+112], eax
+	mov DWORD PTR [ebp+116], ecx
+	mov DWORD PTR [ebp+120], edx
+	mov DWORD PTR [ebp+124], ebx
+	mov ebx, ebp
+	add ebx, 112
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, 0
+	mov DWORD PTR [ebp+196], eax
+	mov DWORD PTR [ebp+200], eax
+	mov DWORD PTR [ebp+204], eax
+	mov DWORD PTR [ebp+208], eax
+	mov edi, DWORD PTR [ebp+212]
+	mov edx, ebp
+	add edx, 196
+	mov ecx, DWORD PTR [ebp+180]
+259:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 259b
+	mov eax, 0
+	mov DWORD PTR [ebp+240], eax
+	mov DWORD PTR [ebp+244], eax
+	mov DWORD PTR [ebp+248], eax
+	mov DWORD PTR [ebp+252], eax
+	mov edi, ebp
+	add edi, 112
+	mov edx, ebp
+	add edx, 240
+	mov ecx, DWORD PTR [ebp+180]
+260:
+	movzx eax, BYTE PTR [edi]
+	mov BYTE PTR [edx], al
+	add edi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 260b
+	mov eax, DWORD PTR [ebp+240]
+	xor eax, DWORD PTR [ebp+196]
+	mov ecx, DWORD PTR [ebp+244]
+	xor ecx, DWORD PTR [ebp+200]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+248]
+	xor ecx, DWORD PTR [ebp+204]
+	or eax, ecx
+	mov ecx, DWORD PTR [ebp+252]
+	xor ecx, DWORD PTR [ebp+208]
+	or eax, ecx
+	cmp eax, 1
+	mov eax, 0
+	adc eax, 0
+	mov DWORD PTR [ebp+184], eax
+	test eax, eax
+	je 261f
+	mov ebx, DWORD PTR [ebp+168]
+	mov edi, DWORD PTR [ebp+172]
+	shr edi, 4
+	test edi, edi
+	je 263f
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32_to}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	jmp 264f
+263:
+264:
+	mov ecx, DWORD PTR [ebp+172]
+	and ecx, 15
+	test ecx, ecx
+	je 265f
+	mov eax, 0
+	mov DWORD PTR [esi+64], eax
+	mov DWORD PTR [esi+68], eax
+	mov DWORD PTR [esi+72], eax
+	mov DWORD PTR [esi+76], eax
+	mov ebx, esi
+	add ebx, 64
+	mov edi, 1
+	mov eax, DWORD PTR [ebp+144]
+	mov ecx, DWORD PTR [ebp+148]
+	mov edx, esi
+	add edx, 48
+	add ebp, 512
+	push ebp
+	push edi
+	push ebx
+	push edx
+	push ecx
+	push eax
+	call {vg_aes_ctr32}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	sub ebp, 512
+	mov eax, DWORD PTR [ebp+172]
+	mov ecx, eax
+	and ecx, 15
+	sub eax, ecx
+	mov edx, esi
+	add edx, 64
+	mov edi, DWORD PTR [esp]
+	add edi, eax
+	mov esi, DWORD PTR [ebp+168]
+	add esi, eax
+267:
+	movzx eax, BYTE PTR [edx]
+	movzx ebx, BYTE PTR [esi]
+	xor eax, ebx
+	mov BYTE PTR [edi], al
+	add edi, 1
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 267b
+	mov esi, ebp
+	add esi, 16
+	jmp 266f
+265:
+266:
+	jmp 262f
+261:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 268f
+270:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 270b
+	jmp 269f
+268:
+269:
+262:
+	mov eax, DWORD PTR [ebp+184]
+	jmp 25f
+24:
+	mov edx, DWORD PTR [esp]
+	mov ecx, DWORD PTR [ebp+172]
+	mov eax, 0
+	cmp ecx, 0
+	je 271f
+273:
+	mov BYTE PTR [edx], al
+	add edx, 1
+	sub ecx, 1
+	jne 273b
+	jmp 272f
+271:
+272:
+25:
+	mov ebx, DWORD PTR [ebp+128]
+	mov esi, DWORD PTR [ebp+132]
+	mov edi, DWORD PTR [ebp+136]
+	mov ebp, DWORD PTR [ebp+140]
 	lea esp, [esp+48]
+	lea esp, [esp+2616]
 	ret
 	.p2align 6
 

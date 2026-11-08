@@ -6,6 +6,7 @@ import os
 import tarfile
 import tempfile
 import unittest
+import urllib.error
 from pathlib import Path
 
 import leantar_release
@@ -32,6 +33,58 @@ class Opener:
     def __call__(self, url):
         self.urls.append(url)
         return io.BytesIO(self.data)
+
+
+class Flaky:
+    """Raises each of `errors` in turn, then serves `data`."""
+
+    def __init__(self, errors, data=b"data"):
+        self.errors, self.data, self.calls = list(errors), data, 0
+
+    def __call__(self, url):
+        self.calls += 1
+        if self.errors:
+            raise self.errors.pop(0)
+        return io.BytesIO(self.data)
+
+
+def http_error(code):
+    return urllib.error.HTTPError("https://example.com", code, "error", {}, None)
+
+
+class Download(unittest.TestCase):
+    def setUp(self):
+        self.slept = []
+
+    def download(self, opener):
+        return leantar_release.download("https://example.com", opener, self.slept.append)
+
+    def test_retries_transient_failures(self):
+        opener = Flaky([http_error(503), http_error(429), urllib.error.URLError("reset"),
+                        ConnectionResetError()])
+        self.assertEqual(self.download(opener), b"data")
+        self.assertEqual(opener.calls, 5)
+        self.assertEqual(self.slept, [2, 4, 8, 16])
+
+    def test_gives_up(self):
+        opener = Flaky([http_error(503)] * 5)
+        with self.assertRaises(urllib.error.HTTPError):
+            self.download(opener)
+        self.assertEqual(opener.calls, 5)
+        self.assertEqual(self.slept, [2, 4, 8, 16])
+
+    def test_client_error_not_retried(self):
+        opener = Flaky([http_error(404)])
+        with self.assertRaises(urllib.error.HTTPError):
+            self.download(opener)
+        self.assertEqual(opener.calls, 1)
+        self.assertEqual(self.slept, [])
+
+    def test_other_error_not_retried(self):
+        opener = Flaky([ValueError("bad")])
+        with self.assertRaises(ValueError):
+            self.download(opener)
+        self.assertEqual(self.slept, [])
 
 
 class Target(unittest.TestCase):

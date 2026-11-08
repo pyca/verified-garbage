@@ -55,8 +55,8 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
     Impl.AesGcm.AArch64.Stitch.shortPre, Impl.AesGcm.AArch64.Stitch.textIn, Impl.AesGcm.AArch64.Stitch.copyQ,
     Impl.AesGcm.AArch64.Stitch.ctToB2, Impl.AesGcm.AArch64.Stitch.aadIn, Impl.AesGcm.AArch64.Stitch.shortAes,
     Impl.AesGcm.AArch64.SealGather.copyBlocks, Impl.Gcm.AArch64.Stitch.byRounds, Bool.false_eq_true, ite_true, ite_false,
-    Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front,
-    Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT,
+    Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.decPart, cond,
+    Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.cond, Impl.AesGcm.AArch64.Fast.padMul, Impl.AesGcm.AArch64.Fast.padMulT,
     Impl.AesGcm.AArch64.Fast.oneCryptT, Impl.AesGcm.AArch64.Tail.cryptAlT, Impl.AesGcm.AArch64.Tail.crSeg2T,
     Impl.AesGcm.AArch64.Tail.crTailT, openRest, openMain, oneCrypt, cryptAl, crArgs,
     tagLenOk, tagIn, cmpSeg, cmp, cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag,
@@ -67,5 +67,21 @@ theorem stitchOpenWithS_keepsV (v : GcmImpl) {k : Nat} (hk : k = 16 ∨ k = 24) 
 theorem pwTbl_keepsV {k : Nat} (hk : k = 8 ∨ k = 16) :
     (Code.block (Impl.AesGcm.AArch64.Stitch.pwTbl k) : Prog isa).allInstrs keepsV = true := by
   rcases hk with rfl | rfl <;> decide +kernel
+
+/-- `vg_aes_gcm_open_split_with_powers` keeps the callee-saved vector registers. -/
+theorem stitchOpenSplit_keepsV (v : GcmImpl) {gh : Fn}
+    (hcl : (Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 gh).allInstrs keepsV = true) :
+    (Impl.AesGcm.AArch64.Stitch.openSplitWithPw v.callees gh).allInstrs keepsV = true := by
+  have htb := pwTbl_keepsV (.inr rfl)
+  simp only [Code.allInstrs] at htb
+  unfold Impl.AesGcm.AArch64.Stitch.openSplitWithPw
+  generalize Impl.AesGcm.AArch64.Fast.pwSel v.callees 16 gh = cl at hcl ⊢
+  simp only [Impl.AesGcm.AArch64.Stitch.openFastS, Impl.AesGcm.AArch64.Stitch.tailTo,
+    Impl.AesGcm.AArch64.Stitch.openRunWithS, Impl.AesGcm.AArch64.Stitch.decPart, cond,
+    Impl.AesGcm.AArch64.Stitch.stitched, Impl.AesGcm.AArch64.Fast.front, Impl.AesGcm.AArch64.Fast.padMul,
+    Impl.AesGcm.AArch64.Fast.padMulT, Impl.AesGcm.AArch64.Tail.cryptAlT, Impl.AesGcm.AArch64.Tail.crSeg2T,
+    Impl.AesGcm.AArch64.Tail.crTailT, crArgs, tagLenOk, tagIn, cmpSeg, cmp, cmp16, crTail, ctrCall, copy,
+    copyB, Impl.AesGcm.AArch64.xor, GcmImpl.callees, Code.allInstrs, List.nil_append, v.ctr.keepsV, htb, hcl,
+    Bool.and_true, Bool.true_and] <;> decide +kernel
 
 end VG.Proof.AesGcm.AArch64

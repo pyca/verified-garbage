@@ -85,6 +85,11 @@ theorem ctr {I : State → Prop}
       CtrCall s₁ K C D S R n ∧ CtrCall s₂ K C D S R n ∧ s₁.sp = s₂.sp) : CT I ctrFrame :=
   ctr_rel fun _ _ hh => h _ _ hh.1 hh.2
 
+theorem ctrTo {I : State → Prop}
+    (h : ∀ s₁ s₂, I s₁ → I s₂ → ∃ K C D T S : BitVec 32, ∃ R n : Nat,
+      CtrToCall s₁ K C D T S R n ∧ CtrToCall s₂ K C D T S R n ∧ s₁.sp = s₂.sp) : CT I ctrToFrame :=
+  ctrTo_rel fun _ _ hh => h _ _ hh.1 hh.2
+
 end CT
 
 end VG.Proof.AesGcm.Arm

@@ -19,6 +19,12 @@ from byte `P` of the text on, into the `r5` bytes at `r4`, where `r6` is
 `P` bytes (`Proof.Gcm.Ctr`): the rest of the keystream block (`cryptHead`),
 whole blocks with `vg_aes_ctr32` (`cryptWhole`), then a new keystream block
 for the last bytes (`cryptTail`). The number of rounds is in `r8`.
+
+The pieces after the first (`cryptWholeG`, `cryptTailG`) also decrypt out
+of place (`to`): from the source `S` at `r4` to the destination `T` at
+`r6`, which are apart (`CrMode`); in place `S = T`. Out of place the call
+of `vg_aes_ctr32_to` pushes 12 bytes below the stack pointer
+(`below12`), apart from everything else.
 -/
 
 @[expose] public section
@@ -62,6 +68,26 @@ abbrev crFrame (st w sp D : BitVec 32) (n : Nat) : List Region :=
   [⟨State.addr D, n⟩, ⟨State.addr st + BitVec.ofNat 64 48, 32⟩, ⟨State.addr w + BitVec.ofNat 64 512, 2048⟩,
     below sp]
 
+/-- The regions `crypt` writes, out of place too: the 12 bytes below the
+stack pointer that the call of `vg_aes_ctr32_to` pushes. -/
+def crFrameG : Bool → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → Nat → List Region
+  | false, st, w, sp, D, n => crFrame st w sp D n
+  | true, st, w, sp, D, n => crFrame st w sp D n ++ [below12 sp]
+
+@[simp] theorem crFrameG_false (st w sp D : BitVec 32) (n : Nat) :
+    crFrameG false st w sp D n = crFrame st w sp D n := rfl
+
+/-- Where the source `S` and the destination `T` lie: the same in place;
+out of place, apart, with the 12 bytes below the stack pointer apart from
+everything. -/
+def CrMode : Bool → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32 → Nat → Prop
+  | false, _, _, _, _, S, T, _ => S = T
+  | true, c, st, w, sp, S, T, n =>
+    (⟨State.addr S, n⟩ : Region).Disjoint ⟨State.addr T, n⟩ ∧ 12 ≤ sp.toNat ∧
+      (below12 sp).Disjoint ⟨State.addr c, 256⟩ ∧ (below12 sp).Disjoint ⟨State.addr st, 80⟩ ∧
+      (below12 sp).Disjoint ⟨State.addr w, 2560⟩ ∧ (below12 sp).Disjoint ⟨State.addr S, n⟩ ∧
+      (below12 sp).Disjoint ⟨State.addr T, n⟩
+
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go, `R`
 rounds in `r8`. -/
 structure CrIn (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (D : BitVec 32) (n : Nat) (s : State) :
@@ -74,30 +100,39 @@ structure CrIn (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   data : DataW c st w sp k7 k8 s D n
 
-/-- Part of the way: `j` bytes done, from `m₀`. -/
-structure CrMid (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem)
-    (j : Nat) (s : State) : Prop where
+/-- Part of the way: `j` bytes done, from `m₀`, read from `S` and written to
+`T` (`r6` out of place). -/
+structure CrMidG (to : Bool) (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (S T : BitVec 32)
+    (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
   le : j ≤ n
-  r4 : s.gpr .r4 = D + BitVec.ofNat 32 j
+  r4 : s.gpr .r4 = S + BitVec.ofNat 32 j
   r5 : s.gpr .r5 = BitVec.ofNat 32 (n - j)
   r8 : s.gpr .r8 = BitVec.ofNat 32 R
   rounds : R = 10 ∨ R = 12 ∨ R = 14
-  data : DataW c st w sp k7 k8 s D n
+  data : DataW c st w sp k7 k8 s T n
   ctr : Ctr m₀ (State.addr st + BitVec.ofNat 64 48) (State.addr st + BitVec.ofNat 64 64) (ciphOf m₀ (State.addr c) R)
       icb P →
     Ctr s.mem (State.addr st + BitVec.ofNat 64 48) (State.addr st + BitVec.ofNat 64 64) (ciphOf m₀ (State.addr c) R)
       icb (P + j)
   done : Ctr m₀ (State.addr st + BitVec.ofNat 64 48) (State.addr st + BitVec.ofNat 64 64)
       (ciphOf m₀ (State.addr c) R) icb P →
-    bytesAt s.mem (State.addr D) j = xorKs (ciphOf m₀ (State.addr c) R) icb P (bytesAt m₀ (State.addr D) j)
-  rest : bytesAt s.mem (State.addr D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (State.addr D + BitVec.ofNat 64 j) (n - j)
+    bytesAt s.mem (State.addr T) j = xorKs (ciphOf m₀ (State.addr c) R) icb P (bytesAt m₀ (State.addr S) j)
+  rest : bytesAt s.mem (State.addr S + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (State.addr S + BitVec.ofNat 64 j) (n - j)
   whole : n - j = 0 ∨ (P + j) % 16 = 0
-  frame : Frame (crFrame st w sp D n) m₀ s.mem
+  frame : Frame (crFrameG to st w sp T n) m₀ s.mem
+  r6 : to = true → s.gpr .r6 = T + BitVec.ofNat 32 j
+  src : DataOk st w sp s S n
+  mode : CrMode to c st w sp S T n
 
-/-- After `crypt`. -/
-structure CrOut (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem)
-    (s : State) : Prop where
+/-- In place. -/
+abbrev CrMid (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem)
+    (j : Nat) (s : State) : Prop :=
+  CrMidG false c st w sp k7 k8 R icb P D D n m₀ j s
+
+/-- After `crypt` (`T` from `S`). -/
+structure CrOutG (to : Bool) (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (S T : BitVec 32)
+    (n : Nat) (m₀ : Mem) (s : State) : Prop where
   env : Env c st w sp k7 k8 s
   r8 : s.gpr .r8 = BitVec.ofNat 32 R
   ctr : Ctr m₀ (State.addr st + BitVec.ofNat 64 48) (State.addr st + BitVec.ofNat 64 64) (ciphOf m₀ (State.addr c) R)
@@ -106,8 +141,13 @@ structure CrOut (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) 
       icb (P + n)
   out : Ctr m₀ (State.addr st + BitVec.ofNat 64 48) (State.addr st + BitVec.ofNat 64 64)
       (ciphOf m₀ (State.addr c) R) icb P →
-    bytesAt s.mem (State.addr D) n = xorKs (ciphOf m₀ (State.addr c) R) icb P (bytesAt m₀ (State.addr D) n)
-  frame : Frame (crFrame st w sp D n) m₀ s.mem
+    bytesAt s.mem (State.addr T) n = xorKs (ciphOf m₀ (State.addr c) R) icb P (bytesAt m₀ (State.addr S) n)
+  frame : Frame (crFrameG to st w sp T n) m₀ s.mem
+
+/-- After `crypt`, in place. -/
+abbrev CrOut (c st w sp k7 k8 : BitVec 32) (R : Nat) (icb : Block) (P : Nat) (D : BitVec 32) (n : Nat) (m₀ : Mem)
+    (s : State) : Prop :=
+  CrOutG false c st w sp k7 k8 R icb P D D n m₀ s
 
 section
 variable {c st w sp k7 k8 : BitVec 32} (L : Lay c st w sp)
@@ -122,6 +162,16 @@ theorem ctx_crFrame {s : State} {D : BitVec 32} {n : Nat} (hd : DataW c st w sp 
   · exact L.cs.sub_right (Lay.stSub (by decide))
   · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.kc.symm
+
+theorem ctx_crFrameG {to : Bool} {s : State} {S T : BitVec 32} {n : Nat} (hd : DataW c st w sp k7 k8 s T n)
+    (hm : CrMode to c st w sp S T n) : ∀ r ∈ crFrameG to st w sp T n, (⟨State.addr c, 256⟩ : Region).Disjoint r := by
+  cases to
+  · exact ctx_crFrame L hd
+  · intro r hr
+    simp only [crFrameG, List.mem_append, List.mem_singleton] at hr
+    rcases hr with hr | rfl
+    · exact ctx_crFrame L hd r hr
+    · exact hm.2.2.1.symm
 
 omit L in
 theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
@@ -139,11 +189,11 @@ theorem split_disj {D : Addr} {j n : Nat} (hj : j ≤ n) (hn : n < 2 ^ 64) :
   have := Offset.disjoint D (d := 0) (n := j) (e := j) (k := n - j) (.inl (by omega)) (by omega) (by omega)
   simpa using this
 
-/-- The bytes done so far and the next ones. -/
-theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {D : Addr} {j l : Nat}
-    (h₁ : bytesAt m D j = xorKs ciph icb P (bytesAt m₀ D j))
-    (h₂ : bytesAt m (D + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (D + BitVec.ofNat 64 j) l)) :
-    bytesAt m D (j + l) = xorKs ciph icb P (bytesAt m₀ D (j + l)) := by
+/-- The bytes done so far and the next ones, written to `T` from `S`. -/
+theorem done_append {m m₀ : Mem} {ciph : Block → Block} {icb : Block} {P : Nat} {S T : Addr} {j l : Nat}
+    (h₁ : bytesAt m T j = xorKs ciph icb P (bytesAt m₀ S j))
+    (h₂ : bytesAt m (T + BitVec.ofNat 64 j) l = xorKs ciph icb (P + j) (bytesAt m₀ (S + BitVec.ofNat 64 j) l)) :
+    bytesAt m T (j + l) = xorKs ciph icb P (bytesAt m₀ S (j + l)) := by
   rw [bytesAt_add, bytesAt_add, Proof.Gcm.xorKs_append, h₁, h₂, length_bytesAt]
 
 theorem ctr32_single (ciph : Block → Block) (icb x : Block) : Spec.Gcm.ctr32 ciph icb [x] = [x ^^^ ciph icb] := by

@@ -10,6 +10,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::rc2::{vg_rc2_cbc_decrypt_update, vg_rc2_cbc_encrypt_update, vg_rc2_cbc_init};
 use crate::error::{IncompleteBlock, OutputTooSmall};
 use crate::zeroize::zeroize;
@@ -38,7 +39,7 @@ crate::error::impl_error! {
 struct Cbc<const DECRYPT: bool> {
     /// The verified primitives' context: key schedule, chaining value and
     /// pending bytes.
-    ctx: [u8; 144],
+    ctx: CacheAligned<[u8; 144]>,
     pending_len: usize,
 }
 
@@ -46,7 +47,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
     /// Initializes CBC with an effective key size of `effective_bits`.
     fn new(key: &[u8], iv: &[u8], effective_bits: usize) -> Result<Self, Error> {
         let mut ctx = Self {
-            ctx: [0; 144],
+            ctx: CacheAligned([0; 144]),
             pending_len: 0,
         };
         // SAFETY: the key, IV and context are valid, separate objects of the
@@ -58,7 +59,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
                 effective_bits,
                 iv.as_ptr(),
                 iv.len(),
-                &mut ctx.ctx,
+                &mut ctx.ctx.0,
             )
         };
         match code {
@@ -98,7 +99,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         // overlap).
         unsafe {
             update(
-                &mut self.ctx,
+                &mut self.ctx.0,
                 self.pending_len,
                 input.as_ptr(),
                 input.len(),
@@ -122,7 +123,7 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
 
 impl<const DECRYPT: bool> Drop for Cbc<DECRYPT> {
     fn drop(&mut self) {
-        zeroize(&mut self.ctx);
+        zeroize(&mut self.ctx.0);
     }
 }
 

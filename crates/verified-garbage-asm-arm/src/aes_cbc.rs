@@ -14,91 +14,37 @@
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r"ldr r12, [sp, #4]
-str r4, [r12, #2064]
-str r5, [r12, #2068]
-str r6, [r12, #2072]
-str r7, [r12, #2076]
-str r8, [r12, #2080]
-str r9, [r12, #2084]
-str lr, [r12, #2092]
-str r10, [r12, #2088]
-mov r4, r0
-mov r5, r1
-mov r6, r2
-mov r7, r3
-ldr r8, [sp, #0]
-mov r10, r12
-cmp r8, #0
-beq 20f
-22:
-ldr r12, [r7, #0]
-ldr lr, [r6, #0]
-eor r12, r12, lr
-str r12, [r7, #0]
-ldr r12, [r7, #4]
-ldr lr, [r6, #4]
-eor r12, r12, lr
-str r12, [r7, #4]
-ldr r12, [r7, #8]
-ldr lr, [r6, #8]
-eor r12, r12, lr
-str r12, [r7, #8]
-ldr r12, [r7, #12]
-ldr lr, [r6, #12]
-eor r12, r12, lr
-str r12, [r7, #12]
+        r"push {{r4, r5, r6, lr}}
+sub sp, sp, #8
+add r12, sp, #0
+ldr lr, [sp, #24]
+str lr, [r12, #0]
+ldr lr, [sp, #28]
+str lr, [r12, #4]
+ldr r4, [sp, #4]
+bl {vg_aes_cbc_encrypt_unwiped}
+add sp, sp, #8
+mov r5, r0
+mov r6, r1
 mov r0, r4
-mov r1, r5
-mov r2, r7
-mov r3, #1
-mov r12, r10
-push {{r12, lr}}
-bl {vg_aes_encrypt_blocks}
-ldr r12, [sp], #8
-mov r12, #0
-str r12, [r6, #0]
-str r12, [r6, #4]
-str r12, [r6, #8]
-str r12, [r6, #12]
-ldr r12, [r6, #0]
-ldr lr, [r7, #0]
-eor r12, r12, lr
-str r12, [r6, #0]
-ldr r12, [r6, #4]
-ldr lr, [r7, #4]
-eor r12, r12, lr
-str r12, [r6, #4]
-ldr r12, [r6, #8]
-ldr lr, [r7, #8]
-eor r12, r12, lr
-str r12, [r6, #8]
-ldr r12, [r6, #12]
-ldr lr, [r7, #12]
-eor r12, r12, lr
-str r12, [r6, #12]
-add r7, r7, #16
-subs r8, r8, #1
-bne 22b
-b 21f
-20:
-21:
-ldr r4, [r10, #2064]
-ldr r5, [r10, #2068]
-ldr r6, [r10, #2072]
-ldr r7, [r10, #2076]
-ldr r8, [r10, #2080]
-ldr r9, [r10, #2084]
-ldr lr, [r10, #2092]
-ldr r10, [r10, #2088]
+movw r1, #2176
+movt r1, #0
+bl {vg_zeroize}
+mov r0, r5
+mov r1, r6
+ldr r5, [sp, #4]
+ldr r6, [sp, #8]
+ldr lr, [sp, #12]
+ldr r4, [sp], #16
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -113,111 +59,44 @@ bx lr",
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other, `schedule` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 8 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r"ldr r12, [sp, #4]
-str r4, [r12, #2064]
-str r5, [r12, #2068]
-str r6, [r12, #2072]
-str r7, [r12, #2076]
-str r8, [r12, #2080]
-str r9, [r12, #2084]
-str lr, [r12, #2092]
-str r10, [r12, #2088]
-mov r4, r0
-mov r5, r1
-mov r6, r2
-mov r7, r3
-ldr r8, [sp, #0]
-mov r10, r12
-cmp r8, #0
-beq 20f
-22:
-mov r12, #0
-str r12, [r10, #2048]
-str r12, [r10, #2052]
-str r12, [r10, #2056]
-str r12, [r10, #2060]
-ldr r12, [r10, #2048]
-ldr lr, [r7, #0]
-eor r12, r12, lr
-str r12, [r10, #2048]
-ldr r12, [r10, #2052]
-ldr lr, [r7, #4]
-eor r12, r12, lr
-str r12, [r10, #2052]
-ldr r12, [r10, #2056]
-ldr lr, [r7, #8]
-eor r12, r12, lr
-str r12, [r10, #2056]
-ldr r12, [r10, #2060]
-ldr lr, [r7, #12]
-eor r12, r12, lr
-str r12, [r10, #2060]
+        r"push {{r4, r5, r6, lr}}
+sub sp, sp, #8
+add r12, sp, #0
+ldr lr, [sp, #24]
+str lr, [r12, #0]
+ldr lr, [sp, #28]
+str lr, [r12, #4]
+ldr r4, [sp, #4]
+bl {vg_aes_cbc_decrypt_unwiped}
+add sp, sp, #8
+mov r5, r0
+mov r6, r1
 mov r0, r4
-mov r1, r5
-mov r2, r7
-mov r3, #1
-mov r12, r10
-push {{r12, lr}}
-bl {vg_aes_decrypt_blocks}
-ldr r12, [sp], #8
-ldr r12, [r7, #0]
-ldr lr, [r6, #0]
-eor r12, r12, lr
-str r12, [r7, #0]
-ldr r12, [r7, #4]
-ldr lr, [r6, #4]
-eor r12, r12, lr
-str r12, [r7, #4]
-ldr r12, [r7, #8]
-ldr lr, [r6, #8]
-eor r12, r12, lr
-str r12, [r7, #8]
-ldr r12, [r7, #12]
-ldr lr, [r6, #12]
-eor r12, r12, lr
-str r12, [r7, #12]
-mov r12, #0
-str r12, [r6, #0]
-str r12, [r6, #4]
-str r12, [r6, #8]
-str r12, [r6, #12]
-ldr r12, [r6, #0]
-ldr lr, [r10, #2048]
-eor r12, r12, lr
-str r12, [r6, #0]
-ldr r12, [r6, #4]
-ldr lr, [r10, #2052]
-eor r12, r12, lr
-str r12, [r6, #4]
-ldr r12, [r6, #8]
-ldr lr, [r10, #2056]
-eor r12, r12, lr
-str r12, [r6, #8]
-ldr r12, [r6, #12]
-ldr lr, [r10, #2060]
-eor r12, r12, lr
-str r12, [r6, #12]
-add r7, r7, #16
-subs r8, r8, #1
-bne 22b
-b 21f
-20:
-21:
-ldr r4, [r10, #2064]
-ldr r5, [r10, #2068]
-ldr r6, [r10, #2072]
-ldr r7, [r10, #2076]
-ldr r8, [r10, #2080]
-ldr r9, [r10, #2084]
-ldr lr, [r10, #2092]
-ldr r10, [r10, #2088]
+movw r1, #2176
+movt r1, #0
+bl {vg_zeroize}
+mov r0, r5
+mov r1, r6
+ldr r5, [sp, #4]
+ldr r6, [sp, #8]
+ldr lr, [sp, #12]
+ldr r4, [sp], #16
 bx lr",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped;

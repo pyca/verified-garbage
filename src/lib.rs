@@ -102,6 +102,7 @@ compile_error!("AArch64 needs a target with NEON (not, e.g., aarch64-unknown-non
 compile_error!("32-bit ARM needs an AAPCS target (not Apple's armv7s or armv7k)");
 
 pub mod aead;
+mod align;
 pub mod cipher;
 pub mod cmac;
 mod ct;

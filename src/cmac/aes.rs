@@ -10,6 +10,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::cmac_aes::{
     vg_cmac_aes_absorb_auto, vg_cmac_aes_finish_auto, vg_cmac_aes_init_auto,
 };
@@ -29,7 +30,7 @@ const STATE: usize = 38;
 pub struct AesCmac {
     /// The streaming state (`VG.Spec.Cmac.Repr`): the key schedule, the
     /// subkeys, the chaining value and the bytes held back.
-    state: [u64; STATE],
+    state: CacheAligned<[u64; STATE]>,
     /// The number of rounds of AES for the key.
     rounds: usize,
     /// The length of the message the state represents, in bytes.
@@ -39,7 +40,7 @@ pub struct AesCmac {
 impl Drop for AesCmac {
     /// Wipes the streaming state, which holds the key schedule.
     fn drop(&mut self) {
-        zeroize(&mut self.state);
+        zeroize(&mut self.state.0);
     }
 }
 
@@ -54,7 +55,7 @@ impl AesCmac {
             return Err(InvalidKeyLength);
         }
         let mut c = AesCmac {
-            state: [0; STATE],
+            state: CacheAligned([0; STATE]),
             rounds: key.len() / 4 + 6,
             count: 0,
         };
@@ -66,7 +67,7 @@ impl AesCmac {
         // function uses, and neither wraps around the end of the address
         // space. The dispatcher calls only an implementation the CPU has the
         // features of.
-        unsafe { vg_cmac_aes_init_auto(&mut c.state, key.as_ptr(), key.len()) };
+        unsafe { vg_cmac_aes_init_auto(&mut c.state.0, key.as_ptr(), key.len()) };
         Ok(c)
     }
 
@@ -93,7 +94,7 @@ impl AesCmac {
         // of.
         unsafe {
             vg_cmac_aes_absorb_auto(
-                &mut self.state,
+                &mut self.state.0,
                 self.rounds,
                 self.count,
                 data.as_ptr(),
@@ -116,7 +117,7 @@ impl AesCmac {
         // represents a message of `self.count` bytes, as the contract's
         // postcondition requires. The dispatcher calls only an implementation
         // the CPU has the features of.
-        unsafe { vg_cmac_aes_finish_auto(&mut self.state, self.rounds, self.count, &mut mac) };
+        unsafe { vg_cmac_aes_finish_auto(&mut self.state.0, self.rounds, self.count, &mut mac) };
         mac
     }
 

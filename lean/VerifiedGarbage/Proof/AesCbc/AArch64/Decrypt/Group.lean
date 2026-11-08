@@ -42,13 +42,13 @@ structure Inv (s₀ : State) (c p : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-theorem group_ok {s₀ s : State} (hp : UPre s₀) (rs : List VReg)
+theorem group_ok (sha3 : Bool) {s₀ s : State} (hp : UPre s₀) (rs : List VReg)
     (hrs : rs = regs7 ∨ rs = [.v0]) {c : Nat} (hc : c+rs.length ≤ N s₀)
     (hI : Inv s₀ c c s) (tail : List Instr) {Q : State → Prop}
     (hQ : ∀ t, Inv s₀ (c+rs.length) c t → t.gpr = s.gpr → WP isa (.block tail) t Q) :
     WP isa (.seq (.block (ldData rs 0))
       (.seq (Impl.AesCbc.AArch64.Decrypt.rounds (R s₀) rs)
-        (.block (Impl.AesCbc.AArch64.Decrypt.finishData rs 0 ++ tail)))) s Q := by
+        (.block (Impl.AesCbc.AArch64.Decrypt.finishData sha3 rs 0 ++ tail)))) s Q := by
   have hbr : BlockRegs rs := by rcases hrs with rfl | rfl <;> exact ⟨by decide,by decide⟩
   have h31 : .v31 ∉ rs := by rcases hrs with rfl | rfl <;> decide
   have h16 : .v16 ∉ rs := hbr.v16
@@ -64,7 +64,7 @@ theorem group_ok {s₀ s : State} (hp : UPre s₀) (rs : List VReg)
   have hv : v.v .v31 = chaining s₀ c := by rw [fa.v _ h31,fl.v _ h31,hI.chain]
   have hkv := hku.of_frame fa hbr
   rw [WP.block_append_iff]
-  refine WP.mono (finishData_ok (m₀ := s₀.mem) (D := Dp s₀) (n := N s₀) (c := c)
+  refine WP.mono (finishData_ok sha3 (m₀ := s₀.mem) (D := Dp s₀) (n := N s₀) (c := c)
     (F := output s₀) (chain := chaining s₀) (by have := hp.data_wrap; omega)
     (fun _ _ => rfl) rs 0 v hbr.1 h31 h16 (hg ▸ hI.x2) (by omega) (by simpa using hc)
     (by rw [fa.wr,fl.wr,hI.wr,hp.wr]; simp) (by simpa only [Nat.add_zero,hm] using hI.data)

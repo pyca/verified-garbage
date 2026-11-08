@@ -22,7 +22,7 @@ pub const VG_AES_CBC_DECRYPT_AES_SHA3_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` and `sha3` target features.
@@ -190,6 +190,195 @@ b 220f
     )
 }
 
+/// The CPU features `vg_aes_cbc_decrypt_aes` requires (`Artifact.features`).
+pub const VG_AES_CBC_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// The bytes of `scratch` that `vg_aes_cbc_decrypt_aes` may write: it changes no byte of `scratch` at this offset or beyond (`Artifact.written`).
+pub const VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN: usize = 0;
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_DECRYPT_AES_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub unsafe extern "C" fn vg_aes_cbc_decrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd1002829,0xd100302a
+cbz x9, 20f
+cbz x10, 22f
+.inst 0x9100004b,0x91000062,0x91000083,0x910000a4,0x3dc0017f,0x3dc00010,0x3dc00411,0x3dc00812
+.inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
+.inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
+.inst 0x3dc0341d,0x4e287a31,0x4e287a52,0x4e287a73,0x4e287a94,0x4e287ab5,0x4e287ad6,0x4e287af7
+.inst 0x4e287b18,0x4e287b39,0x4e287b5a,0x4e287b7b,0x4e287b9c,0x4e287bbd,0xd1001c69,0xd37ffd2d
+cbnz x13, 24f
+.p2align 4
+26:
+.inst 0x3dc00040,0x3dc00441,0x3dc00842,0x3dc00c43,0x3dc01044,0x3dc01445,0x3dc01846,0x4e285bc0
+.inst 0x4e287800,0x4e285bc1,0x4e287821,0x4e285bc2,0x4e287842,0x4e285bc3,0x4e287863,0x4e285bc4
+.inst 0x4e287884,0x4e285bc5,0x4e2878a5,0x4e285bc6,0x4e2878c6,0x4e285ba0,0x4e287800,0x4e285ba1
+.inst 0x4e287821,0x4e285ba2,0x4e287842,0x4e285ba3,0x4e287863,0x4e285ba4,0x4e287884,0x4e285ba5
+.inst 0x4e2878a5,0x4e285ba6,0x4e2878c6,0x4e285b80,0x4e287800,0x4e285b81,0x4e287821,0x4e285b82
+.inst 0x4e287842,0x4e285b83,0x4e287863,0x4e285b84,0x4e287884,0x4e285b85,0x4e2878a5,0x4e285b86
+.inst 0x4e2878c6,0x4e285b60,0x4e287800,0x4e285b61,0x4e287821,0x4e285b62,0x4e287842,0x4e285b63
+.inst 0x4e287863,0x4e285b64,0x4e287884,0x4e285b65,0x4e2878a5,0x4e285b66,0x4e2878c6,0x4e285b40
+.inst 0x4e287800,0x4e285b41,0x4e287821,0x4e285b42,0x4e287842,0x4e285b43,0x4e287863,0x4e285b44
+.inst 0x4e287884,0x4e285b45,0x4e2878a5,0x4e285b46,0x4e2878c6,0x4e285b20,0x4e287800,0x4e285b21
+.inst 0x4e287821,0x4e285b22,0x4e287842,0x4e285b23,0x4e287863,0x4e285b24,0x4e287884,0x4e285b25
+.inst 0x4e2878a5,0x4e285b26,0x4e2878c6,0x4e285b00,0x4e287800,0x4e285b01,0x4e287821,0x4e285b02
+.inst 0x4e287842,0x4e285b03,0x4e287863,0x4e285b04,0x4e287884,0x4e285b05,0x4e2878a5,0x4e285b06
+.inst 0x4e2878c6,0x4e285ae0,0x4e287800,0x4e285ae1,0x4e287821,0x4e285ae2,0x4e287842,0x4e285ae3
+.inst 0x4e287863,0x4e285ae4,0x4e287884,0x4e285ae5,0x4e2878a5,0x4e285ae6,0x4e2878c6,0x4e285ac0
+.inst 0x4e287800,0x4e285ac1,0x4e287821,0x4e285ac2,0x4e287842,0x4e285ac3,0x4e287863,0x4e285ac4
+.inst 0x4e287884,0x4e285ac5,0x4e2878a5,0x4e285ac6,0x4e2878c6,0x4e285aa0,0x4e287800,0x4e285aa1
+.inst 0x4e287821,0x4e285aa2,0x4e287842,0x4e285aa3,0x4e287863,0x4e285aa4,0x4e287884,0x4e285aa5
+.inst 0x4e2878a5,0x4e285aa6,0x4e2878c6,0x4e285a80,0x4e287800,0x4e285a81,0x4e287821,0x4e285a82
+.inst 0x4e287842,0x4e285a83,0x4e287863,0x4e285a84,0x4e287884,0x4e285a85,0x4e2878a5,0x4e285a86
+.inst 0x4e2878c6,0x4e285a60,0x4e287800,0x4e285a61,0x4e287821,0x4e285a62,0x4e287842,0x4e285a63
+.inst 0x4e287863,0x4e285a64,0x4e287884,0x4e285a65,0x4e2878a5,0x4e285a66,0x4e2878c6,0x4e285a40
+.inst 0x4e287800,0x4e285a41,0x4e287821,0x4e285a42,0x4e287842,0x4e285a43,0x4e287863,0x4e285a44
+.inst 0x4e287884,0x4e285a45,0x4e2878a5,0x4e285a46,0x4e2878c6,0x4e285a20,0x4e285a21,0x4e285a22
+.inst 0x4e285a23,0x4e285a24,0x4e285a25,0x4e285a26,0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040
+.inst 0x6e301c21,0x6e3f1c21,0x3dc0045f,0x3d800441,0x6e301c42,0x6e3f1c42,0x3dc0085f,0x3d800842
+.inst 0x6e301c63,0x6e3f1c63,0x3dc00c5f,0x3d800c43,0x6e301c84,0x6e3f1c84,0x3dc0105f,0x3d801044
+.inst 0x6e301ca5,0x6e3f1ca5,0x3dc0145f,0x3d801445,0x6e301cc6,0x6e3f1cc6,0x3dc0185f,0x3d801846
+.inst 0x9101c042,0xd1001c63,0xd1001c69,0xd37ffd2d
+cbz x13, 26b
+b 25f
+24:
+25:
+cbz x3, 27f
+.p2align 4
+29:
+.inst 0x3dc00040,0x4e285bc0,0x4e287800,0x4e285ba0,0x4e287800,0x4e285b80,0x4e287800,0x4e285b60
+.inst 0x4e287800,0x4e285b40,0x4e287800,0x4e285b20,0x4e287800,0x4e285b00,0x4e287800,0x4e285ae0
+.inst 0x4e287800,0x4e285ac0,0x4e287800,0x4e285aa0,0x4e287800,0x4e285a80,0x4e287800,0x4e285a60
+.inst 0x4e287800,0x4e285a40,0x4e287800,0x4e285a20,0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040
+.inst 0x91004042,0xd1000463
+cbnz x3, 29b
+b 28f
+27:
+28:
+.inst 0x3d80017f
+b 23f
+22:
+.inst 0x9100004b,0x91000062,0x91000083,0x910000a4,0x3dc0017f,0x3dc00010,0x3dc00411,0x3dc00812
+.inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
+.inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
+.inst 0x3dc0341d,0x4e287a31,0x4e287a52,0x4e287a73,0x4e287a94,0x4e287ab5,0x4e287ad6,0x4e287af7
+.inst 0x4e287b18,0x4e287b39,0x4e287b5a,0x4e287b7b,0x4e287b9c,0x4e287bbd,0xd1001c69,0xd37ffd2d
+cbnz x13, 210f
+.p2align 4
+212:
+.inst 0x3dc00040,0x3dc00441,0x3dc00842,0x3dc00c43,0x3dc01044,0x3dc01445,0x3dc01846,0x4e285bc0
+.inst 0x4e287800,0x4e285bc1,0x4e287821,0x4e285bc2,0x4e287842,0x4e285bc3,0x4e287863,0x4e285bc4
+.inst 0x4e287884,0x4e285bc5,0x4e2878a5,0x4e285bc6,0x4e2878c6,0x4e285b60,0x4e287800,0x4e285b61
+.inst 0x4e287821,0x4e285b62,0x4e287842,0x4e285b63,0x4e287863,0x4e285b64,0x4e287884,0x4e285b65
+.inst 0x4e2878a5,0x4e285b66,0x4e2878c6,0x4e285b40,0x4e287800,0x4e285b41,0x4e287821,0x4e285b42
+.inst 0x4e287842,0x4e285b43,0x4e287863,0x4e285b44,0x4e287884,0x4e285b45,0x4e2878a5,0x4e285b46
+.inst 0x4e2878c6,0x4e285b20,0x4e287800,0x4e285b21,0x4e287821,0x4e285b22,0x4e287842,0x4e285b23
+.inst 0x4e287863,0x4e285b24,0x4e287884,0x4e285b25,0x4e2878a5,0x4e285b26,0x4e2878c6,0x4e285b00
+.inst 0x4e287800,0x4e285b01,0x4e287821,0x4e285b02,0x4e287842,0x4e285b03,0x4e287863,0x4e285b04
+.inst 0x4e287884,0x4e285b05,0x4e2878a5,0x4e285b06,0x4e2878c6,0x4e285ae0,0x4e287800,0x4e285ae1
+.inst 0x4e287821,0x4e285ae2,0x4e287842,0x4e285ae3,0x4e287863,0x4e285ae4,0x4e287884,0x4e285ae5
+.inst 0x4e2878a5,0x4e285ae6,0x4e2878c6,0x4e285ac0,0x4e287800,0x4e285ac1,0x4e287821,0x4e285ac2
+.inst 0x4e287842,0x4e285ac3,0x4e287863,0x4e285ac4,0x4e287884,0x4e285ac5,0x4e2878a5,0x4e285ac6
+.inst 0x4e2878c6,0x4e285aa0,0x4e287800,0x4e285aa1,0x4e287821,0x4e285aa2,0x4e287842,0x4e285aa3
+.inst 0x4e287863,0x4e285aa4,0x4e287884,0x4e285aa5,0x4e2878a5,0x4e285aa6,0x4e2878c6,0x4e285a80
+.inst 0x4e287800,0x4e285a81,0x4e287821,0x4e285a82,0x4e287842,0x4e285a83,0x4e287863,0x4e285a84
+.inst 0x4e287884,0x4e285a85,0x4e2878a5,0x4e285a86,0x4e2878c6,0x4e285a60,0x4e287800,0x4e285a61
+.inst 0x4e287821,0x4e285a62,0x4e287842,0x4e285a63,0x4e287863,0x4e285a64,0x4e287884,0x4e285a65
+.inst 0x4e2878a5,0x4e285a66,0x4e2878c6,0x4e285a40,0x4e287800,0x4e285a41,0x4e287821,0x4e285a42
+.inst 0x4e287842,0x4e285a43,0x4e287863,0x4e285a44,0x4e287884,0x4e285a45,0x4e2878a5,0x4e285a46
+.inst 0x4e2878c6,0x4e285a20,0x4e285a21,0x4e285a22,0x4e285a23,0x4e285a24,0x4e285a25,0x4e285a26
+.inst 0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040,0x6e301c21,0x6e3f1c21,0x3dc0045f,0x3d800441
+.inst 0x6e301c42,0x6e3f1c42,0x3dc0085f,0x3d800842,0x6e301c63,0x6e3f1c63,0x3dc00c5f,0x3d800c43
+.inst 0x6e301c84,0x6e3f1c84,0x3dc0105f,0x3d801044,0x6e301ca5,0x6e3f1ca5,0x3dc0145f,0x3d801445
+.inst 0x6e301cc6,0x6e3f1cc6,0x3dc0185f,0x3d801846,0x9101c042,0xd1001c63,0xd1001c69,0xd37ffd2d
+cbz x13, 212b
+b 211f
+210:
+211:
+cbz x3, 213f
+.p2align 4
+215:
+.inst 0x3dc00040,0x4e285bc0,0x4e287800,0x4e285b60,0x4e287800,0x4e285b40,0x4e287800,0x4e285b20
+.inst 0x4e287800,0x4e285b00,0x4e287800,0x4e285ae0,0x4e287800,0x4e285ac0,0x4e287800,0x4e285aa0
+.inst 0x4e287800,0x4e285a80,0x4e287800,0x4e285a60,0x4e287800,0x4e285a40,0x4e287800,0x4e285a20
+.inst 0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040,0x91004042,0xd1000463
+cbnz x3, 215b
+b 214f
+213:
+214:
+.inst 0x3d80017f
+23:
+b 21f
+20:
+.inst 0x9100004b,0x91000062,0x91000083,0x910000a4,0x3dc0017f,0x3dc00010,0x3dc00411,0x3dc00812
+.inst 0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc02018,0x3dc02419,0x3dc0281a
+.inst 0x3dc02c1b,0x3dc0301c,0xd37cec29,0x8b090009,0x3dc0013e,0xd1002826,0xd1003027,0xd343fc6d
+.inst 0x3dc0341d,0x4e287a31,0x4e287a52,0x4e287a73,0x4e287a94,0x4e287ab5,0x4e287ad6,0x4e287af7
+.inst 0x4e287b18,0x4e287b39,0x4e287b5a,0x4e287b7b,0x4e287b9c,0x4e287bbd,0xd1001c69,0xd37ffd2d
+cbnz x13, 216f
+.p2align 4
+218:
+.inst 0x3dc00040,0x3dc00441,0x3dc00842,0x3dc00c43,0x3dc01044,0x3dc01445,0x3dc01846,0x4e285bc0
+.inst 0x4e287800,0x4e285bc1,0x4e287821,0x4e285bc2,0x4e287842,0x4e285bc3,0x4e287863,0x4e285bc4
+.inst 0x4e287884,0x4e285bc5,0x4e2878a5,0x4e285bc6,0x4e2878c6,0x4e285b20,0x4e287800,0x4e285b21
+.inst 0x4e287821,0x4e285b22,0x4e287842,0x4e285b23,0x4e287863,0x4e285b24,0x4e287884,0x4e285b25
+.inst 0x4e2878a5,0x4e285b26,0x4e2878c6,0x4e285b00,0x4e287800,0x4e285b01,0x4e287821,0x4e285b02
+.inst 0x4e287842,0x4e285b03,0x4e287863,0x4e285b04,0x4e287884,0x4e285b05,0x4e2878a5,0x4e285b06
+.inst 0x4e2878c6,0x4e285ae0,0x4e287800,0x4e285ae1,0x4e287821,0x4e285ae2,0x4e287842,0x4e285ae3
+.inst 0x4e287863,0x4e285ae4,0x4e287884,0x4e285ae5,0x4e2878a5,0x4e285ae6,0x4e2878c6,0x4e285ac0
+.inst 0x4e287800,0x4e285ac1,0x4e287821,0x4e285ac2,0x4e287842,0x4e285ac3,0x4e287863,0x4e285ac4
+.inst 0x4e287884,0x4e285ac5,0x4e2878a5,0x4e285ac6,0x4e2878c6,0x4e285aa0,0x4e287800,0x4e285aa1
+.inst 0x4e287821,0x4e285aa2,0x4e287842,0x4e285aa3,0x4e287863,0x4e285aa4,0x4e287884,0x4e285aa5
+.inst 0x4e2878a5,0x4e285aa6,0x4e2878c6,0x4e285a80,0x4e287800,0x4e285a81,0x4e287821,0x4e285a82
+.inst 0x4e287842,0x4e285a83,0x4e287863,0x4e285a84,0x4e287884,0x4e285a85,0x4e2878a5,0x4e285a86
+.inst 0x4e2878c6,0x4e285a60,0x4e287800,0x4e285a61,0x4e287821,0x4e285a62,0x4e287842,0x4e285a63
+.inst 0x4e287863,0x4e285a64,0x4e287884,0x4e285a65,0x4e2878a5,0x4e285a66,0x4e2878c6,0x4e285a40
+.inst 0x4e287800,0x4e285a41,0x4e287821,0x4e285a42,0x4e287842,0x4e285a43,0x4e287863,0x4e285a44
+.inst 0x4e287884,0x4e285a45,0x4e2878a5,0x4e285a46,0x4e2878c6,0x4e285a20,0x4e285a21,0x4e285a22
+.inst 0x4e285a23,0x4e285a24,0x4e285a25,0x4e285a26,0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040
+.inst 0x6e301c21,0x6e3f1c21,0x3dc0045f,0x3d800441,0x6e301c42,0x6e3f1c42,0x3dc0085f,0x3d800842
+.inst 0x6e301c63,0x6e3f1c63,0x3dc00c5f,0x3d800c43,0x6e301c84,0x6e3f1c84,0x3dc0105f,0x3d801044
+.inst 0x6e301ca5,0x6e3f1ca5,0x3dc0145f,0x3d801445,0x6e301cc6,0x6e3f1cc6,0x3dc0185f,0x3d801846
+.inst 0x9101c042,0xd1001c63,0xd1001c69,0xd37ffd2d
+cbz x13, 218b
+b 217f
+216:
+217:
+cbz x3, 219f
+.p2align 4
+221:
+.inst 0x3dc00040,0x4e285bc0,0x4e287800,0x4e285b20,0x4e287800,0x4e285b00,0x4e287800,0x4e285ae0
+.inst 0x4e287800,0x4e285ac0,0x4e287800,0x4e285aa0,0x4e287800,0x4e285a80,0x4e287800,0x4e285a60
+.inst 0x4e287800,0x4e285a40,0x4e287800,0x4e285a20,0x6e301c00,0x6e3f1c00,0x3dc0005f,0x3d800040
+.inst 0x91004042,0xd1000463
+cbnz x3, 221b
+b 220f
+219:
+220:
+.inst 0x3d80017f
+21:
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// The CPU features `vg_aes_cbc_encrypt_aes` requires (`Artifact.features`).
 pub const VG_AES_CBC_ENCRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -209,7 +398,7 @@ pub const VG_AES_CBC_ENCRYPT_AES_SCRATCH_WRITTEN: usize = 0;
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
@@ -299,46 +488,6 @@ b 215f
     )
 }
 
-/// The CPU features `vg_aes_cbc_decrypt_aes` requires (`Artifact.features`).
-pub const VG_AES_CBC_DECRYPT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
-///
-/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `iv` must be valid for reads and writes of 16 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2176 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
-/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub unsafe extern "C" fn vg_aes_cbc_decrypt_aes(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
-    core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf9040309,0xf94006c9,0xf9040709,0x91000260,0x91000281,0x910002c2,0xd2800023
-.inst 0x91000304
-bl {vg_aes_decrypt_blocks_aes}
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
-.p2align 6",
-        vg_aes_decrypt_blocks_aes = sym super::aes::vg_aes_decrypt_blocks_aes,
-    )
-}
-
 /// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
@@ -350,27 +499,20 @@ b 21f
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0x91000260,0x91000281,0x910002c2,0xd2800023,0x91000304
-bl {vg_aes_encrypt_blocks}
-.inst 0xf94002c9,0xf90002a9,0xf94006c9,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_encrypt_unwiped}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
 
@@ -385,27 +527,27 @@ b 21f
 /// * `data` must be valid for reads and writes of `16 * n` bytes.
 /// * `scratch` must be valid for reads and writes of 2176 bytes.
 /// * `rounds` must be 10, 12 or 14.
-/// * The contents of `scratch` on return are unspecified.
+/// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
-.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
-cbz x23, 20f
-22:
-.inst 0xf94002c9,0xf9040309,0xf94006c9,0xf9040709,0x91000260,0x91000281,0x910002c2,0xd2800023
-.inst 0x91000304
-bl {vg_aes_decrypt_blocks}
-.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
-.inst 0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x910042d6,0xd10006f7
-cbnz x23, 22b
-b 21f
-20:
-21:
-.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_decrypt_unwiped}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
 .p2align 6",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped;

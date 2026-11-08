@@ -12,6 +12,7 @@
     target_arch = "riscv64"
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::aes_siv::{
     vg_aes_siv_decrypt_auto, vg_aes_siv_encrypt_auto, vg_aes_siv_init_auto,
 };
@@ -46,7 +47,7 @@ crate::error::impl_error! {
 #[derive(Clone)]
 pub struct AesSiv {
     /// The key context `vg_aes_siv_init` writes (`VG.Spec.Siv.KeyRepr`).
-    ctx: [u64; 64],
+    ctx: CacheAligned<[u64; 64]>,
     /// The number of rounds of AES for each half of the key.
     rounds: usize,
 }
@@ -54,7 +55,7 @@ pub struct AesSiv {
 impl Drop for AesSiv {
     /// Wipes the key context.
     fn drop(&mut self) {
-        zeroize(&mut self.ctx);
+        zeroize(&mut self.ctx.0);
     }
 }
 
@@ -73,7 +74,7 @@ impl AesSiv {
             return Err(InvalidKeyLength);
         }
         let mut k = AesSiv {
-            ctx: [0; 64],
+            ctx: CacheAligned([0; 64]),
             rounds: key.len() / 8 + 6,
         };
         // SAFETY: `key` is valid for reads of `key.len()` bytes, which is 32,
@@ -83,7 +84,7 @@ impl AesSiv {
         // the function uses, and neither wraps around the end of the address
         // space. The dispatcher calls only an implementation the CPU has the
         // features of.
-        unsafe { vg_aes_siv_init_auto(key.as_ptr(), key.len(), &mut k.ctx) };
+        unsafe { vg_aes_siv_init_auto(key.as_ptr(), key.len(), &mut k.ctx.0) };
         Ok(k)
     }
 
@@ -132,7 +133,7 @@ impl AesSiv {
         // CPU has the features of.
         unsafe {
             vg_aes_siv_encrypt_auto(
-                &self.ctx,
+                &self.ctx.0,
                 self.rounds,
                 descs,
                 ads.len(),
@@ -162,7 +163,7 @@ impl AesSiv {
         // only read-only buffers may overlap it.
         let ok = unsafe {
             vg_aes_siv_decrypt_auto(
-                &self.ctx,
+                &self.ctx.0,
                 self.rounds,
                 descs,
                 ads.len(),

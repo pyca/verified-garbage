@@ -542,25 +542,8 @@ vg_aes_gcm_open_split:
 	b 274f
 273:
 274:
-	or %r3, %r24, %r24
-	or %r4, %r26, %r26
-	or %r5, %r25, %r25
-	or %r24, %r26, %r26
-	cmpldi %cr0, %r5, 0
-	beq %cr0, 275f
-277:
-	lbz %r0, 0(%r3)
-	stb %r0, 0(%r4)
-	addi %r3, %r3, 1
-	addi %r4, %r4, 1
-	addi %r5, %r5, -1
-	cmpldi %cr0, %r5, 0
-	bne %cr0, 277b
-	b 276f
-275:
-276:
 	cmpldi %cr0, %r25, 0
-	beq %cr0, 278f
+	beq %cr0, 275f
 	li %r0, 0
 	std %r0, 64(%r30)
 	std %r0, 72(%r30)
@@ -574,19 +557,21 @@ vg_aes_gcm_open_split:
 	addi %r3, %r30, 64
 	or %r4, %r24, %r24
 	or %r5, %r25, %r25
-280:
+	or %r7, %r26, %r26
+277:
 	lbz %r0, 0(%r4)
 	lbz %r6, 0(%r3)
 	xor %r0, %r0, %r6
-	stb %r0, 0(%r4)
+	stb %r0, 0(%r7)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
+	addi %r7, %r7, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 280b
-	b 279f
-278:
-279:
+	bne %cr0, 277b
+	b 276f
+275:
+276:
 	b 272f
 271:
 272:

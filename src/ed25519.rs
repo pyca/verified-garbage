@@ -9,6 +9,7 @@
     all(target_arch = "powerpc64", target_endian = "little")
 ))]
 
+use crate::align::CacheAligned;
 use crate::arch::dispatch::ed25519::{
     vg_ed25519_key_pair_auto, vg_ed25519_sign_expanded_auto, vg_ed25519_verify_auto,
 };
@@ -117,21 +118,21 @@ impl SigningKey {
 fn key_pair(public: &mut [u8; 32], expanded: &mut [u8; 64], seed: &[u8; 32]) {
     // Uninitialized: the contract holds whatever the scratch holds, so
     // filling it with zeros first would only cost time.
-    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
+    let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
     // SAFETY: the public key, digest, seed and scratch are distinct objects
     // valid for 32, 64, 32 and 8192 bytes, respectively, so they overlap
     // neither each other nor the call's stack, and none wraps the address
     // space. The dispatcher calls only an implementation the CPU has the
     // features of.
-    unsafe { vg_ed25519_key_pair_auto(public, expanded, seed, scratch.as_mut_ptr()) };
+    unsafe { vg_ed25519_key_pair_auto(public, expanded, seed, scratch.0.as_mut_ptr()) };
     // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
 }
 
 fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
     // Uninitialized: each function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
-    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
+    let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
     // SAFETY: input references are valid for their declared lengths and scratch
     // is a distinct writable object. No object overlaps the call stack. The
     // dispatcher calls only an implementation the CPU has the features of.
@@ -141,11 +142,11 @@ fn verify_message(pk: &[u8; 32], message: &[u8], signature: &[u8; 64]) -> u32 {
             message.as_ptr(),
             message.len(),
             signature,
-            scratch.as_mut_ptr(),
+            scratch.0.as_mut_ptr(),
         )
     };
     // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     valid
 }
 
@@ -153,7 +154,7 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
     let mut signature = [0u8; 64];
     // Uninitialized: each function's contract holds whatever the scratch
     // holds, so filling it with zeros first would only cost time.
-    let mut scratch = MaybeUninit::<[u64; 1024]>::uninit();
+    let mut scratch = CacheAligned(MaybeUninit::<[u64; 1024]>::uninit());
     // SAFETY: the input references are valid for their declared lengths.
     // Signature and scratch are distinct writable objects, disjoint from the
     // inputs and the call's stack. None wraps the address space. `expanded`
@@ -168,10 +169,10 @@ fn sign_message(key: &SigningKey, message: &[u8]) -> [u8; 64] {
             &key.public.bytes,
             message.as_ptr(),
             message.len(),
-            scratch.as_mut_ptr(),
+            scratch.0.as_mut_ptr(),
         )
     };
     // SAFETY: `scratch` is writable for its whole length.
-    unsafe { zeroize_raw(scratch.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
+    unsafe { zeroize_raw(scratch.0.as_mut_ptr().cast(), size_of::<[u64; 1024]>()) };
     signature
 }

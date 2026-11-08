@@ -85,40 +85,55 @@ theorem rel_iteQ {F F' : State → Prop} {Q : State → State → Prop} {t e : P
     rw [eval_eq' (hz _ hp.1)] at hc
     exact he (Option.some.inj hc) _ _ _ _ _ _ hp e₁ e₂
 
-/-- `finTag`'s state with the tag length in `r6`. -/
-def P6 (c st w sp : BitVec 32) (R tl : Nat) (t₀ s : State) : Prop :=
-  FT 7 t₀ c st w sp R s ∧ s.gpr .r6 = BitVec.ofNat 32 tl
+/-- `finTag`'s state with the tag length in `r6`, with `na` words of stack arguments. -/
+def P6n (na : Nat) (c st w sp : BitVec 32) (R tl : Nat) (t₀ s : State) : Prop :=
+  FT na t₀ c st w sp R s ∧ s.gpr .r6 = BitVec.ofNat 32 tl
 
 /-- After the comparison: `r0` is 1 or 0. -/
-def P7 (c st w sp : BitVec 32) (R : Nat) (t₀ s : State) : Prop :=
-  FT 7 t₀ c st w sp R s ∧ ∃ b : Bool, s.gpr .r0 = if b then 1 else 0
+def P7n (na : Nat) (c st w sp : BitVec 32) (R : Nat) (t₀ s : State) : Prop :=
+  FT na t₀ c st w sp R s ∧ ∃ b : Bool, s.gpr .r0 = if b then 1 else 0
+
+/-- With 7 words of stack arguments. -/
+abbrev P6 (c st w sp : BitVec 32) (R tl : Nat) (t₀ s : State) : Prop := P6n 7 c st w sp R tl t₀ s
+abbrev P7 (c st w sp : BitVec 32) (R : Nat) (t₀ s : State) : Prop := P7n 7 c st w sp R t₀ s
 
 theorem ite_bool {p : Prop} [Decidable p] {x : BitVec 32} (h : x = if p then 1 else 0) :
     ∃ b : Bool, x = if b then 1 else 0 :=
   ⟨decide p, by rw [h]; simp only [decide_eq_true_eq]⟩
 
 section
-variable {c st w sp : BitVec 32} {R tl : Nat} {t₀ : State}
+variable {c st w sp : BitVec 32} {R tl : Nat} {t₀ : State} {na : Nat}
 
-theorem ld6_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
-    (h5 : (arg t₀ 5).toNat = tl) (h : FT 7 t₀ c st w sp R s) :
-    WP isa (.block [.ldrSp .r6 20]) s (P6 c st w sp R tl t₀) := by
+/-- The tag length, stack argument `li`, to `r6`. -/
+theorem ld6n_wp {s : State} {li off : Nat} (ho : off < 4096) (hli : li < na) (hoff : 4 * li = off)
+    (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hin : args t₀ na ∈ t₀.rd)
+    (h5 : (arg t₀ li).toNat = tl) (h : FT na t₀ c st w sp R s) :
+    WP isa (.block [.ldrSp .r6 off]) s (P6n na c st w sp R tl t₀) := by
   subst h5
   obtain ⟨k7, he, hk⟩ := h
-  obtain ⟨i5, v5⟩ := hk.at hf hin 5 (by decide) (show 4 * 5 = 20 from rfl)
-  refine WP.of_runBlock ⟨_, by arun [i5, v5], ?_⟩
+  obtain ⟨i5, v5⟩ := hk.at hf hin li hli hoff
+  refine WP.of_runBlock ⟨_, by arun [ho, i5, v5], ?_⟩
   refine ⟨⟨k7, he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]) rfl rfl rfl, hk.of_eq rfl rfl rfl rfl⟩, ?_⟩
   simp [gpr_setReg, v5]
 
-theorem tlo_wp {s : State} (htl : tl < 2 ^ 32) (h : P6 c st w sp R tl t₀ s) :
-    WP isa tagLenOk s fun s' => P6 c st w sp R tl t₀ s' ∧ s'.z = !Spec.Gcm.tagLenOk tl := by
+theorem ld6_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
+    (h5 : (arg t₀ 5).toNat = tl) (h : FT 7 t₀ c st w sp R s) :
+    WP isa (.block [.ldrSp .r6 20]) s (P6 c st w sp R tl t₀) :=
+  ld6n_wp (by decide) (by decide) rfl hf hin h5 h
+
+theorem tlon_wp {s : State} (htl : tl < 2 ^ 32) (h : P6n na c st w sp R tl t₀ s) :
+    WP isa tagLenOk s fun s' => P6n na c st w sp R tl t₀ s' ∧ s'.z = !Spec.Gcm.tagLenOk tl := by
   obtain ⟨⟨k7, he, hk⟩, h6⟩ := h
   refine WP.mono (tagLenOk_ok h6 htl) fun s' ⟨hz, g, k⟩ => ⟨⟨⟨k7, he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g _ (by decide)) k.sp k.rd k.wr,
     hk.of_eq k.mem k.sp k.rd k.wr⟩, by rw [g _ (by decide), h6]⟩, hz⟩
+
+theorem tlo_wp {s : State} (htl : tl < 2 ^ 32) (h : P6 c st w sp R tl t₀ s) :
+    WP isa tagLenOk s fun s' => P6 c st w sp R tl t₀ s' ∧ s'.z = !Spec.Gcm.tagLenOk tl :=
+  tlon_wp htl h
 
 theorem mov0_wp {s : State} (h : s.gpr .r11 = w) :
     WP isa (.block [.mov .r0 (imm 0)]) s fun s' => s'.gpr .r11 = w :=
@@ -127,21 +142,31 @@ theorem mov0_wp {s : State} (h : s.gpr .r11 = w) :
 variable (L : Lay c st w sp)
 include L
 
-theorem recv_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
-    (hD : (args t₀ 7).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
-    (hTr : (⟨State.addr (arg t₀ 4), tl⟩ : Region) ∈ t₀.rd) (hTf : (arg t₀ 4).toNat + tl ≤ 2 ^ 32)
-    (hTd : (⟨State.addr (arg t₀ 4), tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
-    (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (h : P6 c st w sp R tl t₀ s) : WP isa recv s (P6 c st w sp R tl t₀) := by
+/-- The received tag, stack argument `ti`, padded. -/
+theorem recvn_wp {s : State} {ti off : Nat} (ho : off < 4096) (hti : ti < na) (hoff : 4 * ti = off)
+    (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) (hin : args t₀ na ∈ t₀.rd)
+    (hD : (args t₀ na).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (hTr : (⟨State.addr (arg t₀ ti), tl⟩ : Region) ∈ t₀.rd) (hTf : (arg t₀ ti).toNat + tl ≤ 2 ^ 32)
+    (hTd : (⟨State.addr (arg t₀ ti), tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (h : P6n na c st w sp R tl t₀ s) :
+    WP isa (recvAt off) s (P6n na c st w sp R tl t₀) := by
   obtain ⟨⟨k7, he, hk⟩, h6⟩ := h
-  obtain ⟨i4, v4⟩ := hk.at hf hin 4 (by decide) (show 4 * 4 = 16 from rfl)
-  refine WP.mono (recv_ok L he i4 v4 (by rw [hk.rd, hk.wr]; exact covers_of_mem (List.mem_append_left _ hTr)) hTf hTd
-    h6 h1 h16) fun s' ⟨_, hf₄, g₄, rd₄, wr₄, sp₄⟩ => ?_
+  obtain ⟨i4, v4⟩ := hk.at hf hin ti hti hoff
+  refine WP.mono (recvAt_ok L ho he i4 v4 (by rw [hk.rd, hk.wr]; exact covers_of_mem (List.mem_append_left _ hTr))
+    hTf hTd h6 h1 h16) fun s' ⟨_, hf₄, g₄, rd₄, wr₄, sp₄⟩ => ?_
   refine ⟨⟨k7, he.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact g₄ _ (by decide) (by decide) (by decide) (by decide)
         (by decide)) sp₄ rd₄ wr₄,
     hk.frame hf hf₄ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hD) sp₄ rd₄ wr₄⟩, ?_⟩
   rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide), h6]
+
+theorem recv_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
+    (hD : (args t₀ 7).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (hTr : (⟨State.addr (arg t₀ 4), tl⟩ : Region) ∈ t₀.rd) (hTf : (arg t₀ 4).toNat + tl ≤ 2 ^ 32)
+    (hTd : (⟨State.addr (arg t₀ 4), tl⟩ : Region).Disjoint ⟨State.addr w + BitVec.ofNat 64 256, 16⟩)
+    (h1 : 1 ≤ tl) (h16 : tl ≤ 16) (h : P6 c st w sp R tl t₀ s) : WP isa recv s (P6 c st w sp R tl t₀) :=
+  recvn_wp L (by decide) (by decide) rfl hf hin hD hTr hTf hTd h1 h16 h
 
 theorem ft_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t₀ 7 ∈ t₀.rd)
     (hA : ∀ r ∈ tagFrame st w sp 0, (args t₀ 7).Disjoint r) (hR : R = 10 ∨ R = 12 ∨ R = 14)
@@ -151,9 +176,9 @@ theorem ft_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) (hin : args t�
     (a := List.replicate ((arg t₀ 0).toNat % 16) 0) (ct := List.replicate (arg t₀ 3 ++ arg t₀ 2).toNat 0)
     (by simp) (by simp)) fun s' h => ⟨h.env.choose, h.env.choose_spec, h.args⟩
 
-theorem cmp_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) {o : Nat} (ho : o = 0 ∨ o = 112)
-    (hD : (args t₀ 7).Disjoint ⟨State.addr w + BitVec.ofNat 64 240, 16⟩) (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
-    (h : P6 c st w sp R tl t₀ s) : WP isa (cmp o) s (P7 c st w sp R t₀) := by
+theorem cmpn_wp {s : State} (hf : t₀.sp.toNat + 4 * na ≤ 2 ^ 32) {o : Nat} (ho : o = 0 ∨ o = 112)
+    (hD : (args t₀ na).Disjoint ⟨State.addr w + BitVec.ofNat 64 240, 16⟩) (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
+    (h : P6n na c st w sp R tl t₀ s) : WP isa (cmp o) s (P7n na c st w sp R t₀) := by
   obtain ⟨⟨k7, he, hk⟩, h6⟩ := h
   refine WP.mono (cmp_ok L he ho h6 h1 h16) fun s' ⟨h0, hf₇, g₇, rd₇, wr₇, sp₇⟩ => ?_
   refine ⟨⟨k7, he.keep (fun r hr => by
@@ -162,6 +187,11 @@ theorem cmp_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) {o : Nat} (ho
         (by decide)) sp₇ rd₇ wr₇,
     hk.frame hf hf₇ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hD) sp₇ rd₇ wr₇⟩,
     ite_bool h0⟩
+
+theorem cmp_wp {s : State} (hf : t₀.sp.toNat + 4 * 7 ≤ 2 ^ 32) {o : Nat} (ho : o = 0 ∨ o = 112)
+    (hD : (args t₀ 7).Disjoint ⟨State.addr w + BitVec.ofNat 64 240, 16⟩) (h1 : 1 ≤ tl) (h16 : tl ≤ 16)
+    (h : P6 c st w sp R tl t₀ s) : WP isa (cmp o) s (P7 c st w sp R t₀) :=
+  cmpn_wp L hf ho hD h1 h16 h
 
 end
 

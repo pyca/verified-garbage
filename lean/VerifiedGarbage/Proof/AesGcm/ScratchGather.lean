@@ -123,7 +123,7 @@ theorem sealGatherPrecomputedPre_local : ∀ vs m₁ m₂, vs.length = (sealGath
 
 /-- `sealGatherRoundsPost` reads the memory on entry only within the buffers and the
 list of slices, for a key context of `cl ≥ 256` bytes. -/
-private theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
+theorem post_local {cl : Nat} (hcl : 256 ≤ cl) {m₁ m₂ m' : Mem}
     {ctx rd nonce nl aad al src cnt dst len tag : BitVec 64}
     (hc : ∀ i < cl, m₂ (ctx + BitVec.ofNat 64 i) = m₁ (ctx + BitVec.ofNat 64 i))
     (hn : ∀ i < nl.toNat, m₂ (nonce + BitVec.ofNat 64 i) = m₁ (nonce + BitVec.ofNat 64 i))

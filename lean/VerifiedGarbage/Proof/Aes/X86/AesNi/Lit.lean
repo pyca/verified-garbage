@@ -17,4 +17,5 @@ meta import VerifiedGarbage.Proof.Framework.X86.Lit
 namespace VG.Impl.Aes.X86.AesNi
 materialize_code expandKey
 materialize_code ctr32
+materialize_code ctr32To
 end VG.Impl.Aes.X86.AesNi
