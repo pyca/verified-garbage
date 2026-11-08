@@ -190,7 +190,7 @@ bl {vg_p384_sub_mod_n}
         vg_p384_add_mod_p = sym super::ec_p384::vg_p384_add_mod_p::vg_p384_add_mod_p,
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
         vg_p384_mul_mod_n = sym super::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,
-        vg_p384_mul = sym super::ec_p384::vg_p384_mul::vg_p384_mul,
+        vg_p384_mul = sym super::ecdh_p384::vg_p384_mul::vg_p384_mul,
         vg_p384_sub_mod_n = sym super::ecdsa_p384::vg_p384_sub_mod_n::vg_p384_sub_mod_n,
     )
 }
