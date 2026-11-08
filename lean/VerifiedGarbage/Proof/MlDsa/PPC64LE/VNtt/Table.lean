@@ -7,6 +7,10 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+import VerifiedGarbage.Proof.Framework.PPC64LE.Run
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 
 /-! # ML-DSA's vector NTT on PPC64LE: the zetas
 
@@ -143,5 +147,142 @@ theorem fill_ok {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .
     · subst ep; exact Mem.readW_writeW_self32 _ _ _
     · rw [Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide)]
       exact h.tab p hp (by omega)
+
+/-! ## The constants -/
+
+theorem hi64_append (a b : BitVec 64) : (a ++ b).extractLsb' 64 64 = a := BitVec.extractLsb'_append_eq_left
+theorem lo64_append (a b : BitVec 64) : (a ++ b).extractLsb' 0 64 = b := BitVec.extractLsb'_append_eq_right
+
+set_option linter.unusedSimpArgs false in
+theorem vconst_run (u : State) {d : VReg} (h6 : d ≠ .v6) (h7 : d ≠ .v7) (hi lo : Nat) :
+    WP isa (.block (vconst d hi lo)) u fun t =>
+      t.vpr d = BitVec.ofNat 64 hi ++ BitVec.ofNat 64 lo ∧ (∀ r, r ≠ d → r ≠ .v6 → r ≠ .v7 → t.vpr r = u.vpr r) ∧
+      (∀ r, r ≠ .r11 → r ≠ .r12 → t.gpr r = u.gpr r) ∧ t.mem = u.mem ∧ t.rd = u.rd ∧ t.wr = u.wr ∧
+      t.sp = u.sp ∧ t.lr = u.lr ∧ t.syms = u.syms := by
+  unfold vconst
+  rw [List.append_assoc, WP.block_append_iff]
+  refine WP.mono (const64_ok .r12 _ u) fun u₁ e₁ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (const64_ok .r11 _ u₁) fun u₂ e₂ => ?_
+  subst e₁ e₂
+  refine WP.cons rfl (WP.cons rfl (WP.cons (exec_sldoi8 _ _ _ _) (WP.cons (exec_sldoi8 _ _ _ _) (wp_nil ?_))))
+  simp only [vpr_writeV, h6, h7, ite_true, ite_false, reduceCtorEq, Ne.symm h6, Ne.symm h7]
+  refine ⟨?_, fun r h1 h2 h3 => ?_, fun r h1 h2 => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · simp only [State.writeV, State.write, ite_true, reduceCtorEq, ite_false, lo64_append, hi64_append]
+  · simp only [State.writeV, State.write, h1, h2, h3, ite_false]
+  · simp only [State.writeV, State.write, h1, h2, ite_false]
+
+def caC : BitVec 128 := 0x00010203101112130405060714151617#128
+def cbC : BitVec 128 := 0x08090a0b18191a1b0c0d0e0f1c1d1e1f#128
+def ccC : BitVec 128 := 0x00010203040506071011121314151617#128
+def cdC : BitVec 128 := 0x08090a0b0c0d0e0f18191a1b1c1d1e1f#128
+
+theorem vword_append (x y : BitVec 64) :
+    vword (x ++ y) 0 = x.extractLsb' 32 32 ∧ vword (x ++ y) 1 = x.extractLsb' 0 32 ∧
+    vword (x ++ y) 2 = y.extractLsb' 32 32 ∧ vword (x ++ y) 3 = y.extractLsb' 0 32 := by
+  refine ⟨?_, ?_, ?_, ?_⟩ <;>
+  · apply BitVec.eq_of_getLsbD_eq
+    intro r hr
+    simp only [vword, BitVec.getLsbD_extractLsb', BitVec.getLsbD_append, hr, decide_true, Bool.true_and]
+    split <;> first | omega | exact congrArg _ (by omega)
+
+/-- The state the constants leave. -/
+structure ConstsOut (u t : State) : Prop where
+  q : ∀ i < 4, (vword (t.vpr .v4) i).toNat = Spec.MlDsa.q
+  v5 : t.vpr .v5 = hiC
+  v16 : t.vpr .v16 = caC
+  v17 : t.vpr .v17 = cbC
+  v18 : t.vpr .v18 = ccC
+  v19 : t.vpr .v19 = cdC
+  vpr : ∀ r, r ∉ [.v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19] → t.vpr r = u.vpr r
+  gpr : ∀ r, r ≠ .r11 → r ≠ .r12 → t.gpr r = u.gpr r
+  mem : t.mem = u.mem
+  rd : t.rd = u.rd
+  wr : t.wr = u.wr
+  sp : t.sp = u.sp
+  lr : t.lr = u.lr
+  syms : t.syms = u.syms
+
+set_option linter.unusedSimpArgs false in
+theorem consts_run (u : State) : WP isa (.block consts) u (ConstsOut u) := by
+  unfold consts ctl
+  simp only [List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.cons exec_lis (WP.cons exec_ori (wp_nil ?_))
+  rw [WP.block_append_iff]
+  refine WP.cons rfl (WP.cons rfl (wp_nil ?_))
+  rw [WP.block_append_iff]
+  refine WP.mono (vconst_run _ (d := .v5) (by decide) (by decide) _ _) fun t₅ ⟨d₅, v₅, g₅, m₅, rd₅, wr₅, sp₅, lr₅, sy₅⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (vconst_run _ (d := .v16) (by decide) (by decide) _ _)
+    fun t₁₆ ⟨d₁₆, v₁₆, g₁₆, m₁₆, rd₁₆, wr₁₆, sp₁₆, lr₁₆, sy₁₆⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (vconst_run _ (d := .v17) (by decide) (by decide) _ _)
+    fun t₁₇ ⟨d₁₇, v₁₇, g₁₇, m₁₇, rd₁₇, wr₁₇, sp₁₇, lr₁₇, sy₁₇⟩ => ?_
+  rw [WP.block_append_iff]
+  refine WP.mono (vconst_run _ (d := .v18) (by decide) (by decide) _ _)
+    fun t₁₈ ⟨d₁₈, v₁₈, g₁₈, m₁₈, rd₁₈, wr₁₈, sp₁₈, lr₁₈, sy₁₈⟩ => ?_
+  refine WP.mono (vconst_run _ (d := .v19) (by decide) (by decide) _ _)
+    fun t ⟨d₁₉, v₁₉, g₁₉, m₁₉, rd₁₉, wr₁₉, sp₁₉, lr₁₉, sy₁₉⟩ => ?_
+  have q4 : ∀ i < 4, (vword (t.vpr .v4) i).toNat = Spec.MlDsa.q := fun i hi => by
+    rw [v₁₉ _ (by decide) (by decide) (by decide), v₁₈ _ (by decide) (by decide) (by decide),
+      v₁₇ _ (by decide) (by decide) (by decide), v₁₆ _ (by decide) (by decide) (by decide),
+      v₅ _ (by decide) (by decide) (by decide)]
+    simp only [State.writeV, State.write, ite_true]
+    have e32 : ∀ x : BitVec 64, x.extractLsb' 0 32 = x.setWidth 32 := fun x => by
+      apply BitVec.eq_of_getLsbD_eq; intro j hj; simp [hj]
+    rw [vword_ofVWords _ hi, (vword_append _ _).2.1, e32, loadImm_lo (by decide)]
+    rfl
+  have nv : ∀ r, r ∉ [.v4, .v5, .v6, .v7, .v16, .v17, .v18, .v19] → t.vpr r = u.vpr r := fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    obtain ⟨h4, h5, h6, h7, h16, h17, h18, h19⟩ := hr
+    rw [v₁₉ _ h19 h6 h7, v₁₈ _ h18 h6 h7, v₁₇ _ h17 h6 h7, v₁₆ _ h16 h6 h7, v₅ _ h5 h6 h7]
+    simp only [State.writeV, State.write, h4, ite_false]
+  refine ⟨q4, ?_, ?_, ?_, ?_, ?_, nv, fun r h1 h2 => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · rw [v₁₉ _ (by decide) (by decide) (by decide), v₁₈ _ (by decide) (by decide) (by decide),
+      v₁₇ _ (by decide) (by decide) (by decide), v₁₆ _ (by decide) (by decide) (by decide), d₅]; decide
+  · rw [v₁₉ _ (by decide) (by decide) (by decide), v₁₈ _ (by decide) (by decide) (by decide),
+      v₁₇ _ (by decide) (by decide) (by decide), d₁₆]; decide
+  · rw [v₁₉ _ (by decide) (by decide) (by decide), v₁₈ _ (by decide) (by decide) (by decide), d₁₇]; decide
+  · rw [v₁₉ _ (by decide) (by decide) (by decide), d₁₈]; decide
+  · rw [d₁₉]; decide
+  · rw [g₁₉ r h1 h2, g₁₈ r h1 h2, g₁₇ r h1 h2, g₁₆ r h1 h2, g₅ r h1 h2]
+    simp only [State.writeV, State.write, h1, h2, ite_false]
+  · rw [m₁₉, m₁₈, m₁₇, m₁₆, m₅]; rfl
+  · rw [rd₁₉, rd₁₈, rd₁₇, rd₁₆, rd₅]; rfl
+  · rw [wr₁₉, wr₁₈, wr₁₇, wr₁₆, wr₅]; rfl
+  · rw [sp₁₉, sp₁₈, sp₁₇, sp₁₆, sp₅]; rfl
+  · rw [lr₁₉, lr₁₈, lr₁₇, lr₁₆, lr₅]; rfl
+  · rw [sy₁₉, sy₁₈, sy₁₇, sy₁₆, sy₅]; rfl
+
+/-! ## `z` from `z'` -/
+
+theorem eval_one (v : VReg → BitVec 128) (d : VReg) :
+    VOp.eval v (.splatImm true d 1) = some (d, ofVWords fun _ => BitVec.ofInt 32 1) := rfl
+
+set_option linter.unusedSimpArgs false in
+theorem zcalc_run (u : State) (hq : ∀ i < 4, (vword (u.vpr .v4) i).toNat = Spec.MlDsa.q) (h5 : u.vpr .v5 = hiC)
+    {z : Nat → Nat} (hzq : ∀ i < 4, z i < Spec.MlDsa.q) (hz : ∀ i < 4, z i * 2 ^ 32 % 8380417 ≠ 0)
+    (h3 : ∀ i < 4, (vword (u.vpr .v3) i).toNat = shoup (z i)) :
+    WP isa (.block zcalc) u fun t => (∀ i < 4, (vword (t.vpr .v2) i).toNat = z i) ∧
+      VOnly [.v2, .v6, .v7] u t ∧ t.syms = u.syms := by
+  unfold zcalc
+  refine wp_vop (eval_mulE _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
+  refine wp_vop (eval_mulO _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
+  refine wp_vop (eval_perm _ _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
+  refine wp_vop (eval_one _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
+  refine wp_vop (eval_add _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
+  refine WP.block_nil ⟨fun i hi => ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
+  · simp only [vpr_writeV, ite_true]
+    rw [h5, vword_addV _ _ hi, vword_ofVWords _ hi, BitVec.toNat_add, vword_hi _ _ hi, h3 i hi, hq i hi]
+    have h1 := shoup_lt (hzq i hi)
+    have hs : shoup (z i) * Spec.MlDsa.q / 2 ^ 32 < 2 ^ 32 - 1 := by
+      generalize shoup (z i) = x at h1 ⊢
+      show x * 8380417 / 2 ^ 32 < 2 ^ 32 - 1
+      omega
+    rw [show (BitVec.ofInt 32 1).toNat = 1 from rfl, Nat.mod_eq_of_lt (by omega)]
+    exact zrec (hz i hi)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [vpr_writeV, hr.1, hr.2.1, hr.2.2, ite_false]
 
 end VG.Proof.MlDsa.PPC64LE.VNtt
