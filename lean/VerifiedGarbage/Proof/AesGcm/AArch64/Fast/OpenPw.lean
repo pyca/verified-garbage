@@ -125,7 +125,7 @@ theorem openPw_correctN (s : State) (hs : openPwN s) :
   WP.withPreservedV (openWithE_wp (w := 3) _ v hMK (.inr rfl) hs.1 fun _ _ _ _ _ hc sY sS hrd hwr hsp hf =>
       have q := gwCallO_of hs sY sS hrd hwr hsp hf
       pwSel_call v g (k := 16) (by decide) q.1 q.2.1 hc q.2.2)
-    (fastOpenWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr rfl)))
+    (fastOpenWithE_keepsV v (.inr rfl) (pwSel_keepsV v g (.inr (.inl rfl))))
 
 theorem openPw_ctN :
     ConstantTime isa openPwN (fun s₁ s₂ => onePub 4 s₁ s₂ ∧ openLeakOf s₁ = openLeakOf s₂)
@@ -143,7 +143,7 @@ theorem openPw_ctN :
         (sp₂.trans qsp) (by rw [← e3, ← q6, ← q7]; exact f₂)
       rw [← e2] at hP₂ k₂
       rw [← q0] at k₂
-      exact pwSel_rel v g (.inr rfl) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
+      exact pwSel_rel v g (.inr (.inl rfl)) hP₁ hs₁ hP₂ hs₂ c₁ k₁ c₂ k₂ (sp₁.trans sp₂.symm)
 
 end
 

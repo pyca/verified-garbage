@@ -158,15 +158,15 @@ theorem pw_call (g : GhashWithImpl) {s : State} {Ctx Y D S P : Addr} {n k : Nat}
   · rw [qout, m]
 
 /-- `Fast.pwCall k g` in two runs, with the same public arguments. -/
-theorem pw_rel (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y D S P : Addr} {n k : Nat} (hk : k = 8 ∨ k = 16)
+theorem pw_rel (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y D S P : Addr} {n k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32)
     (hP₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 k) 64 = P) (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
     (hP₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 k) 64 = P) (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
     (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhWCall σ₁ Ctx Y S P)
     (h₂ : GhCall σ₂ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₂ : GhWCall σ₂ Ctx Y S P) (qsp : σ₁.sp = σ₂.sp) :
     RelCT isa (Eq2 σ₁ σ₂) (Impl.AesGcm.AArch64.Fast.pwCall k g.fn) TT := by
-  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl <;> decide
+  have hk' : k % 8 = 0 ∧ k < 32768 := by rcases hk with rfl | rfl | rfl <;> decide
   have t : ∃ h, (taint.check (Taint.ofRegs []) (.block [.ldrSp .x5 k]) h).isSome = true := by
-    rcases hk with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rcases hk with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨s₁, run₁, x5₁, c₁, w₁, -, sp₁, -, -, -⟩ := pwLoad_ok hk' hP₁ hsp₁ h₁ p₁
   obtain ⟨s₂, run₂, x5₂, c₂, w₂, -, sp₂, -, -, -⟩ := pwLoad_ok hk' hP₂ hsp₂ h₂ p₂
   refine rel_seq (rel_taint [] qsp (by agree_tac []) t) (F₁ := fun u => u = s₁) (F₂ := fun u => u = s₂)
@@ -218,7 +218,7 @@ theorem pwSel_call (v : GcmImpl) (g : GhashWithImpl) {s : State} {Ctx Y D S P : 
 
 /-- `Fast.pwSel k g` in two runs, with the same public arguments. -/
 theorem pwSel_rel (v : GcmImpl) (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y D S P : Addr} {n k : Nat}
-    (hk : k = 8 ∨ k = 16)
+    (hk : k = 8 ∨ k = 16 ∨ k = 32)
     (hP₁ : σ₁.mem.readW (σ₁.sp + BitVec.ofNat 64 k) 64 = P) (hsp₁ : InRegions (σ₁.rd ++ σ₁.wr) (σ₁.sp + BitVec.ofNat 64 k) 8)
     (hP₂ : σ₂.mem.readW (σ₂.sp + BitVec.ofNat 64 k) 64 = P) (hsp₂ : InRegions (σ₂.rd ++ σ₂.wr) (σ₂.sp + BitVec.ofNat 64 k) 8)
     (h₁ : GhCall σ₁ (Ctx + BitVec.ofNat 64 240) Y D S n) (p₁ : GhWCall σ₁ Ctx Y S P)
@@ -245,9 +245,9 @@ theorem pwSel_rel (v : GcmImpl) (g : GhashWithImpl) {σ₁ σ₂ : State} {Ctx Y
 
 /-- Every instruction of `Fast.pwSel k g` keeps the vector registers the ABI
 preserves, if `vg_ghash`'s and `g`'s do. -/
-theorem pwSel_keepsV (v : GcmImpl) (g : GhashWithImpl) {k : Nat} (hk : k = 8 ∨ k = 16) :
+theorem pwSel_keepsV (v : GcmImpl) (g : GhashWithImpl) {k : Nat} (hk : k = 8 ∨ k = 16 ∨ k = 32) :
     (Impl.AesGcm.AArch64.Fast.pwSel v.callees k g.fn).allInstrs keepsV = true := by
-  rcases hk with rfl | rfl <;>
+  rcases hk with rfl | rfl | rfl <;>
   simp only [Impl.AesGcm.AArch64.Fast.pwSel, Impl.AesGcm.AArch64.Fast.pwCall, Code.allInstrs, GcmImpl.callees,
     v.gh.keepsV, g.keepsV, Bool.and_true] <;> decide
 
