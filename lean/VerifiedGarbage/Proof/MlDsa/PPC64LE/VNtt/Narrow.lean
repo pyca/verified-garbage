@@ -96,6 +96,7 @@ theorem transpose_run (s : State) (h16 : s.vpr .v16 = caC) (h17 : s.vpr .v17 = c
 open VG.Proof.MlDsa (PolyIs coeffAt)
 open VG.Proof.MlDsa.Arith (coeffAddr coeffAddr_add polyRegion polyIs_toNat polyIs_of_toNat bfly blockN nttLayer
   layF layF1_get layF2_get nttBlk_ok)
+open VG.Proof.MlKem.PPC64LE (count_sub count_nz wp_loop_nz)
 open VG.Spec.MlDsa (Poly Zq zetas)
 
 theorem layer2_get (W : Poly) {j : Nat} (hj : j < 256) :
@@ -416,5 +417,118 @@ theorem core_run (u : State) (hc : CEnv u) {g : Nat} (hg : g < 16)
       (f₄.mono (by decide) (by simp))).trans' (f₅.mono (by decide) (by simp))).trans' (f₆.mono (by decide) (by simp))).trans'
       (f₇.mono (by decide) (by simp))).trans' (f₈.mono (by decide) (by simp))).trans' (f₉.mono (by decide) (by simp)))
   · rw [f₉.g _ (by simp), f₈.g _ (by simp), r7₇] <;> exact congrArg _ (by omega)
+
+/-! ## Groups -/
+
+/-- The polynomial after `g` groups, from `W`. -/
+def mix (g : Nat) (W : Poly) : Poly :=
+  Vector.ofFn fun i => if i.val < 16 * g then (nttLayer (nttLayer W 2) 1)[i.val]! else W[i.val]!
+
+theorem mix_get (g : Nat) (W : Poly) {i : Nat} (hi : i < 256) :
+    (mix g W)[i]! = if i < 16 * g then (nttLayer (nttLayer W 2) 1)[i]! else W[i]! := by
+  rw [VG.Proof.MlDsa.Arith.getElem!_eq _ hi]
+  simp only [mix, Vector.getElem_ofFn]
+
+/-- After `g` groups, from `W`. -/
+structure GInv (s₀ : State) (W : Poly) (g : Nat) (s : State) : Prop where
+  env : Env s₀ s
+  r5 : s.gpr .r5 = coeffAddr (F s₀) (16 * g)
+  r9 : s.gpr .r9 = 0#64
+  r8 : s.gpr .r8 = 16#64
+  r11 : s.gpr .r11 = 32#64
+  r12 : s.gpr .r12 = 48#64
+  r10 : s.gpr .r10 = BitVec.ofNat 64 (16 - g)
+  r7 : s.gpr .r7 = BitVec.ofNat 64 (16 * (132 + 6 * g))
+  poly : PolyIs s.mem (F s₀) (mix g W)
+
+theorem group_ok {s₀ : State} (hp : Pre s₀) {W : Poly} {g : Nat} (hg : g < 16) {s : State}
+    (h : GInv s₀ W g s) :
+    WP isa (.block groupBody) s fun s' => GInv s₀ W (g + 1) s' ∧ (s'.gpr .r10 != 0) = decide (g + 1 ≠ 16) := by
+  have ea : ∀ k, coeffAddr (F s₀) (16 * g) + BitVec.ofNat 64 (4 * k) = coeffAddr (F s₀) (16 * g + k) :=
+    fun k => coeffAddr_add _ _ _
+  have e16 : coeffAddr (F s₀) (16 * g) + 16#64 = coeffAddr (F s₀) (16 * g + 4) := ea 4
+  have e32 : coeffAddr (F s₀) (16 * g) + 32#64 = coeffAddr (F s₀) (16 * g + 8) := ea 8
+  have e48 : coeffAddr (F s₀) (16 * g) + 48#64 = coeffAddr (F s₀) (16 * g + 12) := ea 12
+  rw [groupBody_eq, WP.block_append_iff]
+  refine WP.mono (loads4_run s h.r5 h.r9 h.r8 h.r11 h.r12 (h.env.inR hp (by omega))
+    (by rw [e16]; exact h.env.inR hp (by omega)) (by rw [e32]; exact h.env.inR hp (by omega))
+    (by rw [e48]; exact h.env.inR hp (by omega))) fun u₁ ⟨l₁, f₁⟩ => ?_
+  have c₁ : CEnv u₁ := ⟨by rw [f₁.v _ (by decide), h.env.v4], by rw [f₁.v _ (by decide), h.env.v5],
+    by rw [f₁.v _ (by decide), h.env.v16], by rw [f₁.v _ (by decide), h.env.v17],
+    by rw [f₁.v _ (by decide), h.env.v18], by rw [f₁.v _ (by decide), h.env.v19],
+    by rw [f₁.g _ (by simp), f₁.syms, h.env.r6, h.env.syms]⟩
+  have hin : ∀ r < 4, Lanes (u₁.vpr (tv r)) (fun e => W[16 * g + 4 * r + (e ^^^ 1)]!) := fun r hr e he => by
+    have hx := xor1_lt he
+    rw [l₁ r hr, show 16 * r = 4 * (4 * r) by omega, ea, vword_loadC _ _ _ he, polyIs_toNat h.poly (by show _ < 256; omega),
+      mix_get _ _ (by omega), ite_eq_right (by omega)]
+  rw [WP.block_append_iff]
+  refine WP.mono (core_run u₁ c₁ hg (by rw [f₁.g _ (by simp)]; exact h.r7) hin) fun u₂ ⟨l₂, f₂, r7₂⟩ => ?_
+  have g₂ : ∀ r, r ≠ .r7 → u₂.gpr r = s.gpr r := fun r hr => by
+    rw [f₂.g r (by simp [hr]), f₁.g r (by simp)]
+  refine WP.mono (stores4_run u₂ (x := coeffAddr (F s₀) (16 * g)) (by rw [g₂ _ (by decide), h.r5])
+    (by rw [g₂ _ (by decide), h.r9]) (by rw [g₂ _ (by decide), h.r8]) (by rw [g₂ _ (by decide), h.r11])
+    (by rw [g₂ _ (by decide), h.r12]) (by rw [f₂.wr, f₁.wr]; exact h.env.inW hp (by omega))
+    (by rw [f₂.wr, f₁.wr, e16]; exact h.env.inW hp (by omega))
+    (by rw [f₂.wr, f₁.wr, e32]; exact h.env.inW hp (by omega))
+    (by rw [f₂.wr, f₁.wr, e48]; exact h.env.inW hp (by omega)))
+    fun u₃ ⟨m₃, r5₃, r10₃, gk₃, v₃, sy₃, rd₃, wr₃, sp₃, lr₃⟩ => ?_
+  have hm : u₂.mem = s.mem := by rw [f₂.mem, f₁.mem]
+  have hv : ∀ r, r ∉ [.v8, .v9, .v10, .v11] ++ coreV → u₃.vpr r = s.vpr r := fun r hr => by
+    rw [List.mem_append, not_or] at hr; rw [v₃, f₂.v r hr.2, f₁.v r hr.1]
+  have hg₃ : ∀ r, r ≠ .r5 → r ≠ .r10 → r ≠ .r7 → u₃.gpr r = s.gpr r := fun r h5 h10 h7 => by
+    rw [gk₃ r h5 h10, g₂ r h7]
+  have g₂10 : u₂.gpr .r10 = s.gpr .r10 := g₂ _ (by decide)
+  refine ⟨⟨⟨(hg₃ .r3 (by decide) (by decide) (by decide)).trans h.env.r3,
+      (hg₃ .r6 (by decide) (by decide) (by decide)).trans h.env.r6,
+      by rw [sy₃, f₂.syms, f₁.syms, h.env.syms], (hv .v4 (by decide)).trans h.env.v4,
+      (hv .v5 (by decide)).trans h.env.v5, (hv .v16 (by decide)).trans h.env.v16,
+      (hv .v17 (by decide)).trans h.env.v17, (hv .v18 (by decide)).trans h.env.v18,
+      (hv .v19 (by decide)).trans h.env.v19,
+      fun r hr => (hg₃ r (fun e => hr (e ▸ by decide)) (fun e => hr (e ▸ by decide))
+        (fun e => hr (e ▸ by decide))).trans (h.env.keep r hr),
+      by rw [rd₃, f₂.rd, f₁.rd, h.env.rd], by rw [wr₃, f₂.wr, f₁.wr, h.env.wr],
+      by rw [sp₃, f₂.sp, f₁.sp, h.env.sp], by rw [lr₃, f₂.lr, f₁.lr, h.env.lr], ?_⟩,
+    ?_, (hg₃ .r9 (by decide) (by decide) (by decide)).trans h.r9,
+    (hg₃ .r8 (by decide) (by decide) (by decide)).trans h.r8,
+    (hg₃ .r11 (by decide) (by decide) (by decide)).trans h.r11,
+    (hg₃ .r12 (by decide) (by decide) (by decide)).trans h.r12, ?_,
+    by rw [gk₃ _ (by decide) (by decide), r7₂], ?_⟩, ?_⟩
+  · rw [m₃, hm, e16, e32, e48]
+    exact frame_store2 (frame_store2 h.env.frame (by omega) (by omega) _ _) (by omega) (by omega) _ _
+  · rw [r5₃, show (64 : BitVec 64) = BitVec.ofNat 64 (4 * 16) from rfl, ea]
+    exact congrArg _ (by omega)
+  · rw [r10₃, g₂10, h.r10]; exact count_sub hg
+  · rw [m₃, hm]
+    refine polyIs_store4 (x := fun r => u₂.vpr (tv r)) h.poly (by omega) (fun r hr e he => ?_) (fun i hi hn => ?_)
+    · rw [mix_get _ _ (by have := xor1_lt he; omega), ite_eq_left (by have := xor1_lt he; omega)]
+      exact l₂ r hr e he
+    · rw [mix_get _ _ hi, mix_get _ _ hi]
+      by_cases hi' : i < 16 * g
+      · rw [ite_eq_left (by omega), ite_eq_left hi']
+      · rw [ite_eq_right (by omega), ite_eq_right hi']
+  · rw [r10₃, g₂10, h.r10, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, count_sub hg]
+    exact count_nz hg (by decide)
+
+theorem mix_zero (W : Poly) : mix 0 W = W :=
+  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [mix_get _ _ hi, ite_eq_right (by omega)]
+
+theorem mix_sixteen (W : Poly) : mix 16 W = nttLayer (nttLayer W 2) 1 :=
+  VG.Proof.MlDsa.Arith.ext_getElem! fun i hi => by rw [mix_get _ _ hi, ite_eq_left (by show i < 256; exact hi)]
+
+theorem narrow_ok {s₀ : State} (hp : Pre s₀) {R : Poly} {s : State} (h : LInv s₀ R 2 64 s) :
+    WP isa narrowLayers s fun s' => Env s₀ s' ∧ PolyIs s'.mem (F s₀) (nttLayer (nttLayer R 2) 1) := by
+  unfold narrowLayers
+  let s₁ := ((((s.write .r5 (s.gpr .r3 + BitVec.ofNat 64 0)).write .r8 (BitVec.ofNat 64 16)).write .r11
+    (BitVec.ofNat 64 32)).write .r12 (BitVec.ofNat 64 48)).write .r10 (BitVec.ofNat 64 16)
+  refine WP.seq (WP.block_cons_iff.2 ⟨_, rfl, WP.block_cons_iff.2 ⟨_, rfl, WP.block_cons_iff.2 ⟨_, rfl,
+    WP.block_cons_iff.2 ⟨_, rfl, WP.block_cons_iff.2 ⟨s₁, rfl, WP.block_nil ?_⟩⟩⟩⟩⟩)
+  have h0 : GInv s₀ R 0 s₁ := by
+    refine ⟨((((h.env.write (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide) _).write
+      (by decide) (by decide) (by decide) _).write (by decide) (by decide) (by decide) _).write (by decide)
+      (by decide) (by decide) _, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    all_goals simp only [s₁, State.write, reduceCtorEq, ite_false, ite_true]
+    all_goals first | (rw [mix_zero]; exact h.poly) | rw [h.env.r3] | exact h.r9 | rw [h.r7] | rfl
+  refine wp_loop_nz (fun g t => GInv s₀ R g t) (N := 16) (by decide) (fun g hg t ht => group_ok hp hg ht)
+    (fun t ht => ⟨ht.env, by rw [← mix_sixteen]; exact ht.poly⟩) h0
 
 end VG.Proof.MlDsa.PPC64LE.VNtt
