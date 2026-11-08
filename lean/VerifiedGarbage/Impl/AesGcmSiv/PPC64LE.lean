@@ -15,11 +15,12 @@ of calls of the verified `vg_aes_ctr32`, `vg_aes_encrypt_blocks`,
 (`Impl/AesGcmSiv/RISCV64.lean`):
 
 * The message keys (RFC 8452 §4): `CIPH_K(little_endian_uint32(i) ‖ nonce)`
-  for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), each by
-  `vg_aes_ctr32` on a zero block, of which the first 8 bytes are kept, one
-  after the other from `W + 16` (`derive`): the authentication key at
-  `W + 16`, the encryption key at `W + 32`; the encryption key is expanded
-  for the same number of rounds (`expand`).
+  for `i` from 0 to `rounds / 2 - 2` (3 for 10 rounds, 5 for 14), all by one
+  call of `vg_aes_encrypt_blocks` on those blocks at `W + 496`
+  (`deriveBuild`), of which the first 8 bytes are kept, one after the other
+  from `W + 16` (`deriveKeep`): the authentication key at `W + 16`, the
+  encryption key at `W + 32`; the encryption key is expanded for the same
+  number of rounds (`expand`).
 * POLYVAL (§3) is GHASH on the same bits (`Proof.GcmSiv.Polyval`) with the
   key `H · x` (`hkey`), on blocks in the other byte order: up to 64 blocks
   at a time are copied to `W + 496` with their bytes reversed (`ldbrx`)
@@ -53,7 +54,7 @@ A call (`bl`) stores nothing in memory and the callees use no stack.
   `[128, 224)`: our caller's `r14`–`r25`, and `[224, 232)` our return
   address; `[240, 256)`: a block (and the tag `open` computes);
 * `[256, 496)`: the encryption key's schedule; `[496, 1520)`: the reversed
-  blocks (or the counter blocks); `[1520, 1776)`: `vg_ghash`'s working
+  blocks (or the blocks of the message keys, or the counter blocks); `[1520, 1776)`: `vg_ghash`'s working
   space; `[1776, 3824)`: `vg_aes_ctr32`'s and `vg_aes_encrypt_blocks`'s, and
   `vg_aes_expand_key_scratch`'s at its start.
 
@@ -114,26 +115,38 @@ def ctrArgs : List Instr := [.addi .r3 .r14 skO, mov .r4 .r17, .addi .r5 .r14 cc
 
 /-! ## The keys -/
 
-/-- `little_endian_uint32(r25) ‖ nonce` at `W + 112`, a zero block at
-`W + 240`, and the arguments of `vg_aes_ctr32` with the key-generating key's
-schedule. -/
-def deriveBlock : List Instr :=
-  ([.load .w .r3 .r15 0, .load .w .r4 .r15 4, .load .w .r5 .r15 8, .store .w .r25 .r14 ccO,
-    .store .w .r3 .r14 (ccO + 4), .store .w .r4 .r14 (ccO + 8), .store .w .r5 .r14 (ccO + 12)] : List Instr) ++
-    zero16 bO ++
-    ([mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 ccO, .addi .r6 .r14 bO, .li .r7 1, .addi .r8 .r14 scrO] :
-      List Instr)
+/-- `vg_aes_encrypt_blocks`. -/
+def encCall : Prog isa := .call "vg_aes_encrypt_blocks" Impl.Aes.PPC64LE.encryptBlocks
 
-/-- The first 8 bytes of the block kept at `W + 16 + 8 r25`, the next `r25`,
-and `r5` the number of blocks left (`rounds / 2 - 1` of them in all). -/
-def derivePost : List Instr :=
-  [.load .d .r3 .r14 bO, .lsl .r4 .r25 3, .add .r4 .r14 .r4, .store .d .r3 .r4 akO, .addi .r25 .r25 1,
-    .lsr .d .r5 .r17 1, .subi .r5 .r5 1, .sub .r5 .r5 .r25]
+/-- Block `r25`, `little_endian_uint32(r25) ‖ nonce`, at `r4`, advancing
+`r25` and `r4`. -/
+def deriveBody : List Instr :=
+  [.load .w .r3 .r15 0, .load .w .r6 .r15 4, .load .w .r7 .r15 8, .store .w .r25 .r4 0,
+    .store .w .r3 .r4 4, .store .w .r6 .r4 8, .store .w .r7 .r4 12, .addi .r25 .r25 1, .addi .r4 .r4 16,
+    .subi .r5 .r5 1]
+
+/-- The `rounds / 2 - 1` blocks `little_endian_uint32(i) ‖ nonce` at
+`W + 496`, and their number in `r25`. -/
+def deriveBuild : Prog isa :=
+  .seq (.block [.li .r25 0, .addi .r4 .r14 revO, .lsr .d .r5 .r17 1, .subi .r5 .r5 1])
+    (.loop (.block deriveBody) (.nonzero .d .r5))
+
+/-- The arguments of `vg_aes_encrypt_blocks` on the `r25` blocks at `W + 496`
+with the key-generating key's schedule. -/
+def deriveArgs : List Instr :=
+  [mov .r3 .r16, mov .r4 .r17, .addi .r5 .r14 revO, mov .r6 .r25, .addi .r7 .r14 scrO]
+
+/-- The first 8 bytes of the block at `r5` kept at `r4`, advancing both. -/
+def keepBody : List Instr :=
+  [.load .d .r3 .r5 0, .store .d .r3 .r4 0, .addi .r5 .r5 16, .addi .r4 .r4 8, .subi .r25 .r25 1]
+
+/-- The first 8 bytes of each of the `r25` blocks at `W + 496` kept, one
+after the other from `W + 16`. -/
+def deriveKeep : Prog isa :=
+  .seq (.block [.addi .r5 .r14 revO, .addi .r4 .r14 akO]) (.loop (.block keepBody) (.nonzero .d .r25))
 
 /-- The message keys, 8 bytes per block, from `W + 16`. -/
-def derive : Prog isa :=
-  .seq (.block [.li .r25 0])
-    (.loop (.seq (.block deriveBlock) (.seq ctrCall (.block derivePost))) (.nonzero .d .r5))
+def derive : Prog isa := .seq deriveBuild (.seq (.block deriveArgs) (.seq encCall deriveKeep))
 
 /-- The arguments of `vg_aes_expand_key_scratch`: the encryption key, whose
 length is `4 (rounds − 6)`, its schedule at `W + 256` and the working
@@ -247,9 +260,6 @@ def cryptHead : List Instr :=
   ([mov .r23 .r20, mov .r24 .r21, .load .d .r3 .r14 tagO, .load .d .r4 .r14 (tagO + 8), .li .r5 1,
     .lsl .r5 .r5 63, .logic .or .r4 .r4 .r5, .store .d .r3 .r14 cbO, .store .d .r4 .r14 (cbO + 8)] :
     List Instr) ++ wholeLeft
-
-/-- `vg_aes_encrypt_blocks`. -/
-def encCall : Prog isa := .call "vg_aes_encrypt_blocks" Impl.Aes.PPC64LE.encryptBlocks
 
 /-- The counter block copied to `r4`, then its first word incremented,
 advancing `r4`. -/
