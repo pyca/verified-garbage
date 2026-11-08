@@ -30,9 +30,18 @@ it is. -/
 def onFlag (c₁ c₂ : Prog isa) : Prog isa :=
   .seq (.block testFlag) (Code.iteCold .ne c₁ c₂)
 
-/-- `vg_aes_gcm_prepare` computing no powers: `mov rax, 1; mov [rdi + 1024], rax`,
-the flag word saying they are absent. -/
+/-- `mov rax, v; mov [rdi + 1024], rax`: sets the flag word to `v`. -/
+def storeFlag (v : BitVec 32) : List Instr :=
+  [.mov .rax (.imm v), .store { base := .rdi, disp := flagOff } .rax]
+
+/-- `vg_aes_gcm_prepare` computing no powers: the flag word says they are
+absent. -/
 def prepareAbsent : Prog isa :=
-  .block [.mov .rax (.imm 1), .store { base := .rdi, disp := flagOff } .rax]
+  .block (storeFlag 1)
+
+/-- `vg_aes_gcm_prepare` computing the powers with `c`, after setting the flag
+word to 0, so that the functions on the context read them. -/
+def prepareFlagged (c : Prog isa) : Prog isa :=
+  .seq (.block (storeFlag 0)) c
 
 end VG.Impl.Gcm.X86_64.Flag

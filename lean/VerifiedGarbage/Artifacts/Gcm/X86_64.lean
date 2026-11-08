@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
-public import VerifiedGarbage.Proof.AesGcm.X86_64.Flag
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
@@ -22,23 +21,23 @@ namespace VG.Artifacts.Gcm.X86_64
 def artifacts : List Artifact := [
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul_avx512"
-    code := Impl.Gcm.X86_64.PrepareZ.prepare
-    verified := Proof.AesGcm.X86_64.Flag.prepare_of_powers Proof.Gcm.X86_64.PrepareZ.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareZ.prepare
+    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified
     features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul"
-    code := Impl.Gcm.X86_64.Prepare16.prepare
-    verified := Proof.AesGcm.X86_64.Flag.prepare_of_powers Proof.Gcm.X86_64.Prepare16.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.Prepare16.prepare
+    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified
     features := ["avx", "avx2", "ssse3", "vpclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_pclmul_avx"
-    code := Impl.Gcm.X86_64.PrepareAvx.prepare
-    verified := Proof.AesGcm.X86_64.Flag.prepare_of_powers Proof.Gcm.X86_64.PrepareAvx.prepare_verified
+    code := Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified
     features := ["avx", "pclmulqdq"] },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := ""
     code := Impl.Gcm.X86_64.Flag.prepareAbsent
-    verified := Proof.AesGcm.X86_64.Flag.absent_verified },
+    verified := Proof.Gcm.X86_64.Prepare.absent_verified },
   Spec.Gcm.prepare16Api.artifact X86_64.target {
     suffix := "_vpclmul"
     written := [("ctx", 512)]

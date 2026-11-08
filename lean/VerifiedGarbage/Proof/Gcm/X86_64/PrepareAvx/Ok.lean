@@ -348,4 +348,10 @@ theorem prepareSse_verified :
     Verified X86_64.target Impl.Gcm.X86_64.PrepareAvx.prepareSse (Proof.Gcm.preparePowersContract X86_64.abi) :=
   Prepare.verified_of _ (fun _ hw _ => prepareSse_ok hw) (by decide +kernel) Prepare16.prepareSse_ct
 
+/-- `prepare` after setting the flag word to 0, on the prepared key context. -/
+theorem prepareFlagged_verified :
+    Verified X86_64.target (Impl.Gcm.X86_64.Flag.prepareFlagged Impl.Gcm.X86_64.PrepareAvx.prepare)
+      (Spec.Gcm.prepareContract X86_64.abi) :=
+  Prepare.flagged_verified _ (fun _ hw _ => prepare_ok hw) (by decide +kernel) Prepare.flaggedAvx_ct
+
 end VG.Proof.Gcm.X86_64.PrepareAvx
