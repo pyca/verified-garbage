@@ -189,13 +189,17 @@ impl Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        for chunk in self
-            .b
-            .iter_mut()
-            .chain(&mut self.v)
-            .chain(&mut self.scratch)
-        {
-            crate::zeroize::zeroize(&mut chunk.0);
+        for chunks in [&mut self.b, &mut self.v, &mut self.scratch] {
+            let chunks = chunks.as_mut_slice();
+            // SAFETY: the slice is writable for its entire byte length and
+            // cannot overlap the callee's stack or wrap around the address
+            // space. Zero bytes are valid for CacheAligned<[u8; 128]>.
+            unsafe {
+                crate::zeroize::zeroize_raw(
+                    chunks.as_mut_ptr().cast(),
+                    core::mem::size_of_val(chunks),
+                )
+            };
         }
     }
 }
