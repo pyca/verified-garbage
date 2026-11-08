@@ -41,6 +41,8 @@ end VG.Impl.Aes.X86_64
 namespace VG.Impl.Aes.X86_64.AesNi
 materialize_code ctr32
 materialize_code ctr32To
+-- The key loop's body, which `ctr32To`'s proof checks writes no SSE register.
+materialize_value keyBody
 materialize_code encryptBlocks
 materialize_code decryptBlocks
 end VG.Impl.Aes.X86_64.AesNi

@@ -29,6 +29,15 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
 * Only `rdi` (the first round key), `rsi`, `rdx` (the data), `r8` (the
   blocks left), `r9` and `r15` during the key loop hold public values; no
   address and no branch depends on anything else.
+
+Out of place (`to`), `vg_aes_ctr32_to` reads the data at `rcx` (then `rdx`)
+and writes the result to the output at `r11`. The key loop needs every
+general-purpose register, so the output pointer waits in `xmm15` until it is
+done, then lives in slot 57 (`dSlot`) of the scratch buffer: each group's XOR
+phase loads it into `r15`, stores the keystream XORed into the data there,
+and stores it back, advanced. The stores of the data through `r15` make the
+taint analysis forget the slot's value, and storing the pointer back makes it
+public again.
 -/
 
 @[expose] public section
@@ -112,27 +121,53 @@ def encrypt4 : Prog isa :=
   .seq (.block (toBs ++ [movR kp .rdi] ++ addRoundKey))
     (.seq (.loop (.block roundBody) .ne) (.block (lastRound ++ fromBs)))
 
-/-- XOR the keystream block `b` into data block `b`. -/
-def xorBlock (b : Nat) : List Instr :=
-  [.mov t0 (.mem (at_ .rdx (16 * b))), xorR t0 (q b), .store (at_ .rdx (16 * b)) t0,
-   .mov t0 (.mem (at_ .rdx (16 * b + 8))), xorR t0 (q (b + 4)), .store (at_ .rdx (16 * b + 8)) t0]
+/-- The slot of the output pointer, out of place. -/
+def dSlot : Nat := 57
+
+/-- Where the keystream XORed into the data at `rdx` is stored: back to it,
+or, out of place (`to`), to the output at `r15`, which holds the slot
+`dSlot` during the XOR phase. -/
+def dstR (to : Bool) : Reg := if to then t1 else .rdx
+
+/-- Out of place, load the output pointer from its slot. -/
+def dstLoad (to : Bool) : List Instr := if to then [movS t1 dSlot] else []
+
+/-- Out of place, advance the output pointer by `k` bytes. -/
+def dstAdv (to : Bool) (k : Nat) : List Instr := if to then [.alu .add t1 (.imm (BitVec.ofNat 32 k))] else []
+
+/-- Out of place, store the output pointer back to its slot. -/
+def dstSave (to : Bool) : List Instr := if to then [st dSlot t1] else []
+
+/-- XOR the keystream block `b` into data block `b`, stored at `dstR to`. -/
+def xorBlockG (to : Bool) (b : Nat) : List Instr :=
+  [.mov t0 (.mem (at_ .rdx (16 * b))), xorR t0 (q b), .store (at_ (dstR to) (16 * b)) t0,
+   .mov t0 (.mem (at_ .rdx (16 * b + 8))), xorR t0 (q (b + 4)), .store (at_ (dstR to) (16 * b + 8)) t0]
+
+def xorBlock : Nat → List Instr := xorBlockG false
 
 /-- Four blocks, and on to the next four (ZF is set when none are left). -/
-def xorFull : List Instr :=
-  (List.range 4).flatMap xorBlock ++ ([.alu .add .rdx (.imm 64), .alu .sub .r8 (.imm 4)] : List Instr)
+def xorFullG (to : Bool) : List Instr :=
+  (List.range 4).flatMap (xorBlockG to) ++ dstAdv to 64 ++ dstSave to ++
+    ([.alu .add .rdx (.imm 64), .alu .sub .r8 (.imm 4)] : List Instr)
+
+def xorFull : List Instr := xorFullG false
 
 /-- The last one to three blocks (and ZF set). -/
-def xorTail : Prog isa :=
-  .seq (.block (xorBlock 0 ++ ([.alu .cmp .r8 (.imm 2)] : List Instr)))
-    (.seq (.ite .ae (.seq (.block (xorBlock 1 ++ ([.alu .cmp .r8 (.imm 3)] : List Instr)))
-        (.ite .ae (.block (xorBlock 2)) (.block [])))
+def xorTailG (to : Bool) : Prog isa :=
+  .seq (.block (xorBlockG to 0 ++ ([.alu .cmp .r8 (.imm 2)] : List Instr)))
+    (.seq (.ite .ae (.seq (.block (xorBlockG to 1 ++ ([.alu .cmp .r8 (.imm 3)] : List Instr)))
+        (.ite .ae (.block (xorBlockG to 2)) (.block [])))
       (.block []))
-    (.block [.alu .sub .r8 (.reg .r8)]))
+    (.block (dstSave to ++ [.alu .sub .r8 (.reg .r8)])))
+
+def xorTail : Prog isa := xorTailG false
 
 /-- One group of (up to) four blocks. -/
-def group : Prog isa :=
+def groupG (to : Bool) : Prog isa :=
   .seq (.block ctrBlocks)
     (.seq encrypt4
-      (.seq (.block [.alu .cmp .r8 (.imm 4)]) (.ite .ae (.block xorFull) xorTail)))
+      (.seq (.block (dstLoad to ++ [.alu .cmp .r8 (.imm 4)])) (.ite .ae (.block (xorFullG to)) (xorTailG to))))
+
+def group : Prog isa := groupG false
 
 end VG.Impl.Aes.X86_64
