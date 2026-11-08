@@ -8,17 +8,12 @@ public import VerifiedGarbage.Impl.ChaCha20Poly1305.X86_64.Shared
 `vg_chacha20_poly1305_open_to(key = rdi, nonce = rsi, aad = rdx,
 aad_len = rcx, src = r8, len = r9, dst = [rsp + 8], dst_len = [rsp + 16],
 tag = [rsp + 24], work = [rsp + 32])`, with `work` allocated on the stack
-by its frame (`scratched`), as `open`'s, runs the code `open` runs after its
-entry (`openShared`, or the stitched `Stitch.openStitchedShared`), which
-reads the ciphertext at `r11` and writes the plaintext to `r8`, with the tag
-and `work` at `rsp + 8` and `rsp + 16`. The calling convention lets no
-function write its stack arguments, so `framed` lays out `open`'s entry in
-a frame of its own, below `open_to`'s stack arguments: it loads `work`, `tag`
-and `dst` (into `rax`, `r10` and `r8`) and copies `src` to `r11`, then pushes
-`work`, `tag` and `src`, which leaves `tag` and `work` at `rsp + 8` and
-`rsp + 16`, `src` where `open`'s return address would be.
+by its frame (`scratched`), as `open`'s, calls the function `open` calls
+(`Shared.callOpen`: `vg_chacha20_poly1305_open_body*`), which reads the
+ciphertext at `r11` and writes the plaintext to `r8`: `toArgs` loads `work`,
+`tag` and `dst` (into `rax`, `r10` and `r8`) and copies `src` to `r11`.
 
-As `open` (`Shared.openCode`), the AVX-512 instances run the AVX2 code with
+As `open` (`Shared.openCode`), the AVX-512 instances call the AVX2 code with
 `vg_chacha20_xor_avx512vl`'s or `vg_chacha20_xor_avx2`'s rounds for the
 lengths it is the faster for, and choose before they allocate `work`.
 -/
@@ -36,16 +31,10 @@ def toArgs : List Instr :=
   [.mov .rax (.mem (at_ .rsp 32)), .mov .r10 (.mem (at_ .rsp 24)), .mov .r11 (.reg .r8),
    .mov .r8 (.mem (at_ .rsp 8))]
 
-/-- `body` in a frame laid out as `open`'s entry: `src` (where the return
-address would be), then `tag` and `work`, `open`'s stack arguments. -/
-def framed (body : Prog isa) : Prog isa :=
-  .seq (.block toArgs) (.frame (.push [.rax, .r10, .r11]) body (.pop .r10 3))
-
 /-- The body of the instance calling the implementation `x` of
-`vg_chacha20_xor` and `b` of `vg_poly1305_blocks`: the stitched code with the
-AVX2 one, as `Shared.body`. -/
+`vg_chacha20_xor` and `b` of `vg_poly1305_blocks`: the call of `open`'s. -/
 def body (x : ChaCha20.X86_64.Callee) (b : Poly1305.X86_64.Blocks) : Prog isa :=
-  framed (if b = .avx2 then Stitch.openStitchedShared x .avx2 else openShared x b)
+  .seq (.block toArgs) (Shared.callOpen x b)
 
 /-- `work` in a frame of its own, wiped after the code: `dst`, `dst_len` and
 `tag` copied, the address of `work`, and its 1696 bytes, with 8 bytes unused

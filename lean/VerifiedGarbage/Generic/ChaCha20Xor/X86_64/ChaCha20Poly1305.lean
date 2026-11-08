@@ -39,14 +39,14 @@ def artifacts (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
   Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.ChaCha20Poly1305.X86_64.Shared.openCode v.callee v.poly
-    stack := 1768
+    stack := 1784
     verified := Shared.open_verified v
     spSafe := Shared.open_sp v
     features := openFeatures v },
   Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
-    stack := 1792
+    stack := 1800
     verified := OpenTo.openTo_verified v
     spSafe := OpenTo.openTo_sp v
     features := openFeatures v },

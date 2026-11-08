@@ -477,6 +477,10 @@ pub(crate) mod vg_chacha20_poly1305_open_body_avx512;
 pub(crate) mod vg_chacha20_poly1305_open_body_avx512vl;
 
 #[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_open_body_avx512vl_large.rs"]
+pub(crate) mod vg_chacha20_poly1305_open_body_avx512vl_large;
+
+#[rustfmt::skip]
 #[path = "internal/vg_chacha20_poly1305_open_body_ifma.rs"]
 pub(crate) mod vg_chacha20_poly1305_open_body_ifma;
 
