@@ -11154,6 +11154,9 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 21:
 	ret
 20:
+	mov rax, QWORD PTR [rsp+16]
+	cmp rax, 1024
+	jae 27f
 	push rdi
 	push rsi
 	push rdx
@@ -11169,7 +11172,7 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 	mov rdi, QWORD PTR [rsp+112]
 	mov rcx, QWORD PTR [rsp+104]
 	cmp rcx, 64
-	jb 27f
+	jb 29f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	mov r10d, 0
@@ -11178,73 +11181,73 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 	mov r8, rcx
 	sub r8, 64
 	cmp r8, r10
-	jb 29f
-211:
+	jb 211f
+213:
 	vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
 	vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
 	vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
 	vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
 	add r10, 64
 	cmp r8, r10
-	jae 211b
-	jmp 210f
-29:
-210:
+	jae 213b
+	jmp 212f
+211:
+212:
 	vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 28f
-27:
+	jmp 210f
+29:
 	cmp rcx, 32
-	jb 212f
+	jb 214f
 	vmovdqu ymm0, YMMWORD PTR [rsi]
 	vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
 	vmovdqu YMMWORD PTR [rdi], ymm0
 	vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
-	jmp 213f
-212:
+	jmp 215f
+214:
 	cmp rcx, 16
-	jb 214f
+	jb 216f
 	vmovdqu xmm0, XMMWORD PTR [rsi]
 	vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
 	vmovdqu XMMWORD PTR [rdi], xmm0
 	vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
-	jmp 215f
-214:
+	jmp 217f
+216:
 	cmp rcx, 8
-	jb 216f
+	jb 218f
 	mov rax, QWORD PTR [rsi]
 	mov r8, QWORD PTR [rsi+rcx*1-8]
 	mov QWORD PTR [rdi], rax
 	mov QWORD PTR [rdi+rcx*1-8], r8
-	jmp 217f
-216:
+	jmp 219f
+218:
 	cmp rcx, 4
-	jb 218f
+	jb 220f
 	mov eax, DWORD PTR [rsi]
 	mov r8d, DWORD PTR [rsi+rcx*1-4]
 	mov DWORD PTR [rdi], eax
 	mov DWORD PTR [rdi+rcx*1-4], r8d
-	jmp 219f
-218:
+	jmp 221f
+220:
 	mov r10d, 0
 	cmp r10, rcx
-	je 220f
-222:
+	je 222f
+224:
 	movzx eax, BYTE PTR [rsi+r10*1]
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 222b
-	jmp 221f
-220:
+	jne 224b
+	jmp 223f
+222:
+223:
 221:
 219:
 217:
 215:
-213:
-28:
+210:
 	vzeroupper
 	mov rdi, QWORD PTR [rsp+80]
 	mov rsi, QWORD PTR [rsp+72]
@@ -11262,24 +11265,24 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 	mov QWORD PTR [rsp+24], rax
 	call {vg_aes_gcm_open_prepared_aesni_pclmul_avx}
 	test eax, eax
-	je 223f
-	jmp 224f
-223:
+	je 225f
+	jmp 226f
+225:
 	mov rdi, QWORD PTR [rsp+112]
 	mov rcx, QWORD PTR [rsp+104]
 	mov eax, 0
 	mov r10d, 0
 	cmp r10, rcx
-	je 225f
-227:
+	je 227f
+229:
 	mov BYTE PTR [rdi+r10*1], al
 	add r10, 1
 	cmp r10, rcx
-	jne 227b
-	jmp 226f
-225:
+	jne 229b
+	jmp 228f
+227:
+228:
 226:
-224:
 	pop r11
 	pop r11
 	pop r11
@@ -11291,7 +11294,83 @@ vg_aes_gcm_open_to_prepared_aesni_pclmul_avx:
 	pop r11
 	pop r11
 	pop r11
+28:
 	jmp 21b
+27:
+	lea rsp, [rsp-2624]
+	mov rax, QWORD PTR [rsp+2632]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, QWORD PTR [rsp+2640]
+	mov QWORD PTR [rsp+16], rax
+	mov rax, QWORD PTR [rsp+2648]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+2656]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+2664]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+2672]
+	mov QWORD PTR [rsp+48], rax
+	mov rax, rsp
+	add rax, 64
+	mov QWORD PTR [rsp+56], rax
+	push rdi
+	push rsi
+	push rdx
+	push rcx
+	push r8
+	push r9
+	push rax
+	push rax
+	push rax
+	push rax
+	push rax
+	mov rax, QWORD PTR [rsp+112]
+	mov QWORD PTR [rsp], rax
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+8], rax
+	mov rax, QWORD PTR [rsp+128]
+	mov QWORD PTR [rsp+16], rax
+	mov rax, QWORD PTR [rsp+136]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+96]
+	mov QWORD PTR [rsp+32], rax
+	mov rax, QWORD PTR [rsp+104]
+	mov QWORD PTR [rsp+40], rax
+	mov rax, QWORD PTR [rsp+144]
+	mov QWORD PTR [rsp+48], rax
+	call {vg_aes_gcm_open_split_prepared16_aesni_pclmul_avx}
+	test eax, eax
+	je 230f
+	jmp 231f
+230:
+	mov rdi, QWORD PTR [rsp+112]
+	mov rcx, QWORD PTR [rsp+104]
+	mov eax, 0
+	mov r10d, 0
+	cmp r10, rcx
+	je 232f
+234:
+	mov BYTE PTR [rdi+r10*1], al
+	add r10, 1
+	cmp r10, rcx
+	jne 234b
+	jmp 233f
+232:
+233:
+231:
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	pop r11
+	lea rsp, [rsp+2624]
+	jmp 28b
 	.p2align 6
 
 vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul_avx:
