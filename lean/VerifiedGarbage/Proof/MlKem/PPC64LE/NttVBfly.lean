@@ -334,4 +334,154 @@ theorem body_ok {s : State} (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r
     rw [hv.v v (by simp [n6, n7, n8, n9, n10])]
     simp only [vpr_writeV, n6, n7, ite_false]
 
+/-! ## The last layer: two blocks of `len = 2` per step -/
+
+theorem vword_lo (n m : BitVec 128) {p : Nat} (hp : p < 4) :
+    vword (perm n m ctlLo) p = if p < 2 then vword n p else vword m (p - 2) := by
+  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 4) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 5) (by decide) (by decide) (by decide)]; rfl
+
+theorem vword_hi2 (n m : BitVec 128) {p : Nat} (hp : p < 4) :
+    vword (perm n m ctlHi2) p = if p < 2 then vword n (p + 2) else vword m p := by
+  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 6) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 7) (by decide) (by decide) (by decide)]; rfl
+
+theorem vword_pw (n : BitVec 128) {p : Nat} (hp : p < 4) :
+    vword (perm n n ctlPw) p = vword n (if p < 2 then 1 else 3) := by
+  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 1) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 3) (by decide) (by decide) (by decide)]; rfl
+
+theorem vword_pwp (n : BitVec 128) {p : Nat} (hp : p < 4) :
+    vword (perm n n ctlPwp) p = vword n (if p < 2 then 0 else 2) := by
+  rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl
+  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 0) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
+  · rw [vword_perm _ _ _ (q := 2) (by decide) (by decide) (by decide)]; rfl
+
+/-- What a step of the last layer keeps. -/
+structure Kept2 (s s' : State) : Prop where
+  g : ∀ r, r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → r ≠ .r10 → s'.gpr r = s.gpr r
+  v : ∀ v, v ≠ .v4 → v ≠ .v5 → v ≠ .v6 → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 → v ≠ .v11 →
+    s'.vpr v = s.vpr v
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  lr : s'.lr = s.lr
+
+/-- A step of the last layer: the rows `R` and `T` of four coefficients and
+the zetas `Z` (`ζ'ₖ, ζₖ, ζ'ₖ₊₁, ζₖ₊₁`). -/
+theorem body2_ok {s : State} {R T Z : BitVec 128}
+    (iz : InRegions (s.rd ++ s.wr) (s.gpr .r4 + s.gpr .r7) 16)
+    (ia : InRegions (s.rd ++ s.wr) (s.gpr .r3 + s.gpr .r5) 16)
+    (ib : InRegions (s.rd ++ s.wr) (s.gpr .r3 + (s.gpr .r5 + BitVec.ofNat 64 16)) 16)
+    (oa : InRegions s.wr (s.gpr .r3 + s.gpr .r5) 16)
+    (ob : InRegions s.wr (s.gpr .r3 + (s.gpr .r5 + BitVec.ofNat 64 16)) 16)
+    (eZ : swapDwords (s.mem.read (s.gpr .r4 + s.gpr .r7) 16) = Z)
+    (eR : swapDwords (s.mem.read (s.gpr .r3 + s.gpr .r5) 16) = R)
+    (eT : swapDwords (s.mem.read (s.gpr .r3 + (s.gpr .r5 + BitVec.ofNat 64 16)) 16) = T)
+    (hR : ∀ i < 4, (vword R i).toNat < 3329) (hT : ∀ i < 4, (vword T i).toNat < 3329)
+    (hz1 : (vword Z 1).toNat < 3329) (hz3 : (vword Z 3).toNat < 3329)
+    (hz0 : (vword Z 0).toNat = (vword Z 1).toNat * 2 ^ 32 / 3329)
+    (hz2 : (vword Z 2).toNat = (vword Z 3).toNat * 2 ^ 32 / 3329)
+    (h0 : s.vpr .v0 = qVec) (h1 : s.vpr .v1 = ctlHi) (h2 : s.vpr .v2 = ctlLo) (h3 : s.vpr .v3 = ctlHi2)
+    (h12 : s.vpr .v12 = ctlPw) (h13 : s.vpr .v13 = ctlPwp) :
+    WP isa (.block vbfly2Body) s fun s' => ∃ A B : BitVec 128,
+      (∀ p < 4, vword A p = if p < 2 then bx (vword R p) (vword R (p + 2)) (vword Z 1)
+        else by' (vword R (p - 2)) (vword R p) (vword Z 1)) ∧
+      (∀ p < 4, vword B p = if p < 2 then bx (vword T p) (vword T (p + 2)) (vword Z 3)
+        else by' (vword T (p - 2)) (vword T p) (vword Z 3)) ∧
+      s'.mem = (s.mem.write (s.gpr .r3 + s.gpr .r5) 16 (swapDwords A)).write
+        (s.gpr .r3 + (s.gpr .r5 + BitVec.ofNat 64 16)) 16 (swapDwords B) ∧
+      s'.gpr .r5 = s.gpr .r5 + BitVec.ofNat 64 32 ∧ s'.gpr .r7 = s.gpr .r7 + BitVec.ofNat 64 16 ∧
+      s'.gpr .r10 = s.gpr .r10 - 1 ∧ Kept2 s s' := by
+  rw [vbfly2Body, WP.block_append_iff, WP.block_append_iff]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, exec_perm, exec_lxvd2x .v11 .r4 .r7 s (by decide) iz,
+    exec_addi (show Reg.r5 ≠ .r0 by decide) (show 16 < 2 ^ 15 by decide)]
+  rw [exec_lxvd2x .v8 .r3 .r5 _ (by decide) (by exact ia), runStep_some, runBlock_cons,
+    exec_lxvd2x .v9 .r3 .r6 _ (by decide) (by exact ib), runStep_some, runBlock_cons, exec_perm, runStep_some,
+    runBlock_cons, exec_perm, runStep_some, runBlock_nil]
+  refine ⟨_, rfl, ?_⟩
+  simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_true, ite_false, eZ, h2, h3, h12, h13]
+  refine WP.mono (vbfly_ok ⟨fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, fun i hi => ?_, ?_, ?_⟩)
+    fun s₂ ⟨h6, h7, hv⟩ => ?_
+  · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
+    rw [vword_lo _ _ hi]; split
+    · exact hR _ hi
+    · exact hT _ (by omega)
+  · simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write, RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false]
+    rw [vword_hi2 _ _ hi]; split
+    · exact hR _ (by omega)
+    · exact hT _ hi
+  · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false, ite_true]
+    rw [vword_pw _ hi]; split
+    · exact hz1
+    · exact hz3
+  · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false, ite_true]
+    rw [vword_pw _ hi, vword_pwp _ hi]; split
+    · exact hz0
+    · exact hz2
+  · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false]; exact h0
+  · simp only [vpr_writeV, vpr_write, reduceCtorEq, ite_false]; exact h1
+  have g₂ : ∀ r, s₂.gpr r = if r = .r6 then s.gpr .r5 + BitVec.ofNat 64 16 else s.gpr r := fun r => by
+    rw [hv.gpr]; rfl
+  have m₂ : s₂.mem = s.mem := hv.mem
+  have v₂ : ∀ v, v ≠ .v4 → v ≠ .v5 → v ≠ .v6 → v ≠ .v7 → v ≠ .v8 → v ≠ .v9 → v ≠ .v10 → v ≠ .v11 →
+      s₂.vpr v = s.vpr v := fun v n4 n5 n6 n7 n8 n9 n10 n11 => by
+    rw [hv.v v (by simp [n6, n7, n8, n9, n10])]
+    simp only [vpr_writeV, vpr_write, n4, n5, n6, n7, n8, n9, n11, ite_false]
+  have oa' : InRegions s₂.wr (s₂.gpr .r3 + s₂.gpr .r5) 16 := by
+    rw [hv.wr, g₂, g₂]; simpa only [wr_writeV, RegUpd.wr_write, reduceCtorEq, ite_false] using oa
+  have ob' : InRegions s₂.wr (s₂.gpr .r3 + s₂.gpr .r6) 16 := by
+    rw [hv.wr, g₂, g₂]; simpa only [wr_writeV, RegUpd.wr_write, reduceCtorEq, ite_false, ite_true] using ob
+  apply WP.of_runBlock
+  rw [runBlock_cons, exec_perm, runStep_some, runBlock_cons, exec_perm, runStep_some, runBlock_cons,
+    exec_stxvd2x .v8 .r3 .r5 _ (by decide) (by exact oa'), runStep_some, runBlock_cons,
+    exec_stxvd2x .v9 .r3 .r6 _ (by decide) (by exact ob'), runStep_some, runBlock_cons,
+    exec_addi (by decide) (by decide), runStep_some, runBlock_cons, exec_addi (by decide) (by decide), runStep_some,
+    runBlock_cons, exec_subi (by decide) (by decide), runStep_some, runBlock_nil]
+  have e2 := v₂ .v2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  have e3 := v₂ .v3 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+  refine ⟨_, rfl, perm (s₂.vpr .v6) (s₂.vpr .v7) ctlLo, perm (s₂.vpr .v6) (s₂.vpr .v7) ctlHi2,
+    fun p hp => ?_, fun p hp => ?_, ?_, ?_, ?_, ?_, ⟨fun r h5 h6' h7' h10 => ?_,
+    fun v n4 n5 n6 n7 n8 n9 n10 n11 => ?_, hv.rd, hv.wr, hv.sp, hv.lr⟩⟩
+  · rw [vword_lo _ _ hp]
+    split
+    · rw [h6 p hp]
+      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
+        ↓ite_eq_left]
+    · rw [h7 (p - 2) (by omega)]
+      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
+        ↓ite_eq_left, Nat.sub_add_cancel]
+  · rw [vword_hi2 _ _ hp]
+    split
+    · rw [h6 (p + 2) (by omega)]
+      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
+        ↓ite_eq_right, Nat.add_sub_cancel]
+    · rw [h7 p hp]
+      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
+        ↓ite_eq_right]
+  · show (s₂.mem.write _ 16 _).write _ 16 _ = _
+    simp only [m₂, gpr_writeV, vpr_writeV, g₂, e2, e3, h2, h3, reduceCtorEq, ite_false, ite_true]
+  · simp only [RegUpd.gpr_write, gpr_writeV, g₂, ite_true, ite_false, reduceCtorEq]
+  · simp only [RegUpd.gpr_write, gpr_writeV, g₂, ite_true, ite_false, reduceCtorEq]
+  · simp only [RegUpd.gpr_write, gpr_writeV, g₂, ite_true, ite_false, reduceCtorEq]; rfl
+  · simp only [RegUpd.gpr_write, gpr_writeV, g₂, h5, h6', h7', h10, ite_false]
+  · simp only [vpr_writeV, vpr_write, n8, n9, ite_false]
+    exact v₂ v n4 n5 n6 n7 n8 n9 n10 n11
+
 end VG.Proof.MlKem.PPC64LE.VBfly
