@@ -1266,39 +1266,54 @@ vg_ecdsa_p256_verify:
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 29b
-	li %r31, 32
-210:
-	addi %r31, %r31, -1
-	add %r4, %r3, %r31
-	lbz %r4, 1184(%r4)
-	rldicr %r5, %r31, 3, 60
-	add %r5, %r3, %r5
-	li %r7, 1
-	and %r6, %r4, %r7
-	stb %r6, 4864(%r5)
-	rldicl %r6, %r4, 63, 1
-	and %r6, %r6, %r7
-	stb %r6, 4865(%r5)
-	rldicl %r6, %r4, 62, 2
-	and %r6, %r6, %r7
-	stb %r6, 4866(%r5)
-	rldicl %r6, %r4, 61, 3
-	and %r6, %r6, %r7
-	stb %r6, 4867(%r5)
-	rldicl %r6, %r4, 60, 4
-	and %r6, %r6, %r7
-	stb %r6, 4868(%r5)
-	rldicl %r6, %r4, 59, 5
-	and %r6, %r6, %r7
-	stb %r6, 4869(%r5)
-	rldicl %r6, %r4, 58, 6
-	and %r6, %r6, %r7
-	stb %r6, 4870(%r5)
-	rldicl %r6, %r4, 57, 7
-	and %r6, %r6, %r7
-	stb %r6, 4871(%r5)
-	cmpldi %cr0, %r31, 0
-	bne %cr0, 210b
+	lis %r11, 10692
+	ori %r11, %r11, 48607
+	stw %r11, 1344(%r3)
+	lis %r11, -10084
+	ori %r11, %r11, 57186
+	stw %r11, 1348(%r3)
+	lis %r11, 30852
+	ori %r11, %r11, 12432
+	stw %r11, 1352(%r3)
+	lis %r11, -21264
+	ori %r11, %r11, 1485
+	stw %r11, 1356(%r3)
+	lis %r11, -2271
+	ori %r11, %r11, 11990
+	stw %r11, 1360(%r3)
+	lis %r11, -6750
+	ori %r11, %r11, 8363
+	stw %r11, 1364(%r3)
+	lis %r11, 1159
+	ori %r11, %r11, 18484
+	stw %r11, 1368(%r3)
+	lis %r11, -9168
+	ori %r11, %r11, 1565
+	stw %r11, 1372(%r3)
+	ld %r4, 320(%r3)
+	std %r4, 3424(%r3)
+	ld %r4, 328(%r3)
+	std %r4, 3432(%r3)
+	ld %r4, 336(%r3)
+	std %r4, 3440(%r3)
+	ld %r4, 344(%r3)
+	std %r4, 3448(%r3)
+	ld %r4, 352(%r3)
+	std %r4, 3456(%r3)
+	ld %r4, 360(%r3)
+	std %r4, 3464(%r3)
+	ld %r4, 368(%r3)
+	std %r4, 3472(%r3)
+	ld %r4, 376(%r3)
+	std %r4, 3480(%r3)
+	ld %r4, 224(%r3)
+	std %r4, 3488(%r3)
+	ld %r4, 232(%r3)
+	std %r4, 3496(%r3)
+	ld %r4, 240(%r3)
+	std %r4, 3504(%r3)
+	ld %r4, 248(%r3)
+	std %r4, 3512(%r3)
 	ld %r4, 256(%r3)
 	std %r4, 3520(%r3)
 	ld %r4, 264(%r3)
@@ -1315,79 +1330,441 @@ vg_ecdsa_p256_verify:
 	std %r4, 3568(%r3)
 	ld %r4, 312(%r3)
 	std %r4, 3576(%r3)
-	ld %r4, 320(%r3)
-	std %r4, 3328(%r3)
-	ld %r4, 328(%r3)
-	std %r4, 3336(%r3)
-	ld %r4, 336(%r3)
-	std %r4, 3344(%r3)
-	ld %r4, 344(%r3)
-	std %r4, 3352(%r3)
-	ld %r4, 352(%r3)
-	std %r4, 3360(%r3)
-	ld %r4, 360(%r3)
-	std %r4, 3368(%r3)
-	ld %r4, 368(%r3)
-	std %r4, 3376(%r3)
-	ld %r4, 376(%r3)
-	std %r4, 3384(%r3)
-	ld %r4, 224(%r3)
-	std %r4, 3392(%r3)
-	ld %r4, 232(%r3)
-	std %r4, 3400(%r3)
-	ld %r4, 240(%r3)
-	std %r4, 3408(%r3)
-	ld %r4, 248(%r3)
-	std %r4, 3416(%r3)
-	ld %r4, 1280(%r3)
+	lis %r11, -16813
+	ori %r11, %r11, 64837
+	stw %r11, 512(%r3)
+	lis %r11, 6120
+	ori %r11, %r11, 11329
+	stw %r11, 516(%r3)
+	lis %r11, -4730
+	ori %r11, %r11, 2573
+	stw %r11, 520(%r3)
+	lis %r11, 7430
+	ori %r11, %r11, 12395
+	stw %r11, 524(%r3)
+	lis %r11, 13799
+	ori %r11, %r11, 4496
+	stw %r11, 528(%r3)
+	lis %r11, 26225
+	ori %r11, %r11, 28971
+	stw %r11, 532(%r3)
+	lis %r11, -10734
+	ori %r11, %r11, 12950
+	stw %r11, 536(%r3)
+	lis %r11, -12004
+	ori %r11, %r11, 41266
+	stw %r11, 540(%r3)
+	lis %r11, 8015
+	ori %r11, %r11, 27653
+	stw %r11, 544(%r3)
+	lis %r11, -25412
+	ori %r11, %r11, 63407
+	stw %r11, 548(%r3)
+	lis %r11, 6917
+	ori %r11, %r11, 44807
+	stw %r11, 552(%r3)
+	lis %r11, 25432
+	ori %r11, %r11, 8743
+	stw %r11, 556(%r3)
+	lis %r11, 25998
+	ori %r11, %r11, 39282
+	stw %r11, 560(%r3)
+	lis %r11, 23531
+	ori %r11, %r11, 9986
+	stw %r11, 564(%r3)
+	lis %r11, 26627
+	ori %r11, %r11, 64828
+	stw %r11, 568(%r3)
+	lis %r11, 30041
+	ori %r11, %r11, 26201
+	stw %r11, 572(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 1
+	stw %r11, 576(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 580(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 584(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 588(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 592(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 596(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65534
+	stw %r11, 600(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 604(%r3)
+	li %r31, 37
+210:
+	addi %r31, %r31, -1
+	li %r4, 7
+	mulld %r4, %r4, %r31
+	add %r4, %r3, %r4
+	addi %r6, %r31, -36
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 211f
+	li %r9, 0
+	add %r9, %r9, %r9
+	lbz %r5, 4102(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4101(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4100(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4099(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4098(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4097(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4096(%r4)
+	add %r9, %r9, %r5
+	b 212f
+211:
+	li %r9, 0
+	add %r9, %r9, %r9
+	lbz %r5, 4099(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4098(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4097(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4096(%r4)
+	add %r9, %r9, %r5
+212:
+	addi %r9, %r9, -64
+	rldicl %r4, %r9, 1, 63
+	li %r5, 0
+	subf %r4, %r4, %r5
+	xor %r9, %r9, %r4
+	subf %r9, %r4, %r9
+	bcl 20, 31, 2f
+2:
+	mflr %r8
+	addis %r8, %r8, ({VG_P256_COMB}
+	addi %r8, %r8, ({VG_P256_COMB}
+	li %r4, 4096
+	mulld %r4, %r4, %r31
+	add %r8, %r8, %r4
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3424(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3428(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3432(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3436(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3440(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3444(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3448(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3452(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3456(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3460(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3464(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3468(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3472(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3476(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3480(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3484(%r3)
+	li %r7, 1
+213:
+	xor %r10, %r9, %r7
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 3424(%r3)
+	ld %r5, 0(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3424(%r3)
-	ld %r4, 1288(%r3)
+	ld %r4, 3432(%r3)
+	ld %r5, 8(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3432(%r3)
-	ld %r4, 1296(%r3)
+	ld %r4, 3440(%r3)
+	ld %r5, 16(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3440(%r3)
-	ld %r4, 1304(%r3)
+	ld %r4, 3448(%r3)
+	ld %r5, 24(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3448(%r3)
-	ld %r4, 1440(%r3)
+	ld %r4, 3456(%r3)
+	ld %r5, 32(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3456(%r3)
-	ld %r4, 1448(%r3)
+	ld %r4, 3464(%r3)
+	ld %r5, 40(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3464(%r3)
-	ld %r4, 1456(%r3)
+	ld %r4, 3472(%r3)
+	ld %r5, 48(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3472(%r3)
-	ld %r4, 1464(%r3)
+	ld %r4, 3480(%r3)
+	ld %r5, 56(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3480(%r3)
-	ld %r4, 224(%r3)
+	addi %r8, %r8, 64
+	addi %r7, %r7, 1
+	addi %r6, %r7, -65
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 213b
+	lis %r11, 0
+	ori %r11, %r11, 1
+	stw %r11, 3488(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3492(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3496(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 3500(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 3504(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65535
+	stw %r11, 3508(%r3)
+	lis %r11, -1
+	ori %r11, %r11, 65534
+	stw %r11, 3512(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 3516(%r3)
+	li %r7, 0
+	xor %r10, %r9, %r7
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 3456(%r3)
+	ld %r5, 3488(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3456(%r3)
+	ld %r4, 3464(%r3)
+	ld %r5, 3496(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3464(%r3)
+	ld %r4, 3472(%r3)
+	ld %r5, 3504(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3472(%r3)
+	ld %r4, 3480(%r3)
+	ld %r5, 3512(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3480(%r3)
+	ld %r4, 3488(%r3)
+	ld %r5, 160(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3488(%r3)
-	ld %r4, 232(%r3)
+	ld %r4, 3496(%r3)
+	ld %r5, 168(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3496(%r3)
-	ld %r4, 240(%r3)
+	ld %r4, 3504(%r3)
+	ld %r5, 176(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3504(%r3)
-	ld %r4, 248(%r3)
+	ld %r4, 3512(%r3)
+	ld %r5, 184(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
 	std %r4, 3512(%r3)
+	li %r4, 704
+	li %r5, 160
+	li %r6, 3456
+	bl {vg_p256_sub_mod_p}
+	addi %r6, %r31, -36
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 214f
+	li %r4, 7
+	mulld %r4, %r4, %r31
+	add %r4, %r3, %r4
+	lbz %r4, 4102(%r4)
+	addi %r10, %r4, -1
+	b 215f
+214:
+	li %r10, 0
+	addi %r10, %r10, -1
+215:
+	ld %r4, 3456(%r3)
+	ld %r5, 704(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3456(%r3)
+	ld %r4, 3464(%r3)
+	ld %r5, 712(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3464(%r3)
+	ld %r4, 3472(%r3)
+	ld %r5, 720(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3472(%r3)
+	ld %r4, 3480(%r3)
+	ld %r5, 728(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 3480(%r3)
+	ld %r4, 512(%r3)
+	std %r4, 3328(%r3)
+	ld %r4, 520(%r3)
+	std %r4, 3336(%r3)
+	ld %r4, 528(%r3)
+	std %r4, 3344(%r3)
+	ld %r4, 536(%r3)
+	std %r4, 3352(%r3)
+	ld %r4, 544(%r3)
+	std %r4, 3360(%r3)
+	ld %r4, 552(%r3)
+	std %r4, 3368(%r3)
+	ld %r4, 560(%r3)
+	std %r4, 3376(%r3)
+	ld %r4, 568(%r3)
+	std %r4, 3384(%r3)
+	ld %r4, 576(%r3)
+	std %r4, 3392(%r3)
+	ld %r4, 584(%r3)
+	std %r4, 3400(%r3)
+	ld %r4, 592(%r3)
+	std %r4, 3408(%r3)
+	ld %r4, 600(%r3)
+	std %r4, 3416(%r3)
 	bl {vg_p256_point_add}
 	ld %r4, 3232(%r3)
-	std %r4, 1056(%r3)
+	std %r4, 512(%r3)
 	ld %r4, 3240(%r3)
-	std %r4, 1064(%r3)
+	std %r4, 520(%r3)
 	ld %r4, 3248(%r3)
-	std %r4, 1072(%r3)
+	std %r4, 528(%r3)
 	ld %r4, 3256(%r3)
-	std %r4, 1080(%r3)
+	std %r4, 536(%r3)
 	ld %r4, 3264(%r3)
-	std %r4, 1088(%r3)
+	std %r4, 544(%r3)
 	ld %r4, 3272(%r3)
-	std %r4, 1096(%r3)
+	std %r4, 552(%r3)
 	ld %r4, 3280(%r3)
-	std %r4, 1104(%r3)
+	std %r4, 560(%r3)
 	ld %r4, 3288(%r3)
-	std %r4, 1112(%r3)
+	std %r4, 568(%r3)
 	ld %r4, 3296(%r3)
-	std %r4, 1120(%r3)
+	std %r4, 576(%r3)
 	ld %r4, 3304(%r3)
-	std %r4, 1128(%r3)
+	std %r4, 584(%r3)
 	ld %r4, 3312(%r3)
-	std %r4, 1136(%r3)
+	std %r4, 592(%r3)
 	ld %r4, 3320(%r3)
-	std %r4, 1144(%r3)
+	std %r4, 600(%r3)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 210b
+	ld %r4, 512(%r3)
+	std %r4, 1376(%r3)
+	ld %r4, 520(%r3)
+	std %r4, 1384(%r3)
+	ld %r4, 528(%r3)
+	std %r4, 1392(%r3)
+	ld %r4, 536(%r3)
+	std %r4, 1400(%r3)
+	ld %r4, 544(%r3)
+	std %r4, 1408(%r3)
+	ld %r4, 552(%r3)
+	std %r4, 1416(%r3)
+	ld %r4, 560(%r3)
+	std %r4, 1424(%r3)
+	ld %r4, 568(%r3)
+	std %r4, 1432(%r3)
+	ld %r4, 576(%r3)
+	std %r4, 1248(%r3)
+	ld %r4, 584(%r3)
+	std %r4, 1256(%r3)
+	ld %r4, 592(%r3)
+	std %r4, 1264(%r3)
+	ld %r4, 600(%r3)
+	std %r4, 1272(%r3)
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 512(%r3)
@@ -1460,309 +1837,5314 @@ vg_ecdsa_p256_verify:
 	lis %r11, 0
 	ori %r11, %r11, 0
 	stw %r11, 604(%r3)
-	li %r31, 256
-211:
+	li %r31, 32
+216:
 	addi %r31, %r31, -1
-	ld %r4, 512(%r3)
-	std %r4, 3328(%r3)
-	ld %r4, 520(%r3)
-	std %r4, 3336(%r3)
-	ld %r4, 528(%r3)
-	std %r4, 3344(%r3)
-	ld %r4, 536(%r3)
-	std %r4, 3352(%r3)
-	ld %r4, 544(%r3)
-	std %r4, 3360(%r3)
-	ld %r4, 552(%r3)
-	std %r4, 3368(%r3)
-	ld %r4, 560(%r3)
-	std %r4, 3376(%r3)
-	ld %r4, 568(%r3)
-	std %r4, 3384(%r3)
-	ld %r4, 576(%r3)
-	std %r4, 3392(%r3)
-	ld %r4, 584(%r3)
-	std %r4, 3400(%r3)
-	ld %r4, 592(%r3)
-	std %r4, 3408(%r3)
-	ld %r4, 600(%r3)
-	std %r4, 3416(%r3)
-	bl {vg_p256_point_double}
-	ld %r4, 3232(%r3)
-	std %r4, 3328(%r3)
-	ld %r4, 3240(%r3)
-	std %r4, 3336(%r3)
-	ld %r4, 3248(%r3)
-	std %r4, 3344(%r3)
-	ld %r4, 3256(%r3)
-	std %r4, 3352(%r3)
-	ld %r4, 3264(%r3)
-	std %r4, 3360(%r3)
-	ld %r4, 3272(%r3)
-	std %r4, 3368(%r3)
-	ld %r4, 3280(%r3)
-	std %r4, 3376(%r3)
-	ld %r4, 3288(%r3)
-	std %r4, 3384(%r3)
-	ld %r4, 3296(%r3)
-	std %r4, 3392(%r3)
-	ld %r4, 3304(%r3)
-	std %r4, 3400(%r3)
-	ld %r4, 3312(%r3)
-	std %r4, 3408(%r3)
-	ld %r4, 3320(%r3)
-	std %r4, 3416(%r3)
 	add %r4, %r3, %r31
-	lbz %r4, 4096(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
+	lbz %r4, 1184(%r4)
+	rldicr %r5, %r31, 3, 60
+	add %r5, %r3, %r5
+	li %r7, 1
+	and %r6, %r4, %r7
+	stb %r6, 4096(%r5)
+	rldicl %r6, %r4, 63, 1
+	and %r6, %r6, %r7
+	stb %r6, 4097(%r5)
+	rldicl %r6, %r4, 62, 2
+	and %r6, %r6, %r7
+	stb %r6, 4098(%r5)
+	rldicl %r6, %r4, 61, 3
+	and %r6, %r6, %r7
+	stb %r6, 4099(%r5)
+	rldicl %r6, %r4, 60, 4
+	and %r6, %r6, %r7
+	stb %r6, 4100(%r5)
+	rldicl %r6, %r4, 59, 5
+	and %r6, %r6, %r7
+	stb %r6, 4101(%r5)
+	rldicl %r6, %r4, 58, 6
+	and %r6, %r6, %r7
+	stb %r6, 4102(%r5)
+	rldicl %r6, %r4, 57, 7
+	and %r6, %r6, %r7
+	stb %r6, 4103(%r5)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 216b
 	ld %r4, 160(%r3)
-	ld %r5, 320(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 704(%r3)
+	std %r4, 4864(%r3)
 	ld %r4, 168(%r3)
-	ld %r5, 328(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 712(%r3)
+	std %r4, 4872(%r3)
 	ld %r4, 176(%r3)
-	ld %r5, 336(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 720(%r3)
+	std %r4, 4880(%r3)
 	ld %r4, 184(%r3)
-	ld %r5, 344(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 728(%r3)
+	std %r4, 4888(%r3)
 	ld %r4, 224(%r3)
-	ld %r5, 352(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 736(%r3)
+	std %r4, 4896(%r3)
 	ld %r4, 232(%r3)
-	ld %r5, 360(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 744(%r3)
+	std %r4, 4904(%r3)
 	ld %r4, 240(%r3)
-	ld %r5, 368(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 752(%r3)
+	std %r4, 4912(%r3)
 	ld %r4, 248(%r3)
-	ld %r5, 376(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 760(%r3)
+	std %r4, 4920(%r3)
 	ld %r4, 160(%r3)
-	ld %r5, 224(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 768(%r3)
+	std %r4, 4928(%r3)
 	ld %r4, 168(%r3)
-	ld %r5, 232(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 776(%r3)
+	std %r4, 4936(%r3)
 	ld %r4, 176(%r3)
-	ld %r5, 240(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 784(%r3)
+	std %r4, 4944(%r3)
 	ld %r4, 184(%r3)
-	ld %r5, 248(%r3)
+	std %r4, 4952(%r3)
+	ld %r4, 1280(%r3)
+	std %r4, 4960(%r3)
+	ld %r4, 1288(%r3)
+	std %r4, 4968(%r3)
+	ld %r4, 1296(%r3)
+	std %r4, 4976(%r3)
+	ld %r4, 1304(%r3)
+	std %r4, 4984(%r3)
+	ld %r4, 1440(%r3)
+	std %r4, 4992(%r3)
+	ld %r4, 1448(%r3)
+	std %r4, 5000(%r3)
+	ld %r4, 1456(%r3)
+	std %r4, 5008(%r3)
+	ld %r4, 1464(%r3)
+	std %r4, 5016(%r3)
+	ld %r4, 224(%r3)
+	std %r4, 5024(%r3)
+	ld %r4, 232(%r3)
+	std %r4, 5032(%r3)
+	ld %r4, 240(%r3)
+	std %r4, 5040(%r3)
+	ld %r4, 248(%r3)
+	std %r4, 5048(%r3)
+	ld %r4, 1280(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 1288(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 1296(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 1304(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 1440(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 1448(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 1456(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 1464(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 224(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 232(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 240(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 248(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5056(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5064(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5072(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5080(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5088(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5096(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5104(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5112(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5120(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5128(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5136(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5144(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5152(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5160(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5168(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5176(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5184(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5192(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5200(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5208(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5216(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5224(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5232(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5240(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5248(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5256(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5264(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5272(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5280(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5288(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5296(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5304(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5312(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5320(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5328(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5336(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5344(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5352(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5360(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5368(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5376(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5384(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5392(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5400(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5408(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5416(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5424(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5432(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5440(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5448(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5456(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5464(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5472(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5480(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5488(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5496(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5504(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5512(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5520(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5528(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5536(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5544(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5552(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5560(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5568(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5576(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5584(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5592(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5600(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5608(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5616(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5624(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5632(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5640(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5648(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5656(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5664(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5672(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5680(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5688(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5696(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5704(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5712(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5720(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5728(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5736(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5744(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5752(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5760(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5768(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5776(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5784(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5792(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5800(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5808(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5816(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5824(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5832(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5840(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5848(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5856(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5864(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5872(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5880(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5888(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5896(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 5904(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 5912(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 5920(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 5928(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 5936(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 5944(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 5952(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 5960(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 5968(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 5976(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 5984(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 5992(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 6000(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 6008(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 6016(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 6024(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 6032(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 6040(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 6048(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 6056(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 6064(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 6072(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 6080(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 6088(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 6096(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 6104(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 6112(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 6120(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 6128(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 6136(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 6144(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 6152(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 6160(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 6168(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 6176(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 6184(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 6192(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 6200(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 6208(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 6216(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 6224(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 6232(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 6240(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 6248(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 6256(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 6264(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 6272(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 6280(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 6288(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 6296(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 608
+	li %r6, 1280
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 1440
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 672
+	li %r6, 224
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 1280
+	li %r6, 1440
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 1440
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1280
+	li %r6, 224
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	ld %r4, 704(%r3)
+	std %r4, 6304(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 6312(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 6320(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 6328(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 6336(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 6344(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 6352(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 6360(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 6368(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 6376(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 6384(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 6392(%r3)
+	ld %r4, 704(%r3)
+	std %r4, 608(%r3)
+	ld %r4, 712(%r3)
+	std %r4, 616(%r3)
+	ld %r4, 720(%r3)
+	std %r4, 624(%r3)
+	ld %r4, 728(%r3)
+	std %r4, 632(%r3)
+	ld %r4, 736(%r3)
+	std %r4, 640(%r3)
+	ld %r4, 744(%r3)
+	std %r4, 648(%r3)
+	ld %r4, 752(%r3)
+	std %r4, 656(%r3)
+	ld %r4, 760(%r3)
+	std %r4, 664(%r3)
+	ld %r4, 768(%r3)
+	std %r4, 672(%r3)
+	ld %r4, 776(%r3)
+	std %r4, 680(%r3)
+	ld %r4, 784(%r3)
+	std %r4, 688(%r3)
+	ld %r4, 792(%r3)
+	std %r4, 696(%r3)
+	ld %r4, 160(%r3)
+	std %r4, 512(%r3)
+	ld %r4, 168(%r3)
+	std %r4, 520(%r3)
+	ld %r4, 176(%r3)
+	std %r4, 528(%r3)
+	ld %r4, 184(%r3)
+	std %r4, 536(%r3)
+	ld %r4, 224(%r3)
+	std %r4, 544(%r3)
+	ld %r4, 232(%r3)
+	std %r4, 552(%r3)
+	ld %r4, 240(%r3)
+	std %r4, 560(%r3)
+	ld %r4, 248(%r3)
+	std %r4, 568(%r3)
+	ld %r4, 160(%r3)
+	std %r4, 576(%r3)
+	ld %r4, 168(%r3)
+	std %r4, 584(%r3)
+	ld %r4, 176(%r3)
+	std %r4, 592(%r3)
+	ld %r4, 184(%r3)
+	std %r4, 600(%r3)
+	li %r31, 64
+217:
+	addi %r31, %r31, -1
+	li %r4, 608
+	li %r5, 512
+	li %r6, 576
+	bl {vg_p256_mul_mod_p}
+	li %r4, 800
+	li %r5, 576
+	li %r6, 576
+	bl {vg_p256_mul_mod_p}
+	li %r4, 640
+	li %r5, 544
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 576
+	li %r6, 160
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 672
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 640
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 608
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 704
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 864
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 896
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 800
+	li %r5, 768
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 704
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 704
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 608
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 672
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 608
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 608
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 640
+	li %r5, 864
+	li %r6, 608
+	bl {vg_p256_sub_mod_p}
+	li %r4, 640
+	li %r5, 896
+	li %r6, 640
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 640
+	li %r5, 640
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 800
+	li %r5, 672
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 640
+	li %r6, 640
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 608
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 608
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 704
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 864
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 896
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 800
+	li %r5, 768
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 704
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 704
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 608
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 608
+	li %r6, 896
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 672
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 896
+	li %r6, 896
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 608
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 608
+	li %r5, 608
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 640
+	li %r5, 864
+	li %r6, 608
+	bl {vg_p256_sub_mod_p}
+	li %r4, 640
+	li %r5, 896
+	li %r6, 640
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 640
+	li %r5, 640
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 512
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 800
+	li %r5, 672
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 576
+	li %r5, 800
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 544
+	li %r5, 640
+	li %r6, 160
+	bl {vg_p256_add_mod_p}
+	ld %r5, 576(%r3)
+	ld %r4, 584(%r3)
+	or %r5, %r5, %r4
+	ld %r4, 592(%r3)
+	or %r5, %r5, %r4
+	ld %r4, 600(%r3)
+	or %r5, %r5, %r4
+	li %r4, 0
+	subf %r4, %r5, %r4
+	or %r4, %r4, %r5
+	rldicl %r4, %r4, 1, 63
+	li %r5, 0
+	subf %r5, %r4, %r5
+	or %r10, %r5, %r5
+	ld %r4, 224(%r3)
+	ld %r5, 544(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
-	std %r4, 792(%r3)
-	ld %r4, 1280(%r3)
-	ld %r5, 1056(%r3)
+	std %r4, 544(%r3)
+	ld %r4, 232(%r3)
+	ld %r5, 552(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 552(%r3)
+	ld %r4, 240(%r3)
+	ld %r5, 560(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 560(%r3)
+	ld %r4, 248(%r3)
+	ld %r5, 568(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 568(%r3)
+	rldicr %r4, %r31, 2, 61
+	add %r4, %r3, %r4
+	lbz %r9, 4099(%r4)
+	add %r9, %r9, %r9
+	lbz %r5, 4098(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4097(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4096(%r4)
+	add %r9, %r9, %r5
+	li %r5, 0
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 4864(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 608(%r3)
-	ld %r4, 1288(%r3)
-	ld %r5, 1064(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 4872(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 616(%r3)
-	ld %r4, 1296(%r3)
-	ld %r5, 1072(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 4880(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 624(%r3)
-	ld %r4, 1304(%r3)
-	ld %r5, 1080(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 4888(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 632(%r3)
-	ld %r4, 1440(%r3)
-	ld %r5, 1088(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 4896(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 640(%r3)
-	ld %r4, 1448(%r3)
-	ld %r5, 1096(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 4904(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 648(%r3)
-	ld %r4, 1456(%r3)
-	ld %r5, 1104(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 4912(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 656(%r3)
-	ld %r4, 1464(%r3)
-	ld %r5, 1112(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 4920(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 664(%r3)
-	ld %r4, 224(%r3)
-	ld %r5, 1120(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 4928(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 672(%r3)
-	ld %r4, 232(%r3)
-	ld %r5, 1128(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 4936(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 680(%r3)
-	ld %r4, 240(%r3)
-	ld %r5, 1136(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 4944(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 688(%r3)
-	ld %r4, 248(%r3)
-	ld %r5, 1144(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 4952(%r3)
 	xor %r5, %r5, %r4
 	and %r5, %r5, %r10
 	xor %r4, %r4, %r5
 	std %r4, 696(%r3)
-	add %r4, %r3, %r31
-	lbz %r4, 4864(%r4)
+	li %r5, 1
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
 	li %r5, 0
-	subf %r10, %r4, %r5
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 4960(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 4968(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 4976(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 4984(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 4992(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5000(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5008(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5016(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5024(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5032(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5040(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5048(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 2
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5056(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5064(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5072(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5080(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5088(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5096(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5104(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5112(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5120(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5128(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5136(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5144(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 3
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5152(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5160(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5168(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5176(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5184(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5192(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5200(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5208(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5216(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5224(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5232(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5240(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 4
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5248(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5256(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5264(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5272(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5280(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5288(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5296(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5304(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5312(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5320(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5328(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5336(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 5
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5344(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5352(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5360(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5368(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5376(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5384(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5392(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5400(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5408(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5416(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5424(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5432(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 6
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5440(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5448(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5456(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5464(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5472(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5480(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5488(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5496(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5504(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5512(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5520(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5528(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 7
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5536(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5544(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5552(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5560(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5568(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5576(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5584(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5592(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5600(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5608(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5616(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5624(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 8
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5632(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5640(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5648(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5656(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5664(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5672(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5680(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5688(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5696(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5704(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5712(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5720(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 9
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5728(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5736(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5744(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5752(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5760(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5768(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5776(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5784(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5792(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5800(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5808(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5816(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 10
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5824(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5832(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5840(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5848(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5856(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5864(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5872(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5880(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5888(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5896(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 5904(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 5912(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 11
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 5920(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 5928(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 5936(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 5944(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 5952(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 5960(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 5968(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 5976(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 5984(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 5992(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 6000(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 6008(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 12
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 6016(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 6024(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 6032(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 6040(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 6048(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 6056(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 6064(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 6072(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 6080(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 6088(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 6096(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 6104(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 13
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 6112(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 6120(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 6128(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 6136(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 6144(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 6152(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 6160(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 6168(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 6176(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 6184(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 6192(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 6200(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 14
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 6208(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 6216(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 6224(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 6232(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 6240(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 6248(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 6256(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 6264(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 6272(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 6280(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 6288(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 6296(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r5, 15
+	xor %r10, %r9, %r5
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 608(%r3)
+	ld %r5, 6304(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 608(%r3)
+	ld %r4, 616(%r3)
+	ld %r5, 6312(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 616(%r3)
+	ld %r4, 624(%r3)
+	ld %r5, 6320(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 624(%r3)
+	ld %r4, 632(%r3)
+	ld %r5, 6328(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 632(%r3)
+	ld %r4, 640(%r3)
+	ld %r5, 6336(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 640(%r3)
+	ld %r4, 648(%r3)
+	ld %r5, 6344(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 648(%r3)
+	ld %r4, 656(%r3)
+	ld %r5, 6352(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 656(%r3)
+	ld %r4, 664(%r3)
+	ld %r5, 6360(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 664(%r3)
+	ld %r4, 672(%r3)
+	ld %r5, 6368(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 672(%r3)
+	ld %r4, 680(%r3)
+	ld %r5, 6376(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 680(%r3)
+	ld %r4, 688(%r3)
+	ld %r5, 6384(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 688(%r3)
+	ld %r4, 696(%r3)
+	ld %r5, 6392(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 696(%r3)
+	li %r4, 800
+	li %r5, 512
+	li %r6, 608
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 544
+	li %r6, 640
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 576
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 512
+	li %r6, 544
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 608
+	li %r6, 640
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 544
+	li %r6, 576
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 640
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 512
+	li %r6, 576
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 736
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 1344
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 736
+	li %r6, 768
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 704
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_add_mod_p}
+	li %r4, 768
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_sub_mod_p}
+	li %r4, 704
+	li %r5, 832
+	li %r6, 704
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 1344
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 864
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 736
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 736
+	li %r5, 832
+	li %r6, 736
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 832
+	li %r5, 928
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 736
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 704
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 736
+	li %r5, 736
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 704
+	li %r5, 896
+	li %r6, 704
+	bl {vg_p256_mul_mod_p}
+	li %r4, 704
+	li %r5, 704
+	li %r6, 832
+	bl {vg_p256_sub_mod_p}
+	li %r4, 768
+	li %r5, 928
+	li %r6, 768
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 896
+	li %r6, 800
+	bl {vg_p256_mul_mod_p}
+	li %r4, 768
+	li %r5, 768
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
 	ld %r4, 704(%r3)
-	ld %r5, 608(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3424(%r3)
-	ld %r4, 712(%r3)
-	ld %r5, 616(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3432(%r3)
-	ld %r4, 720(%r3)
-	ld %r5, 624(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3440(%r3)
-	ld %r4, 728(%r3)
-	ld %r5, 632(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3448(%r3)
-	ld %r4, 736(%r3)
-	ld %r5, 640(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3456(%r3)
-	ld %r4, 744(%r3)
-	ld %r5, 648(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3464(%r3)
-	ld %r4, 752(%r3)
-	ld %r5, 656(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3472(%r3)
-	ld %r4, 760(%r3)
-	ld %r5, 664(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3480(%r3)
-	ld %r4, 768(%r3)
-	ld %r5, 672(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3488(%r3)
-	ld %r4, 776(%r3)
-	ld %r5, 680(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3496(%r3)
-	ld %r4, 784(%r3)
-	ld %r5, 688(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3504(%r3)
-	ld %r4, 792(%r3)
-	ld %r5, 696(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 3512(%r3)
-	bl {vg_p256_point_add}
-	ld %r4, 3232(%r3)
 	std %r4, 512(%r3)
-	ld %r4, 3240(%r3)
+	ld %r4, 712(%r3)
 	std %r4, 520(%r3)
-	ld %r4, 3248(%r3)
+	ld %r4, 720(%r3)
 	std %r4, 528(%r3)
-	ld %r4, 3256(%r3)
+	ld %r4, 728(%r3)
 	std %r4, 536(%r3)
-	ld %r4, 3264(%r3)
+	ld %r4, 736(%r3)
 	std %r4, 544(%r3)
-	ld %r4, 3272(%r3)
+	ld %r4, 744(%r3)
 	std %r4, 552(%r3)
-	ld %r4, 3280(%r3)
+	ld %r4, 752(%r3)
 	std %r4, 560(%r3)
-	ld %r4, 3288(%r3)
+	ld %r4, 760(%r3)
 	std %r4, 568(%r3)
-	ld %r4, 3296(%r3)
+	ld %r4, 768(%r3)
 	std %r4, 576(%r3)
-	ld %r4, 3304(%r3)
+	ld %r4, 776(%r3)
 	std %r4, 584(%r3)
-	ld %r4, 3312(%r3)
+	ld %r4, 784(%r3)
 	std %r4, 592(%r3)
-	ld %r4, 3320(%r3)
+	ld %r4, 792(%r3)
 	std %r4, 600(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 211b
+	bne %cr0, 217b
+	li %r4, 800
+	li %r5, 1376
+	li %r6, 512
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 1408
+	li %r6, 544
+	bl {vg_p256_mul_mod_p}
+	li %r4, 864
+	li %r5, 1248
+	li %r6, 576
+	bl {vg_p256_mul_mod_p}
+	li %r4, 896
+	li %r5, 1376
+	li %r6, 1408
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 512
+	li %r6, 544
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 800
+	li %r6, 832
+	bl {vg_p256_add_mod_p}
+	li %r4, 896
+	li %r5, 896
+	li %r6, 928
+	bl {vg_p256_sub_mod_p}
+	li %r4, 928
+	li %r5, 1376
+	li %r6, 1248
+	bl {vg_p256_add_mod_p}
+	li %r4, 960
+	li %r5, 512
+	li %r6, 576
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 960
+	bl {vg_p256_mul_mod_p}
+	li %r4, 960
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 960
+	bl {vg_p256_sub_mod_p}
+	li %r4, 960
+	li %r5, 1408
+	li %r6, 1248
+	bl {vg_p256_add_mod_p}
+	li %r4, 608
+	li %r5, 544
+	li %r6, 576
+	bl {vg_p256_add_mod_p}
+	li %r4, 960
+	li %r5, 960
+	li %r6, 608
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 960
+	li %r5, 960
+	li %r6, 608
+	bl {vg_p256_sub_mod_p}
+	li %r4, 672
+	li %r5, 256
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 288
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 608
+	li %r5, 832
+	li %r6, 672
+	bl {vg_p256_sub_mod_p}
+	li %r4, 672
+	li %r5, 832
+	li %r6, 672
+	bl {vg_p256_add_mod_p}
+	li %r4, 640
+	li %r5, 608
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 800
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 256
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 288
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 832
+	li %r5, 832
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 864
+	li %r5, 800
+	li %r6, 864
+	bl {vg_p256_sub_mod_p}
+	li %r4, 864
+	li %r5, 256
+	li %r6, 864
+	bl {vg_p256_mul_mod_p}
+	li %r4, 928
+	li %r5, 928
+	li %r6, 864
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 832
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 640
+	li %r5, 640
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	li %r4, 800
+	li %r5, 960
+	li %r6, 928
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 896
+	li %r6, 608
+	bl {vg_p256_mul_mod_p}
+	li %r4, 608
+	li %r5, 608
+	li %r6, 800
+	bl {vg_p256_sub_mod_p}
+	li %r4, 800
+	li %r5, 896
+	li %r6, 832
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 960
+	li %r6, 672
+	bl {vg_p256_mul_mod_p}
+	li %r4, 672
+	li %r5, 672
+	li %r6, 800
+	bl {vg_p256_add_mod_p}
+	ld %r4, 608(%r3)
+	std %r4, 512(%r3)
+	ld %r4, 616(%r3)
+	std %r4, 520(%r3)
+	ld %r4, 624(%r3)
+	std %r4, 528(%r3)
+	ld %r4, 632(%r3)
+	std %r4, 536(%r3)
+	ld %r4, 640(%r3)
+	std %r4, 544(%r3)
+	ld %r4, 648(%r3)
+	std %r4, 552(%r3)
+	ld %r4, 656(%r3)
+	std %r4, 560(%r3)
+	ld %r4, 664(%r3)
+	std %r4, 568(%r3)
+	ld %r4, 672(%r3)
+	std %r4, 576(%r3)
+	ld %r4, 680(%r3)
+	std %r4, 584(%r3)
+	ld %r4, 688(%r3)
+	std %r4, 592(%r3)
+	ld %r4, 696(%r3)
+	std %r4, 600(%r3)
 	ld %r4, 224(%r3)
 	std %r4, 992(%r3)
 	ld %r4, 232(%r3)
@@ -1772,7 +7154,7 @@ vg_ecdsa_p256_verify:
 	ld %r4, 248(%r3)
 	std %r4, 1016(%r3)
 	li %r31, 256
-212:
+218:
 	addi %r31, %r31, -1
 	li %r4, 992
 	li %r5, 992
@@ -1811,7 +7193,7 @@ vg_ecdsa_p256_verify:
 	xor %r4, %r4, %r5
 	std %r4, 1016(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 212b
+	bne %cr0, 218b
 	li %r4, 1152
 	li %r5, 512
 	li %r6, 992
