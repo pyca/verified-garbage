@@ -240,11 +240,11 @@ theorem negateI_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive 
     exact ov.trans ot.unch
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    have lowx : x + 8 * K.L.M.n ≤ own K.L.M.n := by rcases hx with rfl | rfl | rfl <;> assumption
+    have lowx : x + 8 * K.L.M.n ≤ own K.L.M.n := by rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     have negx : K.neg + 8 * K.L.M.n ≤ x ∨ x + 8 * K.L.M.n ≤ K.neg := by
-      rcases hx with rfl | rfl | rfl <;> assumption
+      rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     have qx' : x + 8 * K.L.M.n ≤ K.Q.x ∨ K.Q.x + 24 * K.L.M.n ≤ x := by
-      rcases hx with rfl | rfl | rfl <;> assumption
+      rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     rw [ot.wordsVal (by omega) (by omega), mv]
     apply ou.wordsVal _ (by omega)
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
@@ -370,9 +370,9 @@ theorem entryI_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {s
       wordsVal v.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    have lowx : x + 8 * K.L.M.n ≤ own K.L.M.n := by rcases hx with rfl | rfl | rfl <;> assumption
+    have lowx : x + 8 * K.L.M.n ≤ own K.L.M.n := by rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     have qx' : x + 8 * K.L.M.n ≤ K.Q.x ∨ K.Q.x + 24 * K.L.M.n ≤ x := by
-      rcases hx with rfl | rfl | rfl <;> assumption
+      rcases hx with rfl | rfl | rfl <;> with_reducible assumption
     rw [ov.unch.wordsVal (by simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; omega)
       (by omega), mu]
   have mask : ∀ a, Rk fnClob v a → Unch base [(K.neg, 8 * K.L.M.n), (own K.L.M.n, 64 * K.L.M.n)] v.mem a.mem →
