@@ -66,15 +66,15 @@ theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho 
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
   WP.mono (mulS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
-theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
+theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (add o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x + v y))) :=
-  WP.mono (addS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (addS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
-theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
+theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
-  WP.mono (subS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (subS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 end
 
@@ -133,8 +133,8 @@ theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
   | mul o x y => exact opMul hq hal ho hx hy h
-  | add o x y => exact opAdd hq ho hx hy h
-  | sub o x y => exact opSub hq ho hx hy h
+  | add o x y => exact opAdd hq hal ho hx hy h
+  | sub o x y => exact opSub hq hal ho hx hy h
 
 theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
