@@ -45,10 +45,6 @@ def ranking : Rust.Ranking := [
     { suffix := "_pclmul_avx" },
     { suffix := "_pclmul_avx2" },
     { suffix := "_pclmul" },
-    -- ChaCha20's 512-bit code (`_avx512`) is chosen where ChaCha20-Poly1305's
-    -- `_ifma` is, on CPUs with AVX512_IFMA, and `_avx512vl` on the other CPUs
-    -- with AVX512VL.
-    { suffix := "_avx512", modules := ["chacha20"], extra := ["avx512ifma"] },
     { suffix := "_ifma" },
     { suffix := "_avx512vl" },
     { suffix := "_avx512" },

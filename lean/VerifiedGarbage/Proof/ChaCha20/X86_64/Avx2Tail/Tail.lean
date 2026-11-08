@@ -208,10 +208,13 @@ theorem scalarT_ok {s₀ : State} (hp : TPre s₀) {p : Nat} {s : State} (h : TI
 theorem smallT_ok (vl : Bool) {s₀ : State} (hp : TPre s₀) {p : Nat} (hle : eL s₀ - p ≤ 128)
     {s : State} (h : TInv (XA s₀) s₀ p s) (hr9 : s.gpr .r9 = ebp s₀) :
     WP isa (small vl) s (FinT s₀) := by
+  cases vl with
+  | true => exact WP.mono (last1T_ok true hp hle h hr9) fun _ d => d.fin hp
+  | false =>
   refine WP.seq (WP.mono (cmpN_ok h hr9 (N := 65) (by decide) (by decide)) fun s₁ ⟨h₁, r₁, c₁⟩ => ?_)
   refine WP.ite (decide (eL s₀ - p < 65)) (by simp [eval, c₁]) (fun _ => ?_) (fun _ => ?_)
   · exact scalarT_ok hp h₁
-  · exact WP.mono (last1T_ok vl hp hle h₁ r₁) fun _ d => d.fin hp
+  · exact WP.mono (last1T_ok false hp hle h₁ r₁) fun _ d => d.fin hp
 
 theorem last3_eq (vl : Bool) : last3 vl = .seq (.block setup3) (.seq (roundsS vl 3 10) (.seq (.block
     ((addIn3 ++ xorSetT .xmm0 .xmm1 .xmm2 .xmm3 0 ++ xorSetT .xmm4 .xmm5 .xmm6 .xmm7 128 ++

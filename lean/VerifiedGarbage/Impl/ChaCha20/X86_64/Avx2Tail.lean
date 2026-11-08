@@ -16,7 +16,8 @@ state):
   as many of their bytes as remain are XORed from there (`fromBuf`);
 * if 129 to 256, four blocks are computed into `buf[0, 256)`, and the data
   XORed from there; if 65 to 128, two blocks into `buf[0, 128)`, the same;
-  if fewer, but some, `vg_chacha20_xor` XORs them (`scalar`).
+  if fewer, but some, two blocks with `vprold`, and otherwise
+  `vg_chacha20_xor` XORs them (`scalar`).
 
 The rounds of a computation take about the same time for two, four or six
 blocks (they are bound by the latency of a quarter round, not by its
@@ -310,15 +311,14 @@ def last1 (vl : Bool) : Prog isa :=
     (fromBuf vl)))
 
 /-- At most 64 bytes, by `vg_chacha20_xor` (from `rsi` to `rsi + r11`), whose
-one block takes less time than several in vector registers (here and in
-`vg_chacha20_xor_avx512`); it returns with `rsi` pointing at `buf`, which
-goes back to `r9`. -/
+one block takes less time than several in vector registers without `vprold`;
+it returns with `rsi` pointing at `buf`, which goes back to `r9`. -/
 def scalar : Prog isa :=
   .seq (.block [.vop .vzeroupper]) (.seq (Xor.callTo "vg_chacha20_xor" Xor.xor) (.block [.mov .r9 (.reg .rsi)]))
 
-/-- The last `rdx` bytes, from 1 to 128. -/
+/-- The last `rdx` bytes, from 1 to 128: with `vprold`, two blocks. -/
 def small (vl : Bool) : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar (last1 vl))
+  if vl then last1 vl else .seq (.block [.alu .cmp .rdx (.imm 65)]) (.ite .b scalar (last1 vl))
 
 /-- 257 to 384 bytes: six blocks, the first four XORed with the next 256
 bytes of the source into the destination and the last two into `buf`, from

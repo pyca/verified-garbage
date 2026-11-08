@@ -154,11 +154,6 @@ def x86Rank (module suffix : String) : Option Nat :=
   | some i, some j => i < j
   | _, _ => false
 
--- ChaCha20's `_avx512` needs AVX512_IFMA too, which its own features do not
--- name: it is chosen where ChaCha20-Poly1305's `_ifma`, built on it, is.
-#guard ((Rust.rankOf ((Dispatch.ranking.lookup "x86_64").getD []) "chacha20" "_avx512").map
-  (·.2.extra)) == some ["avx512ifma"]
-
 -- An unranked suffix fails the emitter.
 #guard match Rust.files Artifacts.Poly1305.AArch64.artifacts [("aarch64", [])] with
   | .error e => has e "vg_poly1305_update_neon: its suffix `_neon` is not ranked"

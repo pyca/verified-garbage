@@ -12,7 +12,7 @@ pub use crate::chacha20::vg_chacha20_init as vg_chacha20_init_auto;
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`) and it also supports `avx512ifma`; `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -30,11 +30,11 @@ pub unsafe fn vg_chacha20_apply_auto(state: *mut [u64; 96], data: *mut u8, len: 
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if cpu.contains(verified_garbage_cpu::Features(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES.0 | verified_garbage_cpu::feature::AVX512IFMA)) {
-            return crate::chacha20::vg_chacha20_apply_avx512;
-        }
         if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512VL_FEATURES) {
             return crate::chacha20::vg_chacha20_apply_avx512vl;
+        }
+        if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX512_FEATURES) {
+            return crate::chacha20::vg_chacha20_apply_avx512;
         }
         if cpu.contains(crate::chacha20::VG_CHACHA20_APPLY_AVX2_FEATURES) {
             return crate::chacha20::vg_chacha20_apply_avx2;
