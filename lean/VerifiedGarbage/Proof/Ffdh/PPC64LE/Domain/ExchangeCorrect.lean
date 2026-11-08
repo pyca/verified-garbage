@@ -202,7 +202,8 @@ theorem ex_correct (s : State) (h : exContract.pre s) :
         ((k4.gpr .r28 (by decide)).trans a28) (by omega_arith) (by omega_arith) hx1 (by omega_arith)
         (fun i hi => by rw [k1234.rd, k1234.wr]; exact rdP i hi) sepP
         (fun i hi => by rw [k1234.rd, k1234.wr]; exact rdX i hi) sepX hX₄ hXL₄
-        (by rw [p4]; exact hf.1) (by rw [p4]; exact hf.2)) fun s₅ ⟨⟨z5, p5, b5', r10₅⟩, k5⟩ => ?_)
+        (by rw [p4]; exact hf.1) (by rw [p4]; exact hf.2)
+        (by rw [p4]; exact top_of_valid hv (by omega) (by omega))) fun s₅ ⟨⟨z5, p5, b5', r10₅⟩, k5⟩ => ?_)
       rw [Body.bytesAt b4' hZw sepP, Body.bytesAt b4' hZw sepX, hb3 P k sepP, hb3 X xl sepX, p4, hz] at z5
       have hO5 : s₅.mem.readW (off S 80) 64 = off O 0 := by
         show word s₅.mem S 80 = _

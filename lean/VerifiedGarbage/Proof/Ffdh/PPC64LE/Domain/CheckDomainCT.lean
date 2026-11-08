@@ -332,6 +332,7 @@ theorem DS {d : CD} {s : State} (h : E9 d s ∧ s.gpr .r26 ≠ 0) : WP isa subgr
   have hk := hb.k64
   refine WP.mono (subgroup_ok hb.env hb.r23 hb.r21 hb.r28 (by omega) hb.k1024 (by rw [hv.p0]; omega)
     (by rw [hv.p0]; exact hf.2)
+    (by rw [hv.p0]; exact top_of_valid hv.valid (by simp only [CD.w]; omega) (by simp only [CD.w]; omega))
     (fun i hi => by rw [off_off']; exact hb.rdD _ (by omega))
     (fun i hi => by rw [off_off']; exact hb.sepD _ (by omega))) fun t ⟨_, k⟩ => ?_
   show t.gpr .r23 = d.S

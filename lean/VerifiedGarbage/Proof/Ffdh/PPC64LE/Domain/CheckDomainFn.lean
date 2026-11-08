@@ -179,7 +179,8 @@ theorem cd_correct (s : State) (h : cdContract.pre s) :
         ((k3.gpr .r21 (by decide)).trans a21) ((k3.gpr .r27 (by decide)).trans a27)
         ((k3.gpr .r28 (by decide)).trans a28) (by omega) (by omega) hk' hL'
         (fun i hi => by rw [k13.rd, k13.wr]; exact rdD i hi) sepD
-        (p3.trans (by rw [hb3 D k fun i hi => sepD i (by omega)])) (by rw [p3]; exact hf.1) (by rw [p3]; exact hf.2))
+        (p3.trans (by rw [hb3 D k fun i hi => sepD i (by omega)])) (by rw [p3]; exact hf.1) (by rw [p3]; exact hf.2)
+        (by rw [p3]; exact top_of_valid hv (by omega) (by omega)))
         fun t ⟨⟨t3, bt⟩, kt⟩ => ⟨?_, bt, kt.mono (by decide)⟩
       rw [t3, p3, hb3 (off D k) k (sep' (a := k) (by omega))]
       rcases hL' with rfl | rfl
