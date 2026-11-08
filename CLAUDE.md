@@ -200,8 +200,7 @@ Guidance for particular tasks is in skills, `.agents/skills/<name>/SKILL.md`
 tasks, read its skill, whether or not your tool loads it for you:
 
 * `adding-a-primitive`: before adding a primitive, a new target for one, a
-  CPU-feature variant, or a file under `Artifacts/`, `Generic/` or
-  `Variants/`.
+  CPU-feature variant, or a file under `Artifacts/` or `Proof/Variants/`.
 * `proof-performance`: before writing or editing a proof, or when one is
   slow. The rules in "Keeping proofs fast" below are its summary: change
   the two together.
@@ -232,10 +231,9 @@ the Rust API, its tests and its benchmark together. Only what the Rust code
 calls has a spec: a function only verified code calls is emitted as an
 internal function, with no `Api` and its contract in `Proof/`. Any TCB additions the
 primitive needs (e.g. new instructions in an ISA model) go in their own PR
-before either. Registration files (`Artifacts/`, `Generic/`) and variant
-files (`Variants/`) are reviewed by hand, so they only bind
-(`ci/check_registrations.py` checks it). The `adding-a-primitive` skill has
-the steps.
+before either. Registration files (`Artifacts/`) are reviewed by hand, so
+they only bind (`ci/check_registrations.py` checks it). The
+`adding-a-primitive` skill has the steps.
 
 ## Keeping parallel PRs from conflicting
 

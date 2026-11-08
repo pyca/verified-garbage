@@ -4,283 +4,6 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_mldsa65_prepare_verifying_key:
-	str x25, [sp, #-16]!
-	str x26, [sp, #-16]!
-	str x28, [sp, #-16]!
-	str x30, [sp, #-16]!
-	add x25, x0, #0
-	add x26, x1, #0
-	add x28, x2, #0
-	add x0, x26, #0
-	add x1, x25, #0
-	movz x2, #122, lsl #0
-20:
-	ldr q0, [x1, #0]
-	str q0, [x0, #0]
-	add x0, x0, #16
-	add x1, x1, #16
-	sub x2, x2, #1
-	cbnz x2, 20b
-	add x0, x25, #32
-	add x1, x26, #1952
-	bl {vg_mldsa_unpack_t1}
-	add x0, x26, #1952
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #352
-	add x1, x26, #2976
-	bl {vg_mldsa_unpack_t1}
-	add x0, x26, #2976
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #672
-	add x1, x26, #4000
-	bl {vg_mldsa_unpack_t1}
-	add x0, x26, #4000
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #992
-	movz x1, #5024, lsl #0
-	add x1, x26, x1
-	bl {vg_mldsa_unpack_t1}
-	movz x0, #5024, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1312
-	movz x1, #6048, lsl #0
-	add x1, x26, x1
-	bl {vg_mldsa_unpack_t1}
-	movz x0, #6048, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1632
-	movz x1, #7072, lsl #0
-	add x1, x26, x1
-	bl {vg_mldsa_unpack_t1}
-	movz x0, #7072, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	ldr x30, [sp], #16
-	ldr x28, [sp], #16
-	ldr x26, [sp], #16
-	ldr x25, [sp], #16
-	ret
-	.p2align 6
-
-vg_mldsa65_prepare_signing_key:
-	str x25, [sp, #-16]!
-	str x26, [sp, #-16]!
-	str x28, [sp, #-16]!
-	str x30, [sp, #-16]!
-	add x25, x0, #0
-	add x26, x1, #0
-	add x28, x2, #0
-	add x0, x26, #0
-	add x1, x25, #0
-	movz x2, #252, lsl #0
-20:
-	ldr q0, [x1, #0]
-	str q0, [x0, #0]
-	add x0, x0, #16
-	add x1, x1, #16
-	sub x2, x2, #1
-	cbnz x2, 20b
-	add x0, x25, #128
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	add x4, x26, #4032
-	bl {vg_mldsa_bit_unpack}
-	add x0, x26, #4032
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #256
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #5056, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #5056, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #384
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #6080, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #6080, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #512
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #7104, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #7104, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #640
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #8128, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #8128, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #768
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #9152, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #9152, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #896
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #10176, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #10176, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1024
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #11200, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #11200, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1152
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #12224, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #12224, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1280
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #13248, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #13248, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1408
-	movz x1, #128, lsl #0
-	movz x2, #4, lsl #0
-	movz x3, #4, lsl #0
-	movz x4, #14272, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #14272, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1536
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #15296, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #15296, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #1952
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #16320, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #16320, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #2368
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #17344, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #17344, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #2784
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #18368, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #18368, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #3200
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #19392, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #19392, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	add x0, x25, #3616
-	movz x1, #416, lsl #0
-	movz x2, #4095, lsl #0
-	movz x3, #4096, lsl #0
-	movz x4, #20416, lsl #0
-	add x4, x26, x4
-	bl {vg_mldsa_bit_unpack}
-	movz x0, #20416, lsl #0
-	add x0, x26, x0
-	add x1, x28, #0
-	bl {vg_mldsa_ntt}
-	ldr x30, [sp], #16
-	ldr x28, [sp], #16
-	ldr x26, [sp], #16
-	ldr x25, [sp], #16
-	ret
-	.p2align 6
-
 vg_mldsa65_keygen:
 	str x24, [x3, #840]
 	str x25, [x3, #848]
@@ -1943,514 +1666,6 @@ vg_mldsa65_keygen:
 	ret
 	.p2align 6
 
-vg_mldsa65_pk_tr:
-	add x3, x2, #0
-	str x24, [x3, #840]
-	str x25, [x3, #848]
-	str x26, [x3, #856]
-	str x27, [x3, #864]
-	str x28, [x3, #872]
-	str x30, [x3, #880]
-	add x25, x0, #0
-	add x26, x1, #0
-	add x27, x2, #0
-	add x28, x3, #0
-	movz x24, #1, lsl #0
-	add x0, x28, #0
-	movz x9, #0, lsl #0
-	str x9, [x0, #0]
-	str x9, [x0, #8]
-	str x9, [x0, #16]
-	str x9, [x0, #24]
-	str x9, [x0, #32]
-	str x9, [x0, #40]
-	str x9, [x0, #48]
-	str x9, [x0, #56]
-	str x9, [x0, #64]
-	str x9, [x0, #72]
-	str x9, [x0, #80]
-	str x9, [x0, #88]
-	str x9, [x0, #96]
-	str x9, [x0, #104]
-	str x9, [x0, #112]
-	str x9, [x0, #120]
-	str x9, [x0, #128]
-	str x9, [x0, #136]
-	str x9, [x0, #144]
-	str x9, [x0, #152]
-	str x9, [x0, #160]
-	str x9, [x0, #168]
-	str x9, [x0, #176]
-	str x9, [x0, #184]
-	str x9, [x0, #192]
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x5, x28, #200
-	add x3, x25, #0
-	movz x4, #1952, lsl #0
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x4, x28, #200
-	movz x3, #31, lsl #0
-	bl {vg_keccak_pad_scratch}
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x5, x28, #200
-	add x3, x26, #0
-	movz x4, #64, lsl #0
-	bl {vg_keccak_squeeze_scratch}
-	add x0, x24, #0
-	ldr x30, [x28, #880]
-	ldr x24, [x28, #840]
-	ldr x25, [x28, #848]
-	ldr x26, [x28, #856]
-	ldr x27, [x28, #864]
-	ldr x28, [x28, #872]
-	ret
-	.p2align 6
-
-vg_mldsa65_sign:
-	str x30, [sp, #-16]!
-	add x5, x0, #0
-	movz x6, #0, lsl #0
-	bl {vg_mldsa65_sign_with_cache}
-	ldr x30, [sp], #16
-	ret
-	.p2align 6
-
-vg_mldsa65_sign_message:
-	lsr x9, x4, #8
-	cbnz x9, 20f
-	movz x9, #37888, lsl #0
-	movk x9, #1, lsl #16
-	movk x9, #0, lsl #32
-	movk x9, #0, lsl #48
-	add x9, x7, x9
-	str x28, [x9, #904]
-	str x30, [x9, #912]
-	add x28, x9, #0
-	str x0, [x28, #920]
-	str x1, [x28, #928]
-	str x2, [x28, #936]
-	str x3, [x28, #944]
-	str x4, [x28, #952]
-	str x5, [x28, #960]
-	str x6, [x28, #968]
-	str x7, [x28, #976]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #984]
-	strb w4, [x28, #985]
-	add x0, x28, #0
-	movz x9, #0, lsl #0
-	str x9, [x0, #0]
-	str x9, [x0, #8]
-	str x9, [x0, #16]
-	str x9, [x0, #24]
-	str x9, [x0, #32]
-	str x9, [x0, #40]
-	str x9, [x0, #48]
-	str x9, [x0, #56]
-	str x9, [x0, #64]
-	str x9, [x0, #72]
-	str x9, [x0, #80]
-	str x9, [x0, #88]
-	str x9, [x0, #96]
-	str x9, [x0, #104]
-	str x9, [x0, #112]
-	str x9, [x0, #120]
-	str x9, [x0, #128]
-	str x9, [x0, #136]
-	str x9, [x0, #144]
-	str x9, [x0, #152]
-	str x9, [x0, #160]
-	str x9, [x0, #168]
-	str x9, [x0, #176]
-	str x9, [x0, #184]
-	str x9, [x0, #192]
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #920]
-	add x3, x3, #64
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #64, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x3, x28, #984
-	movz x4, #2, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #66, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #944]
-	ldr x4, [x28, #952]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #928]
-	ldr x4, [x28, #936]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x3, #31, lsl #0
-	add x4, x28, #200
-	bl {vg_keccak_pad_scratch}
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x2, #0, lsl #0
-	add x3, x28, #840
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_squeeze_scratch}
-	ldr x0, [x28, #920]
-	add x1, x28, #840
-	ldr x2, [x28, #960]
-	ldr x3, [x28, #968]
-	ldr x4, [x28, #976]
-	bl {vg_mldsa65_sign}
-	ldr x30, [x28, #912]
-	ldr x28, [x28, #904]
-	b 21f
-20:
-	movz x0, #2, lsl #0
-21:
-	ret
-	.p2align 6
-
-vg_mldsa65_sign_message_prepared:
-	lsr x9, x4, #8
-	cbnz x9, 20f
-	movz x9, #37888, lsl #0
-	movk x9, #1, lsl #16
-	movk x9, #0, lsl #32
-	movk x9, #0, lsl #48
-	add x9, x7, x9
-	str x28, [x9, #904]
-	str x30, [x9, #912]
-	add x28, x9, #0
-	str x0, [x28, #920]
-	str x1, [x28, #928]
-	str x2, [x28, #936]
-	str x3, [x28, #944]
-	str x4, [x28, #952]
-	str x5, [x28, #960]
-	str x6, [x28, #968]
-	str x7, [x28, #976]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #984]
-	strb w4, [x28, #985]
-	add x0, x28, #0
-	movz x9, #0, lsl #0
-	str x9, [x0, #0]
-	str x9, [x0, #8]
-	str x9, [x0, #16]
-	str x9, [x0, #24]
-	str x9, [x0, #32]
-	str x9, [x0, #40]
-	str x9, [x0, #48]
-	str x9, [x0, #56]
-	str x9, [x0, #64]
-	str x9, [x0, #72]
-	str x9, [x0, #80]
-	str x9, [x0, #88]
-	str x9, [x0, #96]
-	str x9, [x0, #104]
-	str x9, [x0, #112]
-	str x9, [x0, #120]
-	str x9, [x0, #128]
-	str x9, [x0, #136]
-	str x9, [x0, #144]
-	str x9, [x0, #152]
-	str x9, [x0, #160]
-	str x9, [x0, #168]
-	str x9, [x0, #176]
-	str x9, [x0, #184]
-	str x9, [x0, #192]
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #920]
-	add x3, x3, #64
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #64, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x3, x28, #984
-	movz x4, #2, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #66, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #944]
-	ldr x4, [x28, #952]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #928]
-	ldr x4, [x28, #936]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x3, #31, lsl #0
-	add x4, x28, #200
-	bl {vg_keccak_pad_scratch}
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x2, #0, lsl #0
-	add x3, x28, #840
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_squeeze_scratch}
-	ldr x0, [x28, #920]
-	add x1, x28, #840
-	ldr x2, [x28, #960]
-	ldr x3, [x28, #968]
-	ldr x4, [x28, #976]
-	bl {vg_mldsa65_sign_prepared}
-	ldr x30, [x28, #912]
-	ldr x28, [x28, #904]
-	b 21f
-20:
-	movz x0, #2, lsl #0
-21:
-	ret
-	.p2align 6
-
-vg_mldsa65_verify:
-	str x30, [sp, #-16]!
-	add x4, x0, #0
-	movz x5, #0, lsl #0
-	bl {vg_mldsa65_verify_with_cache}
-	ldr x30, [sp], #16
-	ret
-	.p2align 6
-
-vg_mldsa65_verify_message_cached:
-	lsr x9, x4, #8
-	cbnz x9, 20f
-	movz x9, #37888, lsl #0
-	movk x9, #1, lsl #16
-	movk x9, #0, lsl #32
-	movk x9, #0, lsl #48
-	add x9, x6, x9
-	str x28, [x9, #904]
-	str x30, [x9, #912]
-	add x28, x9, #0
-	str x0, [x28, #920]
-	str x1, [x28, #928]
-	str x2, [x28, #936]
-	str x3, [x28, #944]
-	str x4, [x28, #952]
-	str x7, [x28, #960]
-	str x5, [x28, #968]
-	str x6, [x28, #976]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #984]
-	strb w4, [x28, #985]
-	add x0, x28, #0
-	movz x9, #0, lsl #0
-	str x9, [x0, #0]
-	str x9, [x0, #8]
-	str x9, [x0, #16]
-	str x9, [x0, #24]
-	str x9, [x0, #32]
-	str x9, [x0, #40]
-	str x9, [x0, #48]
-	str x9, [x0, #56]
-	str x9, [x0, #64]
-	str x9, [x0, #72]
-	str x9, [x0, #80]
-	str x9, [x0, #88]
-	str x9, [x0, #96]
-	str x9, [x0, #104]
-	str x9, [x0, #112]
-	str x9, [x0, #120]
-	str x9, [x0, #128]
-	str x9, [x0, #136]
-	str x9, [x0, #144]
-	str x9, [x0, #152]
-	str x9, [x0, #160]
-	str x9, [x0, #168]
-	str x9, [x0, #176]
-	str x9, [x0, #184]
-	str x9, [x0, #192]
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #960]
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #64, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x3, x28, #984
-	movz x4, #2, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #66, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #944]
-	ldr x4, [x28, #952]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #928]
-	ldr x4, [x28, #936]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x3, #31, lsl #0
-	add x4, x28, #200
-	bl {vg_keccak_pad_scratch}
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x2, #0, lsl #0
-	add x3, x28, #840
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_squeeze_scratch}
-	ldr x0, [x28, #920]
-	add x1, x28, #840
-	ldr x2, [x28, #968]
-	ldr x3, [x28, #976]
-	bl {vg_mldsa65_verify}
-	ldr x30, [x28, #912]
-	ldr x28, [x28, #904]
-	b 21f
-20:
-	movz x0, #2, lsl #0
-21:
-	ret
-	.p2align 6
-
-vg_mldsa65_verify_message_prepared:
-	lsr x9, x4, #8
-	cbnz x9, 20f
-	movz x9, #37888, lsl #0
-	movk x9, #1, lsl #16
-	movk x9, #0, lsl #32
-	movk x9, #0, lsl #48
-	add x9, x6, x9
-	str x28, [x9, #904]
-	str x30, [x9, #912]
-	add x28, x9, #0
-	str x0, [x28, #920]
-	str x1, [x28, #928]
-	str x2, [x28, #936]
-	str x3, [x28, #944]
-	str x4, [x28, #952]
-	str x7, [x28, #960]
-	str x5, [x28, #968]
-	str x6, [x28, #976]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #984]
-	strb w4, [x28, #985]
-	add x0, x28, #0
-	movz x9, #0, lsl #0
-	str x9, [x0, #0]
-	str x9, [x0, #8]
-	str x9, [x0, #16]
-	str x9, [x0, #24]
-	str x9, [x0, #32]
-	str x9, [x0, #40]
-	str x9, [x0, #48]
-	str x9, [x0, #56]
-	str x9, [x0, #64]
-	str x9, [x0, #72]
-	str x9, [x0, #80]
-	str x9, [x0, #88]
-	str x9, [x0, #96]
-	str x9, [x0, #104]
-	str x9, [x0, #112]
-	str x9, [x0, #120]
-	str x9, [x0, #128]
-	str x9, [x0, #136]
-	str x9, [x0, #144]
-	str x9, [x0, #152]
-	str x9, [x0, #160]
-	str x9, [x0, #168]
-	str x9, [x0, #176]
-	str x9, [x0, #184]
-	str x9, [x0, #192]
-	movz x2, #0, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #960]
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #64, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	add x3, x28, #984
-	movz x4, #2, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	movz x2, #66, lsl #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #944]
-	ldr x4, [x28, #952]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	ldr x3, [x28, #928]
-	ldr x4, [x28, #936]
-	add x5, x28, #200
-	bl {vg_keccak_absorb_scratch}
-	add x2, x0, #0
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x3, #31, lsl #0
-	add x4, x28, #200
-	bl {vg_keccak_pad_scratch}
-	add x0, x28, #0
-	movz x1, #136, lsl #0
-	movz x2, #0, lsl #0
-	add x3, x28, #840
-	movz x4, #64, lsl #0
-	add x5, x28, #200
-	bl {vg_keccak_squeeze_scratch}
-	ldr x0, [x28, #920]
-	add x1, x28, #840
-	ldr x2, [x28, #968]
-	ldr x3, [x28, #976]
-	bl {vg_mldsa65_verify_prepared}
-	ldr x30, [x28, #912]
-	ldr x28, [x28, #904]
-	b 21f
-20:
-	movz x0, #2, lsl #0
-21:
-	ret
-	.p2align 6
-
 vg_mldsa65_keygen_sha3:
 	str x24, [x3, #840]
 	str x25, [x3, #848]
@@ -3579,6 +2794,76 @@ vg_mldsa65_keygen_sha3:
 	ret
 	.p2align 6
 
+vg_mldsa65_pk_tr:
+	add x3, x2, #0
+	str x24, [x3, #840]
+	str x25, [x3, #848]
+	str x26, [x3, #856]
+	str x27, [x3, #864]
+	str x28, [x3, #872]
+	str x30, [x3, #880]
+	add x25, x0, #0
+	add x26, x1, #0
+	add x27, x2, #0
+	add x28, x3, #0
+	movz x24, #1, lsl #0
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x25, #0
+	movz x4, #1952, lsl #0
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x4, x28, #200
+	movz x3, #31, lsl #0
+	bl {vg_keccak_pad_scratch}
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x5, x28, #200
+	add x3, x26, #0
+	movz x4, #64, lsl #0
+	bl {vg_keccak_squeeze_scratch}
+	add x0, x24, #0
+	ldr x30, [x28, #880]
+	ldr x24, [x28, #840]
+	ldr x25, [x28, #848]
+	ldr x26, [x28, #856]
+	ldr x27, [x28, #864]
+	ldr x28, [x28, #872]
+	ret
+	.p2align 6
+
 vg_mldsa65_pk_tr_sha3:
 	add x3, x2, #0
 	str x24, [x3, #840]
@@ -3649,12 +2934,510 @@ vg_mldsa65_pk_tr_sha3:
 	ret
 	.p2align 6
 
+vg_mldsa65_prepare_verifying_key:
+	str x25, [sp, #-16]!
+	str x26, [sp, #-16]!
+	str x28, [sp, #-16]!
+	str x30, [sp, #-16]!
+	add x25, x0, #0
+	add x26, x1, #0
+	add x28, x2, #0
+	add x0, x26, #0
+	add x1, x25, #0
+	movz x2, #122, lsl #0
+20:
+	ldr q0, [x1, #0]
+	str q0, [x0, #0]
+	add x0, x0, #16
+	add x1, x1, #16
+	sub x2, x2, #1
+	cbnz x2, 20b
+	add x0, x25, #32
+	add x1, x26, #1952
+	bl {vg_mldsa_unpack_t1}
+	add x0, x26, #1952
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #352
+	add x1, x26, #2976
+	bl {vg_mldsa_unpack_t1}
+	add x0, x26, #2976
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #672
+	add x1, x26, #4000
+	bl {vg_mldsa_unpack_t1}
+	add x0, x26, #4000
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #992
+	movz x1, #5024, lsl #0
+	add x1, x26, x1
+	bl {vg_mldsa_unpack_t1}
+	movz x0, #5024, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1312
+	movz x1, #6048, lsl #0
+	add x1, x26, x1
+	bl {vg_mldsa_unpack_t1}
+	movz x0, #6048, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1632
+	movz x1, #7072, lsl #0
+	add x1, x26, x1
+	bl {vg_mldsa_unpack_t1}
+	movz x0, #7072, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	ldr x30, [sp], #16
+	ldr x28, [sp], #16
+	ldr x26, [sp], #16
+	ldr x25, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa65_prepare_signing_key:
+	str x25, [sp, #-16]!
+	str x26, [sp, #-16]!
+	str x28, [sp, #-16]!
+	str x30, [sp, #-16]!
+	add x25, x0, #0
+	add x26, x1, #0
+	add x28, x2, #0
+	add x0, x26, #0
+	add x1, x25, #0
+	movz x2, #252, lsl #0
+20:
+	ldr q0, [x1, #0]
+	str q0, [x0, #0]
+	add x0, x0, #16
+	add x1, x1, #16
+	sub x2, x2, #1
+	cbnz x2, 20b
+	add x0, x25, #128
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	add x4, x26, #4032
+	bl {vg_mldsa_bit_unpack}
+	add x0, x26, #4032
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #256
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #5056, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #5056, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #384
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #6080, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #6080, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #512
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #7104, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #7104, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #640
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #8128, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #8128, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #768
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #9152, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #9152, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #896
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #10176, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #10176, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1024
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #11200, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #11200, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1152
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #12224, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #12224, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1280
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #13248, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #13248, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1408
+	movz x1, #128, lsl #0
+	movz x2, #4, lsl #0
+	movz x3, #4, lsl #0
+	movz x4, #14272, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #14272, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1536
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #15296, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #15296, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #1952
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #16320, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #16320, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #2368
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #17344, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #17344, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #2784
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #18368, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #18368, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #3200
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #19392, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #19392, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	add x0, x25, #3616
+	movz x1, #416, lsl #0
+	movz x2, #4095, lsl #0
+	movz x3, #4096, lsl #0
+	movz x4, #20416, lsl #0
+	add x4, x26, x4
+	bl {vg_mldsa_bit_unpack}
+	movz x0, #20416, lsl #0
+	add x0, x26, x0
+	add x1, x28, #0
+	bl {vg_mldsa_ntt}
+	ldr x30, [sp], #16
+	ldr x28, [sp], #16
+	ldr x26, [sp], #16
+	ldr x25, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa65_sign:
+	str x30, [sp, #-16]!
+	add x5, x0, #0
+	movz x6, #0, lsl #0
+	bl {vg_mldsa65_sign_with_cache}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_mldsa65_sign_sha3:
 	str x30, [sp, #-16]!
 	add x5, x0, #0
 	movz x6, #0, lsl #0
 	bl {vg_mldsa65_sign_with_cache_sha3}
 	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa65_sign_message:
+	lsr x9, x4, #8
+	cbnz x9, 20f
+	movz x9, #37888, lsl #0
+	movk x9, #1, lsl #16
+	movk x9, #0, lsl #32
+	movk x9, #0, lsl #48
+	add x9, x7, x9
+	str x28, [x9, #904]
+	str x30, [x9, #912]
+	add x28, x9, #0
+	str x0, [x28, #920]
+	str x1, [x28, #928]
+	str x2, [x28, #936]
+	str x3, [x28, #944]
+	str x4, [x28, #952]
+	str x5, [x28, #960]
+	str x6, [x28, #968]
+	str x7, [x28, #976]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #984]
+	strb w4, [x28, #985]
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #920]
+	add x3, x3, #64
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #64, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x3, x28, #984
+	movz x4, #2, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #66, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #944]
+	ldr x4, [x28, #952]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #928]
+	ldr x4, [x28, #936]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x3, #31, lsl #0
+	add x4, x28, #200
+	bl {vg_keccak_pad_scratch}
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x2, #0, lsl #0
+	add x3, x28, #840
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_squeeze_scratch}
+	ldr x0, [x28, #920]
+	add x1, x28, #840
+	ldr x2, [x28, #960]
+	ldr x3, [x28, #968]
+	ldr x4, [x28, #976]
+	bl {vg_mldsa65_sign}
+	ldr x30, [x28, #912]
+	ldr x28, [x28, #904]
+	b 21f
+20:
+	movz x0, #2, lsl #0
+21:
+	ret
+	.p2align 6
+
+vg_mldsa65_sign_message_prepared:
+	lsr x9, x4, #8
+	cbnz x9, 20f
+	movz x9, #37888, lsl #0
+	movk x9, #1, lsl #16
+	movk x9, #0, lsl #32
+	movk x9, #0, lsl #48
+	add x9, x7, x9
+	str x28, [x9, #904]
+	str x30, [x9, #912]
+	add x28, x9, #0
+	str x0, [x28, #920]
+	str x1, [x28, #928]
+	str x2, [x28, #936]
+	str x3, [x28, #944]
+	str x4, [x28, #952]
+	str x5, [x28, #960]
+	str x6, [x28, #968]
+	str x7, [x28, #976]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #984]
+	strb w4, [x28, #985]
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #920]
+	add x3, x3, #64
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #64, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x3, x28, #984
+	movz x4, #2, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #66, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #944]
+	ldr x4, [x28, #952]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #928]
+	ldr x4, [x28, #936]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x3, #31, lsl #0
+	add x4, x28, #200
+	bl {vg_keccak_pad_scratch}
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x2, #0, lsl #0
+	add x3, x28, #840
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_squeeze_scratch}
+	ldr x0, [x28, #920]
+	add x1, x28, #840
+	ldr x2, [x28, #960]
+	ldr x3, [x28, #968]
+	ldr x4, [x28, #976]
+	bl {vg_mldsa65_sign_prepared}
+	ldr x30, [x28, #912]
+	ldr x28, [x28, #904]
+	b 21f
+20:
+	movz x0, #2, lsl #0
+21:
 	ret
 	.p2align 6
 
@@ -3870,12 +3653,229 @@ vg_mldsa65_sign_message_prepared_sha3:
 	ret
 	.p2align 6
 
+vg_mldsa65_verify:
+	str x30, [sp, #-16]!
+	add x4, x0, #0
+	movz x5, #0, lsl #0
+	bl {vg_mldsa65_verify_with_cache}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_mldsa65_verify_sha3:
 	str x30, [sp, #-16]!
 	add x4, x0, #0
 	movz x5, #0, lsl #0
 	bl {vg_mldsa65_verify_with_cache_sha3}
 	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa65_verify_message_cached:
+	lsr x9, x4, #8
+	cbnz x9, 20f
+	movz x9, #37888, lsl #0
+	movk x9, #1, lsl #16
+	movk x9, #0, lsl #32
+	movk x9, #0, lsl #48
+	add x9, x6, x9
+	str x28, [x9, #904]
+	str x30, [x9, #912]
+	add x28, x9, #0
+	str x0, [x28, #920]
+	str x1, [x28, #928]
+	str x2, [x28, #936]
+	str x3, [x28, #944]
+	str x4, [x28, #952]
+	str x7, [x28, #960]
+	str x5, [x28, #968]
+	str x6, [x28, #976]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #984]
+	strb w4, [x28, #985]
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #960]
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #64, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x3, x28, #984
+	movz x4, #2, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #66, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #944]
+	ldr x4, [x28, #952]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #928]
+	ldr x4, [x28, #936]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x3, #31, lsl #0
+	add x4, x28, #200
+	bl {vg_keccak_pad_scratch}
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x2, #0, lsl #0
+	add x3, x28, #840
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_squeeze_scratch}
+	ldr x0, [x28, #920]
+	add x1, x28, #840
+	ldr x2, [x28, #968]
+	ldr x3, [x28, #976]
+	bl {vg_mldsa65_verify}
+	ldr x30, [x28, #912]
+	ldr x28, [x28, #904]
+	b 21f
+20:
+	movz x0, #2, lsl #0
+21:
+	ret
+	.p2align 6
+
+vg_mldsa65_verify_message_prepared:
+	lsr x9, x4, #8
+	cbnz x9, 20f
+	movz x9, #37888, lsl #0
+	movk x9, #1, lsl #16
+	movk x9, #0, lsl #32
+	movk x9, #0, lsl #48
+	add x9, x6, x9
+	str x28, [x9, #904]
+	str x30, [x9, #912]
+	add x28, x9, #0
+	str x0, [x28, #920]
+	str x1, [x28, #928]
+	str x2, [x28, #936]
+	str x3, [x28, #944]
+	str x4, [x28, #952]
+	str x7, [x28, #960]
+	str x5, [x28, #968]
+	str x6, [x28, #976]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #984]
+	strb w4, [x28, #985]
+	add x0, x28, #0
+	movz x9, #0, lsl #0
+	str x9, [x0, #0]
+	str x9, [x0, #8]
+	str x9, [x0, #16]
+	str x9, [x0, #24]
+	str x9, [x0, #32]
+	str x9, [x0, #40]
+	str x9, [x0, #48]
+	str x9, [x0, #56]
+	str x9, [x0, #64]
+	str x9, [x0, #72]
+	str x9, [x0, #80]
+	str x9, [x0, #88]
+	str x9, [x0, #96]
+	str x9, [x0, #104]
+	str x9, [x0, #112]
+	str x9, [x0, #120]
+	str x9, [x0, #128]
+	str x9, [x0, #136]
+	str x9, [x0, #144]
+	str x9, [x0, #152]
+	str x9, [x0, #160]
+	str x9, [x0, #168]
+	str x9, [x0, #176]
+	str x9, [x0, #184]
+	str x9, [x0, #192]
+	movz x2, #0, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #960]
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #64, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	add x3, x28, #984
+	movz x4, #2, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	movz x2, #66, lsl #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #944]
+	ldr x4, [x28, #952]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	ldr x3, [x28, #928]
+	ldr x4, [x28, #936]
+	add x5, x28, #200
+	bl {vg_keccak_absorb_scratch}
+	add x2, x0, #0
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x3, #31, lsl #0
+	add x4, x28, #200
+	bl {vg_keccak_pad_scratch}
+	add x0, x28, #0
+	movz x1, #136, lsl #0
+	movz x2, #0, lsl #0
+	add x3, x28, #840
+	movz x4, #64, lsl #0
+	add x5, x28, #200
+	bl {vg_keccak_squeeze_scratch}
+	ldr x0, [x28, #920]
+	add x1, x28, #840
+	ldr x2, [x28, #968]
+	ldr x3, [x28, #976]
+	bl {vg_mldsa65_verify_prepared}
+	ldr x30, [x28, #912]
+	ldr x28, [x28, #904]
+	b 21f
+20:
+	movz x0, #2, lsl #0
+21:
 	ret
 	.p2align 6
 

@@ -3,35 +3,6 @@
 //! `assembly/mldsa44.s`.
 #![allow(dead_code)]
 
-/// ML-DSA-44 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa44_verify_message_cached` takes.
-///
-/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `tr` must be valid for reads and writes of 64 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `tr` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_pk_tr(pk: *const [u8; 1312], tr: *mut [u8; 64], scratch: *mut [u64; 9728]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInTSYn8SYn1Qb8BAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAFAABJidlJgcHIAAAA"
-call {vg_keccak_absorb_scratch}
-.base64 "SInfSIPHAL6IAAAAulgAAAC5HwAAAEmJ2EmBwMgAAAA="
-call {vg_keccak_pad_scratch}
-.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-    )
-}
-
 /// The CPU features `vg_mldsa44_keygen_avx2` requires (`Artifact.features`).
 pub const VG_MLDSA44_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
@@ -252,406 +223,6 @@ call {vg_keccak_squeeze_scratch}
         vg_mldsa_add_avx2 = sym super::mldsa44::vg_mldsa_add_avx2::vg_mldsa_add_avx2,
         vg_mldsa_power2round = sym super::mldsa44::vg_mldsa_power2round::vg_mldsa_power2round,
         vg_mldsa_simple_bit_pack = sym super::mldsa44::vg_mldsa_simple_bit_pack::vg_mldsa_simple_bit_pack,
-    )
-}
-
-/// The CPU features `vg_mldsa44_prepare_verifying_key_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa44_verify_message_prepared`.
-///
-/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `prepared` must be valid for reads and writes of 5408 bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
-/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_prepare_verifying_key_avx2(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAFAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIAUAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAEAAEiJ3kiBxiAJAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIAkAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAIAAEiJ3kiBxiANAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIA0AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AMAAEiJ3kiBxiARAAA="
-call {vg_mldsa_unpack_t1}
-.base64 "SInfSIHHIBEAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIPHAEiJ7kiDxgC5pAAAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
-.p2align 6"#,
-        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_prepare_signing_key_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa44_sign_message_prepared`.
-///
-/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 2560 bytes.
-/// * `prepared` must be valid for reads and writes of 14848 bytes.
-/// * `scratch` must be valid for reads and writes of 1024 bytes.
-/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
-/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_prepare_signing_key_avx2(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
-    core::arch::naked_asm!(
-        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAKAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHAAoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAOAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHAA4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAASAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHABIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAWAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHABYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAaAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHABoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAeAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHAB4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAiAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHACIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAmAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHACYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHgAMAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAqAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHACoAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHIAUAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAuAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHAC4AAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHwAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAyAAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHADIAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInvSIHHYAgAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAA2AAA="
-call {vg_mldsa_bit_unpack}
-.base64 "SInfSIHHADYAAEiJ3kiDxgA="
-call {vg_mldsa_ntt_avx2}
-.base64 "SInfSIPHAEiJ7kiDxgC5QAEAAA=="
-20:
-.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
-jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
-.p2align 6"#,
-        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
-        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_sign_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 2560 bytes.
-/// * `mu` must be valid for reads of 64 bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `sk` must have been written by `vg_mldsa44_keygen`.
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx2(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbkAAAAA"
-call {vg_mldsa44_sign_with_cache_avx2}
-.base64 "ww=="
-.p2align 6"#,
-        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_sign_message_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
-///
-/// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 2560 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `sk` must have been written by `vg_mldsa44_keygen`.
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_avx2(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
-call {vg_mldsa44_sign_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_sign_message_prepared_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
-///
-/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 14848 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
-/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_prepared_avx2(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
-call {vg_mldsa44_sign_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
-///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `mu` must be valid for reads of 64 bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx2(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbgAAAAA"
-call {vg_mldsa44_verify_with_cache_avx2}
-.base64 "ww=="
-.p2align 6"#,
-        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_message_cached_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
-///
-/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `tr` must be valid for reads of 64 bytes.
-/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_cached_avx2(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgAAAAA"
-call {vg_mldsa44_verify_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_message_prepared_avx2` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
-///
-/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 5408 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `tr` must be valid for reads of 64 bytes.
-/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
-/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_prepared_avx2(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgBAAAA"
-call {vg_mldsa44_verify_with_cache_avx2}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
     )
 }
 
@@ -878,281 +449,6 @@ call {vg_keccak_squeeze_scratch}
     )
 }
 
-/// The CPU features `vg_mldsa44_sign_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 2560 bytes.
-/// * `mu` must be valid for reads of 64 bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `sk` must have been written by `vg_mldsa44_keygen`.
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
-/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx512(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbkAAAAA"
-call {vg_mldsa44_sign_with_cache_avx512}
-.base64 "ww=="
-.p2align 6"#,
-        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa44_sign_message_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
-///
-/// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 2560 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `sk` must have been written by `vg_mldsa44_keygen`.
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_avx512(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
-call {vg_mldsa44_sign_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa44_sign_message_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
-///
-/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
-///
-/// # Safety
-///
-/// * `sk` must be valid for reads of 14848 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `rnd` must be valid for reads of 32 bytes.
-/// * `sig` must be valid for reads and writes of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
-/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_prepared_avx512(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
-call {vg_mldsa44_sign_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
-///
-/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `mu` must be valid for reads of 64 bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 77824 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
-/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx512(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbgAAAAA"
-call {vg_mldsa44_verify_with_cache_avx512}
-.base64 "ww=="
-.p2align 6"#,
-        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_message_cached_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
-///
-/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 1312 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `tr` must be valid for reads of 64 bytes.
-/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_cached_avx512(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgAAAAA"
-call {vg_mldsa44_verify_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
-    )
-}
-
-/// The CPU features `vg_mldsa44_verify_message_prepared_avx512` requires (`Artifact.features`).
-pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
-
-/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
-///
-/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 5408 bytes.
-/// * `msg` must be valid for reads of `msg_len` bytes.
-/// * `ctx` must be valid for reads of `ctx_len` bytes.
-/// * `sig` must be valid for reads of 2420 bytes.
-/// * `scratch` must be valid for reads and writes of 78848 bytes.
-/// * `tr` must be valid for reads of 64 bytes.
-/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
-/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
-/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
-/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_prepared_avx512(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SYH4AAEAAA=="
-jb 20f
-.base64 "uAIAAAA="
-jmp 21f
-20:
-.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
-call {vg_keccak_absorb_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
-call {vg_keccak_pad_scratch}
-.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
-call {vg_keccak_squeeze_scratch}
-.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgBAAAA"
-call {vg_mldsa44_verify_with_cache_avx512}
-.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
-21:
-.base64 "ww=="
-.p2align 6"#,
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
-    )
-}
-
 /// ML-DSA-44 key generation from a seed, `ML-DSA.KeyGen_internal(ξ)` (FIPS 204 Algorithm 6): with the 32-byte seed `ξ` at `seed`, writes the public key to `*pk` and the private key to `*sk`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
@@ -1372,6 +668,160 @@ call {vg_keccak_squeeze_scratch}
     )
 }
 
+/// ML-DSA-44 public-key hash: writes `tr = H(pk, 64)` (FIPS 204 Algorithm 8, line 6), SHAKE256 of the public key `*pk` to 64 bytes, to `*tr`, the digest `vg_mldsa44_verify_message_cached` takes.
+///
+/// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `tr` must be valid for reads and writes of 64 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `tr` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `tr` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_pk_tr(pk: *const [u8; 1312], tr: *mut [u8; 64], scratch: *mut [u64; 9728]) {
+    core::arch::naked_asm!(
+        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInTSYn8SYn1Qb8BAAAAuAAAAABIiQNIiUMISIlDEEiJQxhIiUMgSIlDKEiJQzBIiUM4SIlDQEiJQ0hIiUNQSIlDWEiJQ2BIiUNoSIlDcEiJQ3hIiYOAAAAASImDiAAAAEiJg5AAAABIiYOYAAAASImDoAAAAEiJg6gAAABIiYOwAAAASImDuAAAAEiJg8AAAABIid9Ig8cAvogAAAC6AAAAAEyJ4UiDwQBBuCAFAABJidlJgcHIAAAA"
+call {vg_keccak_absorb_scratch}
+.base64 "SInfSIPHAL6IAAAAulgAAAC5HwAAAEmJ2EmBwMgAAAA="
+call {vg_keccak_pad_scratch}
+.base64 "SInfSIPHAL6IAAAAugAAAABMielIg8EAQbhAAAAASYnZSYHByAAAAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "RIn4TIu7cAMAAEyLs2gDAABMi6tgAwAATIujWAMAAEiLq1ADAABIi5tIAwAAww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+    )
+}
+
+/// The CPU features `vg_mldsa44_prepare_verifying_key_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_PREPARE_VERIFYING_KEY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa44_verify_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `prepared` must be valid for reads and writes of 5408 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `pk` (distinct Rust objects never do).
+/// * None of `pk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_prepare_verifying_key_avx2(pk: *const [u8; 1312], prepared: *mut [u8; 5408], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIPHIEiJ3kiBxiAFAAA="
+call {vg_mldsa_unpack_t1}
+.base64 "SInfSIHHIAUAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHYAEAAEiJ3kiBxiAJAAA="
+call {vg_mldsa_unpack_t1}
+.base64 "SInfSIHHIAkAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHoAIAAEiJ3kiBxiANAAA="
+call {vg_mldsa_unpack_t1}
+.base64 "SInfSIHHIA0AAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHH4AMAAEiJ3kiBxiARAAA="
+call {vg_mldsa_unpack_t1}
+.base64 "SInfSIHHIBEAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInfSIPHAEiJ7kiDxgC5pAAAAA=="
+20:
+.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
+jne 20b
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.p2align 6"#,
+        vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_prepare_signing_key_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_PREPARE_SIGNING_KEY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa44_sign_message_prepared`.
+///
+/// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `prepared` must be valid for reads and writes of 14848 bytes.
+/// * `scratch` must be valid for reads and writes of 1024 bytes.
+/// * `*prepared` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `prepared` and `scratch` must not overlap each other or `sk` (distinct Rust objects never do).
+/// * None of `sk`, `prepared` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_prepare_signing_key_avx2(sk: *const [u8; 2560], prepared: *mut [u8; 14848], scratch: *mut [u64; 128]) {
+    core::arch::naked_asm!(
+        r#".base64 "SImaSAMAAEiJqlADAABMiaJYAwAATImqYAMAAEyJsmgDAABMibpwAwAASInzSIn9SYnUSYnVSInvSIHHgAAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAKAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHAAoAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHH4AAAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAOAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHAA4AAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHQAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAASAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHABIAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHoAEAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAWAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHABYAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHAAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAaAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHABoAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHYAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAeAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHAB4AAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHwAIAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAiAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHACIAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHIAMAAL5gAAAAugIAAAC5AgAAAEmJ2EmBwAAmAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHACYAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHgAMAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAqAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHACoAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHIAUAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAuAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHAC4AAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHwAYAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAAyAAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHADIAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInvSIHHYAgAAL6gAQAAuv8PAAC5ABAAAEmJ2EmBwAA2AAA="
+call {vg_mldsa_bit_unpack}
+.base64 "SInfSIHHADYAAEiJ3kiDxgA="
+call {vg_mldsa_ntt_avx2}
+.base64 "SInfSIPHAEiJ7kiDxgC5QAEAAA=="
+20:
+.base64 "SIsGSIkHSIPHCEiDxghIg+kB"
+jne 20b
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAww=="
+.p2align 6"#,
+        vg_mldsa_bit_unpack = sym super::mldsa44::vg_mldsa_bit_unpack::vg_mldsa_bit_unpack,
+        vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
+    )
+}
+
 /// ML-DSA-44 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa44_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
@@ -1489,6 +939,68 @@ jne 20b
     )
 }
 
+/// The CPU features `vg_mldsa44_sign_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx2(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbkAAAAA"
+call {vg_mldsa44_sign_with_cache_avx2}
+.base64 "ww=="
+.p2align 6"#,
+        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `mu` or `rnd` (distinct Rust objects never do).
+/// * None of `sk`, `mu`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_avx512(sk: *const [u8; 2560], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbkAAAAA"
+call {vg_mldsa44_sign_with_cache_avx512}
+.base64 "ww=="
+.p2align 6"#,
+        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
+    )
+}
+
 /// ML-DSA-44 signing of a message representative, `ML-DSA.Sign_internal(sk, M′, rnd)` (FIPS 204 Algorithm 7) with `μ` computed by the caller: with the private key `*sk`, the 64-byte message representative `μ = H(tr ‖ M′, 64)` at `mu` (for the public key hash `tr`, bytes 64–127 of `*sk`) and the randomness `*rnd`, writes the signature to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
@@ -1513,6 +1025,224 @@ call {vg_mldsa44_sign_with_cache}
 .base64 "ww=="
 .p2align 6"#,
         vg_mldsa44_sign_with_cache = sym super::mldsa44::vg_mldsa44_sign_with_cache::vg_mldsa44_sign_with_cache,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_message_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+///
+/// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_avx2(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
+call {vg_mldsa44_sign_with_cache_avx2}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_message_prepared_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_prepared_avx2(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
+call {vg_mldsa44_sign_with_cache_avx2}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx2::vg_mldsa44_sign_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_message_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
+///
+/// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 2560 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_keygen`.
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_avx512(sk: *const [u8; 2560], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQAAAAA="
+call {vg_mldsa44_sign_with_cache_avx512}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
+    )
+}
+
+/// The CPU features `vg_mldsa44_sign_message_prepared_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_SIGN_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 signing with a prepared private key: `vg_mldsa44_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
+///
+/// # Safety
+///
+/// * `sk` must be valid for reads of 14848 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `rnd` must be valid for reads of 32 bytes.
+/// * `sig` must be valid for reads and writes of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `sk` must have been written by `vg_mldsa44_prepare_signing_key` from a private key written by `vg_mldsa44_keygen`, and not changed since.
+/// * `*sk` holds private key material, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `rnd` must be fresh random bytes (FIPS 204 §3.6.1), or 32 zero bytes for deterministic signing.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `sig` and `scratch` must not overlap each other, `sk`, `msg`, `ctx`, `rnd` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `sk`, `msg`, `ctx`, `rnd`, `sig` and `scratch` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_sign_message_prepared_avx512(sk: *const [u8; 14848], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 2420], scratch: *mut [u64; 9856]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItUJAhMi1wkELgAAAAAV1ZSUUFQQVJBUUFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJEBIg8FAQbhAAAAATItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkEEiLTCQYTItEJAhBuQEAAAA="
+call {vg_mldsa44_sign_with_cache_avx512}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_sign_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_sign_with_cache_avx512::vg_mldsa44_sign_with_cache_avx512,
     )
 }
 
@@ -1617,6 +1347,62 @@ call {vg_mldsa44_sign_with_cache}
     )
 }
 
+/// The CPU features `vg_mldsa44_verify_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx2(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbgAAAAA"
+call {vg_mldsa44_verify_with_cache_avx2}
+.base64 "ww=="
+.p2align 6"#,
+        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
+///
+/// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `mu` must be valid for reads of 64 bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 77824 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `mu` or `sig` (distinct Rust objects never do).
+/// * None of `pk`, `mu`, `sig` and `scratch` may overlap the return address on the stack or the 40 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_avx512(pk: *const [u8; 1312], mu: *const [u8; 64], sig: *const [u8; 2420], scratch: *mut [u64; 9728]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbgAAAAA"
+call {vg_mldsa44_verify_with_cache_avx512}
+.base64 "ww=="
+.p2align 6"#,
+        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
+    )
+}
+
 /// ML-DSA-44 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
@@ -1638,6 +1424,220 @@ call {vg_mldsa44_verify_with_cache}
 .base64 "ww=="
 .p2align 6"#,
         vg_mldsa44_verify_with_cache = sym super::mldsa44::vg_mldsa44_verify_with_cache::vg_mldsa44_verify_with_cache,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_message_cached_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_cached_avx2(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgAAAAA"
+call {vg_mldsa44_verify_with_cache_avx2}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_message_prepared_avx2` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_prepared_avx2(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgBAAAA"
+call {vg_mldsa44_verify_with_cache_avx2}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_with_cache_avx2 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx2::vg_mldsa44_verify_with_cache_avx2,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_message_cached_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_CACHED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
+///
+/// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 1312 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `*tr` must equal SHAKE256(`*pk`, 64 bytes).
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_cached_avx512(pk: *const [u8; 1312], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgAAAAA"
+call {vg_mldsa44_verify_with_cache_avx512}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
+    )
+}
+
+/// The CPU features `vg_mldsa44_verify_message_prepared_avx512` requires (`Artifact.features`).
+pub const VG_MLDSA44_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+
+/// ML-DSA-44 verification with a prepared public key: `vg_mldsa44_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
+///
+/// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 5408 bytes.
+/// * `msg` must be valid for reads of `msg_len` bytes.
+/// * `ctx` must be valid for reads of `ctx_len` bytes.
+/// * `sig` must be valid for reads of 2420 bytes.
+/// * `scratch` must be valid for reads and writes of 78848 bytes.
+/// * `tr` must be valid for reads of 64 bytes.
+/// * `pk` must have been written by `vg_mldsa44_prepare_verifying_key`, and not changed since.
+/// * `*tr` must equal SHAKE256 of the public key that `*pk` begins with, 64 bytes.
+/// * `scratch` is working space: on return it holds intermediate values, which the caller must destroy (FIPS 204 §3.6.3).
+/// * `scratch` must not overlap `pk`, `msg`, `ctx`, `sig`, `tr` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `pk`, `msg`, `ctx`, `sig`, `scratch` and `tr` may overlap the return address on the stack or the 112 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mldsa44_verify_message_prepared_avx512(pk: *const [u8; 5408], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 2420], scratch: *mut [u64; 9856], tr: *const [u8; 64]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SYH4AAEAAA=="
+jb 20f
+.base64 "uAIAAAA="
+jmp 21f
+20:
+.base64 "TItcJAhMi1QkELgAAAAAV1ZSUUFQQVFBUkFTUESIRCQBSIt8JAhIgccAMAEAuAAAAABIiQdIiUcISIlHEEiJRxhIiUcgSIlHKEiJRzBIiUc4SIlHQEiJR0hIiUdQSIlHWEiJR2BIiUdoSIlHcEiJR3hIiYeAAAAASImHiAAAAEiJh5AAAABIiYeYAAAASImHoAAAAEiJh6gAAABIiYewAAAASImHuAAAAEiJh8AAAABIi3wkCEiBxwAwAQC+iAAAALoAAAAASItMJBBBuEAAAABMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QAAAAEiJ4UG4AgAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6QgAAAEiLTCQoTItEJCBMi0wkCEmBwcgwAQA="
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicJIi0wkOEyLRCQwTItMJAhJgcHIMAEA"
+call {vg_keccak_absorb_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAABIicK5HwAAAEyLRCQISYHAyDABAA=="
+call {vg_keccak_pad_scratch}
+.base64 "SIt8JAhIgccAMAEAvogAAAC6AAAAAEiLTCQISIHBSDMBAEG4QAAAAEyLTCQISYHByDABAA=="
+call {vg_keccak_squeeze_scratch}
+.base64 "SIt8JEBIi3QkCEiBxkgzAQBIi1QkGEiLTCQIQbgBAAAA"
+call {vg_mldsa44_verify_with_cache_avx512}
+.base64 "QVtBW0FbQVtBW0FbQVtBW0Fb"
+21:
+.base64 "ww=="
+.p2align 6"#,
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_mldsa44_verify_with_cache_avx512 = sym super::mldsa44::vg_mldsa44_verify_with_cache_avx512::vg_mldsa44_verify_with_cache_avx512,
     )
 }
 

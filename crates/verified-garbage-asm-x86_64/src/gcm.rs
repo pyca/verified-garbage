@@ -3,229 +3,6 @@
 //! `assembly/gcm.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
-
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SMfAMAAAAEiJhwAEAAA="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "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"
-.p2align 6"#,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
-
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SMfAEAAAAEiJhwAEAAA="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bxON1OMkBxGNlRMMAxGNlRNMRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/gxGNdOOMBxONdOPwBxX5/pwABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/pxGNFRMcAxGNFRNcRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/QxX5/ryABAADEYx1EwgDEYx1E0hHEYx1EygHEYx1E2hDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/xxGMVRMIAxGMVRNIRxGMVRMoBxGMVRNoQxEE178vEYz1E2RDEQX1wwE7EQT3vw8RBNe/IxGM1RNkQxEF9cMlOxEE178vEQS3v+cRjbUTCAMRjbUTSEcRjPUTZEMRBfXDATsRBPe/DxGM9RNkQxEF9cMBOxEE978PEwS3v+MV+f7dAAQAAxX5/v2ABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/xxf5/t4ABAADEYxVExwDEYxVE1xHEYxVEzwHEYxVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/pxf5/r6ABAADEYw1ExwDEYw1E1xHEYw1EzwHEYw1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/hxf5/p8ABAADEYwVExwDEYwVE1xHEYwVEzwHEYwVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/Zxf5/n+ABAADF+HfD"
-.p2align 6"#,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_prepare_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
-
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `pclmulqdq` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SMfAEAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5eQAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEYwFExQDEYwFE1RHEYwFEzQHEYwFE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t7ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDAUTEAMRDAUTUEcRDAUTMAcRDAUTcEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+H0AEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv0MX6f5fAAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6fwAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/t+ABAADD"
-.p2align 6"#,
-    )
-}
-
-/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SMfAAAAAAEiJhwAEAADD"
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_wipe_prepared_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
-
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared_avx(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SIuHAAQAAEiD+DA="
-jae 20f
-.base64 "SIuHAAQAAEiD+BA="
-jae 22f
-.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX4dw=="
-23:
-21:
-.base64 "ww=="
-22:
-.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF+Hc="
-jmp 23b
-20:
-.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF/n+HAAIAAMX+f4cgAgAAxf5/h0ACAADF/n+HYAIAAMX+f4eAAgAAxf5/h6ACAADF/n+HwAIAAMX+f4fgAgAAxf5/hwADAADF/n+HIAMAAMX+f4dAAwAAxf5/h2ADAADF/n+HgAMAAMX+f4egAwAAxf5/h8ADAADF/n+H4AMAAMX4dw=="
-jmp 21b
-.p2align 6"#,
-    )
-}
-
-/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
-///
-/// # Safety
-///
-/// * `ctx` must be valid for reads and writes of 1032 bytes.
-/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129]) {
-    core::arch::naked_asm!(
-        r#".base64 "SIuHAAQAAEiD+DA="
-jae 20f
-.base64 "SIuHAAQAAEiD+BA="
-jae 22f
-.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAAA="
-23:
-21:
-.base64 "ww=="
-22:
-.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAA=="
-jmp 23b
-20:
-.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAPMPf4cAAgAA8w9/hxACAADzD3+HIAIAAPMPf4cwAgAA8w9/h0ACAADzD3+HUAIAAPMPf4dgAgAA8w9/h3ACAADzD3+HgAIAAPMPf4eQAgAA8w9/h6ACAADzD3+HsAIAAPMPf4fAAgAA8w9/h9ACAADzD3+H4AIAAPMPf4fwAgAA8w9/hwADAADzD3+HEAMAAPMPf4cgAwAA8w9/hzADAADzD3+HQAMAAPMPf4dQAwAA8w9/h2ADAADzD3+HcAMAAPMPf4eAAwAA8w9/h5ADAADzD3+HoAMAAPMPf4ewAwAA8w9/h8ADAADzD3+H0AMAAPMPf4fgAwAA8w9/h/ADAAA="
-jmp 21b
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_init_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
-call {vg_aes_ctr32_aesni}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
-}
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
-call {vg_aes_expand_key_scratch}
-.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
-call {vg_aes_ctr32}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
-.p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_init_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
-
-/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
-///
-/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `ctx` must be valid for reads and writes of 256 bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `ctx` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
-call {vg_aes_ctr32_vaes}
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
-.p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-    )
-}
-
 /// The CPU features `vg_aes_gcm_stream_finish_aesni_pclmul` requires (`Artifact.features`).
 pub const VG_AES_GCM_STREAM_FINISH_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
@@ -1420,6 +1197,89 @@ jmp 25f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJBgKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_init_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_INIT_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_aesni(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
+call {vg_aes_expand_key_scratch}
+.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32}
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.p2align 6"#,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_init_vaes` requires (`Artifact.features`).
+pub const VG_AES_GCM_INIT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AES);
+
+/// The AES-GCM key setup: writes the key context of the `key_len`-byte AES key at `key` to `*ctx`: its key schedule for `Nr = key_len / 4 + 6` rounds (FIPS 197 §5.2, as `vg_aes_expand_key` writes it) in the first `16 * (Nr + 1)` bytes, and the hash subkey `H = CIPH_K(0¹²⁸)` (NIST SP 800-38D §7.1 step 1) in bytes 240–255. The other bytes are unspecified. The other `vg_aes_gcm_*` functions read it, with `Nr` as their `rounds`.
+///
+/// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `ctx` must be valid for reads and writes of 256 bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `ctx` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `ctx` may overlap the return address on the stack or the 2576 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `ssse3`, `vaes` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_init_vaes(key: *const u8, key_len: usize, ctx: *mut [u64; 32]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPj1//9IieFIg8EISImZgAAAAEiJqYgAAABMiaGQAAAATImpmAAAAEyJsaAAAABMibmoAAAASYnPSYnVSInzSMHrAkiDwwZMiflIgcEAAgAA"
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "uAAAAABJiYXwAAAASYmF+AAAAEmJR2BJiUdoTInvSIneTIn6SIPCYEyJ6UiBwfAAAABBuAEAAABNiflJgcEAAgAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
+.p2align 6"#,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
     )
 }
@@ -16222,5 +16082,145 @@ jmp 21f
 .base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJAgKAADD"
 .p2align 6"#,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_prepare_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_PREPARE_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX512F);
+
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `pclmulqdq`, `ssse3`, `vpclmulqdq` and `avx512f` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul_avx512(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SMfAMAAAAEiJhwAEAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "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"
+.p2align 6"#,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_prepare_vpclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_PREPARE_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ);
+
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx`, `avx2`, `ssse3` and `vpclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_vpclmul(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SMfAEAAAAEiJhwAEAAA="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzD2+/8AAAAGYPOAD4"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bxON1OMkBxGNlRMMAxGNlRNMRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/gxGNdOOMBxONdOPwBxX5/pwABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/pxGNFRMcAxGNFRNcRxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/QxX5/ryABAADEYx1EwgDEYx1E0hHEYx1EygHEYx1E2hDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8RBLe/xxGMVRMIAxGMVRNIRxGMVRMoBxGMVRNoQxEE178vEYz1E2RDEQX1wwE7EQT3vw8RBNe/IxGM1RNkQxEF9cMlOxEE178vEQS3v+cRjbUTCAMRjbUTSEcRjPUTZEMRBfXDATsRBPe/DxGM9RNkQxEF9cMBOxEE978PEwS3v+MV+f7dAAQAAxX5/v2ABAADEYx1ExwDEYx1E1xHEYx1EzwHEYx1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/xxf5/t4ABAADEYxVExwDEYxVE1xHEYxVEzwHEYxVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/pxf5/r6ABAADEYw1ExwDEYw1E1xHEYw1EzwHEYw1E3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/hxf5/p8ABAADEYwVExwDEYwVE1xHEYwVEzwHEYwVE3xDEQTXvy8RjPUTZEMRBfXDATsRBPe/DxEE178jEYzVE2RDEQX1wyU7EQTXvy8TBLe/Zxf5/n+ABAADF+HfD"
+.p2align 6"#,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_prepare_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_PREPARE_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::PCLMULQDQ);
+
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `pclmulqdq` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare_pclmul_avx(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SMfAEAAAAEiJhwAEAABIuA8ODQwLCgkIxOH5bsBIuAcGBQQDAgEAxGH5buDEwXlsxEi4AAAAAAAAAADE4fluyEi4AAAAAAAAAMLEYflu4MTBcWzMxfpvv/AAAADE4kEA+Ei4AQAAAAAAAADEYflu6Ei4AAAAAAAAAMLEYflu4MRBEWzsSLj//////////8Rh+W7wxEEJbPbF4XP3AcWhc9c/xMEhc/sIxaHr28V5cN//xMEhctMfxEEh/t7EQSHf3cWh79vF+n+fEAEAAMRjYUTDAMRjYUTTEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv4MX6f6cAAQAAxGNZRMMAxGNZRNMRxGNZRMsBxGNZRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv6cX6f68wAQAAxGNZRMQAxGNZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/tyABAADEY0lEwwDEY0lE0xHEY0lEywHEY0lE2xDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8RBKe/hxXp/p1ABAADEY1FExQDEY1FE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxEEp7+jFen+vQAEAAMRjSUTFAMRjSUTVEcRjSUTNAcRjSUTdEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxEEp7/HFen+3cAEAAMRjSUTGAMRjSUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEQSnv+MV6f79gAQAAxGMBRMMAxGMBRNMRxGMBRMsBxGMBRNsQxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv0cX6f5eQAQAAxEMZRMQAxEMZRNQRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/gxfp/p4ABAADEYwFExQDEYwFE1RHEYwFEzQHEYwFE3RDEQTHvy8RjOUTZEMRBeXDATsRBOe/DxEEx78jEYzFE2RDEQXlwyU7EQTHvy8TBKe/xxfp/t7ABAADEQxFExQDEQxFE1RHEYzlE2RDEQXlwwE7EQTnvw8RjOUTZEMRBeXDATsRBOe/DxMEp7/jF+n+/oAEAAMRDAUTEAMRDAUTUEcRDAUTMAcRDAUTcEMRBMe/LxGM5RNkQxEF5cMBOxEE578PEQTHvyMRjMUTZEMRBeXDJTsRBMe/LxMEp78HF+n+H0AEAAMRDCUTGAMRDCUTWEcRjOUTZEMRBeXDATsRBOe/DxGM5RNkQxEF5cMBOxEE578PEwSnv0MX6f5fAAQAAxEMBRMYAxEMBRNYRxEMBRM4BxEMBRN4QxEEx78vEYzlE2RDEQXlwwE7EQTnvw8RBMe/IxGMxRNkQxEF5cMlOxEEx78vEwSnv4cX6f6fwAQAAxEMBRMcAxEMBRNcRxGM5RNkQxEF5cMBOxEE578PEYzlE2RDEQXlwwE7EQTnvw8TBKe/wxfp/t+ABAADD"
+.p2align 6"#,
+    )
+}
+
+/// Makes the 1032-byte `*ctx`, whose first 256 bytes are a key context of `vg_aes_gcm_init`, the prepared key context of the same key, in place: keeps its first 256 bytes, at byte `256 + 32*k`, for `k` from 0 to `n/2 - 1`, stores `preparedPower(H^(2*k+2))` and then `preparedPower(H^(2*k+1))`, as two little-endian 128-bit words, `H` being the hash subkey in its bytes 240–255, and stores `n` in the 64-bit word at byte 1024, `n` being 48, 16 or 0, as the implementation's other functions read. Use only the `*_prepared` APIs, or APIs that read the first 256 bytes, with this format. Contract: `VG.Spec.Gcm.prepareContract`: the first 256 bytes are kept and the context satisfies `PreparedRepr`. Constant time: only the pointer may affect timing, not the hash subkey.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_prepare(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SMfAAAAAAEiJhwAEAADD"
+.p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_wipe_prepared_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_WIPE_PREPARED_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX);
+
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared_avx(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+DA="
+jae 20f
+.base64 "SIuHAAQAAEiD+BA="
+jae 22f
+.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX4dw=="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF+Hc="
+jmp 23b
+20:
+.base64 "xfnvwMX+fwfF/n9HIMX+f0dAxf5/R2DF/n+HgAAAAMX+f4egAAAAxf5/h8AAAADF/n+H4AAAAMX+f4cAAQAAxf5/hyABAADF/n+HQAEAAMX+f4dgAQAAxf5/h4ABAADF/n+HoAEAAMX+f4fAAQAAxf5/h+ABAADF/n+HAAIAAMX+f4cgAgAAxf5/h0ACAADF/n+HYAIAAMX+f4eAAgAAxf5/h6ACAADF/n+HwAIAAMX+f4fgAgAAxf5/hwADAADF/n+HIAMAAMX+f4dAAwAAxf5/h2ADAADF/n+HgAMAAMX+f4egAwAAxf5/h8ADAADF/n+H4AMAAMX4dw=="
+jmp 21b
+.p2align 6"#,
+    )
+}
+
+/// Wipes the 1032-byte `*ctx`, a prepared key context of `vg_aes_gcm_prepare`: sets to zero the key context and the powers its count (the 64-bit word at byte 1024) says are present: its first 1024 bytes if the count is at least 48, 512 if it is at least 16, and 256 otherwise (the bytes after them were not written). Contract: `VG.Spec.Gcm.wipePreparedContract`. Constant time: only the pointer and which of those the count is may affect timing, not the bytes wiped.
+///
+/// # Safety
+///
+/// * `ctx` must be valid for reads and writes of 1032 bytes.
+/// * `ctx` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_wipe_prepared(ctx: *mut [u64; 129]) {
+    core::arch::naked_asm!(
+        r#".base64 "SIuHAAQAAEiD+DA="
+jae 20f
+.base64 "SIuHAAQAAEiD+BA="
+jae 22f
+.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAAA="
+23:
+21:
+.base64 "ww=="
+22:
+.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAA=="
+jmp 23b
+20:
+.base64 "Zg/vwPMPfwfzD39HEPMPf0cg8w9/RzDzD39HQPMPf0dQ8w9/R2DzD39HcPMPf4eAAAAA8w9/h5AAAADzD3+HoAAAAPMPf4ewAAAA8w9/h8AAAADzD3+H0AAAAPMPf4fgAAAA8w9/h/AAAADzD3+HAAEAAPMPf4cQAQAA8w9/hyABAADzD3+HMAEAAPMPf4dAAQAA8w9/h1ABAADzD3+HYAEAAPMPf4dwAQAA8w9/h4ABAADzD3+HkAEAAPMPf4egAQAA8w9/h7ABAADzD3+HwAEAAPMPf4fQAQAA8w9/h+ABAADzD3+H8AEAAPMPf4cAAgAA8w9/hxACAADzD3+HIAIAAPMPf4cwAgAA8w9/h0ACAADzD3+HUAIAAPMPf4dgAgAA8w9/h3ACAADzD3+HgAIAAPMPf4eQAgAA8w9/h6ACAADzD3+HsAIAAPMPf4fAAgAA8w9/h9ACAADzD3+H4AIAAPMPf4fwAgAA8w9/hwADAADzD3+HEAMAAPMPf4cgAwAA8w9/hzADAADzD3+HQAMAAPMPf4dQAwAA8w9/h2ADAADzD3+HcAMAAPMPf4eAAwAA8w9/h5ADAADzD3+HoAMAAPMPf4ewAwAA8w9/h8ADAADzD3+H0AMAAPMPf4fgAwAA8w9/h/ADAAA="
+jmp 21b
+.p2align 6"#,
     )
 }

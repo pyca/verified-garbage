@@ -52,14 +52,9 @@ VerifiedGarbage/
                     constant time by evaluation
   Artifacts/      The registry: one registration file per algorithm and target,
                   each listing the artifacts it emits
-  Variants/       Implementations of an interface that generic callers call: one
-                  file per implementation, `Variants/<Iface>/<Target>/<Name>.lean`
-  Generic/        Callers proven for any variant of an interface, emitted once per
-                  variant: `Generic/<Iface>/<Target>/<Alg>.lean`; callers of several
-                  interfaces, once per combination of their variants:
-                  `Generic/<Iface₁>/<Iface₂>/<Target>/<Alg>.lean`, each instance
-                  named by `Emit.qualifiedName` (a tag and the suffix of each
-                  interface's non-baseline variant: `vg_argon2_blake2b_avx2_g_avx512`)
+                  (a function generic over a callee's implementations is
+                  registered once for each element of their list,
+                  `Proof/Variants/<Iface>/<Target>.lean`)
   Dispatch.lean   The order in which each target's dispatchers try the variants, by
                   suffix (untrusted: it only decides which proven implementation runs)
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions

@@ -56,6 +56,63 @@ bl {vg_ed448_scalar_base}
     )
 }
 
+/// The CPU features `vg_ed448_public_key_sha3` requires (`Artifact.features`).
+pub const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
+
+/// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of 57 bytes.
+/// * `seed` must be valid for reads of 57 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * `seed` must originate from a cryptographically secure random generator.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
+/// * None of `out`, `seed` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha3` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
+    core::arch::naked_asm!(
+        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+.inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf9408bef,0x910001ef
+.inst 0xd280000e,0xf90001ee,0xf90005ee,0xf90009ee,0xf9000dee,0xf90011ee,0xf90015ee,0xf90019ee
+.inst 0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee,0xf9002dee,0xf90031ee,0xf90035ee,0xf90039ee
+.inst 0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee,0xf9004dee,0xf90051ee,0xf90055ee,0xf90059ee
+.inst 0xf9005dee,0xf90061ee,0xf9408be0,0x91000000,0xd2801101,0xd2800002,0xf94087e3,0x91000063
+.inst 0xd2800724,0xf9408be5,0x910400a5
+bl {vg_keccak_absorb_scratch_sha3}
+.inst 0xf9408be0,0x91000000,0xd2801101,0xd2800722,0xd28003e3,0xf9408be4,0x91040084
+bl {vg_keccak_pad_scratch_sha3}
+.inst 0xf9408be0,0x91000000,0xd2801101,0xd2800002,0x910203e3,0xd2800e44,0xf9408be5,0x910400a5
+bl {vg_keccak_squeeze_scratch_sha3}
+.inst 0xf94043e9,0xd29fff8a,0xf2bfffea,0xf2dfffea,0xf2ffffea,0x8a0a0129,0x910003ef,0xf90001e9
+.inst 0xf94047e9,0x910023ef,0xf90001e9,0xf9404be9,0x910043ef,0xf90001e9,0xf9404fe9,0x910063ef
+.inst 0xf90001e9,0xf94053e9,0x910083ef,0xf90001e9,0xf94057e9,0x9100a3ef,0xf90001e9,0xf9405be9
+.inst 0xd2f0000a,0xaa0a0129,0x9100c3ef,0xf90001e9,0x910003ef,0xd280000e,0xf9001dee,0xf94083e0
+.inst 0x91000000,0x910003e1,0xf9408be2,0x91000042
+bl {vg_ed448_scalar_base}
+.inst 0x910003ef,0xd280000e,0xf90001ee,0x910003ef,0xd280000e,0xf90005ee,0x910003ef,0xd280000e
+.inst 0xf90009ee,0x910003ef,0xd280000e,0xf9000dee,0x910003ef,0xd280000e,0xf90011ee,0x910003ef
+.inst 0xd280000e,0xf90015ee,0x910003ef,0xd280000e,0xf90019ee,0x910003ef,0xd280000e,0xf9001dee
+.inst 0x910003ef,0xd280000e,0xf90021ee,0x910003ef,0xd280000e,0xf90025ee,0x910003ef,0xd280000e
+.inst 0xf90029ee,0x910003ef,0xd280000e,0xf9002dee,0x910003ef,0xd280000e,0xf90031ee,0x910003ef
+.inst 0xd280000e,0xf90035ee,0x910003ef,0xd280000e,0xf90039ee,0x910003ef,0xd280000e,0xf9003dee
+.inst 0x910003ef,0xd280000e,0xf90041ee,0x910003ef,0xd280000e,0xf90045ee,0x910003ef,0xd280000e
+.inst 0xf90049ee,0x910003ef,0xd280000e,0xf9004dee,0x910003ef,0xd280000e,0xf90051ee,0x910003ef
+.inst 0xd280000e,0xf90055ee,0x910003ef,0xd280000e,0xf90059ee,0x910003ef,0xd280000e,0xf9005dee
+.inst 0x910003ef,0xd280000e,0xf90061ee,0x910003ef,0xd280000e,0xf90065ee,0x910003ef,0xd280000e
+.inst 0xf90069ee,0x910003ef,0xd280000e,0xf9006dee,0x910003ef,0xd280000e,0xf90071ee,0x910003ef
+.inst 0xd280000e,0xf90075ee,0x910003ef,0xd280000e,0xf90079ee,0x910003ef,0xd280000e,0xf9007dee
+.inst 0x910503ff,0xf84107fe,0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
+        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
+        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
+        vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
+    )
+}
+
 /// Ed448 signing (RFC 8032 §5.2.6): writes the 114-byte signature to `*out`, for the `len` bytes at `message`, the `ctxlen` bytes of context at `context` and the 57-byte private key at `seed`, using its cached public key at `pk`. Includes all hashing, pruning and scalar/group operations. Uses Ed448 with a context, not Ed448ph (no prehash); the context is empty for plain Ed448. Contract: `VG.Spec.Ed448.signCachedContract`. Constant time: only pointers and the context and message lengths may affect timing, not any buffer contents.
 ///
 /// # Safety
@@ -157,124 +214,6 @@ bl {vg_ed448_scalar_mul_add}
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
-    )
-}
-
-/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
-///
-/// # Safety
-///
-/// * `pk` must be valid for reads of 57 bytes.
-/// * `context` must be valid for reads of `ctxlen` bytes.
-/// * `message` must be valid for reads of `len` bytes.
-/// * `signature` must be valid for reads of 114 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
-/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd348fc49
-cbz x9, 20f
-.inst 0xd2800000
-b 21f
-20:
-.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
-.inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0x9103e3ef,0xf90001e6
-.inst 0xd28d2a69,0xf2a8ace9,0xf2c68c89,0xf2e70689,0x910003ef,0xf90001e9,0xf9408be9,0x91000129
-.inst 0xd378dd29,0xf90005e9,0xf9407fef,0x910001ef,0xd280000e,0xf90001ee,0xf90005ee,0xf90009ee
-.inst 0xf9000dee,0xf90011ee,0xf90015ee,0xf90019ee,0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee
-.inst 0xf9002dee,0xf90031ee,0xf90035ee,0xf90039ee,0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee
-.inst 0xf9004dee,0xf90051ee,0xf90055ee,0xf90059ee,0xf9005dee,0xf90061ee,0xd2800002,0xf9407fe0
-.inst 0x91000000,0xd2801101,0x910003e3,0xd2800144,0xf9407fe5,0x910400a5
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94087e3,0x91000063,0xf9408be4,0x91000084
-.inst 0xf9407fe5,0x910400a5
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94097e3,0x91000063,0xd2800724,0xf9407fe5
-.inst 0x910400a5
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94083e3,0x91000063,0xd2800724,0xf9407fe5
-.inst 0x910400a5
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf9408fe3,0x91000063,0xf94093e4,0x91000084
-.inst 0xf9407fe5,0x910400a5
-bl {vg_keccak_absorb_scratch}
-.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xd28003e3,0xf9407fe4,0x91040084
-bl {vg_keccak_pad_scratch}
-.inst 0xf9407fe0,0x91000000,0xd2801101,0xd2800002,0x910043e3,0xd2800e44,0xf9407fe5,0x910400a5
-bl {vg_keccak_squeeze_scratch}
-.inst 0x910223e0,0x910043e1,0xf9407fe2,0x91000042
-bl {vg_ed448_scalar_reduce}
-.inst 0xf94083e0,0x91000000,0xf94097e1,0x91000021,0x910223e2,0xf9407fe3,0x91000063
-bl {vg_ed448_verify_equation}
-.inst 0x910503ff,0xf84107fe
-21:
-.inst 0xd65f03c0
-.p2align 6",
-        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
-        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
-        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
-        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
-        vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
-    )
-}
-
-/// The CPU features `vg_ed448_public_key_sha3` requires (`Artifact.features`).
-pub const VG_ED448_PUBLIC_KEY_SHA3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA3);
-
-/// Ed448 public-key derivation (RFC 8032 §5.2.5): writes the 57-byte public key to `*out`, from the 57-byte private key at `seed`, including SHAKE256 and pruning. Contract: `VG.Spec.Ed448.publicKeyContract`. Constant time: only pointers may affect timing.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of 57 bytes.
-/// * `seed` must be valid for reads of 57 bytes.
-/// * `scratch` must be valid for reads and writes of 8192 bytes.
-/// * `seed` must originate from a cryptographically secure random generator.
-/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
-/// * `out` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `out`, `seed` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha3` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_ed448_public_key_sha3(out: *mut [u8; 57], seed: *const [u8; 57], scratch: *mut [u64; 1024]) {
-    core::arch::naked_asm!(
-        r".inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
-.inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0xf9408bef,0x910001ef
-.inst 0xd280000e,0xf90001ee,0xf90005ee,0xf90009ee,0xf9000dee,0xf90011ee,0xf90015ee,0xf90019ee
-.inst 0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee,0xf9002dee,0xf90031ee,0xf90035ee,0xf90039ee
-.inst 0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee,0xf9004dee,0xf90051ee,0xf90055ee,0xf90059ee
-.inst 0xf9005dee,0xf90061ee,0xf9408be0,0x91000000,0xd2801101,0xd2800002,0xf94087e3,0x91000063
-.inst 0xd2800724,0xf9408be5,0x910400a5
-bl {vg_keccak_absorb_scratch_sha3}
-.inst 0xf9408be0,0x91000000,0xd2801101,0xd2800722,0xd28003e3,0xf9408be4,0x91040084
-bl {vg_keccak_pad_scratch_sha3}
-.inst 0xf9408be0,0x91000000,0xd2801101,0xd2800002,0x910203e3,0xd2800e44,0xf9408be5,0x910400a5
-bl {vg_keccak_squeeze_scratch_sha3}
-.inst 0xf94043e9,0xd29fff8a,0xf2bfffea,0xf2dfffea,0xf2ffffea,0x8a0a0129,0x910003ef,0xf90001e9
-.inst 0xf94047e9,0x910023ef,0xf90001e9,0xf9404be9,0x910043ef,0xf90001e9,0xf9404fe9,0x910063ef
-.inst 0xf90001e9,0xf94053e9,0x910083ef,0xf90001e9,0xf94057e9,0x9100a3ef,0xf90001e9,0xf9405be9
-.inst 0xd2f0000a,0xaa0a0129,0x9100c3ef,0xf90001e9,0x910003ef,0xd280000e,0xf9001dee,0xf94083e0
-.inst 0x91000000,0x910003e1,0xf9408be2,0x91000042
-bl {vg_ed448_scalar_base}
-.inst 0x910003ef,0xd280000e,0xf90001ee,0x910003ef,0xd280000e,0xf90005ee,0x910003ef,0xd280000e
-.inst 0xf90009ee,0x910003ef,0xd280000e,0xf9000dee,0x910003ef,0xd280000e,0xf90011ee,0x910003ef
-.inst 0xd280000e,0xf90015ee,0x910003ef,0xd280000e,0xf90019ee,0x910003ef,0xd280000e,0xf9001dee
-.inst 0x910003ef,0xd280000e,0xf90021ee,0x910003ef,0xd280000e,0xf90025ee,0x910003ef,0xd280000e
-.inst 0xf90029ee,0x910003ef,0xd280000e,0xf9002dee,0x910003ef,0xd280000e,0xf90031ee,0x910003ef
-.inst 0xd280000e,0xf90035ee,0x910003ef,0xd280000e,0xf90039ee,0x910003ef,0xd280000e,0xf9003dee
-.inst 0x910003ef,0xd280000e,0xf90041ee,0x910003ef,0xd280000e,0xf90045ee,0x910003ef,0xd280000e
-.inst 0xf90049ee,0x910003ef,0xd280000e,0xf9004dee,0x910003ef,0xd280000e,0xf90051ee,0x910003ef
-.inst 0xd280000e,0xf90055ee,0x910003ef,0xd280000e,0xf90059ee,0x910003ef,0xd280000e,0xf9005dee
-.inst 0x910003ef,0xd280000e,0xf90061ee,0x910003ef,0xd280000e,0xf90065ee,0x910003ef,0xd280000e
-.inst 0xf90069ee,0x910003ef,0xd280000e,0xf9006dee,0x910003ef,0xd280000e,0xf90071ee,0x910003ef
-.inst 0xd280000e,0xf90075ee,0x910003ef,0xd280000e,0xf90079ee,0x910003ef,0xd280000e,0xf9007dee
-.inst 0x910503ff,0xf84107fe,0xd65f03c0
-.p2align 6",
-        vg_keccak_absorb_scratch_sha3 = sym super::ed448::vg_keccak_absorb_scratch_sha3::vg_keccak_absorb_scratch_sha3,
-        vg_keccak_pad_scratch_sha3 = sym super::ed448::vg_keccak_pad_scratch_sha3::vg_keccak_pad_scratch_sha3,
-        vg_keccak_squeeze_scratch_sha3 = sym super::ed448::vg_keccak_squeeze_scratch_sha3::vg_keccak_squeeze_scratch_sha3,
-        vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
     )
 }
 
@@ -383,6 +322,67 @@ bl {vg_ed448_scalar_mul_add}
         vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
         vg_ed448_scalar_base = sym super::ed448::vg_ed448_scalar_base::vg_ed448_scalar_base,
         vg_ed448_scalar_mul_add = sym super::ed448::vg_ed448_scalar_mul_add::vg_ed448_scalar_mul_add,
+    )
+}
+
+/// Ed448 verification (RFC 8032 §5.2.7): returns 1 if the 114-byte signature at `signature` verifies for the 57-byte public key at `pk`, the `ctxlen` bytes of context at `context` and the `len` bytes at `message`, and 0 otherwise (always 0 for a context longer than 255 bytes). Uses Ed448 with a context, not Ed448ph (no prehash). Checks canonical point encodings, S < L, and the cofactored equation `[4][S]B = [4]R + [4][k]A` with the challenge k = SHAKE256(dom4(0, C) || R || A || M, 114) reduced modulo L. No additional subgroup or small-order check is imposed. Contract: `VG.Spec.Ed448.verifyContract`. Not constant time: timing may depend on the public key, context, message and signature.
+///
+/// # Safety
+///
+/// * `pk` must be valid for reads of 57 bytes.
+/// * `context` must be valid for reads of `ctxlen` bytes.
+/// * `message` must be valid for reads of `len` bytes.
+/// * `signature` must be valid for reads of 114 bytes.
+/// * `scratch` must be valid for reads and writes of 8192 bytes.
+/// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
+/// * `scratch` must not overlap `pk`, `context`, `message` or `signature` (distinct Rust objects never do).
+/// * None of `pk`, `context`, `message`, `signature` and `scratch` may overlap the 352 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_ed448_verify(pk: *const [u8; 57], context: *const u8, ctxlen: usize, message: *const u8, len: usize, signature: *const [u8; 114], scratch: *mut [u64; 1024]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd348fc49
+cbz x9, 20f
+.inst 0xd2800000
+b 21f
+20:
+.inst 0xf81f0ffe,0xd10503ff,0x910403ef,0xf90001e0,0x910423ef,0xf90001e1,0x910443ef,0xf90001e2
+.inst 0x910463ef,0xf90001e3,0x910483ef,0xf90001e4,0x9104a3ef,0xf90001e5,0x9103e3ef,0xf90001e6
+.inst 0xd28d2a69,0xf2a8ace9,0xf2c68c89,0xf2e70689,0x910003ef,0xf90001e9,0xf9408be9,0x91000129
+.inst 0xd378dd29,0xf90005e9,0xf9407fef,0x910001ef,0xd280000e,0xf90001ee,0xf90005ee,0xf90009ee
+.inst 0xf9000dee,0xf90011ee,0xf90015ee,0xf90019ee,0xf9001dee,0xf90021ee,0xf90025ee,0xf90029ee
+.inst 0xf9002dee,0xf90031ee,0xf90035ee,0xf90039ee,0xf9003dee,0xf90041ee,0xf90045ee,0xf90049ee
+.inst 0xf9004dee,0xf90051ee,0xf90055ee,0xf90059ee,0xf9005dee,0xf90061ee,0xd2800002,0xf9407fe0
+.inst 0x91000000,0xd2801101,0x910003e3,0xd2800144,0xf9407fe5,0x910400a5
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94087e3,0x91000063,0xf9408be4,0x91000084
+.inst 0xf9407fe5,0x910400a5
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94097e3,0x91000063,0xd2800724,0xf9407fe5
+.inst 0x910400a5
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf94083e3,0x91000063,0xd2800724,0xf9407fe5
+.inst 0x910400a5
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xf9408fe3,0x91000063,0xf94093e4,0x91000084
+.inst 0xf9407fe5,0x910400a5
+bl {vg_keccak_absorb_scratch}
+.inst 0x91000002,0xf9407fe0,0x91000000,0xd2801101,0xd28003e3,0xf9407fe4,0x91040084
+bl {vg_keccak_pad_scratch}
+.inst 0xf9407fe0,0x91000000,0xd2801101,0xd2800002,0x910043e3,0xd2800e44,0xf9407fe5,0x910400a5
+bl {vg_keccak_squeeze_scratch}
+.inst 0x910223e0,0x910043e1,0xf9407fe2,0x91000042
+bl {vg_ed448_scalar_reduce}
+.inst 0xf94083e0,0x91000000,0xf94097e1,0x91000021,0x910223e2,0xf9407fe3,0x91000063
+bl {vg_ed448_verify_equation}
+.inst 0x910503ff,0xf84107fe
+21:
+.inst 0xd65f03c0
+.p2align 6",
+        vg_keccak_absorb_scratch = sym super::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
+        vg_keccak_pad_scratch = sym super::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
+        vg_keccak_squeeze_scratch = sym super::ed448::vg_keccak_squeeze_scratch::vg_keccak_squeeze_scratch,
+        vg_ed448_scalar_reduce = sym super::ed448::vg_ed448_scalar_reduce::vg_ed448_scalar_reduce,
+        vg_ed448_verify_equation = sym super::ed448::vg_ed448_verify_equation::vg_ed448_verify_equation,
     )
 }
 
