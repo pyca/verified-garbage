@@ -117,7 +117,6 @@ codec!(
 
 #[cfg(test)]
 mod tests {
-    #[cfg(not(target_arch = "riscv64"))]
     use crate::ec::P521;
     use crate::ec::PrivateKey;
     use crate::ec::{
@@ -176,7 +175,6 @@ mod tests {
     cases!(p224, P224, 28);
     cases!(p256, P256, 32);
     cases!(p384, P384, 48);
-    #[cfg(not(target_arch = "riscv64"))]
     cases!(p521, P521, 66);
     cases!(secp256k1, Secp256k1, 32);
     cases!(brainpoolp256r1, BrainpoolP256r1, 32);

@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ecb_encrypt_vaes` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_VAES_FEATURES`); `vg_aes_ecb_encrypt_aesni` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AESNI_FEATURES`); `vg_aes_ecb_encrypt_avx` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AVX_FEATURES`); or else `vg_aes_ecb_encrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ecb_encrypt_vaes` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_VAES_FEATURES`); `vg_aes_ecb_encrypt_aesni` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AESNI_FEATURES`); `vg_aes_ecb_encrypt_avx` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AVX_FEATURES`); or else `vg_aes_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -19,31 +19,48 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ecb_encrypt_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_encrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_encrypt_vaes(schedule, rounds, data, n, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_VAES_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_encrypt_vaes;
+        }
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AESNI_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_encrypt_aesni;
+        }
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AVX_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_encrypt_avx;
+        }
+        crate::aes_ecb::vg_aes_ecb_encrypt
     }
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_encrypt_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_encrypt_aesni(schedule, rounds, data, n, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, data, n, scratch) }
     }
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_encrypt_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_encrypt_avx(schedule, rounds, data, n, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ecb::vg_aes_ecb_encrypt(schedule, rounds, data, n, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, data, n, scratch) }
 }
 
 /// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ecb_decrypt_vaes` if the CPU supports its features (`VG_AES_ECB_DECRYPT_VAES_FEATURES`); `vg_aes_ecb_decrypt_aesni_avx` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES`); `vg_aes_ecb_decrypt_aesni` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AESNI_FEATURES`); `vg_aes_ecb_decrypt_avx` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AVX_FEATURES`); or else `vg_aes_ecb_decrypt`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ecb_decrypt_vaes` if the CPU supports its features (`VG_AES_ECB_DECRYPT_VAES_FEATURES`); `vg_aes_ecb_decrypt_aesni_avx` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES`); `vg_aes_ecb_decrypt_aesni` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AESNI_FEATURES`); `vg_aes_ecb_decrypt_avx` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AVX_FEATURES`); or else `vg_aes_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -56,27 +73,42 @@ pub unsafe fn vg_aes_ecb_encrypt_auto(schedule: *const [u8; 240], rounds: usize,
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_ecb_decrypt_auto(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_VAES_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_decrypt_vaes`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_decrypt_vaes(schedule, rounds, data, n, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_VAES_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_decrypt_vaes;
+        }
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_decrypt_aesni_avx;
+        }
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_decrypt_aesni;
+        }
+        if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AVX_FEATURES) {
+            return crate::aes_ecb::vg_aes_ecb_decrypt_avx;
+        }
+        crate::aes_ecb::vg_aes_ecb_decrypt
     }
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_decrypt_aesni_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_decrypt_aesni_avx(schedule, rounds, data, n, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, rounds, data, n, scratch) }
     }
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AESNI_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_decrypt_aesni`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_decrypt_aesni(schedule, rounds, data, n, scratch) };
-    }
-    if cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AVX_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_aes_ecb_decrypt_avx`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::aes_ecb::vg_aes_ecb_decrypt_avx(schedule, rounds, data, n, scratch) };
-    }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::aes_ecb::vg_aes_ecb_decrypt(schedule, rounds, data, n, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, rounds, data, n, scratch) }
 }

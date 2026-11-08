@@ -81,26 +81,25 @@ vg_cast5_cfb64_encrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 24:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -161,26 +160,25 @@ vg_cast5_cfb64_encrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 25:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -241,26 +239,25 @@ vg_cast5_cfb64_encrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 26:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -326,26 +323,25 @@ vg_cast5_cfb64_encrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 29:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -483,26 +479,25 @@ vg_cast5_cfb64_decrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 24:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -563,26 +558,25 @@ vg_cast5_cfb64_decrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 25:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -643,26 +637,25 @@ vg_cast5_cfb64_decrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 26:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -728,26 +721,25 @@ vg_cast5_cfb64_decrypt:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 29:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -887,26 +879,25 @@ vg_cast5_cfb64_encrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 24:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -967,26 +958,25 @@ vg_cast5_cfb64_encrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 25:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1047,26 +1037,25 @@ vg_cast5_cfb64_encrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 26:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1132,26 +1121,25 @@ vg_cast5_cfb64_encrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 29:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1304,26 +1292,25 @@ vg_cast5_cfb64_decrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 24:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1384,26 +1371,25 @@ vg_cast5_cfb64_decrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 25:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1464,26 +1450,25 @@ vg_cast5_cfb64_decrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 26:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1
@@ -1549,26 +1534,25 @@ vg_cast5_cfb64_decrypt_final:
 	movi v2.2d, #0
 	cmeq v3.4s, v3.4s, v3.4s
 	ushr v3.4s, v3.4s, #31
+	and v4.16b, v0.16b, v3.16b
+	movi v16.2d, #0
+	sub v16.4s, v16.4s, v4.4s
+	ushr v4.4s, v0.4s, #1
+	and v4.16b, v4.16b, v3.16b
+	movi v17.2d, #0
+	sub v17.4s, v17.4s, v4.4s
+	ushr v18.4s, v0.4s, #2
 29:
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #0]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	ldr q4, [x10, #0]
 	ldr q5, [x10, #16]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
-	ldr q5, [x10, #32]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
-	add v2.4s, v2.4s, v3.4s
-	cmeq v4.4s, v0.4s, v2.4s
+	bit v4.16b, v5.16b, v16.16b
+	ldr q19, [x10, #32]
 	ldr q5, [x10, #48]
-	and v5.16b, v5.16b, v4.16b
-	orr v1.16b, v1.16b, v5.16b
+	bit v19.16b, v5.16b, v16.16b
+	bit v4.16b, v19.16b, v17.16b
+	cmeq v5.4s, v18.4s, v2.4s
+	and v4.16b, v4.16b, v5.16b
+	orr v1.16b, v1.16b, v4.16b
 	add v2.4s, v2.4s, v3.4s
 	add x10, x10, #64
 	sub x11, x11, #1

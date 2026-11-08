@@ -1624,20 +1624,44 @@ checks with `verified_garbage_cpu::detected()`, which detects the features
 the CPU and operating system support (`crates/verified-garbage-cpu/`), of
 which a `Features` constant names the bits (`featuresConst`):
 
+It chooses once, on its first call, and calls the implementation it chose
+from then on through a pointer to it, without choosing again: a call is a
+load and an indirect call, however many implementations the function has.
+The pointer, `CHOSEN`, starts out pointing at `first`, a function of the
+implementations' type that chooses one (`select`, which tries them in order
+as below), records it in `CHOSEN` and runs it. Threads that race to make the
+first call choose the same implementation, since `detected()` returns the
+same features to all of them, so `CHOSEN` only ever holds `first` or that
+implementation, and `Relaxed` is enough:
+
 ```rust
 /// <the base's documentation, without its CPU features>
 #[inline]
 pub unsafe fn <base>_auto(<the signature>) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::<module>::<NAME>_FEATURES) {
-        // SAFETY: …
-        return unsafe { crate::<module>::<name>(<the arguments>) };
+    type Impl = unsafe extern "<abi>" fn<the signature>;
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::<module>::<NAME>_FEATURES) {
+            return crate::<module>::<name>;
+        }
+        …
+        crate::<module>::<base>
     }
-    …
-    // SAFETY: the caller's obligations.
-    unsafe { crate::<module>::<base>(<the arguments>) }
+    unsafe extern "<abi>" fn first<the signature> {
+        let f = select();
+        CHOSEN.store(f as *mut (), Relaxed);
+        // SAFETY: …
+        unsafe { f(<the arguments>) }
+    }
+    static CHOSEN: AtomicPtr<()> = AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: …
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(Relaxed))(<the arguments>) }
 }
 ```
+
+Its items are inside it, so that their names are its own and its lines, from
+its first to the `}` closing it, are all of its code (as
+`ci/merge_rust_coverage.py` reads it).
 
 The dispatchers of a module's functions are in a file of their own,
 `dispatch/<module>.rs` of the crate's `codeDir` (`dispatchFile`), declared by
@@ -1651,9 +1675,10 @@ safety: each is proven against the contract that their common documentation
 states, and each is called only on a CPU with its features. So the ranking
 (`Rank`) is not trusted, and comes from outside the trusted base
 (`VerifiedGarbage/Dispatch.lean`). The dispatcher tries the implementations
-in the order it gives, each where the CPU also has the ranking's `extra`
-features for it and, if the ranking names a `vendor`, only where the
-compilation target's `target_vendor` is that, or where `VG_CPU_FEATURES`
+in the order it gives, each where the CPU also has the `extra` features
+that the ranking or its registration (`Artifact.extra`) gives it and, if
+either names a `vendor` (`Artifact.vendor`), only where the compilation
+target's `target_vendor` is that, or where `VG_CPU_FEATURES`
 names every feature the implementation needs
 (`verified_garbage_cpu::requested`, for testing it elsewhere); an
 implementation whose `cfg` (`Printer.featureCfg`) the build lacks is not
@@ -1829,13 +1854,20 @@ structure Impl where
   module : String
   features : List String
   gate : List String
+  /-- Its registration's `extra` features and `vendor` (`Artifact.extra`,
+  `Artifact.vendor`). -/
+  extra : List String := []
+  vendor : Option String := none
 
 /-- The function `a`, as an implementation a dispatcher may call. -/
 def Impl.ofArtifact (a : Artifact) : Impl :=
-  ⟨a.name, a.module, a.features, a.features.filterMap a.target.printer.featureCfg⟩
+  { name := a.name, module := a.module, features := a.features
+    gate := a.features.filterMap a.target.printer.featureCfg, extra := a.extra
+    vendor := a.vendor }
 
-/-- An implementation a dispatcher may choose, with its ranking's `extra`
-features and `vendor`s (those of each of its suffix's parts). -/
+/-- An implementation a dispatcher may choose, with the `extra` features and
+`vendor`s of its registration and of its ranking (those of each of its
+suffix's parts). -/
 structure Arm where
   impl : Impl
   extra : List String
@@ -1847,7 +1879,7 @@ tries, in order (see above), or why `rs` does not rank them. -/
 def armsOf (rs : List Rank) (m t : String) (members : List (Impl × String)) :
     Except String (List Arm) := do
   let arm (a : Impl) (ranks : List Rank) : Arm :=
-    ⟨a, dedup (ranks.flatMap (·.extra)), dedup (ranks.filterMap (·.vendor))⟩
+    ⟨a, dedup (a.extra ++ ranks.flatMap (·.extra)), dedup (a.vendor.toList ++ ranks.filterMap (·.vendor))⟩
   let keyed ← if members.all fun (_, s) => (rankOf rs m s).isSome then
       pure (members.map fun (a, s) => match rankOf rs m s with
         | some (i, r) => ([i], arm a [r])
@@ -1925,8 +1957,21 @@ def dispatchNote (base : String) (arms : List Arm) : String :=
     | cs => s!"`{a.impl.name}` if " ++ englishList "and" cs
   s!"It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders \
     (`VG.Rust.Rank`): " ++ "; ".intercalate (arms.map item) ++
-    s!"; or else `{base}`, which needs no CPU feature. Each has this documentation but for its \
-    stack (whose requirements here are the largest) and what it writes."
+    s!"; or else `{base}`, which needs no CPU feature. It chooses on its first call, and calls \
+    the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) \
+    and what it writes."
+
+/-- The body of a function returning the implementation, of the function
+whose base is `b`, that the first of `arms` that applies names, or else the
+base (see above), each line after `ind`. -/
+def choice (ind : String) (b : Artifact) (arms : List Arm) : String :=
+  (if arms.isEmpty then "" else s!"{ind}let cpu = verified_garbage_cpu::detected();\n") ++
+  String.join (arms.map fun a =>
+    String.join (a.impl.gate.map fun p => s!"{ind}#[cfg({p})]\n") ++
+    s!"{ind}if {condOf a} " ++ "{\n" ++
+    s!"{ind}    return crate::{a.impl.module}::{a.impl.name};\n" ++
+    s!"{ind}" ++ "}\n") ++
+  s!"{ind}crate::{b.module}::{b.name}\n"
 
 /-- The dispatcher of the function `g` of the module `m` (see above), given
 its implementations' `arms`. -/
@@ -1939,7 +1984,9 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
     let ns := (g.members.map (·.1)).map fun a => a.written.lookup p
     if ns.all (·.isSome) then some (p, ns.foldl (fun m o => max m (o.getD 0)) n) else none
   let args := argsOf b.sig
+  let abi := b.target.rustAbi
   let doc := fullDoc.fullDocWith b auto stack written [] [dispatchNote b.name arms]
+  let relaxed := "core::sync::atomic::Ordering::Relaxed"
   writtenConsts auto "" written ++
   docComment "" doc ++
   safetyAllow doc ++
@@ -1947,16 +1994,31 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{b.sig.rust} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
-  String.join (arms.map fun a =>
-    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
-    s!"        // SAFETY: the caller's obligations, which are `{a.impl.name}`'s, and the CPU\n" ++
-    "        // has the features it needs.\n" ++
-    s!"        return unsafe " ++ "{ " ++ s!"crate::{a.impl.module}::{a.impl.name}({args})" ++ " };\n" ++
-    "    }\n") ++
-  "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
-  "    unsafe { " ++ s!"crate::{b.module}::{b.name}({args})" ++ " }\n" ++
+  "    /// The type of the implementations.\n" ++
+  s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
+  "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
+  "    /// features the CPU has.\n" ++
+  "    #[cold]\n" ++
+  "    fn select() -> Impl {\n" ++
+  choice "        " b arms ++
+  "    }\n" ++
+  "    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls\n" ++
+  "    /// after it, and runs it.\n" ++
+  "    #[cold]\n" ++
+  s!"    unsafe extern \"{abi}\" fn first{b.sig.rust} " ++ "{\n" ++
+  "        let f = select();\n" ++
+  s!"        CHOSEN.store(f as *mut (), {relaxed});\n" ++
+  "        // SAFETY: the caller's obligations, which are those of every implementation, `f`\n" ++
+  "        // among them, and the CPU has the features `f` needs.\n" ++
+  s!"        unsafe " ++ "{ " ++ s!"f({args})" ++ " }\n" ++
+  "    }\n" ++
+  "    /// The function to call: `first`, until it records the implementation it chose.\n" ++
+  "    static CHOSEN: core::sync::atomic::AtomicPtr<()> =\n" ++
+  "        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());\n" ++
+  "    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,\n" ++
+  "    // or an implementation `select` returned, which needs only features the CPU has. Calling\n" ++
+  "    // either carries the caller's obligations, which are those of every implementation.\n" ++
+  s!"    unsafe " ++ "{ " ++ s!"core::mem::transmute::<*mut (), Impl>(CHOSEN.load({relaxed}))({args})" ++ " }\n" ++
   "}\n"
 
 /-- The dispatcher of the function `g` whose base is its only implementation:
@@ -1994,29 +2056,41 @@ def selector (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::type_complexity)]\n" ++
   "#[inline]\n" ++
   s!"pub fn {selectName b.name}() -> {ty} " ++ "{\n" ++
-  (if arms.isEmpty then "" else "    let cpu = verified_garbage_cpu::detected();\n") ++
-  String.join (arms.map fun a =>
-    String.join (a.impl.gate.map fun p => s!"    #[cfg({p})]\n") ++
-    s!"    if {condOf a} " ++ "{\n" ++
-    s!"        return crate::{a.impl.module}::{a.impl.name};\n" ++
-    "    }\n") ++
-  s!"    crate::{b.module}::{b.name}\n" ++
+  choice "    " b arms ++
   "}\n"
 
-/-- Each `Rank` of `rs` has a suffix starting with `_` and, if it names a
-vendor, a vendor of lowercase ASCII letters, digits and underscores (the
-text the dispatcher puts in `cfg!(target_vendor = "…")`), and each of its
-`extra` features is a name of letters, digits, `.` and `_`. -/
+/-- Whether `v` is a vendor of lowercase ASCII letters, digits and
+underscores (the text the dispatcher puts in `cfg!(target_vendor = "…")`). -/
+def vendorOk (v : String) : Bool :=
+  !v.isEmpty && v.all fun c => c.isLower || c.isDigit || c == '_'
+
+/-- Whether `f` is a feature's name of letters, digits, `.` and `_`. -/
+def featureOk (f : String) : Bool :=
+  !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_'
+
+/-- Each `Rank` of `rs` has a suffix starting with `_`, and its vendor, if it
+names one, and each of its `extra` features are as `vendorOk` and
+`featureOk` require. -/
 def checkRanks (t : String) (rs : List Rank) : Except String Unit :=
   rs.forM fun r => do
     unless r.suffix.startsWith "_" && r.suffix.length > 1 do
       throw s!"{t}: the ranked suffix `{r.suffix}` does not start with `_`"
     if let some v := r.vendor then
-      unless !v.isEmpty && v.all fun c => c.isLower || c.isDigit || c == '_' do
+      unless vendorOk v do
         throw s!"{t}: the ranked suffix `{r.suffix}` names the vendor `{v}`"
     for f in r.extra do
-      unless !f.isEmpty && f.all fun c => c.isAlphanum || c == '.' || c == '_' do
+      unless featureOk f do
         throw s!"{t}: the ranked suffix `{r.suffix}` needs the feature `{f}`"
+
+/-- The artifact `a`'s vendor, if it names one, and each of its `extra`
+features are as `vendorOk` and `featureOk` require. -/
+def checkChoice (a : Artifact) : Except String Unit := do
+  if let some v := a.vendor then
+    unless vendorOk v do
+      throw s!"{a.target.name}: {a.name} names the vendor `{v}`"
+  for f in a.extra do
+    unless featureOk f do
+      throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
 /-- The dispatchers of the artifacts `as` of the module `m` of a target (see
 above), with the selectors of those whose bases `selected` names, as the
@@ -2067,7 +2141,8 @@ the CPU features each table needs (`features`), its `cfg` predicates
 def tableDispatcher (rs : List Rank) (t : String) (features : FnTable → List String)
     (gate : List String → List String) (rankModule : FnTable → String) (b : FnTable)
     (members : List (FnTable × String)) : Except String String := do
-  let impl (T : FnTable) : Impl := ⟨T.name, "fn_tables", features T, gate (features T)⟩
+  let impl (T : FnTable) : Impl :=
+    { name := T.name, module := "fn_tables", features := features T, gate := gate (features T) }
   let arms ← armsOf rs (rankModule b) t (members.map fun (T, s) => (impl T, s.toLower))
   let item (a : Arm) : String :=
     let needs := if a.impl.features.isEmpty then
@@ -2199,8 +2274,9 @@ tables of constants, or an internal function's name or tables, are not as
 artifact's features are not those its code requires (`checkFeatures`), its
 code has an instruction its target's printer cannot encode
 (`checkEncodable`), its doc has no `# Safety` section at its end for what
-`fullDoc` adds to it (`checkLayout`) or a bound on what it writes is not of a
-writable array parameter, at most its size (`checkWritten`), or `ranking`
+`fullDoc` adds to it (`checkLayout`), a bound on what it writes is not of a
+writable array parameter, at most its size (`checkWritten`), or its vendor
+or `extra` features are not names (`checkChoice`), or `ranking`
 (each target's, by its name) does not rank an implementation a dispatcher
 calls (`dispatchers`, `checkRanks`), or `selected` names a function of a
 target that has no dispatcher there (`dispatchers`); with each module's
@@ -2234,6 +2310,7 @@ def files (as : List Artifact) (ranking : Ranking := []) (selected : Selected :=
   forMPar ps checkEncodable
   forMPar as checkLayout
   forMPar as checkWritten
+  forMPar as checkChoice
   let disp ← (targetsOf as).flatMapM fun (t, _) => do
     let rs := (ranking.lookup t).getD []
     checkRanks t rs

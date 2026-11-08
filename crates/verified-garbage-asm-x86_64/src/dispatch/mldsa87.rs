@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.MlDsa.signContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signLeak`), but not on anything else of the key, the message representative or the randomness.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX512_FEATURES`); `vg_mldsa87_sign_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX2_FEATURES`); or else `vg_mldsa87_sign`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX512_FEATURES`); `vg_mldsa87_sign_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_AVX2_FEATURES`); or else `vg_mldsa87_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -23,19 +23,38 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_auto(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_avx512(sk, mu, rnd, sig, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_sign
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_avx2(sk, mu, rnd, sig, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(sk: *const [u8; 4896], mu: *const [u8; 64], rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, mu, rnd, sig, scratch) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_sign(sk, mu, rnd, sig, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, mu, rnd, sig, scratch) }
 }
 
 /// `vg_mldsa87_pk_tr`, the only implementation of it on this target, which needs no CPU feature
@@ -48,7 +67,7 @@ pub use crate::mldsa87::vg_mldsa87_pk_tr as vg_mldsa87_pk_tr_auto;
 ///
 /// Contract: `VG.Spec.MlDsa.keyGenContract`. Constant time but for `ρ` and rejections: timing may depend on the pointers, on `ρ` (the first 32 bytes of the public key), and on which half-bytes of the SHAKE256 outputs `RejBoundedPoly` rejects (`rejBoundedLeak`, which is independent of the coefficients it samples), but not on anything else of the seed or the keys.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_keygen_avx512` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX512_FEATURES`); `vg_mldsa87_keygen_avx2` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa87_keygen`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_keygen_avx512` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX512_FEATURES`); `vg_mldsa87_keygen_avx2` if the CPU supports its features (`VG_MLDSA87_KEYGEN_AVX2_FEATURES`); or else `vg_mldsa87_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -63,26 +82,45 @@ pub use crate::mldsa87::vg_mldsa87_pk_tr as vg_mldsa87_pk_tr_auto;
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_keygen_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_keygen_avx512(seed, pk, sk, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_keygen_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_keygen_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_keygen
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_KEYGEN_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_keygen_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_keygen_avx2(seed, pk, sk, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(seed: *const [u8; 32], pk: *mut [u8; 2592], sk: *mut [u8; 4896], scratch: *mut [u64; 18048]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(seed, pk, sk, scratch) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_keygen(seed, pk, sk, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(seed, pk, sk, scratch) }
 }
 
 /// ML-DSA-87 verification of a signature of a message representative, `ML-DSA.Verify_internal(pk, M′, σ)` (FIPS 204 Algorithm 8) with `μ` computed by the caller: with the public key `*pk`, the 64-byte message representative `μ = H(H(pk, 64) ‖ M′, 64)` at `mu` and the signature `*sig`, returns 1 if the signature is valid, and 0 if it is not or if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyContract`. Not constant time: timing may depend on the public key, the message representative and the signature.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX512_FEATURES`); `vg_mldsa87_verify_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX2_FEATURES`); or else `vg_mldsa87_verify`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX512_FEATURES`); `vg_mldsa87_verify_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_AVX2_FEATURES`); or else `vg_mldsa87_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -96,26 +134,45 @@ pub unsafe fn vg_mldsa87_keygen_auto(seed: *const [u8; 32], pk: *mut [u8; 2592],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_avx512(pk, mu, sig, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_verify
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_avx2(pk, mu, sig, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 2592], mu: *const [u8; 64], sig: *const [u8; 4627], scratch: *mut [u64; 18048]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, mu, sig, scratch) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_verify(pk, mu, sig, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, mu, sig, scratch) }
 }
 
 /// ML-DSA-87 signing, `ML-DSA.Sign(sk, M, ctx)` (FIPS 204 Algorithm 2) on the randomness `*rnd` (line 5): with the private key `*sk`, the `msg_len` bytes of the message at `msg` and the `ctx_len` bytes of the context string at `ctx`, writes the signature of the formatted message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 10), `ML-DSA.Sign_internal(sk, M′, rnd)` (Algorithm 7), to `*sig`. Returns 1 on success. Returns 0 if a loop reaches its bound, which is at least the limit of FIPS 204 Appendix C, Table 3 (this happens with probability about 2^-256 or less): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed. Returns 2 if `ctx_len` is greater than 255 (FIPS 204 returns the error indication `⊥`): `*sig` is then unspecified.
 ///
 /// Contract: `VG.Spec.MlDsa.signMessageContract`. Constant time but for `ρ` and the rejection sampling: timing may depend on the pointers, on `msg_len` and `ctx_len`, on `ρ` (the first 32 bytes of `*sk`), on the number of iterations of the signing loop, the commitment hash of each and which validity check rejected it, and on the hint of the signature (`signMessageLeak`), but not on anything else of the key, the message, the context string or the randomness.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_message_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES`); `vg_mldsa87_sign_message_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa87_sign_message`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_message_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES`); `vg_mldsa87_sign_message_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES`); or else `vg_mldsa87_sign_message`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -133,26 +190,45 @@ pub unsafe fn vg_mldsa87_verify_auto(pk: *const [u8; 2592], mu: *const [u8; 64],
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_message_avx512(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_message_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_message_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_sign_message
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_message_avx2(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(sk: *const [u8; 4896], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_sign_message(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// ML-DSA-87 private-key preparation: with the private key `*sk`, writes to `*prepared` the key, followed by the `ℓ + 2k` polynomials `NTT(s₁)`, `NTT(s₂)` and `NTT(t₀)` that signing (FIPS 204 Algorithm 7, lines 2–4) computes from it, for `vg_mldsa87_sign_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.prepareSecretKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_signing_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_prepare_signing_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_signing_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -166,21 +242,42 @@ pub unsafe fn vg_mldsa87_sign_message_auto(sk: *const [u8; 4896], msg: *const u8
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_prepare_signing_key_auto(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_prepare_signing_key_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_prepare_signing_key_avx2(sk, prepared, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_PREPARE_SIGNING_KEY_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_prepare_signing_key_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_prepare_signing_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_prepare_signing_key(sk, prepared, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(sk: *const [u8; 4896], prepared: *mut [u8; 28448], scratch: *mut [u64; 128]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, prepared, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, prepared, scratch) }
 }
 
 /// ML-DSA-87 public-key preparation: with the public key `*pk`, writes to `*prepared` the key, followed by the `k` polynomials `NTT(t₁ · 2^d)` that verification (FIPS 204 Algorithm 8, line 9) computes from it, for `vg_mldsa87_verify_message_prepared`.
 ///
 /// Contract: `VG.Spec.MlDsa.preparePublicKeyContract`. Constant time.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_verifying_key`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_prepare_verifying_key_avx2` if the CPU supports its features (`VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES`); or else `vg_mldsa87_prepare_verifying_key`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -193,21 +290,42 @@ pub unsafe fn vg_mldsa87_prepare_signing_key_auto(sk: *const [u8; 4896], prepare
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_prepare_verifying_key_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_prepare_verifying_key_avx2(pk, prepared, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_PREPARE_VERIFYING_KEY_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_prepare_verifying_key_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_prepare_verifying_key
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_prepare_verifying_key(pk, prepared, scratch) }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 2592], prepared: *mut [u8; 10784], scratch: *mut [u64; 128]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, prepared, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, prepared, scratch) }
 }
 
 /// ML-DSA-87 signing with a prepared private key: `vg_mldsa87_sign_message` (with its results, timing and leakage) of the private key that `*sk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedSignMessageContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_sign_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_sign_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_sign_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_sign_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -226,26 +344,45 @@ pub unsafe fn vg_mldsa87_prepare_verifying_key_auto(pk: *const [u8; 2592], prepa
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_prepared_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_message_prepared_avx512(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_message_prepared_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_sign_message_prepared_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_sign_message_prepared
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_SIGN_MESSAGE_PREPARED_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_sign_message_prepared_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_sign_message_prepared_avx2(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(sk: *const [u8; 28448], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, rnd: *const [u8; 32], sig: *mut [u8; 4627], scratch: *mut [u64; 18176]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_sign_message_prepared(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(sk, msg, msg_len, ctx, ctx_len, rnd, sig, scratch) }
 }
 
 /// ML-DSA-87 message verification with a cached public-key digest. Returns 1 for a valid signature, 0 for an invalid signature or exhausted sampling bound, and 2 if the context exceeds 255 bytes. It is `ML-DSA.Verify(pk, M, σ, ctx)` (FIPS 204 Algorithm 3) with `H(pk, 64)` read from `*tr`: with the public key `*pk`, the `msg_len` bytes of the message at `msg`, the `ctx_len` bytes of the context string at `ctx` and the signature `*sig`, it formats the message `M′ = 0 ‖ ctx_len ‖ ctx ‖ M` (line 5), computes `μ = H(tr ‖ M′, 64)`, and verifies `*sig` on `μ` with `*pk`, `ML-DSA.Verify_internal(pk, M′, σ)` (Algorithm 8).
 ///
 /// Contract: `VG.Spec.MlDsa.verifyMessageCachedContract`. Timing may depend on the public key, message, context string and signature, and on argument addresses and lengths.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`); `vg_mldsa87_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_cached`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_message_cached_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES`); `vg_mldsa87_verify_message_cached_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_cached`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -262,26 +399,45 @@ pub unsafe fn vg_mldsa87_sign_message_prepared_auto(sk: *const [u8; 28448], msg:
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_cached_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_message_cached_avx512(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_message_cached_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_message_cached_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_verify_message_cached
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_CACHED_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_cached_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_message_cached_avx2(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 2592], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_verify_message_cached(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }
 
 /// ML-DSA-87 verification with a prepared public key: `vg_mldsa87_verify_message_cached` (with its results, timing and leakage) of the public key that `*pk` begins with.
 ///
 /// Contract: `VG.Spec.MlDsa.preparedVerifyMessageContract`.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_prepared`, which needs no CPU feature. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mldsa87_verify_message_prepared_avx512` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES`); `vg_mldsa87_verify_message_prepared_avx2` if the CPU supports its features (`VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES`); or else `vg_mldsa87_verify_message_prepared`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -299,17 +455,36 @@ pub unsafe fn vg_mldsa87_verify_message_cached_auto(pk: *const [u8; 2592], msg: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_mldsa87_verify_message_prepared_auto(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
-    let cpu = verified_garbage_cpu::detected();
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_prepared_avx512`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_message_prepared_avx512(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+    /// The type of the implementations.
+    type Impl = unsafe extern "sysv64" fn(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX512_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_message_prepared_avx512;
+        }
+        if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES) {
+            return crate::mldsa87::vg_mldsa87_verify_message_prepared_avx2;
+        }
+        crate::mldsa87::vg_mldsa87_verify_message_prepared
     }
-    if cpu.contains(crate::mldsa87::VG_MLDSA87_VERIFY_MESSAGE_PREPARED_AVX2_FEATURES) {
-        // SAFETY: the caller's obligations, which are `vg_mldsa87_verify_message_prepared_avx2`'s, and the CPU
-        // has the features it needs.
-        return unsafe { crate::mldsa87::vg_mldsa87_verify_message_prepared_avx2(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) };
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "sysv64" fn first(pk: *const [u8; 10784], msg: *const u8, msg_len: usize, ctx: *const u8, ctx_len: usize, sig: *const [u8; 4627], scratch: *mut [u64; 18176], tr: *const [u8; 64]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
     }
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mldsa87::vg_mldsa87_verify_message_prepared(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(pk, msg, msg_len, ctx, ctx_len, sig, scratch, tr) }
 }

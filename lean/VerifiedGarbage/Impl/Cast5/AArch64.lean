@@ -11,20 +11,21 @@ As on x86-64 (`Impl/Cast5/X86_64.lean`), a lookup in an S-box never uses a
 secret as an address: the four lookups a round function makes, `S1[Ia]`,
 `S2[Ib]`, `S3[Ic]` and `S4[Id]`, are made at once by a *scan* of a table of
 256 entries of 16 bytes, entry `i` the four words `S4[i], S3[i], S2[i], S1[i]`
-(`VG_CAST5_S1234`), in AdvSIMD registers: the indices are the four lanes of
-`v0`, `cmeq` with the entry's number in every lane (`v2`) gives a mask that is
-all ones in the lanes whose index it is, and the entry is ANDed with it and
-ORed into the result, `v1`; every entry is loaded, in order. Key expansion
+(`VG_CAST5_S1234`), in AdvSIMD registers. The indices are the four lanes of
+`v0`. Their low two bits select within four adjacent entries with BIT;
+`cmeq` compares their remaining bits with the public group number, and the
+selected words are ANDed with that mask and ORed into `v1`. Every entry is
+loaded, in order. Key expansion
 scans `VG_CAST5_S5678` the same way, entry `i` the words `S8[i], S7[i], S6[i],
 S5[i]`.
 
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each selected or not (`csel`) by a bit of `Kr` (`rotate`).
 
-Only the caller-saved registers `x0`–`x15` and `v0`–`v6` are used (the
+Only the caller-saved registers `x0`–`x15`, `v0`–`v6` and `v16`–`v19` are used (the
 round function's `I` in `w4`, whose argument, `scratch`, ECB does not use). Registers
 of the scan: the table in `x10`, the count of groups of four entries left in
-`x11`, `v0`–`v5`.
+`x11`, `v0`–`v5` and `v16`–`v19`.
 -/
 
 @[expose] public section
@@ -35,23 +36,33 @@ open VG.AArch64
 
 /-! ## The scan -/
 
-/-- Entry `e` of the four at `x10`: its mask, from the indices in `v0` and the
-entry's number in every lane of `v2`, ANDed with it and ORed into `v1`; then
-the next number. -/
-def scanEntry (e : Nat) : List Instr :=
-  [.vop (.cmeq .s4 .v4 .v0 .v2), .ldrq .v5 .x10 (16 * e), .vop (.logic .and .v5 .v5 .v4),
-   .vop (.logic .orr .v1 .v1 .v5), .vop (.add .s4 .v2 .v2 .v3)]
+/-- Four fixed-address loads; select their low index bits with BIT. -/
+def scanTile : List Instr :=
+  [.ldrq .v4 .x10 0, .ldrq .v5 .x10 16,
+   .vop (.bsel .bit .v4 .v5 .v16),
+   .ldrq .v19 .x10 32, .ldrq .v5 .x10 48,
+   .vop (.bsel .bit .v19 .v5 .v16), .vop (.bsel .bit .v4 .v19 .v17),
+   .vop (.cmeq .s4 .v5 .v18 .v2), .vop (.logic .and .v4 .v4 .v5),
+   .vop (.logic .orr .v1 .v1 .v4), .vop (.add .s4 .v2 .v2 .v3)]
 
-/-- Four entries, then on to the next four. -/
+def scanStart (sym : String) : List Instr :=
+  [.adrSym .x10 sym, .movz .x .x11 64 0,
+    .vop (.movi0 .v1), .vop (.movi0 .v2),
+    .vop (.cmeq .s4 .v3 .v3 .v3), .vop (.shift .ushr .s4 .v3 .v3 31),
+    .vop (.logic .and .v4 .v0 .v3), .vop (.movi0 .v16),
+    .vop (.sub .s4 .v16 .v16 .v4),
+    .vop (.shift .ushr .s4 .v4 .v0 1), .vop (.logic .and .v4 .v4 .v3),
+    .vop (.movi0 .v17), .vop (.sub .s4 .v17 .v17 .v4),
+    .vop (.shift .ushr .s4 .v18 .v0 2)]
+
+/-- One four-entry group, then advance the public pointer and counter. -/
 def scanBody : List Instr :=
-  (List.range 4).flatMap scanEntry ++ ([.addImm .x .x10 .x10 64, .subImm .x .x11 .x11 1] : List Instr)
+  scanTile ++ [.addImm .x .x10 .x10 64, .subImm .x .x11 .x11 1]
 
-/-- The table `sym` at the indices in the lanes of `v0` (each less than 256),
-into the lanes of `v1`. Clobbers `x10`, `x11` and `v1`–`v5`. -/
+/-- Select four words by scanning every table entry at fixed addresses.
+Clobbers x10, x11, v1–v5 and caller-saved v16–v19. -/
 def scan (sym : String) : Prog isa :=
-  .seq (.block [.adrSym .x10 sym, .movz .x .x11 64 0, .vop (.movi0 .v1), .vop (.movi0 .v2),
-      .vop (.cmeq .s4 .v3 .v3 .v3), .vop (.shift .ushr .s4 .v3 .v3 31)])
-    (.loop (.block scanBody) (.nonzero .x .x11))
+  .seq (.block (scanStart sym)) (.loop (.block scanBody) (.nonzero .x .x11))
 
 /-! ## Encryption and decryption -/
 

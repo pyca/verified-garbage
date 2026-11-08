@@ -29,43 +29,13 @@ namespace VG.Proof.Gcm.AArch64.Stitch
 open VG VG.AArch64
 open VG.AArch64.RegUpd (v_setV_self v_setV_of_ne gpr_setV mem_setV rd_setV wr_setV sp_setV v_write
   gpr_write_self gpr_write_of_ne mem_write rd_write wr_write sp_write)
-open VG.Proof.Aes.AArch64 (DataInv keyStream)
+open VG.Proof.Aes.AArch64 (DataInv DataInvM dataInvM_self dataInvM_frame dataInvM_store1 ctr32_of_dataInvM keyStream)
 open VG.Proof.Aes.AArch64.Aese (Fr vbyte_readW inRegions_wr exec_strq)
 open VG.Proof.Gcm.AArch64.Pmull (ext8 VOnly rev64b_read)
 open VG.Spec.Gcm (Block blockAt blocksAt inc32 aesWith ghashFrom ctr32)
 open VG.Impl.Gcm.AArch64.Stitch
 
 /-! ## Storing a batch -/
-
-/-- A block of the text at `D` XORed with the keystream, stored at `O`. -/
-theorem dataInvM_store1 {m₀ m : Mem} {D O : Addr} {n k : Nat} {ks : Nat → Byte} {v : BitVec 128}
-    (hn : 16 * n < 2 ^ 64) (hk : k < n) (h : DataInvM m₀ m D O n k ks)
-    (hv : ∀ t < 16, vbyte v t = ks (16 * k + t) ^^^ m₀ (D + BitVec.ofNat 64 (16 * k + t))) :
-    DataInvM m₀ (m.write (O + BitVec.ofNat 64 (16 * k)) 16 v) D O n (k + 1) ks ∧
-      Frame [⟨O, 16 * n⟩] m (m.write (O + BitVec.ofNat 64 (16 * k)) 16 v) := by
-  refine ⟨fun i hi => ?_, fun x hx => ?_⟩
-  · show (if _ then _ else _) = _
-    rw [Proof.Aes.AArch64.off_toNat O (by omega_arith) (by omega_arith)]
-    by_cases h1 : 16 * k ≤ i
-    · rw [ite_eq_left h1]
-      by_cases h2 : i - 16 * k < 16
-      · rw [ite_eq_left h2, ite_eq_left (show i < 16 * (k + 1) by omega_arith)]
-        show vbyte _ _ = _
-        rw [hv _ h2, show 16 * k + (i - 16 * k) = i by omega_arith, BitVec.xor_comm]
-      · rw [ite_eq_right h2, h i hi, ite_eq_right (show ¬ i < 16 * k by omega_arith),
-          ite_eq_right (show ¬ i < 16 * (k + 1) by omega_arith)]
-    · rw [ite_eq_right h1, ite_eq_right (show ¬ 2 ^ 64 + i - 16 * k < 16 by omega_arith), h i hi,
-        ite_eq_left (show i < 16 * k by omega_arith), ite_eq_left (show i < 16 * (k + 1) by omega_arith)]
-  · have hx' : ¬ (x - O).toNat + 1 ≤ 16 * n := hx ⟨O, 16 * n⟩ (List.mem_singleton_self _)
-    show (if _ then _ else _) = _
-    rw [ite_eq_right]
-    intro hlt
-    apply hx'
-    have e := Offset.toNat_sub_add x O (d := 16 * k) (by omega_arith)
-    rw [Offset.sub_add_eq] at hlt
-    have := (x - O).isLt
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 * k < 2 ^ 64 by omega_arith)] at hlt
-    omega_arith
 
 /-- A block of the text XORed with the keystream, stored over it. -/
 theorem dataInv_store1 {m₀ m : Mem} {D : Addr} {n k : Nat} {ks : Nat → Byte} {v : BitVec 128}
