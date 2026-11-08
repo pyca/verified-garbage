@@ -59,7 +59,7 @@ structure LoopPost (keys : DesSchedule) (direction : Direction)
 
 theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin)
+    (hok : Ok scratchCfg origin) (hc : ConstsAt origin)
     (hread : ∀ j < 16, InRegions (origin.rd ++ origin.wr) (keyAddr base direction j) 8)
     (hsep : ∀ j < 16, (⟨keyAddr base direction j, 8⟩ : Region).Disjoint (spillRegion origin))
     (hkeys : ∀ j < 16, (origin.mem.readW (keyAddr base direction j) 64).setWidth 48 =
@@ -71,14 +71,11 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
   have hj : 16 - n < 16 := by omega_using [hs.positive]
   have hwork : spillRegion s = spillRegion origin := by
     simp only [spillRegion, hs.regs .r5 (by decide)]
-  have hokS : Ok sboxCfg s := hok.congr
+  have hokS : Ok scratchCfg s := hok.congr
     (hs.regs .r5 (by decide)) (hs.regs .r5 (by decide)) hs.rd hs.wr
   have hreadS : InRegions (s.rd ++ s.wr) (s.gpr .r17) 8 := by
     rw [hs.rd, hs.wr, hs.pointer]; exact hread _ hj
-  have hsepS : (⟨s.gpr .r17, 8⟩ : Region).Disjoint (spillRegion s) := by
-    rw [hs.pointer]
-    rw [hwork]
-    exact hsep _ hj
+  have hcS : ConstsAt s := hc.of_frame (hs.regs .r5 (by decide)) hs.frame
   have hk : (s.mem.readW (s.gpr .r17) 64).setWidth 48 = roundKey keys direction (16 - n) := by
     rw [hs.pointer]
     have hmem := hs.frame.readW (a := keyAddr base direction (16 - n)) (w := 64)
@@ -89,7 +86,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
     exact (congrArg (BitVec.setWidth 48) hmem).trans (hkeys _ hj)
   obtain ⟨s', run, left, right, ptr, count, flag, rd, wr, regs, frame⟩ :=
     roundStep_ok s _ _ (s.mem.readW (s.gpr .r17) 64) n hs.positive
-      (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hreadS hsepS
+      (by omega_using [hs.bounded]) hs.left hs.right rfl hokS hcS hreadS
       hs.counter
   have hidx : 16 - (n - 1) = 16 - n + 1 := by
     omega_using [hs.positive, hs.bounded]
@@ -128,7 +125,7 @@ theorem loopStep (keys : DesSchedule) (direction : Direction) (base : Addr)
 /-- The complete sixteen-round loop, in either key order. -/
 theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
     (origin : State) (v : BitVec 32 × BitVec 32)
-    (hok : Ok sboxCfg origin)
+    (hok : Ok scratchCfg origin) (hc : ConstsAt origin)
     (hl : origin.gpr .r14 = v.1.setWidth 64) (hr : origin.gpr .r15 = v.2.setWidth 64)
     (hptr : origin.gpr .r17 = keyAddr base direction 0)
     (hcount : origin.gpr .r16 = BitVec.ofNat 64 16)
@@ -141,7 +138,7 @@ theorem roundsLoop_ok (keys : DesSchedule) (direction : Direction) (base : Addr)
       origin (LoopPost keys direction origin v) := by
   apply WP.loop (M := isa) (body := .block (roundBody ++ roundAdvance))
     (c := .nonzero .d .r16) (Q := LoopPost keys direction origin v) (LoopInv keys direction base origin v)
-    (loopStep keys direction base origin v hok hread hsep hkeys)
+    (loopStep keys direction base origin v hok hc hread hsep hkeys)
     16 origin
   exact ⟨by decide, by decide, hl, hr, hcount, hptr, hstep, rfl, rfl,
     fun _ _ => rfl, Frame.refl _ _⟩

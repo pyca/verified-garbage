@@ -17,7 +17,8 @@ def componentBase (base : Addr) (component : Nat) : Addr :=
   base + BitVec.ofNat 64 (128 * component)
 
 structure Ready (keys : Nat → DesSchedule) (base : Addr) (s : State) : Prop where
-  spills : Ok sboxCfg s
+  scratch : Ok scratchCfg s
+  consts : ConstsAt s
   baseReg : s.gpr .r3 = base
   read : ∀ c < 3, ∀ d : Direction, ∀ j < 16,
     InRegions (s.rd ++ s.wr) (keyAddr (componentBase base c) d j) 8
@@ -31,8 +32,9 @@ theorem Ready.congr {keys : Nat → DesSchedule} {base : Addr} {s t : State}
     (hkey : t.gpr .r3 = s.gpr .r3) (hrd : t.rd = s.rd) (hwr : t.wr = s.wr)
     (hf : Frame [spillRegion s] s.mem t.mem) : Ready keys base t := by
   have hwork : spillRegion t = spillRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) hbase
-  refine ⟨hs.spills.congr hbase hbase hrd hwr, hkey.trans hs.baseReg, ?_, ?_, ?_⟩
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 496, 16⟩ : Region)) hbase
+  refine ⟨hs.scratch.congr hbase hbase hrd hwr, hs.consts.of_frame hbase hf, hkey.trans hs.baseReg,
+    ?_, ?_, ?_⟩
   · rw [hrd, hwr]; exact hs.read
   · rw [hwork]; exact hs.separate
   · intro c hc d j hj
@@ -59,7 +61,7 @@ structure Stable (origin s : State) : Prop where
 
 theorem Stable.trans {s t u : State} (hs : Stable s t) (ht : Stable t u) : Stable s u := by
   have hwork : spillRegion t = spillRegion s :=
-    congrArg (fun p => (⟨p + BitVec.ofNat 64 120, 392⟩ : Region)) (hs.regs .r5 (by decide))
+    congrArg (fun p => (⟨p + BitVec.ofNat 64 496, 16⟩ : Region)) (hs.regs .r5 (by decide))
   have hf := ht.frame
   rw [hwork] at hf
   exact ⟨ht.rd.trans hs.rd, ht.wr.trans hs.wr,
@@ -80,7 +82,7 @@ theorem pass_word_ok (keys : Nat → DesSchedule) (base : Addr) (s : State) (x :
     rw [hready.baseReg]
     exact passPointer base _ _
   apply WP.mono (pass_ok d hp (keys (passOf d p).1) (componentBase base (passOf d p).1) s
-    ((x >>> 32).setWidth 32, x.setWidth 32) hready.spills hword.left hword.right
+    ((x >>> 32).setWidth 32, x.setWidth 32) hready.scratch hready.consts hword.left hword.right
     hpasses hptr (hready.read _ hc _) (hready.separate _ hc _) (hready.values _ hc _))
   intro t ht
   exact ⟨ht.wordState,
