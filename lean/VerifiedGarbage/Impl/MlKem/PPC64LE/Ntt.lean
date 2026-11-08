@@ -14,29 +14,23 @@ Barrett reduction `barrett32` (`VG.Proof.MlKem.barrett32`),
 congruent to `x`, and a subtraction of `q` and a `fixup` finish it.
 `r8 = 161270` and `r9 = q` throughout (`consts`).
 
-The tables of `ζ^BitRev7(k)` (`zetaTable`) and of the `γᵢ` of
-`MultiplyNTTs` (`gammaTable`) are stored in the first 512 bytes of
-`scratch`, as 128 `u32`s (`table`, through `r12`), and read in order
-through a pointer. The inverse NTT and `MultiplyNTTs` use `r14` and `r15`,
-which they save in `scratch[512..528)` and restore; the functions make no
-calls, so the link register is never written, and they use no stack.
+The table of the `γᵢ` of `MultiplyNTTs` (`gammaTable`) is stored in the
+first 512 bytes of `scratch`, as 128 `u32`s (`table`, through `r12`), and
+read in order through a pointer. `MultiplyNTTs` uses `r14` and `r15`, which
+it saves in `scratch[512..528)` and restores; the functions make no calls, so
+the link register is never written, and they use no stack.
 
-* `vg_mlkem_ntt(f = r3, scratch = r4)`: on vectors of four coefficients,
-  with its own table in `scratch` (below, "`ntt`, four butterflies at a
-  time"); it writes no nonvolatile register.
-* `vg_mlkem_inv_ntt(f = r3, scratch = r4)`: the seven layers of Algorithm 10
-  as three nested loops, with `r3 = f + 1024` (the end of `f`),
-  `r10 = 4 len` (from 8, doubled, until it is 1024), the zetas from
-  `zetas[127]` down; for each block, its zeta in `r7`, and `len` inverse
-  butterflies on `r5 = f + 4j` and `r6 = f + 4(j + len)`, counted by `r11`;
-  then every coefficient times 3303.
+* `vg_mlkem_ntt(f = r3, scratch = r4)` and
+  `vg_mlkem_inv_ntt(f = r3, scratch = r4)`: on vectors of four coefficients,
+  with their own table in `scratch` (below, "`ntt`, four butterflies at a
+  time" and "`nttInv`, four inverse butterflies at a time"); they write no
+  nonvolatile register.
 * `vg_mlkem_multiply_ntts(h = r3, f = r4, g = r5, scratch = r6)`: for each
   pair `i` (counted by `r11`), `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ`
   and `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, with `γᵢ`
   read through `r6`.
 
-An inverse butterfly stores `f[j]` before `f[j + len]`, the order in which
-Algorithm 10 writes them. Every address and branch depends only on the pointers.
+Every address and branch depends only on the pointers.
 -/
 
 @[expose] public section

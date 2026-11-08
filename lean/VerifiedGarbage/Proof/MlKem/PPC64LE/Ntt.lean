@@ -34,12 +34,9 @@ stored (`ztable_ok`) and the constant vectors built (`vconsts_ok`,
 invariant each (`LInv`, `BInv`, `FInv`) saying which polynomial `f` holds,
 four butterflies a step (`fstep`, from `VBfly.body_ok` and
 `VBfly.group_poly`); then the last layer, `len = 2`, two blocks a step
-(`PInv`, `pstep`). Layer `ℓ` has `len = 128 / 2^ℓ` and `2^ℓ` blocks.
-
-What the inverse NTT (`Proof/MlKem/PPC64LE/NttInv.lean`) shares with the
-scalar code it replaced is here too: its precondition (`Pre`), the setup of
-its table and saved registers (`setup_base`, `Setup`), what its loops keep
-(`Env`) and its end (`restore_end`).
+(`PInv`, `pstep`). Layer `ℓ` has `len = 128 / 2^ℓ` and `2^ℓ` blocks. The
+inverse NTT (`Proof/MlKem/PPC64LE/NttInv.lean`) shares the setup
+(`vsetup_ok`) and what every loop keeps (`VEnv`).
 -/
 
 @[expose] public section
@@ -68,130 +65,8 @@ structure Pre (s₀ : State) : Prop where
   fitS : (S s₀).toNat + 1024 ≤ 2 ^ 64
   red : Reduced s₀.mem (F s₀)
 
-/-- What the setup leaves in memory `m₁`. -/
-structure Setup (s₀ : State) (m₁ : Mem) : Prop where
-  sav : Saved m₁ (S s₀ + BitVec.ofNat 64 512) s₀.gpr
-  tab : ∀ j < 128, m₁.readW (S s₀ + BitVec.ofNat 64 (4 * j)) 32 = BitVec.ofNat 32 (zetaTable.getD j 0)
-  poly : PolyIs m₁ (F s₀) (P s₀)
-
-/-- What every loop keeps. -/
-structure Env (s₀ : State) (m₁ : Mem) (s : State) : Prop where
-  r3 : s.gpr .r3 = F s₀ + BitVec.ofNat 64 1024
-  r8 : s.gpr .r8 = C
-  r9 : s.gpr .r9 = 3329
-  kept : ∀ r ∈ kept, s.gpr r = s₀.gpr r
-  lr : s.lr = s₀.lr
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  sp : s.sp = s₀.sp
-  frame : Frame [polyRegion (F s₀)] m₁ s.mem
-
-theorem Env.inW {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : Env s₀ m₁ s) {a : Addr} {k : Nat}
-    (hc : (polyRegion (F s₀)).Contains a k) : InRegions s.wr a k := by
-  rw [h.wr, hp.wr]; exact ⟨_, by simp, hc⟩
-
-theorem Env.inR {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : Env s₀ m₁ s) {a : Addr} {k : Nat}
-    (hc : (polyRegion (F s₀)).Contains a k) : InRegions (s.rd ++ s.wr) a k := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, hc⟩
-
-theorem Env.inRS {s₀ : State} (hp : Pre s₀) {m₁ : Mem} {s : State} (h : Env s₀ m₁ s) {a : Addr} {k : Nat}
-    (hc : (polyRegion (S s₀)).Contains a k) : InRegions (s.rd ++ s.wr) a k := by
-  rw [h.rd, h.wr, hp.rd, hp.wr]; exact ⟨_, by simp, hc⟩
-
-/-! ## Blocks -/
-
-section
-variable {s : State} {x4 x5 x10 y : BitVec 64}
-
-/-- The end of a block: the next block's start, compared with the end. -/
-theorem bpost_ok (h6 : s.gpr .r6 = y) :
-    WP isa (.block [.addi .r5 .r6 0, .sub .r0 .r5 .r3]) s fun s' =>
-      s'.gpr .r5 = y ∧ s'.gpr .r0 = y - s.gpr .r3 ∧ s'.gpr .r3 = s.gpr .r3 ∧ s'.gpr .r4 = s.gpr .r4 ∧
-        s'.gpr .r8 = s.gpr .r8 ∧ s'.gpr .r9 = s.gpr .r9 ∧ s'.gpr .r10 = s.gpr .r10 ∧
-        (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr ∧ s'.sp = s.sp := by
-  crunr [kept, h6, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
-
-end
-
-/-! ## Layers -/
-
-section
-variable {s : State} {x3 x10 : BitVec 64}
-
-theorem lpre_ok (h3 : s.gpr .r3 = x3) :
-    WP isa (.block [.subi .r5 .r3 1024]) s fun s' =>
-      s'.gpr .r5 = x3 - 1024 ∧ s'.gpr .r3 = x3 ∧ s'.gpr .r4 = s.gpr .r4 ∧ s'.gpr .r8 = s.gpr .r8 ∧
-        s'.gpr .r9 = s.gpr .r9 ∧ s'.gpr .r10 = s.gpr .r10 ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-        s'.lr = s.lr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
-  crunr [kept, h3, List.forall_mem_cons, List.not_mem_nil, false_imp_iff]
-
-end
-
-/-! ## Setup and the end -/
-
 theorem sub_low (p : Addr) {k L : Nat} (h : k ≤ L) : Region.Sub ⟨p, k⟩ ⟨p, L⟩ := fun a ha => by
   simp only [Region.Contains] at ha ⊢; omega_arith
-
-/-- `r14` and `r15` saved and the table stored. -/
-theorem setup_base {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block (saveRegs .r4 512 ++ table zetaTable .r4)) s₀ fun s =>
-      Setup s₀ s.mem ∧ (∀ r, r ≠ .r12 → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
-        s.sp = s₀.sp ∧ s.lr = s₀.lr := by
-  have fS := hp.fitS
-  have wS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) k := fun h => by
-    rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
-  have e8 : S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 8 = S s₀ + BitVec.ofNat 64 520 := ptr_add _ _ _
-  rw [WP.block_append_iff]
-  refine WP.mono (save_ok (b := .r4) (by decide) (off := 512) (by decide) (by decide) rfl (wS (by omega_arith))
-    (by rw [e8]; exact wS (by omega_arith))) fun s₁ ⟨g1, lr1, sp1, rd1, wr1, m1⟩ => ?_
-  refine WP.mono (table_ok zetaTable (by decide) (b := .r4) (by decide) (by decide) (by rw [g1])
-    fun k hk => by rw [wr1]; exact wS (by omega_arith)) fun s₂ h₂ => ?_
-  have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
-    have f1 : Frame [polyRegion (S s₀)] s₀.mem s₁.mem := by
-      rw [m1, e8]
-      exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
-        ).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by omega_arith) (by omega_arith))
-    refine f1.trans (h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩)
-    rw [List.mem_singleton] at hr; subst hr
-    exact sub_low _ (by omega_arith)
-  have hsav : Saved s₁.mem (S s₀ + BitVec.ofNat 64 512) s₀.gpr := by
-    rw [m1]; exact saved_write _ _ _
-  have hm : Setup s₀ s₂.mem := by
-    refine ⟨⟨?_, ?_⟩, fun j hj => h₂.tab j hj, polyIs_frame fr (fun r hr => by
-      rw [List.mem_singleton] at hr; subst hr; exact hp.disj) ⟨hp.red, rfl⟩⟩
-    · rw [h₂.frame.readW (Region.contains_self _ 8) (fun r hr => by
-        rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)]
-      exact hsav.1
-    · rw [h₂.frame.readW (Region.contains_self _ 8) (fun r hr => by
-        rw [List.mem_singleton] at hr; subst hr; rw [e8]
-        exact Offset.disjoint_base _ (by omega_arith) (by omega_arith)) (by decide)]
-      exact hsav.2
-  exact ⟨hm, fun r hr => (h₂.gpr r hr).trans (by rw [g1]), h₂.rd.trans rd1, h₂.wr.trans wr1,
-    h₂.sp.trans sp1, h₂.lr.trans lr1⟩
-
-/-- `r14` and `r15` restored from `S + 512`, through `r4 + off`. -/
-theorem restore_end {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {s : State} (he : Env s₀ m₁ s)
-    {off : Nat} (ho : off + 8 < 2 ^ 15) (ho4 : off % 4 = 0)
-    (hA : s.gpr .r4 + BitVec.ofNat 64 off = S s₀ + BitVec.ofNat 64 512) :
-    WP isa (.block (restoreRegs .r4 off)) s fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧
-      s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧ s'.mem = s.mem := by
-  have fS := hp.fitS
-  have e8 : S s₀ + BitVec.ofNat 64 512 + BitVec.ofNat 64 8 = S s₀ + BitVec.ofNat 64 520 := ptr_add _ _ _
-  have rS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions (s.rd ++ s.wr) (S s₀ + BitVec.ofNat 64 o) k := fun h' =>
-    he.inRS hp (Offset.contains_base _ h' (by omega_arith))
-  have dj : ∀ {o : Nat}, o + 8 ≤ 1024 → ∀ r ∈ [polyRegion (F s₀)],
-      Region.Disjoint ⟨S s₀ + BitVec.ofNat 64 o, 8⟩ r := fun ho r hr => by
-    rw [List.mem_singleton] at hr; subst hr
-    exact hp.disj.symm.sub_left (Offset.sub_base _ ho)
-  refine WP.mono (restore_ok (b := .r4) (by decide) (by decide) ho ho4 hA (rS (by omega_arith))
-    (by rw [e8]; exact rS (by omega_arith))) fun s' ⟨r14, r15, kp, lr, sp, m⟩ =>
-      ⟨preserved_of (g := s₀.gpr) ?_ ?_ (fun r hr => (kp r hr).trans (he.kept r hr)),
-        sp.trans he.sp, lr.trans he.lr, m⟩
-  · rw [r14, he.frame.readW (Region.contains_self _ 8) (dj (by omega_arith)) (by decide)]
-    exact hm.sav.1
-  · rw [r15, e8, he.frame.readW (Region.contains_self _ 8) (dj (by omega_arith)) (by decide), ← e8]
-    exact hm.sav.2
 
 /-! ## The vector NTT: the table of `ζ` and `ζ'` -/
 
