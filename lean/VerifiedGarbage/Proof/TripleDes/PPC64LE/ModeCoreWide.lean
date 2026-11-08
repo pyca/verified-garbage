@@ -1,4 +1,5 @@
 module
+-- separate module: the core on 64 blocks, as `ModeCore.lean` is the core on one; it alone imports the bitsliced ECB
 
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.Ecb64
