@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTail
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.Main
 public import VerifiedGarbage.Impl.AesGcm.X86_64.FastOpen
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenSplit.Run
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
 
 /-!
@@ -70,5 +71,24 @@ theorem openFinW_wp {M : CtxMode} {lng : Prog isa} (hlng : LongOk M lng) {s : St
     WP isa (Impl.AesGcm.X86_64.FastOpen.openFin lng) s fun s' =>
       gprPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s' :=
   openM_of hp fun C X E hNp hnl hal _ hTa hTar hTr oT oA htl hok => hlng C X E hNp hnl hal hTa hTar hTr oT oA htl hok
+
+/-- `FastOpen.openSplit`'s code after the tag length is checked: `Fast.cond`,
+then `runTo` for the inputs it takes, which leaves what `open_split`'s body
+does (`OpenSplit.midS_ok`, with `Fast.aad`, `tagP` and `tailKG true`), and
+`open_split`'s body for the others. -/
+theorem midSOk_fast (hF : ShortFacts) (v : GcmImpl) (B : BlkFn (CtxMode.preparedN np hpn))
+    (T : BlkToDecFn (CtxMode.preparedN np hpn)) {ks : Prog isa} (hks : KsOk ks) :
+    OpenSplit.MidSOk (CtxMode.preparedN np hpn) (.seq (Impl.AesGcm.X86_64.Fast.cond any)
+      (.ite .e (OpenSplit.midS (oneAad (v.withBlk B)) (oneTag (v.withBlk B) uO) (oneCryptG (v.withBlk B) true) T.fn)
+        (Impl.AesGcm.X86_64.FastOpen.runTo T.fn ks))) := by
+  intro s₀ s₁ Ctx W SP Np A D S Tp nl al n t C X E hS hN hNp hnl hal hTa hDa htl hok
+  refine WP.seq (WP.mono (condE_ok C.toOneCtx E hnl hal) fun s₃ ⟨hz, E₃, K⟩ => ?_)
+  rw [← K.mem] at hS hN
+  refine WP.ite (decide ¬IsFast nl al n any) (eval_e hz)
+    (fun _ => OpenSplit.midSOk_one v B T C X E₃ hS hN hNp hnl hal hTa hDa htl hok) fun h => ?_
+  obtain ⟨h12, h17, -⟩ : IsFast nl al n any := Decidable.not_not.mp (of_decide_eq_false h)
+  subst h12
+  exact OpenSplit.midS_ok T (tagP_okP hF hks) pStable_kOk crOkTo_tailK C X E₃ hS hN hal hTa hDa htl hok
+    (aad_mid hF C.toOneCtx X E₃ hNp hnl hal (by omega))
 
 end VG.Proof.AesGcm.X86_64.FastOpen

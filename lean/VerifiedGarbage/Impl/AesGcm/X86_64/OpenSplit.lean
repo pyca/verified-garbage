@@ -63,9 +63,12 @@ def «prefix» (fToDec : Fn) : Prog isa :=
 /-- `tag_len` kept at `tlO`, after `prefix`. -/
 def tagLen : List Instr := [.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx]
 
+/-- What takes `oneBlocks`' place out of place: `prefix`, then `tagLen`. -/
+abbrev mid (fToDec : Fn) : Prog isa := .seq («prefix» fToDec) (.block tagLen)
+
 /-- `vg_aes_gcm_open_split`, calling `c` and `fToDec`: `openBody` out of
 place. -/
 def openSplit (c : Callees) (fToDec : Fn) : Prog isa :=
-  openBody c entry (.seq («prefix» fToDec) (.block tagLen)) (.block []) (oneCryptG c true)
+  openBody c entry (mid fToDec) (.block []) (oneCryptG c true)
 
 end VG.Impl.AesGcm.X86_64.OpenSplit

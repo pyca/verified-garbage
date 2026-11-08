@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.AesGcm.X86_64.Fast
+public import VerifiedGarbage.Impl.AesGcm.X86_64.OpenSplit
 
 /-!
 # AES-GCM on x86-64: `open`'s path for TLS records
@@ -26,8 +27,8 @@ the keystream of the counter block computed with `J₀`'s (`tailK`), without
 namespace VG.Impl.AesGcm.X86_64.FastOpen
 
 open VG.X86_64
-open VG.Impl.AesGcm.X86_64 (at_ imm ptr Callees copyLoop xorLoop recv cmp oneBlocks oneUndo lenO dataO tlO auxO uO
-  oneEntry tagLenOk restore)
+open VG.Impl.AesGcm.X86_64 (at_ imm ptr Callees Fn copyLoop xorLoopG recv cmp oneBlocks oneUndo lenO dataO tlO auxO uO
+  tlenO oneEntry tagLenOk restore openRun oneAad oneTag oneCryptG)
 
 /-- `J₀`, at the state's start, incremented: its last word, big-endian. -/
 def incJ : List Instr :=
@@ -54,29 +55,41 @@ def tagP (ks : Prog isa := Short.finKs) : Prog isa :=
   (.seq (.block lenTest)
   (.ite .e (.block (Short.finGh1 ++ Short.tagK uO)) (.block (Short.finGh2 ++ Short.tagK uO))))))))
 
+/-- Where `tailKG` reads and writes the `rcx` bytes left: in place, at the
+data kept (`rdi`); out of place (`to`), from the data kept (`rbx`, at `src`)
+to the end of `dst` (`rdi = dst + (len - rcx)`, `dst` at `[rsp + 8]` and
+`len` at `tlenO`), as `oneCryptBlk` puts them. -/
+def tailArgs (to : Bool) : List Instr :=
+  if to then [.mov .rdi (.mem (at_ .rsp 8)), .mov .rax (.mem (at_ .r15 tlenO)), .alu .sub .rax (.reg .rcx),
+    .alu .add .rdi (.reg .rax), .mov .rbx (.mem (at_ .r15 dataO))]
+  else [.mov .rdi (.mem (at_ .r15 dataO))]
+
 /-- The bytes left (`rcx`, fewer than 16, at the data kept) decrypted with
 `K[1]`, the keystream of the counter block, which `tagP` computed: where
-`oneCrypt` encrypts the counter block again with a call of `vg_aes_ctr32`. -/
-def tailK : Prog isa :=
+`oneCrypt` encrypts the counter block again with a call of `vg_aes_ctr32`.
+In place, or out of place (`to`) to the end of `dst` (`tailArgs`). -/
+def tailKG (to : Bool) : Prog isa :=
   .seq (.block [.mov .rcx (.mem (at_ .r15 lenO)), .alu .test .rcx (.reg .rcx)])
     (.ite .e (.block [])
-      (.seq (.block (([.mov .rdi (.mem (at_ .r15 dataO))] : List Instr) ++ ptr .rsi .r15 (Short.kO + 16)))
-        xorLoop))
+      (.seq (.block (tailArgs to ++ ptr .rsi .r15 (Short.kO + 16))) (xorLoopG to)))
+
+/-- `tailKG` in place. -/
+abbrev tailK : Prog isa := tailKG false
 
 variable (c : Callees)
 
 /-- After the entry and `tagLenOk`: `Short.openLong` with `Fast.aad`,
 `tagP ks` and `tailK`. -/
 def run (ks : Prog isa := Short.finKs) : Prog isa :=
-  .seq Fast.aad
-  (.seq (oneBlocks c.dec)
-  (.seq (tagP ks)
-  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
-  (.seq recv
-  (.seq (cmp uO)
-  (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-  (.seq (.ite .e (oneUndo c) tailK)
-    (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
+  openRun Fast.aad (oneBlocks c.dec) (tagP ks) (oneUndo c) tailK
+
+/-- `run` out of place, as `OpenSplit.openSplit` is `open`'s body out of
+place: the whole blocks decrypted from `src` to `dst` by `fToDec`
+(`OpenSplit.mid`), nothing done if the tags differ (the caller zeroes `dst`),
+and the bytes left decrypted to the end of `dst` if they match
+(`tailKG true`). -/
+def runTo (fToDec : Fn) (ks : Prog isa := Short.finKs) : Prog isa :=
+  openRun Fast.aad (OpenSplit.mid fToDec) (tagP ks) (.block []) (tailKG true)
 
 /-- `Fast.cond any`, then this path, or `other`. -/
 def sel (other : Prog isa) (ks : Prog isa := Short.finKs) (any : Bool := false) : Prog isa :=
@@ -90,6 +103,18 @@ def openFin (lng : Prog isa) : Prog isa :=
   .seq (.block (oneEntry 40 ++ ([.mov .rbx (.mem (at_ .rsp 32)), .store (at_ .r15 tlO) .rbx] : List Instr)))
   (.seq tagLenOk
   (.seq (.ite .e (.block [.mov32 .rax (imm 0)]) lng)
+    (.block restore)))
+
+/-- `vg_aes_gcm_open_split_prepared`: `OpenSplit.openSplit`'s entry and end
+around `selTo`, which takes `runTo` for the inputs `Fast.cond any` takes and
+`OpenSplit.openSplit`'s body for the others. -/
+def openSplit (fToDec : Fn) (ks : Prog isa := Short.finKs) (any : Bool := false) : Prog isa :=
+  .seq (.block OpenSplit.entry)
+  (.seq tagLenOk
+  (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
+      (.seq (Fast.cond any)
+        (.ite .e (openRun (oneAad c) (OpenSplit.mid fToDec) (oneTag c uO) (.block []) (oneCryptG c true))
+          (runTo fToDec ks))))
     (.block restore)))
 
 end VG.Impl.AesGcm.X86_64.FastOpen

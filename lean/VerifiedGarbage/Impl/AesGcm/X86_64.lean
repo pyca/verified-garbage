@@ -658,6 +658,22 @@ def «seal» : Prog isa :=
   .seq (.block (oneEntry 32)) (.seq (oneAad c) (.seq (oneBlocks c.enc) (.seq (oneCrypt c)
     (.seq (.seq (oneTag c 0) (.block (tagOut (at_ .rsp 24)))) (.block restore)))))
 
+/-- `open`'s run after the tag length is checked: `J₀` and the additional
+data (`aad`), then `mid`, which takes the whole blocks and leaves the bytes
+after them as the data; the tag of the ciphertext (`tg`) compared with the
+received one, at `[rsp + 24]`; and if they match `good`, which decrypts the
+bytes left, and if not `bad`. The result is in `rax`. -/
+abbrev openRun (aad mid tg bad good : Prog isa) : Prog isa :=
+  .seq aad
+  (.seq mid
+  (.seq tg
+  (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
+  (.seq recv
+  (.seq (cmp uO)
+  (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
+  (.seq (.ite .e bad good)
+    (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))
+
 /-- `open`'s body, in place or out of place: after the entry `entry` (which
 keeps `tag_len` at `tlO`, or leaves it to `mid`), if the tag length is
 allowed, `J₀` and the additional data, then `mid`, which takes the whole
@@ -671,16 +687,7 @@ is in `rax`. -/
 def openBody (entry : List Instr) (mid bad good : Prog isa) : Prog isa :=
   .seq (.block entry)
   (.seq tagLenOk
-  (.seq (.ite .e (.block [.mov32 .rax (imm 0)])
-      (.seq (oneAad c)
-      (.seq mid
-      (.seq (oneTag c uO)
-      (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO)), .mov .rsi (.mem (at_ .rsp 24))])
-      (.seq recv
-      (.seq (cmp uO)
-      (.seq (.block [.store (at_ .r15 auxO) .rax, .alu .test .rax (.reg .rax)])
-      (.seq (.ite .e bad good)
-        (.block [.mov .rax (.mem (at_ .r15 auxO))]))))))))))
+  (.seq (.ite .e (.block [.mov32 .rax (imm 0)]) (openRun (oneAad c) mid (oneTag c uO) bad good))
     (.block restore)))
 
 /-- `vg_aes_gcm_open`, with `tag_len = [rsp + 32]` and `work = [rsp + 40]`:

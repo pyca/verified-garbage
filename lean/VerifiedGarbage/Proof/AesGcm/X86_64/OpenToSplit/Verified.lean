@@ -143,6 +143,47 @@ theorem prepared_implies :
     (toSK CtxMode.prepared).Implies (Proof.AesGcm.openToPreparedScratchContract X86_64.abi 152) :=
   ⟨fun _ h => toPre_prepared h, fun _ _ _ h => toPost_prepared h, fun _ _ _ _ h => toPub_prepared h, toSatS_pre⟩
 
+/-- `openToSplit`, calling an instance of `vg_aes_gcm_open_split` for a prepared
+key context, with its working space as an argument. -/
+theorem openToSplitPrepared_core (F : OpenSplitFn CtxMode.prepared) :
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn)
+      (Proof.AesGcm.openToPreparedScratchContract X86_64.abi 152) :=
+  Verified.of_correct (k := toSK CtxMode.prepared)
+    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToSplit_ct F)
+    prepared_implies
+
+/-! ## In its frame -/
+
+theorem toSatP2776_pre : ∃ s, (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776).pre s := by
+  refine ⟨OpenTo.toSatP, ?_⟩
+  sig_pre [Proof.AesGcm.openToPreparedRoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+    Proof.Gcm.openToPowersPre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq, OpenTo.toSatP,
+    OpenTo.toSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.preparedPowersRepr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false]
+
+/-- `openToSplit` in its frame of 2624 bytes, holding its working space. -/
+theorem openToSplitPrepared_framed (F : OpenSplitFn CtxMode.prepared) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
+      (Proof.AesGcm.openToPreparedRoundsContract X86_64.abi 2776) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.openToPowersPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
+    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared_core F)
+    (by decide) (by decide) (by decide) (openToSplit_spAll F.fn F.spAll) (openToSplit_xdepth F.fn F.xd)
+    (Proof.AesGcm.openToPreparedPre_local _) (Proof.AesGcm.openToRoundsPost_local _) toSatP2776_pre
+    (hleak := Proof.AesGcm.openToLeak_local _)
+
+/-! ## Choosing by length -/
+
+/-- `u` is `s` but for `rax` and the flags. -/
+structure Same (s u : State) : Prop where
+
 /-! ## With 16 prepared powers -/
 
 theorem toPre_prepared16 {s : State} (h : (Proof.AesGcm.openToPrepared16ScratchContract X86_64.abi 152).pre s) :
@@ -199,6 +240,40 @@ theorem toSatS16_pre : ∃ s, (Proof.AesGcm.openToPrepared16ScratchContract X86_
 theorem prepared16_implies :
     (toSK CtxMode.prepared16).Implies (Proof.AesGcm.openToPrepared16ScratchContract X86_64.abi 152) :=
   ⟨fun _ h => toPre_prepared16 h, fun _ _ _ h => toPost_prepared16 h, fun _ _ _ _ h => toPub_prepared16 h, toSatS16_pre⟩
+
+/-- `openToSplit`, calling an instance of `vg_aes_gcm_open_split` for a prepared
+key context, with its working space as an argument. -/
+theorem openToSplitPrepared16_core (F : OpenSplitFn CtxMode.prepared16) :
+    Verified X86_64.target (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn)
+      (Proof.AesGcm.openToPrepared16ScratchContract X86_64.abi 152) :=
+  Verified.of_correct (k := toSK CtxMode.prepared16)
+    (fun _ hs => by obtain ⟨t, s', he, ha, hp⟩ := openToSplit_wp F hs; exact ⟨t, s', he, ha, hp⟩) (openToSplit_ct F)
+    prepared16_implies
+
+theorem toSatP16_2776_pre : ∃ s, (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776).pre s := by
+  refine ⟨OpenTo.toSatP, ?_⟩
+  sig_pre [Proof.AesGcm.openToPrepared16RoundsContract, Spec.Gcm.openToPrecomputedSig, Spec.Gcm.openToPrecomputedSig,
+    Proof.Gcm.openToPrepared16Pre, X86_64.abi, X86_64.argRegs, OpenTo.stackArgs_six, List.append_eq, OpenTo.toSatP,
+    OpenTo.toSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact Proof.AesGcm.preparedPowers16Repr_of_zeroMem fun _ hi => by simp only [OpenTo.ctx_low hi, ite_false]
+
+/-- `openToSplit` in its frame of 2624 bytes, holding its working space. -/
+theorem openToSplitPrepared16_framed (F : OpenSplitFn CtxMode.prepared16) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2624 6 (Impl.AesGcm.X86_64.OpenToSplit.openToSplit F.fn))
+      (Proof.AesGcm.openToPrepared16RoundsContract X86_64.abi 2776) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.Gcm.openToPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.openToPrepared16Pre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.openToRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 152)
+    (leak := some (Spec.Gcm.openToLeak X86_64.abi.ptrBits)) (bytes := 2624) (openToSplitPrepared16_core F)
+    (by decide) (by decide) (by decide) (openToSplit_spAll F.fn F.spAll) (openToSplit_xdepth F.fn F.xd)
+    (Proof.AesGcm.openToPrepared16Pre_local _) (Proof.AesGcm.openToRoundsPost_local _) toSatP16_2776_pre
+    (hleak := Proof.AesGcm.openToLeak_local _)
 
 theorem toPre_base {s : State} (h : (Proof.AesGcm.openToScratchContract X86_64.abi 152).pre s) :
     ToPreS CtxMode.base s := by

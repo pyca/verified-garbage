@@ -195,6 +195,28 @@ def CrOk (P : Addr → Addr → Nat → State → Prop) (cr : Prog isa) : Prop :
           (ciphOf s.mem Ctx R) icb P₀ →
         bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb P₀ (bytesAt s.mem D n))
 
+/-- `CrOk` out of place: what `open_split` needs of the code `cr` decrypting
+the `n` (fewer than 16) bytes left at `Q`, the data kept, to the end of `D`
+(`CryptSrc true`) when the tags match, from a state with `P`: what
+`oneCryptG true` does (`oneCryptG_ok`), but for the counter state. -/
+def CrOkTo (P : Addr → Addr → Nat → State → Prop) (cr : Prog isa) : Prop :=
+  ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
+    ∀ {R : Nat} {icb : Block} {P₀ : Nat} {D Q : Addr} {n : Nat} {s : State}, P₀ % 16 = 0 →
+    Env Ctx (W + BitVec.ofNat 64 16) W SP s → RoundsAt s.mem W R → s.mem.readW (W + BitVec.ofNat 64 200) 64 = Q →
+    s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n → DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n →
+    CryptSrc true W SP s D Q n → P Ctx W R s →
+    WP isa cr s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      Frame (crFrame (W + BitVec.ofNat 64 16) W SP D n) s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (Ctr s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
+          (ciphOf s.mem Ctx R) icb P₀ →
+        bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb P₀ (bytesAt s.mem Q n))
+
+theorem crOkTo_oneCryptG (v : GcmImpl) : CrOkTo PTrue (oneCryptG v.callees true) :=
+  fun L _ icb _ _ _ n _ hP he hR hdat hlen hd hsrc _ =>
+    WP.mono (oneCryptG_ok v L true (icb := icb) hP he hR hdat hlen hd hsrc) fun _ ⟨co, rd, wr⟩ =>
+      ⟨co.env, co.frame, rd, wr, fun hc => by
+        rw [co.out hc, show bytesAt _ _ 0 = [] from rfl, List.nil_append, Nat.sub_zero]⟩
+
 theorem crOk_oneCrypt (v : GcmImpl) : CrOk PTrue (oneCrypt v.callees) :=
   fun L _ _ _ _ _ _ hP _ he hR hdat hlen hd _ =>
     WP.mono (oneCrypt_ok v L hP he hR hdat hlen hd) fun _ ⟨co, rd, wr⟩ => ⟨co.env, co.frame, rd, wr, co.out⟩
