@@ -829,4 +829,123 @@ theorem pair_poly {m : Mem} {F : Addr} {Q : Poly} {c : Nat} (hc : c + 2 ≤ 64)
 
 end
 
+/-! ## The inverse NTT's polynomials -/
+
+section
+open VG.Proof.MlKem VG.Spec.MlKem
+
+theorem ix_val (a b : Zq) : ix (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) = BitVec.ofNat 32 (a + b).val := by
+  rw [ix, toNat_val32, toNat_val32, val_add']
+
+theorem iy_val (a b z : Zq) :
+    iy (BitVec.ofNat 32 a.val) (BitVec.ofNat 32 b.val) (BitVec.ofNat 32 z.val) = BitVec.ofNat 32 (z * (b - a)).val := by
+  rw [iy, toNat_val32, toNat_val32, toNat_val32, val_mul, val_sub']
+  have := val_lt a
+  congr 1
+  show _ = z.val * ((b.val + (3329 - a.val)) % 3329) % 3329
+  rw [show b.val + 3329 - a.val = b.val + (3329 - a.val) by omega, Nat.mul_comm, Nat.mul_mod_mod]
+
+/-- Four inverse butterflies of a block of the layer with `len`, from `st + t`. -/
+theorem igroup_poly {m : Mem} {F : Addr} {Q : Poly} {len k st t : Nat} (ht : t + 4 ≤ len)
+    (hs : st + 2 * len ≤ 256) (h : PolyIs m F (nttInvBlockN Q len k st t)) {A B : BitVec 128}
+    (hA : ∀ p < 4, vword A p = ix (vword (swapDwords (m.read (coeffAddr F (st + t)) 16)) p)
+      (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p))
+    (hB : ∀ p < 4, vword B p = iy (vword (swapDwords (m.read (coeffAddr F (st + t)) 16)) p)
+      (vword (swapDwords (m.read (coeffAddr F (st + t + len)) 16)) p) (BitVec.ofNat 32 (zeta k).val)) :
+    PolyIs ((m.write (coeffAddr F (st + t)) 16 (swapDwords A)).write (coeffAddr F (st + t + len)) 16
+      (swapDwords B)) F (nttInvBlockN Q len k st (t + 4)) := by
+  have hl : 0 < len := by omega
+  have hs' : st + 2 * len ≤ n := by rw [n_eq]; exact hs
+  have g4 := fun i (hi : i < 256) => nttInvBlockN_get Q (k := k) (t := t + 4) hl ht hs' (i := i) (by rw [n_eq]; exact hi)
+  have g0 := fun i (hi : i < 256) => nttInvBlockN_get Q (k := k) (t := t) hl (by omega) hs' (i := i) (by rw [n_eq]; exact hi)
+  refine polyIs_rows h (j₁ := st + t) (j₂ := st + t + len) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+    (fun i hi r1 r2 => ?_)
+  · have l := xor1_lt hp
+    rw [hA p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, ix_val]
+    simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
+    rw [Nat.add_right_comm (st + t) _ len]
+  · have l := xor1_lt hp
+    rw [hB p hp, row_lane h (by omega) hp, row_lane h (by omega) hp, iy_val]
+    simp (disch := omega) only [g4, g0, ↓ite_eq_left, ↓ite_eq_right]
+    rw [show st + t + len + (p ^^^ 1) - len = st + t + (p ^^^ 1) by omega]
+  · rw [g4 i hi, g0 i hi]
+    have c1 : (st ≤ i ∧ i < st + (t + 4)) ↔ (st ≤ i ∧ i < st + t) := by omega
+    have c2 : (st + len ≤ i ∧ i < st + len + (t + 4)) ↔ (st + len ≤ i ∧ i < st + len + t) := by omega
+    simp only [c1, c2]
+
+theorem ilayer2_old (Q : Poly) {c i : Nat} (hc : c ≤ 64) (h1 : 4 * c ≤ i) (h2 : i < 256) :
+    (nttInvLayerN Q 2 c)[i]! = Q[i]! := by
+  rw [nttInvLayerN_get Q (by decide) (by omega) h2, ite_eq_right (by omega)]
+
+theorem ilayer2_new (Q : Poly) {c d : Nat} (hc : c + 2 ≤ 64) (hd : d < 8) :
+    (nttInvLayerN Q 2 (c + 2))[4 * c + d]! =
+      if d % 4 < 2 then Q[4 * c + d]! + Q[4 * c + (d + 2)]!
+      else zeta (127 - c - d / 4) * (Q[4 * c + d]! - Q[4 * c + (d - 2)]!) := by
+  rw [nttInvLayerN_get Q (by decide) (by omega) (by omega), ite_eq_left (by omega),
+    show (4 * c + d) % (2 * 2) = d % 4 by omega, show 256 / 2 - 1 - (4 * c + d) / (2 * 2) = 127 - c - d / 4 by omega]
+  split
+  · rfl
+  · rw [show 4 * c + d - 2 = 4 * c + (d - 2) by omega]
+
+theorem ilayer2_new0 (Q : Poly) {c : Nat} (hc : c + 2 ≤ 64) :
+    (nttInvLayerN Q 2 (c + 2))[4 * c]! = Q[4 * c]! + Q[4 * c + 2]! := by
+  have := ilayer2_new Q hc (d := 0) (by decide)
+  simpa only [Nat.add_zero, Nat.zero_mod, Nat.zero_div, Nat.zero_add, ite_true, show 0 < 2 by decide] using this
+
+/-- The inverse NTT's first layer (`len = 2`) on blocks `c` and `c + 1`: `A`
+is block `c + 1`'s row, `B` block `c`'s. -/
+theorem ipair_poly {m : Mem} {F : Addr} {Q : Poly} {c : Nat} (hc : c + 2 ≤ 64)
+    (h : PolyIs m F (nttInvLayerN Q 2 c)) {Z A B : BitVec 128}
+    (hz1 : vword Z 1 = BitVec.ofNat 32 (zeta (127 - c - 1)).val)
+    (hz3 : vword Z 3 = BitVec.ofNat 32 (zeta (127 - c)).val)
+    (hA : ∀ p < 4, vword A p = if p < 2 then
+        ix (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) p)
+          (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) (p + 2))
+      else iy (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) (p - 2))
+          (vword (swapDwords (m.read (coeffAddr F (4 * c + 4)) 16)) p) (vword Z 1))
+    (hB : ∀ p < 4, vword B p = if p < 2 then
+        ix (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) p)
+          (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) (p + 2))
+      else iy (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) (p - 2))
+          (vword (swapDwords (m.read (coeffAddr F (4 * c)) 16)) p) (vword Z 3)) :
+    PolyIs ((m.write (coeffAddr F (4 * c + 4)) 16 (swapDwords A)).write (coeffAddr F (4 * c)) 16
+      (swapDwords B)) F (nttInvLayerN Q 2 (c + 2)) := by
+  refine polyIs_rows h (j₁ := 4 * c + 4) (j₂ := 4 * c) (by omega) (by omega) (fun p hp => ?_) (fun p hp => ?_)
+    (fun i hi r1 r2 => ?_)
+  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega) only [hA, hz1, row_lane h, ilayer2_old, ilayer2_new, ix_val, iy_val, ↓ite_eq_left,
+      ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero, Nat.add_assoc,
+      Nat.sub_sub]
+  · rcases (by omega : p = 0 ∨ p = 1 ∨ p = 2 ∨ p = 3) with rfl | rfl | rfl | rfl <;>
+    simp (disch := omega) only [hB, hz3, row_lane h, ilayer2_old, ilayer2_new, ilayer2_new0, ix_val, iy_val,
+      ↓ite_eq_left, ↓ite_eq_right, Nat.reduceXor, Nat.reduceAdd, Nat.reduceSub, Nat.reduceDiv, Nat.add_zero,
+      Nat.sub_zero]
+  · rw [nttInvLayerN_get Q (by decide) (by omega) hi, nttInvLayerN_get Q (by decide) (by omega) hi]
+    have c1 : i < 2 * 2 * (c + 2) ↔ i < 2 * 2 * c := by omega
+    simp only [c1]
+
+/-- A row of the scaling by `3303`. -/
+theorem scale_coeff {m m₂ : Mem} {F : Addr} {R : Poly} {g : Nat} (hg : g < 64)
+    (h : ∀ j < 256, coeffAt m F j =
+      if j < 4 * g then BitVec.ofNat 32 ((R.map (· * 3303))[j]!).val else coeffAt m₂ F j)
+    (hR : PolyIs m₂ F R) {A : BitVec 128}
+    (hA : ∀ p < 4, vword A p = BitVec.ofNat 32
+      ((vword (swapDwords (m.read (coeffAddr F (4 * g)) 16)) p).toNat * 3303 % 3329)) :
+    ∀ j < 256, coeffAt (m.write (coeffAddr F (4 * g)) 16 (swapDwords A)) F j =
+      if j < 4 * (g + 1) then BitVec.ofNat 32 ((R.map (· * 3303))[j]!).val else coeffAt m₂ F j := by
+  intro j hj
+  rw [coeffAt_row _ _ _ _ hj (by omega)]
+  by_cases r : 4 * g ≤ j ∧ j < 4 * g + 4
+  · have l := xor1_lt (e := j - 4 * g) (by omega)
+    rw [ite_eq_left r, ite_eq_left (by omega), hA _ l, vword_load _ _ l, coeffAddr_add, xor1_xor1,
+      Nat.add_sub_cancel' r.1, ← coeffAt_eq, h j hj, ite_eq_right (by omega),
+      polyIs_coeffAt hR (by rw [n_eq]; exact hj), toNat_val32, map_mul_get _ (by rw [n_eq]; exact hj), val_mul]
+    rfl
+  · rw [ite_eq_right r, h j hj]
+    by_cases r' : j < 4 * g
+    · rw [ite_eq_left r', ite_eq_left (by omega)]
+    · rw [ite_eq_right r', ite_eq_right (by omega)]
+
+end
+
 end VG.Proof.MlKem.PPC64LE.VBfly
