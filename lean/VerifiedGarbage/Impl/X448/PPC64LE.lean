@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
+public import VerifiedGarbage.Impl.X25519.PPC64LE
 
 /-!
 # X448: PPC64LE implementation
@@ -27,7 +28,9 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   `2³²`, and the carry out in `r8`;
 * `fold`: the carry out `c` folded in as `c + 2²²⁴ c`: added to limbs 0 and
   7 and carried again; `tail` folds twice, after which nothing carries out;
-* `mul`: the 28 limbs of the product row by row (Knuth's algorithm M), then,
+* `mul`: the product's fourteen doublewords by columns (X25519's product
+  scanning: `mulld` and `mulhdu`, and a three-word `addc`/`adde`/`addze`
+  accumulator), the same bytes as its 28 limbs; then,
   for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
   once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
   `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
@@ -125,7 +128,8 @@ def sub (o a b : Nat) : List Instr :=
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
 
-/-- The words `ACC[0, 14)` zeroed. -/
+/-- The words `ACC[0, 14)` zeroed (Ed448's scalar arithmetic on PPC64LE uses
+this and `row`). -/
 def zeroAcc : List Instr := .li .r7 0 :: storeN .r7 ACC 14
 
 /-- Limb `j` of row `i` (`r9` = the base plus `4 i`, `a_i` in `r4`) into
@@ -144,11 +148,13 @@ def mulSrc (k : Nat) : List Instr :=
   (if k < 7 then [.load .w .r5 .r6 (ACC + 56 + 4 * (k + 7)), .add .r7 .r7 .r5]
    else [.add .r7 .r7 .r5, .load .w .r5 .r6 (ACC + 56 + 4 * (k - 7)), .add .r7 .r7 .r5])
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`. -/
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
+fourteen doublewords by X25519's 64-bit product scanning
+(`Impl.X25519.PPC64LE.product`, seven words each), then the reduction of its
+28 limbs. -/
 def mul (o a b : Nat) : Prog isa :=
-  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 14]))
-    (.seq (.loop (.block (row a b)) (.nonzero .d .r11))
-      (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o)))
+  .seq (.block (Impl.X25519.PPC64LE.product 7 ACC a b))
+    (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o))
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
