@@ -91,6 +91,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSAES-OAEP decryption on x86-64, with both hash functions as tables -/
 
@@ -105,7 +106,7 @@ open VG.Proof.HashTable.X86_64 (tables fnsOf)
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaOaep.decryptTablesApi.artifact X86_64.target {
-      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
+      suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack
@@ -125,7 +126,7 @@ open VG.Proof.HashTable.X86_64 (tables fnsOf)
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaOaep.encryptTablesApi.artifact X86_64.target {
-      suffix := Emit.qualifiedName "" [("rsa", c.suffix)]
+      suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code
       stack := encStack
