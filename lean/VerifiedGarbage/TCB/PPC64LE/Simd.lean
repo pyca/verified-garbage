@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.VectorCrypto
 # POWER8 vector cryptography values
 
 **Trusted.** Power ISA v3.1C, Book I §§6.9.1.1 (modular adds), 6.9.4
-(logical), 6.8.5/6.8.7 (permute/shift), 6.11.1 (AES), 6.11.2 (SHA sigma), 6.11.3
+(logical), 6.9.5.1 (rotate), 6.8.5/6.8.7 (permute/shift), 6.11.1 (AES), 6.11.2 (SHA sigma), 6.11.3
 (polynomial multiply). All were available on POWER8 / ISA 2.07.
 https://openpower.foundation/specifications/isa/
 https://www.ibm.com/support/pages/power8-cryptography-core-instructions
@@ -94,6 +94,10 @@ inductive VOp
   | perm (d n m c : VReg)
   /-- `vsldoi`: concatenate VA||VB and select bytes SHB through SHB+15. -/
   | sldoi (d n m : VReg) (sh : Nat)
+  /-- `vrlw` (Book I §6.9.5.1, "Vector Rotate Left Word VX-form", p. 396):
+  each word of VA rotated left by the low five bits of the same word of VB.
+  Baseline AltiVec (Power ISA v2.03). -/
+  | rlw (d n m : VReg)
   deriving DecidableEq, Repr
 
 /-- The destination and result; reject unencodable and reserved immediates.
@@ -126,5 +130,7 @@ def VOp.eval (v : VReg → BitVec 128) : VOp → Option (VReg × BitVec 128)
   | .sldoi d n m sh => if sh < 16 then
       some (d, ((v n ++ v m) <<< (8 * sh)).extractLsb' 128 128)
     else none
+  | .rlw d n m => some (d, (List.range 4).foldl (fun x i => x |||
+      (((vword (v n) i).rotateLeft ((vword (v m) i).toNat % 32)).setWidth 128 <<< (32 * (3 - i)))) 0)
 
 end VG.PPC64LE

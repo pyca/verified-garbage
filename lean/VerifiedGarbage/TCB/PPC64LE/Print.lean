@@ -53,6 +53,7 @@ def VOp.asm : VOp → String
   | .add dw d n m => s!"{if dw then "vaddudm" else "vadduwm"} {d.name}, {n.name}, {m.name}"
   | .perm d n m c => s!"vperm {d.name}, {n.name}, {m.name}, {c.name}"
   | .sldoi d n m sh => s!"vsldoi {d.name}, {n.name}, {m.name}, {sh}"
+  | .rlw d n m => s!"vrlw {d.name}, {n.name}, {m.name}"
 
 def Instr.asm : Instr → List String
   | .vop op => [op.asm]

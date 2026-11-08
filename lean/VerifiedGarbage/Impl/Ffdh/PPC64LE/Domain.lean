@@ -181,8 +181,8 @@ def exPre : Prog isa :=
     (.block (PublicChecked.minv ++ [.load .d .r30 .r23 64, .load .d .r31 .r23 72]))))
 
 /-- `z = y^x mod p` into array 4: `exPre`, then the power by x's `x_len`
-octets. -/
-def exPower : Prog isa := .seq exPre ModExp.powSecret
+octets, by four-bit windows (`ModExp.powWin`, its table in arrays 8–23). -/
+def exPower : Prog isa := .seq exPre ModExp.powWin
 
 /-- The mask of `1 < z < p − 1` into `r26`, and `out` back from the header
 into `r27`. -/
