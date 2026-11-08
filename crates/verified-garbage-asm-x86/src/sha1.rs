@@ -3,23 +3,6 @@
 //! `assembly/sha1.s`.
 #![allow(dead_code)]
 
-/// Starts a SHA-1 computation: makes the streaming state `*state` represent the empty message.
-///
-/// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 84 bytes.
-/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
-/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
-.p2align 6"#,
-    )
-}
-
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
@@ -48,6 +31,58 @@ jne 20b
         vg_sha1_init = sym super::sha1::vg_sha1_init,
         vg_sha1_update_scratch = sym super::sha1::vg_sha1_update_scratch::vg_sha1_update_scratch,
         vg_sha1_finalize_scratch = sym super::sha1::vg_sha1_finalize_scratch::vg_sha1_finalize_scratch,
+    )
+}
+
+/// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
+pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sha` and `ssse3` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
+call {vg_sha1_init}
+.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
+call {vg_sha1_update_scratch_shani}
+.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
+call {vg_sha1_finalize_scratch_shani}
+.base64 "WFhYWFiLdCQMuQAAAAA="
+20:
+.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
+jne 20b
+.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
+.p2align 6"#,
+        vg_sha1_init = sym super::sha1::vg_sha1_init,
+        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
+        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
+    )
+}
+
+/// Starts a SHA-1 computation: makes the streaming state `*state` represent the empty message.
+///
+/// Contract: `VG.Spec.Sha1.initContract`. The streaming state is the hash value followed by a buffered partial block (`VG.Spec.Sha1.Repr`).
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 84 bytes.
+/// * `state` must not overlap the arguments on the stack (distinct Rust objects never do).
+/// * `state` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sha1_init(state: *mut [u8; 84]) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkBLkBI0VniQi5iavN74lIBLn+3LqYiUgIuXZUMhCJSAy58OHSw4lIEMM="
+.p2align 6"#,
     )
 }
 
@@ -184,41 +219,6 @@ je 22b
 .base64 "i4WIAAAAiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLXXCLdXSLfXiLbXyNpCS4AAAAww=="
 .p2align 6"#,
         vg_sha1_compress = sym super::sha1::vg_sha1_compress::vg_sha1_compress,
-    )
-}
-
-/// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
-
-/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
-///
-/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `out` must not overlap `data` or the arguments on the stack (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the return address on the stack or the 348 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQk1P7//4uEJDABAACJRCQEi4QkNAEAAIlEJAiLhCQ4AQAAiUQkDIngg8AUiUQkEItEJBCJmKAAAACJsKQAAACJuKgAAACJqKwAAACJxYnvgcewAAAAVw=="
-call {vg_sha1_init}
-.base64 "WLgAAAAAvgAAAACLTCQIi1QkBFVRUlBWVw=="
-call {vg_sha1_update_scratch_shani}
-.base64 "WFhYWFhYi0QkCLkAAAAAieqBwgQBAABVUlFQVw=="
-call {vg_sha1_finalize_scratch_shani}
-.base64 "WFhYWFiLdCQMuQAAAAA="
-20:
-.base64 "iegByA+2kAQBAACJ8AHIiBCDwQGD+RQ="
-jne 20b
-.base64 "ieiLmKAAAACLsKQAAACLuKgAAACLqKwAAAC5AAAAAIlMJBSJTCQYiUwkHIlMJCCJTCQkiUwkKIlMJCyJTCQwiUwkNIlMJDiJTCQ8iUwkQIlMJESJTCRIiUwkTIlMJFCJTCRUiUwkWIlMJFyJTCRgiUwkZIlMJGiJTCRsiUwkcIlMJHSJTCR4iUwkfImMJIAAAACJjCSEAAAAiYwkiAAAAImMJIwAAACJjCSQAAAAiYwklAAAAImMJJgAAACJjCScAAAAiYwkoAAAAImMJKQAAACJjCSoAAAAiYwkrAAAAImMJLAAAACJjCS0AAAAiYwkuAAAAImMJLwAAACJjCTAAAAAiYwkxAAAAImMJMgAAACJjCTMAAAAiYwk0AAAAImMJNQAAACJjCTYAAAAiYwk3AAAAImMJOAAAACJjCTkAAAAiYwk6AAAAImMJOwAAACJjCTwAAAAiYwk9AAAAImMJPgAAACJjCT8AAAAiYwkAAEAAImMJAQBAACJjCQIAQAAiYwkDAEAAImMJBABAACJjCQUAQAAiYwkGAEAAImMJBwBAACJjCQgAQAAiYwkJAEAAImMJCgBAACNpCQsAQAAww=="
-.p2align 6"#,
-        vg_sha1_init = sym super::sha1::vg_sha1_init,
-        vg_sha1_update_scratch_shani = sym super::sha1::vg_sha1_update_scratch_shani::vg_sha1_update_scratch_shani,
-        vg_sha1_finalize_scratch_shani = sym super::sha1::vg_sha1_finalize_scratch_shani::vg_sha1_finalize_scratch_shani,
     )
 }
 

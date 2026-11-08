@@ -3,28 +3,6 @@
 //! `assembly/mlkem1024.s`.
 #![allow(dead_code)]
 
-/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
-///
-/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1568 bytes.
-/// * `ek` must not wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
-    core::arch::naked_asm!(
-        r".inst 0xd2802009,0xf2bfe049,0xf2c08069,0xf2ffe0a9,0x4e080d30,0xd280e0c9,0xf2bfe109,0xf2c14129
-.inst 0xf2ffe169,0x4e181d30,0xd281ffe9,0x4e040d31,0xd281a029,0x4e040d32,0x6f00e413,0xd280100b
-20:
-.inst 0xf9400009,0xb940080a,0x4e080d20,0x4e181d40,0x4e100001,0x4e311c22,0x6f340423,0x6eb23c42
-.inst 0x6eb23c63,0x4ea21e73,0x4ea31e73,0x91003000,0xd100056b
-cbnz x11, 20b
-.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd65f03c0
-.p2align 6",
-    )
-}
-
 /// ML-KEM-1024 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem1024.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
@@ -408,6 +386,28 @@ bl {vg_zeroize}
 .p2align 6",
         vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3 = sym super::mlkem1024::vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3::vg_mlkem1024_decaps_body_x2_sha3_keccak_sha3,
         vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
+///
+/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `ek` must not wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd2802009,0xf2bfe049,0xf2c08069,0xf2ffe0a9,0x4e080d30,0xd280e0c9,0xf2bfe109,0xf2c14129
+.inst 0xf2ffe169,0x4e181d30,0xd281ffe9,0x4e040d31,0xd281a029,0x4e040d32,0x6f00e413,0xd280100b
+20:
+.inst 0xf9400009,0xb940080a,0x4e080d20,0x4e181d40,0x4e100001,0x4e311c22,0x6f340423,0x6eb23c42
+.inst 0x6eb23c63,0x4ea21e73,0x4ea31e73,0x91003000,0xd100056b
+cbnz x11, 20b
+.inst 0x6eb03a74,0x4e083e89,0xd1000520,0xd37ffc00,0xd65f03c0
+.p2align 6",
     )
 }
 

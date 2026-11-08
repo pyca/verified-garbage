@@ -3,9 +3,8 @@
 .agents/skills/adding-a-primitive/SKILL.md). Exits non-zero on violations,
 naming each.
 
-Registration files (`Artifacts/`, `Generic/`) and variant files
-(`Variants/`) under lean/VerifiedGarbage/ state what an implementation
-chooses and bind proofs made under `Proof/`:
+Registration files (`Artifacts/`) under lean/VerifiedGarbage/ state what an
+implementation chooses and bind proofs made under `Proof/`:
 
   * no theorems or lemmas;
   * no tactic proofs (`by …`) but the defaults of `Registration`
@@ -30,7 +29,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LEAN = ROOT / "lean"
 
-DIRS = ["Artifacts", "Generic", "Variants"]
+DIRS = ["Artifacts"]
 
 # The tactics a registration may run: `Registration`'s defaults.
 DEFAULTS = {"sp_safe", "of_sig"}

@@ -23,6 +23,25 @@ vg_ed25519_key_pair:
 	ret
 	.p2align 6
 
+vg_ed25519_key_pair_sha512:
+	str x30, [sp, #-16]!
+	sub sp, sp, #32
+	str x0, [sp, #0]
+	str x1, [sp, #8]
+	str x3, [sp, #16]
+	add x0, x2, #0
+	add x2, x1, #0
+	movz x1, #32, lsl #0
+	bl {vg_sha512_digest_sha512}
+	ldr x0, [sp, #0]
+	ldr x1, [sp, #8]
+	ldr x2, [sp, #16]
+	bl {vg_ed25519_public_key_expanded}
+	add sp, sp, #32
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_ed25519_sign_expanded:
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
@@ -274,109 +293,6 @@ vg_ed25519_sign_expanded:
 	ret
 	.p2align 6
 
-vg_ed25519_verify:
-	str x30, [sp, #-16]!
-	sub sp, sp, #320
-	add x15, sp, #256
-	str x0, [x15, #0]
-	add x15, sp, #264
-	str x1, [x15, #0]
-	add x15, sp, #272
-	str x2, [x15, #0]
-	add x15, sp, #280
-	str x3, [x15, #0]
-	add x15, sp, #288
-	str x4, [x15, #0]
-	add x15, sp, #296
-	str x5, [x15, #0]
-	ldr x0, [sp, #288]
-	add x0, x0, #0
-	bl {vg_sha512_init}
-	ldr x0, [sp, #288]
-	add x0, x0, #0
-	movz x1, #0, lsl #0
-	ldr x2, [sp, #280]
-	add x2, x2, #0
-	movz x3, #32, lsl #0
-	ldr x4, [sp, #288]
-	add x4, x4, #192
-	bl {vg_sha512_update_scratch}
-	ldr x0, [sp, #288]
-	add x0, x0, #0
-	movz x1, #32, lsl #0
-	ldr x2, [sp, #256]
-	add x2, x2, #0
-	movz x3, #32, lsl #0
-	ldr x4, [sp, #288]
-	add x4, x4, #192
-	bl {vg_sha512_update_scratch}
-	ldr x0, [sp, #288]
-	add x0, x0, #0
-	movz x1, #64, lsl #0
-	ldr x2, [sp, #264]
-	add x2, x2, #0
-	ldr x3, [sp, #272]
-	add x3, x3, #0
-	ldr x4, [sp, #288]
-	add x4, x4, #192
-	bl {vg_sha512_update_scratch}
-	ldr x0, [sp, #288]
-	add x0, x0, #0
-	ldr x1, [sp, #272]
-	add x1, x1, #64
-	add x2, sp, #192
-	ldr x3, [sp, #288]
-	add x3, x3, #192
-	bl {vg_sha512_finalize_scratch}
-	add x0, sp, #128
-	add x1, sp, #192
-	ldr x2, [sp, #288]
-	add x2, x2, #0
-	bl {vg_ed25519_scalar_reduce}
-	add x15, sp, #0
-	movz x14, #0, lsl #0
-	str x14, [x15, #160]
-	add x15, sp, #0
-	movz x14, #0, lsl #0
-	str x14, [x15, #168]
-	add x15, sp, #0
-	movz x14, #0, lsl #0
-	str x14, [x15, #176]
-	add x15, sp, #0
-	movz x14, #0, lsl #0
-	str x14, [x15, #184]
-	ldr x0, [sp, #256]
-	add x0, x0, #0
-	ldr x1, [sp, #280]
-	add x1, x1, #0
-	add x2, sp, #128
-	ldr x3, [sp, #288]
-	add x3, x3, #0
-	bl {vg_ed25519_verify_equation}
-	add sp, sp, #320
-	ldr x30, [sp], #16
-	ret
-	.p2align 6
-
-vg_ed25519_key_pair_sha512:
-	str x30, [sp, #-16]!
-	sub sp, sp, #32
-	str x0, [sp, #0]
-	str x1, [sp, #8]
-	str x3, [sp, #16]
-	add x0, x2, #0
-	add x2, x1, #0
-	movz x1, #32, lsl #0
-	bl {vg_sha512_digest_sha512}
-	ldr x0, [sp, #0]
-	ldr x1, [sp, #8]
-	ldr x2, [sp, #16]
-	bl {vg_ed25519_public_key_expanded}
-	add sp, sp, #32
-	ldr x30, [sp], #16
-	ret
-	.p2align 6
-
 vg_ed25519_sign_expanded_sha512:
 	str x30, [sp, #-16]!
 	sub sp, sp, #320
@@ -623,6 +539,90 @@ vg_ed25519_sign_expanded_sha512:
 	add x15, sp, #0
 	movz x14, #0, lsl #0
 	str x14, [x15, #248]
+	add sp, sp, #320
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_ed25519_verify:
+	str x30, [sp, #-16]!
+	sub sp, sp, #320
+	add x15, sp, #256
+	str x0, [x15, #0]
+	add x15, sp, #264
+	str x1, [x15, #0]
+	add x15, sp, #272
+	str x2, [x15, #0]
+	add x15, sp, #280
+	str x3, [x15, #0]
+	add x15, sp, #288
+	str x4, [x15, #0]
+	add x15, sp, #296
+	str x5, [x15, #0]
+	ldr x0, [sp, #288]
+	add x0, x0, #0
+	bl {vg_sha512_init}
+	ldr x0, [sp, #288]
+	add x0, x0, #0
+	movz x1, #0, lsl #0
+	ldr x2, [sp, #280]
+	add x2, x2, #0
+	movz x3, #32, lsl #0
+	ldr x4, [sp, #288]
+	add x4, x4, #192
+	bl {vg_sha512_update_scratch}
+	ldr x0, [sp, #288]
+	add x0, x0, #0
+	movz x1, #32, lsl #0
+	ldr x2, [sp, #256]
+	add x2, x2, #0
+	movz x3, #32, lsl #0
+	ldr x4, [sp, #288]
+	add x4, x4, #192
+	bl {vg_sha512_update_scratch}
+	ldr x0, [sp, #288]
+	add x0, x0, #0
+	movz x1, #64, lsl #0
+	ldr x2, [sp, #264]
+	add x2, x2, #0
+	ldr x3, [sp, #272]
+	add x3, x3, #0
+	ldr x4, [sp, #288]
+	add x4, x4, #192
+	bl {vg_sha512_update_scratch}
+	ldr x0, [sp, #288]
+	add x0, x0, #0
+	ldr x1, [sp, #272]
+	add x1, x1, #64
+	add x2, sp, #192
+	ldr x3, [sp, #288]
+	add x3, x3, #192
+	bl {vg_sha512_finalize_scratch}
+	add x0, sp, #128
+	add x1, sp, #192
+	ldr x2, [sp, #288]
+	add x2, x2, #0
+	bl {vg_ed25519_scalar_reduce}
+	add x15, sp, #0
+	movz x14, #0, lsl #0
+	str x14, [x15, #160]
+	add x15, sp, #0
+	movz x14, #0, lsl #0
+	str x14, [x15, #168]
+	add x15, sp, #0
+	movz x14, #0, lsl #0
+	str x14, [x15, #176]
+	add x15, sp, #0
+	movz x14, #0, lsl #0
+	str x14, [x15, #184]
+	ldr x0, [sp, #256]
+	add x0, x0, #0
+	ldr x1, [sp, #280]
+	add x1, x1, #0
+	add x2, sp, #128
+	ldr x3, [sp, #288]
+	add x3, x3, #0
+	bl {vg_ed25519_verify_equation}
 	add sp, sp, #320
 	ldr x30, [sp], #16
 	ret

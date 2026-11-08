@@ -24,7 +24,7 @@ class Registrations(unittest.TestCase):
                     "  api.artifact X86_64.target {\n"
                     "    suffix := \"_found by a mask\"\n"
                     "    verified := Proof.A.verified (.inl rfl) }]\n",
-                    "VerifiedGarbage/Generic/B/X86_64/C.lean":
+                    "VerifiedGarbage/Artifacts/C/X86_64.lean":
                     "module\ndef sign (code : Prog isa)\n"
                     "    (hsp : code.all (fun i => !isa.writesSp i) = true := by sp_safe) : Artifact :=\n"
                     "  x\n",
@@ -40,7 +40,7 @@ class Registrations(unittest.TestCase):
             self.assertTrue(p.startswith("lean/VerifiedGarbage/Artifacts/A/X86_64.lean:4: a tactic proof"))
 
     def test_a_tactic_field(self):
-        with tree({"VerifiedGarbage/Generic/A/X86_64/B.lean":
+        with tree({"VerifiedGarbage/Artifacts/B/X86_64.lean":
                     "module\ndef artifacts (adx : Bool) := [\n  api.artifact t {\n"
                     "    spSafe := by cases adx <;> exact h }]\n"}) as d:
             [p] = check_registrations.problems(pathlib.Path(d))
@@ -56,7 +56,7 @@ class Registrations(unittest.TestCase):
             self.assertEqual(check_registrations.problems(pathlib.Path(d)), [])
 
     def test_a_default_with_more_tactics(self):
-        with tree({"VerifiedGarbage/Generic/A/X86_64/B.lean":
+        with tree({"VerifiedGarbage/Artifacts/B/X86_64.lean":
                     "module\ndef sign (code : Prog isa)\n"
                     "    (hsp : P code := by sp_safe <;> decide) : Artifact :=\n  x\n",
                     "VerifiedGarbage/Artifacts/A/X86_64.lean":
@@ -66,7 +66,7 @@ class Registrations(unittest.TestCase):
             ps = check_registrations.problems(pathlib.Path(d))
             self.assertEqual(len(ps), 2)
             self.assertIn("Artifacts/A/X86_64.lean:4: a tactic proof", ps[0])
-            self.assertIn("Generic/A/X86_64/B.lean:3: a tactic proof", ps[1])
+            self.assertIn("Artifacts/B/X86_64.lean:3: a tactic proof", ps[1])
 
     def test_consts(self):
         # The default finds the tables in the contract; a field of the
@@ -75,15 +75,15 @@ class Registrations(unittest.TestCase):
                     "module\ndef artifacts := [\n  api.artifact t {\n"
                     "    consts := Impl.A.tables\n"
                     "    verified := v }]\n",
-                    "VerifiedGarbage/Generic/A/X86_64/B.lean":
+                    "VerifiedGarbage/Artifacts/B/X86_64.lean":
                     "module\n-- consts := none\ndef artifacts := [\n  api.artifact t {\n"
                     "    code := c.consts\n    Impl.myconsts := v }]\n"}) as d:
             [p] = check_registrations.problems(pathlib.Path(d))
             self.assertTrue(p.startswith("lean/VerifiedGarbage/Artifacts/A/X86_64.lean:4: `consts`"))
 
     def test_a_theorem(self):
-        with tree({"VerifiedGarbage/Variants/A/X86_64/B.lean":
-                    "module\ntheorem ok : 1 = 1 := rfl\ndef variant := v\n"}) as d:
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\ntheorem ok : 1 = 1 := rfl\ndef artifacts := v\n"}) as d:
             [p] = check_registrations.problems(pathlib.Path(d))
             self.assertIn(":2: a theorem", p)
 
@@ -91,15 +91,15 @@ class Registrations(unittest.TestCase):
         # Only a title: prose on the implementation goes stale.
         with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
                     "module\n/-! # A on x86-64 -/\ndef artifacts := []\n",
-                    "VerifiedGarbage/Generic/A/X86_64/B.lean":
+                    "VerifiedGarbage/Artifacts/B/X86_64.lean":
                     "module\n/-!\n# B on x86-64\n\nCalls `f` from a frame of 8 bytes.\n-/\n"
                     "def artifacts := []\n",
-                    "VerifiedGarbage/Variants/A/X86_64/C.lean":
-                    "module\n/-! Uses AVX2. -/\ndef variant := v\n"}) as d:
+                    "VerifiedGarbage/Artifacts/C/X86_64.lean":
+                    "module\n/-! Uses AVX2. -/\ndef artifacts := v\n"}) as d:
             ps = check_registrations.problems(pathlib.Path(d))
             self.assertEqual(len(ps), 2)
-            self.assertIn("Generic/A/X86_64/B.lean:2: a module docstring", ps[0])
-            self.assertIn("Variants/A/X86_64/C.lean:2: a module docstring", ps[1])
+            self.assertIn("Artifacts/B/X86_64.lean:2: a module docstring", ps[0])
+            self.assertIn("Artifacts/C/X86_64.lean:2: a module docstring", ps[1])
 
 
 if __name__ == "__main__":

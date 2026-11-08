@@ -3,54 +3,6 @@
 //! `assembly/mlkem1024.s`.
 #![allow(dead_code)]
 
-/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
-///
-/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1568 bytes.
-/// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "QbgAAAAAuQACAAA="
-20:
-.base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
-jne 20b
-.base64 "SYH4AAQAAEgZwEiDwAHD"
-.p2align 6"#,
-    )
-}
-
-/// The CPU features `vg_mlkem1024_check_ek_avx2` requires (`Artifact.features`).
-pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
-///
-/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1568 bytes.
-/// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek_avx2(ek: *const [u8; 1568]) -> u32 {
-    core::arch::naked_asm!(
-        r#"lea rax, [rip + {VG_MLKEM_YCONSTS}]
-.base64 "xX5vgKAEAAA="
-lea rax, [rip + {VG_MLKEM_YCONSTS}]
-.base64 "xX5voMAEAABIuAAAAAAEAAAAxGH5bsjEQn1Zybj/DwAAxGH5btDEQn1Y0rgBDQAAxGH5btjEQn1Y27j/////xOH5btDE4n1Y0rmAAAAA"
-20:
-.base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
-jne 20b
-.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
-.p2align 6"#,
-        VG_MLKEM_YCONSTS = sym super::consts::VG_MLKEM_YCONSTS,
-    )
-}
-
 /// The CPU features `vg_mlkem1024_keygen_avx2` requires (`Artifact.features`).
 pub const VG_MLKEM1024_KEYGEN_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
@@ -568,6 +520,54 @@ call {vg_zeroize}
 .p2align 6"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
+///
+/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "QbgAAAAAuQACAAA="
+20:
+.base64 "D7YHD7ZXAcHKGAHQD7ZXAsHKEAHQicIl/w8AAMHqDD0BDQAASYPQAIH6AQ0AAEmD0ABIg8cDSIPpAQ=="
+jne 20b
+.base64 "SYH4AAQAAEgZwEiDwAHD"
+.p2align 6"#,
+    )
+}
+
+/// The CPU features `vg_mlkem1024_check_ek_avx2` requires (`Artifact.features`).
+pub const VG_MLKEM1024_CHECK_EK_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// The ML-KEM-1024 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1536 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem1024_encaps`.
+///
+/// Contract: `VG.Spec.MlKem1024.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1568 bytes.
+/// * `ek` must not overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_mlkem1024_check_ek_avx2(ek: *const [u8; 1568]) -> u32 {
+    core::arch::naked_asm!(
+        r#"lea rax, [rip + {VG_MLKEM_YCONSTS}]
+.base64 "xX5vgKAEAAA="
+lea rax, [rip + {VG_MLKEM_YCONSTS}]
+.base64 "xX5voMAEAABIuAAAAAAEAAAAxGH5bsjEQn1Zybj/DwAAxGH5btDEQn1Y0rgBDQAAxGH5btjEQn1Y27j/////xOH5btDE4n1Y0rmAAAAA"
+20:
+.base64 "xOJ9WgfEwn0AwMTCfUXBxa3bwMTBffrDxe3b0EiDxwxIg+kB"
+jne 20b
+.base64 "xe1y4h/F/dfCSIPAAUjB6CDF+HfD"
+.p2align 6"#,
+        VG_MLKEM_YCONSTS = sym super::consts::VG_MLKEM_YCONSTS,
     )
 }
 
