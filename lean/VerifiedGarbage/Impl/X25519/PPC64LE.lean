@@ -54,9 +54,8 @@ operations):
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
 multiplication by the constant element `A24`), over the bits of the scalar
 from 254 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
-The inversion `z2^(p-2)` is square-and-multiply over the bits of `p - 2 =
-2²⁵⁵ - 21` from 254 down to 0 (the counter `r12`): every bit but 4 and 2 is
-1.
+The inversion `z2^(p-2)` is ref10's addition chain (254 squarings and 11
+multiplications), its runs of squarings counted by `r12`.
 
 The function uses only volatile registers. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
@@ -262,21 +261,28 @@ def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
 
 /-! ## Inversion
 
-`[R] = [Z2]^(p-2)`, square-and-multiply over the bits of `p - 2` from 254
-down to 0 (`t = r12 - 1`): `R = R²`, then `R = R · Z2` unless `t` is 4 or 2. -/
+`[R] = [Z2]^(p-2)` by ref10's addition chain (254 squarings and 11
+multiplications; `Proof/X25519/Chain250.lean`'s `chainF`, then five squarings
+and `z^11`), in the ladder's temporaries `A`–`D`, free after it; each run of
+squarings after the first is a loop counted by `r12`, the ladder's counter. -/
 
-/-- `[R] = 1`. -/
-def one : List Instr :=
-  [.li .r4 1, .li .r5 0, .store .w .r4 .r6 R] ++ storeN .r5 (R + 4) 7
+/-- `[a]` squared `n` times into `[o]`, the squarings after the first in a
+loop counted by `r12`. -/
+def sqn (o a n : Nat) : Prog isa :=
+  .seq (mul o a a) <| .seq (.block [.li .r12 (n - 1)]) <|
+    .loop (.seq (mul o o o) (.block [.subi .r12 .r12 1])) (.nonzero .d .r12)
 
-def invStep : Prog isa :=
-  .seq (.block [.subi .r12 .r12 1]) <| .seq (mul R R R) <|
-  .seq (.block [.subi .r5 .r12 4]) <|
-  .seq (.ite (.zero .d .r5) (.block [])
-    (.seq (.block [.subi .r5 .r12 2]) (.ite (.zero .d .r5) (.block []) (mul R R Z2))))
-    (.block [])
-
-def invert : Prog isa := .seq (.block (one ++ [.li .r12 255])) (.loop invStep (.nonzero .d .r12))
+def invert : Prog isa :=
+  .seq (mul A Z2 Z2) <| .seq (mul B A A) <| .seq (mul B B B) <| .seq (mul B Z2 B) <|
+  .seq (mul A A B) <| .seq (mul C A A) <| .seq (mul B B C) <|
+  .seq (sqn C B 5) <| .seq (mul B C B) <|
+  .seq (sqn C B 10) <| .seq (mul C C B) <|
+  .seq (sqn D C 20) <| .seq (mul C D C) <|
+  .seq (sqn C C 10) <| .seq (mul B C B) <|
+  .seq (sqn C B 50) <| .seq (mul C C B) <|
+  .seq (sqn D C 100) <| .seq (mul C D C) <|
+  .seq (sqn C C 50) <| .seq (mul B C B) <|
+  .seq (sqn B B 5) (mul R B A)
 
 /-! ## Encoding and decoding -/
 
