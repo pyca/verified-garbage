@@ -137,118 +137,107 @@ theorem halve_ct {x : PP → Nat} {B : PP → Prop} :
   two_post (two_taint _ (pins_MnB fun _ _ h => h) (by taint_decide)) fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
     WP.mono M.halve fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
 
-/-! ## Trial division
+/-! ## Trial division by products of four entries -/
 
-By the first `N q` entries: all of `trialN` (`trialSieve`), or the first
-few (`trialSieveN`). -/
+/-- With the table's address and the count `N q` in `r23` and `r24`. -/
+def MnPT (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (a : PP × Addr) (v : State) : Prop :=
+  ∃ u, MnB x B a u ∧ (v.gpr .r23 = a.2 ∧ v.gpr .r24 = BitVec.ofNat 64 (N a.1) ∧ v.mem = u.mem) ∧
+    (∀ r, r ∉ [Reg.r3, Reg.r4, Reg.r23, Reg.r24] → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧
+    v.sp = u.sp ∧ v.syms = u.syms
 
-/-- With the count of entries in `hTrialN`. -/
-def MnC (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (a : PP × Addr) (u : State) : Prop :=
-  MnB x B a u ∧ u.mem.readW (a.1.B + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (N a.1)
-
-/-- With the table's address and the count in `r23` and `r24`. -/
-def MnT (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (a : PP × Addr) (v : State) : Prop :=
-  ∃ u, MnC x B N a u ∧ (v.gpr .r23 = a.2 ∧ v.gpr .r24 = BitVec.ofNat 64 (N a.1) ∧ v.mem = u.mem) ∧
-    (∀ r, r ∉ [Reg.r23, Reg.r24] → v.gpr r = u.gpr r) ∧ v.rd = u.rd ∧ v.wr = u.wr ∧ v.sp = u.sp ∧
-    v.syms = u.syms
-
-/-- In the loop, `d.2` entries left. -/
-def MnL (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
-  ∃ v, MnT x B N d.1 v ∧ VG.Proof.RsaKeyGen.PPC64LE.Trial.TInv v d.1.2 (x d.1.1) (N d.1.1) d.2 w
+/-- In the loop, `d.2` groups left. -/
+def MnPL (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
+  ∃ v, MnPT x B N d.1 v ∧ LInv v d.1.1.B d.1.2 (x d.1.1) (N d.1.1) d.2 w
 
 /-- After the loop. -/
-def MnE (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
-  ∃ v, MnT x B N d.1 v ∧ Keep VG.Proof.RsaKeyGen.PPC64LE.Trial.entryRegs v w
+def MnPE (x : PP → Nat) (B : PP → Prop) (N : PP → Nat) (d : (PP × Addr) × Nat) (w : State) : Prop :=
+  ∃ v, MnPT x B N d.1 v ∧ Keep groupRegs v w
 
-theorem MnT.base {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State} (h : MnT x B N a v) :
+theorem MnPT.base {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
+    (h : MnPT x B N a v) :
     v.gpr .r10 = off a.1.B (slot (wOf a.1.bits) 0) ∧ v.gpr .r11 = BitVec.ofNat 64 (2 * wOf a.1.bits) ∧
       v.gpr .r31 = a.1.B := by
-  obtain ⟨u, ⟨⟨⟨_, _, M⟩, _⟩, _⟩, -, vg, -⟩ := h
+  obtain ⟨u, ⟨⟨_, _, M⟩, _⟩, -, vg, -⟩ := h
   exact ⟨(vg _ (by decide)).trans M.ph.r10, (vg _ (by decide)).trans M.ph.r11, (vg _ (by decide)).trans M.st.r31⟩
 
-theorem pins_MnL {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} : Pins (MnL x B N) [.r10, .r11, .r23] := by
+theorem pins_MnPL {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} :
+    Pins (MnPL x B N) [.r10, .r11, .r23, .r31] := by
   rintro d s₁ s₂ ⟨v₁, hv₁, k₁, hm₁, hk₁, ⟨a23, -⟩, kv₁⟩ ⟨v₂, hv₂, k₂, hm₂, hk₂, ⟨b23, -⟩, kv₂⟩ r hr
-  obtain ⟨a10, a11, -⟩ := hv₁.base
-  obtain ⟨b10, b11, -⟩ := hv₂.base
+  obtain ⟨a10, a11, a31⟩ := hv₁.base
+  obtain ⟨b10, b11, b31⟩ := hv₂.base
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a10, b10]
   · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a11, b11]
   · rw [a23, b23, show k₁ = k₂ by omega]
+  · rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), a31, b31]
 
-theorem pins_MnE {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} : Pins (MnE x B N) [.r31] := by
+theorem pins_MnPE {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} : Pins (MnPE x B N) [.r31] := by
   rintro d s₁ s₂ ⟨v₁, hv₁, kv₁⟩ ⟨v₂, hv₂, kv₂⟩ r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   subst hr
   rw [kv₁.gpr _ (by decide), kv₂.gpr _ (by decide), hv₁.base.2.2, hv₂.base.2.2]
 
-theorem MnT.init {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
-    (hN : ∀ q, 1 ≤ N q ∧ N q ≤ 1024) (h : MnT x B N a v) : MnL x B N (a, N a.1) v := by
+theorem MnPT.init {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} {a : PP × Addr} {v : State}
+    (hN : 4 ≤ N a.1) (h : MnPT x B N a v) : MnPL x B N (a, N a.1 / 4) v := by
   obtain ⟨u, -, ⟨v23, v24, -⟩, -⟩ := id h
-  have hN1 := (hN a.1).1
-  refine ⟨v, h, 0, ?_, ?_, ?_⟩
-  · dsimp only; omega
-  · dsimp only; omega
-  exact ⟨⟨by rw [v23, Nat.mul_zero, BitVec.add_zero], by rw [v24, Nat.sub_zero], rfl, rfl⟩, Keep.refl _ _⟩
+  refine ⟨v, h, 0, by dsimp only; omega, by dsimp only; omega, ⟨?_, ?_, ?_, Frm.refl _ _ _⟩, Keep.refl _ _⟩
+  · rw [v23]; exact (BitVec.add_zero _).symm
+  · rw [v24]; rfl
+  · simp [VG.Proof.RsaKeyGen.trialPrefix]
 
-/-- The go-on condition of the loop, `d.2` entries left. -/
-def trialGo (x : PP → Nat) (N : PP → Nat) (d : (PP × Addr) × Nat) : Bool :=
-  decide (x d.1.1 % VG.Impl.RsaKeyGen.tabEntry (N d.1.1 - d.2) ≠ 0 ∧ N d.1.1 - d.2 + 1 ≠ N d.1.1)
+/-- The go-on condition of the loop, `d.2` groups left. -/
+def prodGo (x : PP → Nat) (N : PP → Nat) (d : (PP × Addr) × Nat) : Bool :=
+  lgo (x d.1.1) (N d.1.1) (N d.1.1 / 4 - d.2)
 
-theorem MnL.step {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} (hN : ∀ q, 1 ≤ N q ∧ N q ≤ 1024)
-    {d : (PP × Addr) × Nat} {w : State} (h : MnL x B N d w) :
-    WP isa VG.Impl.RsaKeyGen.PPC64LE.Trial.entry w fun t =>
-      isa.eval (.nonzero .d .r24) t = some (trialGo x N d) ∧ (trialGo x N d = false → MnE x B N d t) ∧
-        (trialGo x N d = true → d.2 - 1 < d.2 ∧ MnL x B N (d.1, d.2 - 1) t) := by
+theorem MnPL.step {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
+    (hN : ∀ q, N q % 4 = 0 ∧ 4 ≤ N q ∧ N q ≤ 1024) {d : (PP × Addr) × Nat} {w : State} (h : MnPL x B N d w) :
+    WP isa prodGroup w fun t =>
+      isa.eval (.nonzero .d .r24) t = some (prodGo x N d) ∧ (prodGo x N d = false → MnPE x B N d t) ∧
+        (prodGo x N d = true → d.2 - 1 < d.2 ∧ MnPL x B N (d.1, d.2 - 1) t) := by
   obtain ⟨v, hv, hI⟩ := h
-  obtain ⟨u, ⟨⟨⟨sv, toc, M⟩, _⟩, _⟩, ⟨_, _, vm⟩, vg, vrd, vwr, -⟩ := id hv
-  obtain ⟨vs, v10, v11, vc, w1, w2, hZ, _, n2, htab⟩ := M.loopArgs vm vg vrd vwr (hN d.1.1)
-  refine WP.mono (VG.Proof.RsaKeyGen.PPC64LE.Trial.step_ok vs v10 v11 vc w1 w2 hZ n2 htab hI)
-    fun t ⟨e, f, g⟩ => ⟨e, fun hg => ⟨v, hv, (f (by rw [e, ← hg]; rfl)).2⟩, fun hg => ?_⟩
-  obtain ⟨hm, hI'⟩ := g (by rw [e, ← hg]; rfl)
+  obtain ⟨u, ⟨⟨sv, toc, M⟩, _⟩, ⟨_, _, vm⟩, vg, vrd, vwr, -⟩ := id hv
+  have ha := M.largs vm vg vrd vwr (hN d.1.1).1 (hN d.1.1).2.1 (hN d.1.1).2.2
+  refine WP.mono (lstep_ok ha hI) fun t ⟨e, f, g⟩ => ⟨e, fun hg => ⟨v, hv, (f hg).2⟩, fun hg => ?_⟩
+  obtain ⟨hm, hI'⟩ := g hg
   exact ⟨by omega, v, hv, hI'⟩
 
-theorem trialLoop_ct {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} (hN : ∀ q, 1 ≤ N q ∧ N q ≤ 1024) :
-    RelCT isa (Two (MnT x B N)) VG.Impl.RsaKeyGen.PPC64LE.Trial.loop (Two (MnE x B N)) :=
-  two_map (fun a => (a, N a.1)) (fun _ _ h => h.init hN)
-    (two_loopD (Φ := MnL x B N) (Ψ := MnE x B N) Prod.snd (fun d => (d.1, d.2 - 1)) (trialGo x N)
-      (two_taint _ pins_MnL (by taint_decide)) fun _ _ h => h.step hN)
+theorem prodLoop_ct {x : PP → Nat} {B : PP → Prop} {N : PP → Nat}
+    (hN : ∀ q, N q % 4 = 0 ∧ 4 ≤ N q ∧ N q ≤ 1024) :
+    RelCT isa (Two (MnPT x B N)) prodLoop (Two (MnPE x B N)) :=
+  two_map (fun a => (a, N a.1 / 4)) (fun _ _ h => h.init (hN _).2.1)
+    (two_loopD (Φ := MnPL x B N) (Ψ := MnPE x B N) Prod.snd (fun d => (d.1, d.2 - 1)) (prodGo x N)
+      (two_taint _ pins_MnPL (by taint_decide)) fun _ _ h => h.step hN)
 
-/-- The table's address, the count and the loop, from the count in
-`hTrialN`. -/
-theorem trialRest_ct {x : PP → Nat} {B : PP → Prop} {N : PP → Nat} (hN : ∀ q, 1 ≤ N q ∧ N q ≤ 1024) :
-    RelCT isa (Two (MnC x B N))
-      (.seq (.seq (.block [.adrSym .r23 VG.Impl.RsaKeyGen.TrialTable32.symbol, ldh .r24 hTrialN]) VG.Impl.RsaKeyGen.PPC64LE.Trial.loop)
-        (.block [ldh .r5 hBad, .logic .or .r5 .r5 .r22, sth .r5 hBad])) fun _ _ => True := by
-  refine RelCT.seq (RelCT.seq (two_post (two_taint_sym _ (pins_MnB fun _ _ h => h.1)
-      (fun _ _ _ ⟨⟨⟨_, _, M₁⟩, _⟩, _⟩ ⟨⟨⟨_, _, M₂⟩, _⟩, _⟩ => M₁.tab.sym.trans M₂.tab.sym.symm) (by taint_decide))
-    (Ψ := MnT x B N) fun _ u hu => ?_) (trialLoop_ct hN)) (two_taint _ pins_MnE (by taint_decide))
-  obtain ⟨⟨⟨sv, toc, M⟩, hL⟩, h208⟩ := hu
-  exact WP.mono (M.trialA h208) fun v hv => ⟨u, ⟨⟨⟨sv, toc, M⟩, hL⟩, h208⟩, hv⟩
-
-/-- Trial division leaks the same from the same candidate and table. -/
-theorem trialSieve_ct {x : PP → Nat} {B : PP → Prop} :
-    RelCT isa (Two (MnB x B)) trialSieve
-      (Two (MnB x fun q => B q ∧ VG.Proof.RsaKeyGen.trialPrefix (x q) (trialN q.bits) = false)) := by
-  refine two_post ?_ fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono (trialSieve_ok M) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
-  unfold trialSieve VG.Impl.RsaKeyGen.PPC64LE.Trial.trial
-  exact RelCT.seq (two_post (two_taint _ (pins_MnB fun _ _ h => h) (by taint_decide))
-    (Ψ := MnC x B fun q => trialN q.bits)
-    fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono M.count fun _ ⟨M', h208⟩ => ⟨⟨⟨sv, toc, M'⟩, hL⟩, h208⟩)
-    (trialRest_ct fun _ => trialN_range)
-
-/-- So does trial division by the first entries. -/
-theorem trialSieveN_ct {x : PP → Nat} {B : PP → Prop} :
-    RelCT isa (Two (MnB x B)) (trialSieveN firstEntries)
+/-- Trial division by the first entries, by products, leaks the same from
+the same candidate and table. -/
+theorem prodSieveN_ct {x : PP → Nat} {B : PP → Prop} :
+    RelCT isa (Two (MnB x B)) (prodSieveN firstEntries)
       (Two (MnB x fun q => B q ∧ VG.Proof.RsaKeyGen.trialPrefix (x q) firstEntries = false)) := by
   refine two_post ?_ fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ =>
-    WP.mono (trialSieveN_ok M (by decide) (by decide)) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
-  unfold trialSieveN VG.Impl.RsaKeyGen.PPC64LE.Trial.trial
-  exact RelCT.seq (two_post (two_taint _ (pins_MnB fun _ _ h => h) (by unfold firstEntries; taint_decide))
-    (Ψ := MnC x B fun _ => firstEntries)
-    fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono (M.countN firstEntries (by decide)) fun _ ⟨M', h208⟩ =>
-      ⟨⟨⟨sv, toc, M'⟩, hL⟩, h208⟩)
-    (trialRest_ct fun _ => ⟨by decide, by decide⟩)
+    WP.mono (prodSieveN_ok M (by decide) (by decide) (by decide)) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+  unfold prodSieveN
+  refine RelCT.seq (two_post (two_taint_sym _ (pins_MnB fun _ _ h => h)
+      (fun _ _ _ ⟨⟨_, _, M₁⟩, _⟩ ⟨⟨_, _, M₂⟩, _⟩ => M₁.tab.sym.trans M₂.tab.sym.symm) (by unfold firstEntries; taint_decide))
+    (Ψ := MnPT x B fun _ => firstEntries) fun _ u hu => ?_)
+    (RelCT.seq (prodLoop_ct fun _ => by decide) (two_taint _ pins_MnPE (by taint_decide)))
+  obtain ⟨⟨sv, toc, M⟩, hL⟩ := hu
+  exact WP.mono (M.prodA firstEntries (by decide)) fun v hv =>
+    ⟨u, ⟨⟨sv, toc, M⟩, hL⟩, hv.1, fun r hr => hv.2.1 r fun h' => hr (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h')),
+      hv.2.2⟩
+
+/-- So does trial division by `trialN` entries, by products. -/
+theorem prodSieve_ct {x : PP → Nat} {B : PP → Prop} :
+    RelCT isa (Two (MnB x B)) prodSieve
+      (Two (MnB x fun q => B q ∧ VG.Proof.RsaKeyGen.trialPrefix (x q) (trialN q.bits) = false)) := by
+  refine two_post ?_ fun _ _ ⟨⟨sv, toc, M⟩, hL⟩ => WP.mono (prodSieve_ok M) fun _ M' => ⟨⟨sv, toc, M'⟩, hL⟩
+  unfold prodSieve
+  refine RelCT.seq (two_post (two_taint_sym _ (pins_MnB fun _ _ h => h)
+      (fun _ _ _ ⟨⟨_, _, M₁⟩, _⟩ ⟨⟨_, _, M₂⟩, _⟩ => M₁.tab.sym.trans M₂.tab.sym.symm) (by taint_decide))
+    (Ψ := MnPT x B fun q => trialN q.bits) fun _ u hu => ?_)
+    (RelCT.seq (prodLoop_ct fun _ => by unfold trialN; split <;> decide) (two_taint _ pins_MnPE (by taint_decide)))
+  obtain ⟨⟨sv, toc, M⟩, hL⟩ := hu
+  exact WP.mono M.prodC fun v hv => ⟨u, ⟨⟨sv, toc, M⟩, hL⟩, hv⟩
 
 /-- p into array 0 again leaks the same. -/
 theorem reshape_ct {x : PP → Nat} {B : PP → Prop} :
@@ -289,7 +278,7 @@ theorem ts_of {a : PP × Addr} {s : State} (h : MnB candOf allOk a s) (ha : allO
 theorem mainP_ct (R : RoundImpl) :
     RelCT isa (Two (MnB (fun q => candOf q / 2) qOk)) (mainP R.name R.code) fun _ _ => True := by
   unfold mainP
-  refine RelCT.seq reshape_ct (RelCT.seq trialSieve_ct (RelCT.seq (badLoad_ct (B := allOk))
+  refine RelCT.seq reshape_ct (RelCT.seq prodSieve_ct (RelCT.seq (badLoad_ct (B := allOk))
     (two_ite' (fun a => decide (allOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1))))
   exact two_map (fun a => (⟨a.1, candOf a.1, a.1.L⟩ : TQD))
     (fun _ _ ⟨⟨h, _⟩, ha⟩ => ts_of h (of_decide_eq_true ha)) (tests_ct R)
@@ -297,7 +286,7 @@ theorem mainP_ct (R : RoundImpl) :
 /-- `mainQ` leaks the same from the same arguments, tape and table. -/
 theorem mainQ_ct (R : RoundImpl) : RelCT isa (Two (MnB candOf pOk)) (mainQ R.name R.code) fun _ _ => True := by
   unfold mainQ
-  refine RelCT.seq halve_ct (RelCT.seq trialSieve_ct (RelCT.seq (badLoad_ct (B := qOk))
+  refine RelCT.seq halve_ct (RelCT.seq prodSieve_ct (RelCT.seq (badLoad_ct (B := qOk))
     (two_ite' (fun a => decide (qOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1))))
   exact two_map (fun a => a) (fun _ _ h => h.1.1) (mainP_ct R)
 
@@ -307,7 +296,7 @@ theorem main_ct (R : RoundImpl) : RelCT isa (Two MnI) (main R.name R.code) fun _
   refine RelCT.assoc (RelCT.seq mainA_ct (RelCT.seq residue_ct (RelCT.seq badLoad_ct
     (two_ite' (fun a => decide (goodRes a.1.g (candOf a.1))) (fun _ _ h => h.2) ?_
       (finMnB_ct fun _ _ h => h.1.1)))))
-  refine RelCT.seq (two_map (fun a => a) (fun _ _ h => h.1.1) trialSieveN_ct)
+  refine RelCT.seq (two_map (fun a => a) (fun _ _ h => h.1.1) prodSieveN_ct)
     (RelCT.seq (badLoad_ct (B := pOk))
       (two_ite' (fun a => decide (pOk a.1)) (fun _ _ h => h.2) ?_ (finMnB_ct fun _ _ h => h.1.1)))
   exact two_map (fun a => a) (fun _ _ h => h.1.1) (mainQ_ct R)
