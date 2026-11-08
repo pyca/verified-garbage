@@ -38,6 +38,8 @@ use crate::arch::dispatch::gcm::{
 // read the key context alone.
 use crate::align::CacheAligned;
 #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
+use crate::arch::dispatch::gcm::vg_aes_gcm_open_to_auto;
+#[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
 use crate::arch::dispatch::gcm::{
     vg_aes_gcm_open_auto, vg_aes_gcm_seal_auto, vg_aes_gcm_seal_gather_auto,
 };
@@ -48,20 +50,16 @@ use crate::arch::dispatch::gcm::{
     vg_aes_gcm_stream_decrypt_prepared_auto, vg_aes_gcm_stream_encrypt_prepared_auto,
     vg_aes_gcm_wipe_prepared_auto,
 };
-#[cfg(not(target_arch = "x86_64"))]
-use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_to_auto, vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto,
-};
 #[cfg(target_arch = "aarch64")]
 use crate::arch::dispatch::gcm::{
-    vg_aes_gcm_open_with_powers_auto, vg_aes_gcm_seal_with_powers_auto,
-    vg_aes_gcm_store_powers_auto,
+    vg_aes_gcm_open_to_with_powers_auto, vg_aes_gcm_open_with_powers_auto,
+    vg_aes_gcm_seal_with_powers_auto, vg_aes_gcm_store_powers_auto,
 };
+#[cfg(not(target_arch = "x86_64"))]
+use crate::arch::dispatch::gcm::{vg_aes_gcm_stream_decrypt_auto, vg_aes_gcm_stream_encrypt_auto};
 use crate::error::InvalidKeyLength;
-#[cfg(target_arch = "aarch64")]
-use crate::zeroize::zeroize;
 #[cfg(not(target_arch = "x86_64"))]
-use crate::zeroize::zeroize_raw;
+use crate::zeroize::zeroize;
 use core::mem::MaybeUninit;
 
 /// A 16-byte block.
@@ -196,12 +194,8 @@ impl Drop for AesGcm {
                 self.ctx.0.as_mut_ptr(),
             )
         };
-        // SAFETY: `self.ctx` is valid for writes of `size_of::<KeyCtx>()`
-        // bytes, and lies outside `zeroize_raw`'s frame.
         #[cfg(not(target_arch = "x86_64"))]
-        unsafe {
-            zeroize_raw(self.ctx.0.as_mut_ptr().cast(), size_of::<KeyCtx>())
-        };
+        zeroize(core::slice::from_mut(&mut self.ctx));
         #[cfg(target_arch = "aarch64")]
         zeroize(&mut self.powers.0);
     }
@@ -522,7 +516,24 @@ impl AesGcm {
                 tag.as_ptr(),
                 tag.len(),
             );
-            #[cfg(not(target_arch = "x86_64"))]
+            #[cfg(target_arch = "aarch64")]
+            let ok = vg_aes_gcm_open_to_with_powers_auto(
+                dit,
+                self.key(),
+                self.rounds,
+                nonce.as_ptr(),
+                nonce.len(),
+                aad.as_ptr(),
+                aad.len(),
+                ciphertext.as_ptr(),
+                ciphertext.len(),
+                out.as_mut_ptr(),
+                out.len(),
+                tag.as_ptr(),
+                tag.len(),
+                &self.powers.0,
+            );
+            #[cfg(not(any(target_arch = "x86_64", target_arch = "aarch64")))]
             let ok = vg_aes_gcm_open_to_auto(
                 dit,
                 self.key(),

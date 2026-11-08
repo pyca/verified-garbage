@@ -82,3 +82,35 @@ fn errors() {
     decryptor.decrypt(&mut buffer).unwrap();
     assert_eq!(buffer, [0x5a; 32]);
 }
+
+/// Many blocks at once, at lengths around multiples of eight blocks (the
+/// groups decryption deciphers together), agree with one at a time and with
+/// the message decrypted in two pieces, and encryption undoes decryption.
+#[test]
+fn batches() {
+    // Generated inputs test agreement between lengths, not known answers.
+    let iv = [9; 16];
+    let input = crate::bytes::pattern(16 * 26, 1, 0);
+    for len in [16, 24, 32] {
+        let key: Vec<_> = crate::bytes::pattern(len, 17, 3);
+        for blocks in [1, 7, 8, 9, 15, 16, 17, 26] {
+            let input = &input[..16 * blocks];
+            let mut whole = input.to_vec();
+            CamelliaCbcDecryptor::new(&key, &iv)
+                .unwrap()
+                .decrypt(&mut whole)
+                .unwrap();
+            let mut single = input.to_vec();
+            let mut decryptor = CamelliaCbcDecryptor::new(&key, &iv).unwrap();
+            for block in single.chunks_mut(16) {
+                decryptor.decrypt(block).unwrap();
+            }
+            assert_eq!(whole, single);
+            CamelliaCbcEncryptor::new(&key, &iv)
+                .unwrap()
+                .encrypt(&mut whole)
+                .unwrap();
+            assert_eq!(whole, input);
+        }
+    }
+}

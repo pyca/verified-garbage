@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `apply`, correctness
@@ -715,7 +716,7 @@ theorem blR_sub (s₀ : State) : Region.Sub (blR s₀) (dR s₀) := Offset.sub_b
 theorem kept_preserved : ∀ r ∈ kept, r ∈ preserved := by decide
 
 theorem blocks_ok {s₀ : State} (hp : APre s₀) {s : State} (h : Q1 s₀ s) (hnb : 0 < NB s₀) :
-    WP isa (.seq (.block blocksArgs) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)) s (Q2 s₀) := by
+    WP isa (.seq (.block blocksArgs) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor)) s (Q2 s₀) := by
   have hL := L_lt s₀
   have hH := H_le s₀
   have hHNB := HNB_le s₀

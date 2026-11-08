@@ -208,9 +208,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     $keygen(dit, seed, &mut key.vk.bytes, &mut key.sk, scratch.0.as_mut_ptr())
                 };
-                // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized.
-                unsafe { $crate::zeroize::zeroize_raw(scratch.0.as_mut_ptr().cast(), core::mem::size_of_val(&scratch.0)) };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 if r != 1 {
                     // A loop reaches its bound with probability about 2^-256
                     // or less; dropping `key` destroys it.
@@ -273,9 +271,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     $sign_message(dit, &self.sk, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
-                // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized.
-                unsafe { $crate::zeroize::zeroize_raw(scratch.0.as_mut_ptr().cast(), core::mem::size_of_val(&scratch.0)) };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 match r {
                     1 => Ok(sig),
                     2 => Err(MlDsaError::ContextTooLong),
@@ -318,9 +314,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     $sign(dit, &self.sk, mu, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
-                // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized.
-                unsafe { $crate::zeroize::zeroize_raw(scratch.0.as_mut_ptr().cast(), core::mem::size_of_val(&scratch.0)) };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 if r != 1 {
                     // A loop reaches its bound with probability about 2^-256
                     // or less.
@@ -420,9 +414,7 @@ macro_rules! ml_dsa {
                 // `self.sk` to `prepared`
                 // (`VG.Spec.MlDsa.prepareSecretKeyContract`).
                 unsafe { $prepare_sign(dit, &self.sk, &mut prepared.0, work.0.as_mut_ptr()) };
-                // SAFETY: the entire working space is writable, including
-                // bytes the preparation may not have initialized.
-                unsafe { $crate::zeroize::zeroize_raw(work.0.as_mut_ptr().cast(), core::mem::size_of_val(&work.0)) };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut work));
                 $PreparedSigningKey { prepared, key: self }
             }
         }
@@ -490,9 +482,7 @@ macro_rules! ml_dsa {
                 let r = unsafe {
                     $sign_message_prepared(dit, &self.prepared.0, m, m_len, c, c_len, rnd, &mut sig, scratch.0.as_mut_ptr())
                 };
-                // SAFETY: the entire scratch allocation is writable, including
-                // bytes the operation may not have initialized.
-                unsafe { $crate::zeroize::zeroize_raw(scratch.0.as_mut_ptr().cast(), core::mem::size_of_val(&scratch.0)) };
+                $crate::zeroize::zeroize(core::slice::from_mut(&mut scratch));
                 match r {
                     1 => Ok(sig),
                     2 => Err(MlDsaError::ContextTooLong),

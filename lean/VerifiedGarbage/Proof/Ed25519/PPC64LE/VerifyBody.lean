@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Field
+import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
 /-!
 # Ed25519 on PPC64LE: the body of the verification
@@ -268,13 +269,15 @@ theorem eqResult_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') (hs 
     bytesAt_ws hf hs h.chD (by decide)]
 
 /-- **The equation, if `A` and `R` are points.** -/
-theorem verifyDecode_ok {s : State} (h : VCtx b pk sig ch s) :
+theorem verifyDecode_ok (hR : RhsOk) {s : State} (h : VCtx b pk sig ch s) (hB : BStat b (s.syms bSym) s) :
     WP isa verifyDecode s fun t => Rest verR s t ∧ Frame (verW b) s.mem t.mem ∧
       t.gpr .r17 = if eqResult s.mem pk sig ch then 1 else 0 := by
   unfold verifyDecode
-  refine WP.seq (WP.mono (decodeBoth_ok h) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono_syms (decodeBoth_ok h) fun s1 h1 sy1 => ?_)
   have hf1 : Frame (verW b) s.mem s1.mem := h1.frame.mono (by simp)
   have he1 : eqResult s1.mem pk sig ch = eqResult s.mem pk sig ch := eqResult_frame h1.frame decW_sub h
+  have hB1 : BStat b (s1.syms bSym) s1 := by
+    rw [sy1]; exact hB.of_frame h1.rest.rd h1.frame decW_sub
   refine WP.ite (s1.gpr .r18 != 0) (eval_nonzero s1 .r18) (fun hb => ?_) (fun hb => ?_)
   · have hok : decOk s.mem pk sig 2 = true := by
       rw [h1.r18] at hb
@@ -286,24 +289,11 @@ theorem verifyDecode_ok {s : State} (h : VCtx b pk sig ch s) :
     have ta : tableAt s1.mem b 7776 = a := h1.tables 0 (by decide) a ea
     have tr : tableAt s1.mem b 7904 = r := h1.tables 1 (by decide) r er
     unfold verifyEquationPoints
-    refine WP.seq (WP.mono (verifyLhs_ok h1.ctx) fun s2 ⟨r2, f2, t2⟩ => ?_)
-    have h2 : VCtx b pk sig ch s2 := h1.ctx.of_rest r2 (by decide)
-    refine WP.mono (verifyRhs_ok h2) fun t ⟨rt, ft, et⟩ => ⟨?_, ?_, ?_⟩
-    · exact (h1.rest.mono (by decide)).trans ((r2.mono (by decide)).trans (rt.mono (by decide)))
-    · exact hf1.trans ((f2.mono (by simp)).trans (ft.mono (by simp)))
-    · have hk2 : ∀ o, 7776 ≤ o → o + 128 ≤ 8032 → tableAt s2.mem b o = tableAt s1.mem b o := fun o ho ho' =>
-        tableAt_keep f2 fun r hr => by
-          have hB : BITSB = 32 := rfl
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl | rfl | rfl | rfl
-          · exact Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
-          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-          · exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-      rw [et, t2, hk2 7904 (by decide) (by decide), hk2 7776 (by decide) (by decide), ta, tr,
-        bytesAt_ws f2 (sideW_sub (by decide)) h1.ctx.chD (by decide),
-        bytesAt_ws h1.frame decW_sub h.chD (by decide),
+    refine WP.mono (hR h1.ctx hB1 (by rw [ta]; exact ea) (by rw [tr]; exact er)) fun t ⟨rt, ft, et⟩ =>
+      ⟨?_, ?_, ?_⟩
+    · exact (h1.rest.mono (by decide)).trans (rt.mono (by decide))
+    · exact hf1.trans (ft.mono (by simp))
+    · rw [et, ta, tr, bytesAt_ws h1.frame decW_sub h.chD (by decide),
         bytesAt_ws h1.frame decW_sub (h.sigD.sub_left (Offset.sub_base sig (d := 32) (n := 32) (by decide)))
           (by decide)]
       unfold eqResult
@@ -327,19 +317,23 @@ theorem verifyDecode_ok {s : State} (h : VCtx b pk sig ch s) :
       rw [hf]; rfl
 
 /-- **The verification's body**: `verifyEquation` of the inputs, in `r17`. -/
-theorem verifyBody_ok {s : State} (h : VCtx b pk sig ch s) :
+theorem verifyBody_ok (hR : RhsOk) {s : State} (h : VCtx b pk sig ch s) (hB : BStat b (s.syms bSym) s) :
     WP isa verifyBody s fun t => Rest verR s t ∧ Frame (verW b) s.mem t.mem ∧
       t.gpr .r17 = if Spec.Ed25519.verifyEquation (bytesAt s.mem pk 32) (bytesAt s.mem sig 64)
         (bytesAt s.mem ch 64) then 1 else 0 := by
   unfold verifyBody
-  refine WP.seq (WP.mono (verifyScalar_ok h) fun s1 ⟨r1, f1, h8⟩ => ?_)
+  refine WP.seq (WP.mono_syms (verifyScalar_ok h) fun s1 ⟨r1, f1, h8⟩ sy1 => ?_)
   rw [verifyEquation_eq]
   have hv1 : VCtx b pk sig ch s1 := h.of_rest r1 (by decide)
   have hF : ∀ r ∈ [FA b], r ∈ verW b := by simp
   refine WP.ite (s1.gpr .r8 == 0) (eval_zero s1 .r8) (fun hz => ?_) (fun hz => ?_)
   · have hlt := h8.mp (beq_iff_eq.mp hz)
-    refine WP.seq (WP.mono (initFields_ok hv1.ctx.ctx) fun s2 ⟨r2, f2⟩ => ?_)
-    refine WP.mono (verifyDecode_ok (hv1.of_rest r2 (by decide))) fun t ⟨rt, ft, et⟩ => ⟨?_, ?_, ?_⟩
+    refine WP.seq (WP.mono_syms (initFields_ok hv1.ctx.ctx) fun s2 ⟨r2, f2⟩ sy2 => ?_)
+    have hB2 : BStat b (s2.syms bSym) s2 := by
+      rw [sy2, sy1]
+      exact hB.of_frame (by rw [r2.rd, r1.rd]) (f1.trans f2) fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega_arith)
+    refine WP.mono (verifyDecode_ok hR (hv1.of_rest r2 (by decide)) hB2) fun t ⟨rt, ft, et⟩ => ⟨?_, ?_, ?_⟩
     · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans rt)
     · exact (f1.mono hF).trans ((f2.mono hF).trans ft)
     · rw [et, eqResult_frame (f1.trans f2) (fun r hr => by

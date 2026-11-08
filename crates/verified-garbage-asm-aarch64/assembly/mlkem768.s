@@ -43,11 +43,11 @@ vg_mlkem768_check_ek:
 	ret
 	.p2align 6
 
-vg_mlkem768_keygen:
+vg_mlkem768_keygen_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem768_keygen_body}
+	bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -58,11 +58,11 @@ vg_mlkem768_keygen:
 	ret
 	.p2align 6
 
-vg_mlkem768_encaps:
+vg_mlkem768_encaps_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x4, [sp, #8]
-	bl {vg_mlkem768_encaps_body}
+	bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -73,11 +73,11 @@ vg_mlkem768_encaps:
 	ret
 	.p2align 6
 
-vg_mlkem768_encaps_h:
+vg_mlkem768_encaps_h_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x5, [sp, #8]
-	bl {vg_mlkem768_encaps_h_body}
+	bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -88,11 +88,11 @@ vg_mlkem768_encaps_h:
 	ret
 	.p2align 6
 
-vg_mlkem768_decaps:
+vg_mlkem768_decaps_x2_sha3_keccak_sha3:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem768_decaps_body}
+	bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -163,11 +163,11 @@ vg_mlkem768_decaps_x2_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem768_keygen_x2_sha3_keccak_sha3:
+vg_mlkem768_keygen:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem768_keygen_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem768_keygen_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -178,11 +178,11 @@ vg_mlkem768_keygen_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem768_encaps_x2_sha3_keccak_sha3:
+vg_mlkem768_encaps:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x4, [sp, #8]
-	bl {vg_mlkem768_encaps_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem768_encaps_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -193,11 +193,11 @@ vg_mlkem768_encaps_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem768_encaps_h_x2_sha3_keccak_sha3:
+vg_mlkem768_encaps_h:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x5, [sp, #8]
-	bl {vg_mlkem768_encaps_h_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem768_encaps_h_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0
@@ -208,11 +208,11 @@ vg_mlkem768_encaps_h_x2_sha3_keccak_sha3:
 	ret
 	.p2align 6
 
-vg_mlkem768_decaps_x2_sha3_keccak_sha3:
+vg_mlkem768_decaps:
 	sub sp, sp, #32
 	str x30, [sp, #0]
 	str x3, [sp, #8]
-	bl {vg_mlkem768_decaps_body_x2_sha3_keccak_sha3}
+	bl {vg_mlkem768_decaps_body}
 	str x0, [sp, #16]
 	ldr x0, [sp, #8]
 	movz x1, #32768, lsl #0

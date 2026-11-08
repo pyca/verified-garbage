@@ -14,64 +14,29 @@ say `VerifiedGarbage/Artifacts/Sha3/X86_64.lean`, must define the list
 an algorithm or a target adds such a file, so that parallel changes don't
 all edit one list.
 
-## Variants and generic callers
+## Variants
 
 Some functions have several implementations with the same contract (e.g. a
 compression function in scalar code and with the SHA extensions), and other
 functions call them. A caller whose proof holds for any implementation is
 *generic*: it is emitted once for each implementation, each a direct call
-of that implementation. Adding an implementation must not edit its callers,
-so both are found by their files:
+of that implementation. Its registration file says so in plain Lean, by
+applying it to each element of the list of the implementations (the
+*variants*, `Proof/Variants/<Iface>/<Target>.lean`), which is not trusted:
+every artifact carries its own proof, and the emitter checks its calls and
+features (`Rust.files`) as for any other. So adding an implementation adds
+an element to that list, and edits none of its callers.
 
-* a *variant* file, `VerifiedGarbage/Variants/<Iface>/<Target>/<Name>.lean`,
-  defines `VG.Variants.<Iface>.<Target>.<Name>.variant`, one implementation
-  of the interface `<Iface>` on `<Target>`;
-* a *generic* file, `VerifiedGarbage/Generic/<Iface>/<Target>/<Alg>.lean`,
-  defines `VG.Generic.<Iface>.<Target>.<Alg>.artifacts`, a function from a
-  variant of `<Iface>` on `<Target>` to a list of artifacts.
+Each function's dispatcher tries its implementations in the order their
+registration file lists them (`Rust.dispatcher`): a function's
+implementations are those of its `Api` (`Artifact.base`), which must all be
+in one registration file (`checkSources`). Which comes first is a matter of
+speed, not of correctness or safety, so the order is not trusted either.
 
-A caller of functions of several interfaces (e.g. a key derivation calling
-both a hash's compression function and a block function, each with its own
-implementations) is generic over all of them: its file is
-`VerifiedGarbage/Generic/<Iface₁>/…/<Ifaceₙ>/<Target>/<Alg>.lean`, and its
-`artifacts` takes a variant of each interface on `<Target>`, in that order.
-Variants of different interfaces may have the same suffix (e.g. `_avx2`), so
-the instances of such a caller are named by `qualifiedName`: its name, then
-for each interface whose variant has a non-empty suffix, in that order, a tag
-for the interface and the suffix (`vg_argon2_blake2b_avx2_g_avx512`;
-the instance of the baseline variants keeps the plain name, `vg_argon2`).
-Callers of one interface append the suffix alone (`vg_sha256_update_shani`).
-
-A caller may instead take every variant of an interface at once, as a list:
-one that calls whichever of them it is given at run time, through a table
-of functions (`Abi.withTables`), whose contract the emitter checks lists
-every table (`Rust.checkFnTables`). Its file names the interface `All<Iface>`
-(`allOf`), e.g. `VerifiedGarbage/Generic/MdHash/RsaPrivateCrt/AllMdHash/X86_64/RsaOaep.lean`,
-and its `artifacts` takes, in that place, the list of every variant of
-`<Iface>` on `<Target>`, in order of their module names: it is emitted once
-for them all, rather than once for each. So a new variant reaches it, as it
-reaches the callers of one variant, without anyone listing it.
-
-The artifacts emitted include each generic function applied to each variant
-of its interface and target (each combination of a variant of each of its
-interfaces, and the list of every variant of each `All` interface), in order
-of their module names. What a variant is (its type)
-is up to the interface, as long as every variant and every generic function
-of it agree, which elaboration checks. Nothing here needs trusting beyond
-the files found: every artifact carries its own proof, and
-the emitter checks its calls and features (`Rust.files`) as for any other.
-A variant's own functions (e.g. the implementation itself) are listed in a
-registration file as usual, if the Rust code calls them; if only its callers
-do, they are internal functions, which the emitter writes from the code of
-their calls (`Rust.Internal`).
-
-`Emit.lean` finds the registration, variant and generic files
-(`registrations`, `grouped`, `genericGroups`), writes a program that
-imports them all and the ranking of the dispatchers of every target
-(`VerifiedGarbage/Dispatch.lean`, `VG.Dispatch.ranking`, which only orders
-the implementations a dispatcher tries: see `Rust.Rank`), checks that the whole list depends only on the standard
-axioms, that what it runs is what the kernel checked and that the `Spec/`
-names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
+`Emit.lean` finds the registration files (`registrations`), writes a
+program that imports them all, checks that the whole list depends only on
+the standard axioms, that what it runs is what the kernel checked and that
+the `Spec/` names it uses come from `Spec/` (`TCB/Audit.lean`), and emits it
 (`driver`), and runs that program, whose `main` is `run`.
 -/
 
@@ -89,12 +54,6 @@ def registrationDir : FilePath := "VerifiedGarbage" / "Artifacts"
 def moduleOf (path : FilePath) : String :=
   ".".intercalate ((path.withExtension "").components.filter (· != "."))
 
-/-- The directory of the variant files, relative to `lean/`. -/
-def variantDir : FilePath := "VerifiedGarbage" / "Variants"
-
-/-- The directory of the generic files, relative to `lean/`. -/
-def genericDir : FilePath := "VerifiedGarbage" / "Generic"
-
 /-- The modules of the `.lean` files under `dir`, in order of their names. -/
 def modulesUnder (dir : FilePath) : IO (List String) := do
   unless ← dir.pathExists do return []
@@ -106,177 +65,87 @@ def modulesUnder (dir : FilePath) : IO (List String) := do
 order of their module names. -/
 def registrations : IO (List String) := modulesUnder registrationDir
 
-/-- The interface and target of a variant module `mod`, e.g.
-`Sha256Compress.X86_64` for `VerifiedGarbage.Variants.Sha256Compress.X86_64.ShaNi`;
-`none` unless it is exactly three levels below the directory. -/
-def groupOf (mod : String) : Option String :=
-  match mod.splitOn "." with
-  | [_, _, i, t, _] => some s!"{i}.{t}"
-  | _ => none
-
-/-- The modules under `dir`, grouped by interface and target (`groupOf`), in
-order of the groups' names; fails on a module at any other depth. -/
-def grouped (dir : FilePath) : IO (List (String × List String)) := do
-  let mods ← modulesUnder dir
-  let mut groups : List (String × List String) := []
-  for m in mods do
-    let some g := groupOf m
-      | throw <| IO.userError s!"{m} must be at {dir}/<Iface>/<Target>/<Name>.lean"
-    groups := match groups.find? (·.1 == g) with
-      | some _ => groups.map fun (h, ms) => if h == g then (h, ms ++ [m]) else (h, ms)
-      | none => groups ++ [(g, [m])]
-  return groups.mergeSort (·.1 ≤ ·.1)
-
 /-- The name of the list a registration module defines:
 `VerifiedGarbage.Artifacts.Sha3.X86_64` defines
 `VG.Artifacts.Sha3.X86_64.artifacts`. -/
 def listOf (mod : String) : String :=
   "VG." ++ (mod.dropPrefix "VerifiedGarbage.").toString ++ ".artifacts"
 
-/-- The variant a variant module defines:
-`VerifiedGarbage.Variants.Sha256Compress.X86_64.ShaNi` defines
-`VG.Variants.Sha256Compress.X86_64.ShaNi.variant`. -/
-def variantOf (mod : String) : String :=
-  "VG." ++ (mod.dropPrefix "VerifiedGarbage.").toString ++ ".variant"
-
-/-- The interfaces of a generic module `mod`, each with its target:
-`["Sha256Compress.X86_64"]` for
-`VerifiedGarbage.Generic.Sha256Compress.X86_64.Pbkdf2`, and
-`["Blake2b.X86_64", "Argon2Compress.X86_64"]` for
-`VerifiedGarbage.Generic.Blake2b.Argon2Compress.X86_64.Argon2`; `none`
-unless there is at least one interface, a target and a name below the
-directory. -/
-def interfacesOf (mod : String) : Option (List String) :=
-  match mod.splitOn "." with
-  | _ :: _ :: rest =>
-    match rest.reverse with
-    | _ :: t :: i :: is => some ((i :: is).reverse.map (· ++ "." ++ t))
-    | _ => none
-  | _ => none
-
-/-- The modules under `dir` (generic files), grouped by their interfaces
-(`interfacesOf`), in order of the groups' names; fails on a module with no
-interface. -/
-def genericGroups (dir : FilePath) : IO (List (List String × List String)) := do
-  let mods ← modulesUnder dir
-  let mut groups : List (List String × List String) := []
-  for m in mods do
-    let some g := interfacesOf m
-      | throw <| IO.userError s!"{m} must be at {dir}/<Iface>/…/<Target>/<Name>.lean"
-    groups := match groups.find? (·.1 == g) with
-      | some _ => groups.map fun (h, ms) => if h == g then (h, ms ++ [m]) else (h, ms)
-      | none => groups ++ [(g, [m])]
-  return groups.mergeSort fun a b => ".".intercalate a.1 ≤ ".".intercalate b.1
-
-/-- The name of an instance of a generic function of several interfaces
-(see above): `base`, then `_<tag><suffix>` for each `(tag, suffix)` of
-`parts` (one per interface, in order) whose suffix is not empty. Suffixes
-start with `_`, so `qualifiedName "vg_argon2" [("blake2b", "_avx2"),
-("g", "")]` is `vg_argon2_blake2b_avx2`. Two variants with the same
-suffix in different interfaces give different names, as long as the tags
-differ. -/
+/-- The name of an instance of a generic function of several interfaces:
+`base`, then `_<tag><suffix>` for each `(tag, suffix)` of `parts` (one per
+interface, in order) whose suffix is not empty. Suffixes start with `_`, so
+`qualifiedName "vg_argon2" [("blake2b", "_avx2"), ("g", "")]` is
+`vg_argon2_blake2b_avx2`. Two variants with the same suffix in different
+interfaces give different names, as long as the tags differ. It only names
+them: the emitter checks that names are unique (`Rust.checkUnique`). -/
 def qualifiedName (base : String) (parts : List (String × String)) : String :=
   base ++ String.join (parts.map fun (tag, suffix) =>
     if suffix.isEmpty then "" else "_" ++ tag ++ suffix)
 
-/-- The interface whose variants the interface `i` of a generic function
-takes (`<Iface>.<Target>`), and whether it takes all of them at once, as a
-list: an interface `All<Iface>.<Target>` takes every variant of
-`<Iface>.<Target>`. -/
-def allOf (i : String) : String × Bool :=
-  if i.startsWith "All" then ((i.drop 3).toString, true) else (i, false)
-
-/-- The name of the variable bound to a variant of the `i`th interface of a
-generic function: `v`, then `v2`, `v3`, …. -/
-def varName (i : Nat) : String := if i == 0 then "v" else s!"v{i + 1}"
-
-/-- The artifacts of the generic modules `gens` of the same interfaces and
-target, for each combination of a variant module of each interface, in
-`vars` (one list per interface, in order, with whether the interface takes
-them all, `allOf`, as one list): one term of type `List Artifact`. -/
-def instances (gens : List String) (vars : List (Bool × List String)) : String :=
-  let names := (List.range vars.length).map varName
-  let apply (g : String) : String := listOf g ++ String.join (names.map (" " ++ ·))
-  let body := "List.flatten [" ++ ", ".intercalate (gens.map apply) ++ "]"
-  (names.zip vars).foldr (fun (v, all, ms) acc =>
-    let list := "[" ++ ", ".intercalate (ms.map variantOf) ++ "]"
-    if all then s!"((fun {v} => {acc}) {list})"
-    else s!"(List.flatMap (fun {v} => {acc}) {list})") body
-
 /-- The program that emits every artifact: those of each registration
-module `mods`, in order, then each generic function of `gens` applied to
-each variant of its interface and target in `vars` (each combination of
-variants of its interfaces). It fails to elaborate unless each module defines its list
-(or variant), with types that agree, unless everything emitted depends
-only on the standard axioms (`#assert_standard_axioms`), unless the compiled
-code of everything emitted, of the ranking of the dispatchers
-(`VerifiedGarbage/Dispatch.lean`, `Rust.Rank`) and of `run` is what the kernel checked
+module `mods`, in order, each with the name of its module. It fails to
+elaborate unless each module defines its list, unless everything emitted
+depends only on the standard axioms (`#assert_standard_axioms`), unless the
+compiled code of everything emitted and of `run` is what the kernel checked
 (`#assert_no_compiler_overrides`) and unless every `VG.Spec` definition is
 declared in `Spec/` (`#assert_spec_origin`). It is a module, which does not load
 the private data (`.olean.private`) of what it imports: run with Lake's setup for it
 (`lake setup-file`), Lean reads only their `.olean`, `.olean.server` and IR, and the
 audits take the rest from the audit records (`TCB/AuditRecords.lean`). -/
-def driver (mods : List String) (gens : List (List String × List String) := [])
-    (vars : List (String × List String) := []) : String :=
-  let groups := gens.map fun (is, gs) =>
-    (gs, is.map fun i => let (b, all) := allOf i; (all, ((vars.find? (·.1 == b)).map (·.2)).getD []))
+def driver (mods : List String) : String :=
   -- Each module both ways: `public import` for its declarations, `public meta import`
   -- for its compiled code, which `main` runs.
   let imp (m : String) := s!"public import {m}\npublic meta import {m}\n"
   "-- Generated by Emit.lean, which runs it. DO NOT EDIT.\nmodule\n\n" ++
   imp "VerifiedGarbage.TCB.Audit" ++ imp "VerifiedGarbage.TCB.Axioms" ++ imp "VerifiedGarbage.TCB.Emit" ++
-  imp "VerifiedGarbage.Dispatch" ++
-  String.join ((mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2)).map imp) ++
+  String.join (mods.map imp) ++
   "\npublic section\n\nnamespace VG.Emit\n\n" ++
-  "def all : List Artifact := List.flatten [\n" ++
-  String.join (mods.map fun m => s!"  {listOf m},\n") ++
-  String.join (groups.map fun (gs, vs) => s!"  {instances gs vs},\n") ++
-  "  []]\n\n" ++
+  "def all : List (String × List Artifact) := [" ++
+  ",".intercalate (mods.map fun m => s!"\n  (\"{m}\", {listOf m})") ++ "]\n\n" ++
   "#assert_standard_axioms all\n" ++
-  "#assert_no_compiler_overrides all VG.Dispatch.ranking run\n" ++
+  "#assert_no_compiler_overrides all run\n" ++
   "#assert_spec_origin\n\n" ++
   "end VG.Emit\n\n" ++
-  "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all VG.Dispatch.ranking args\n\nend\n"
+  "def main (args : List String) : IO UInt32 :=\n  VG.Emit.run VG.Emit.all args\n\nend\n"
 
-/-- The target directory a registration, generic or variant module's path
-names: `X86_64` for `VerifiedGarbage.Artifacts.Sha3.X86_64`,
-`VerifiedGarbage.Generic.Sha256Compress.X86_64.Pbkdf2` and
-`VerifiedGarbage.Variants.Sha256Compress.X86_64.ShaNi`. -/
+/-- The target directory a registration module's path names: `X86_64` for
+`VerifiedGarbage.Artifacts.Sha3.X86_64`. -/
 def targetDirOf (mod : String) : Option String :=
   match mod.splitOn "." with
   | ["VerifiedGarbage", "Artifacts", _, t] => some t
-  | "VerifiedGarbage" :: d :: rest =>
-    if (d == "Generic" || d == "Variants") && rest.length ≥ 3 then rest[rest.length - 2]?
-    else none
   | _ => none
 
-/-- The registration modules `mods`, generic modules `gens` and variant
-modules `vars` (as `driver` takes them) of each target directory
-(`targetDirOf`), in order of its name; fails on a module without one.
-`Emit.lean` runs a driver for each (a *part*): where they are split only
-decides how much each process does, as `finish` checks that no target's
-artifacts are in two parts. -/
-def parts (mods : List String) (gens : List (List String × List String))
-    (vars : List (String × List String)) :
-    Except String (List (String × List String × List (List String × List String) ×
-      List (String × List String))) := do
+/-- The registration modules `mods` of each target directory (`targetDirOf`),
+in order of its name; fails on a module without one. `Emit.lean` runs a
+driver for each (a *part*): where they are split only decides how much each
+process does, as `finish` checks that no target's artifacts are in two
+parts. -/
+def parts (mods : List String) : Except String (List (String × List String)) := do
   let dirOf (m : String) : Except String String :=
     match targetDirOf m with
     | some t => pure t
     | none => throw s!"{m} names no target directory"
   let mut dirs : List String := []
-  for m in mods ++ gens.flatMap (·.2) ++ vars.flatMap (·.2) do
+  for m in mods do
     let t ← dirOf m
     unless dirs.contains t do dirs := dirs ++ [t]
   dirs.mergeSort (· ≤ ·) |>.mapM fun t => do
-    let ms ← mods.filterM fun m => return (← dirOf m) == t
-    let gs ← gens.filterMapM fun (is, gs) => do
-      let gs ← gs.filterM fun g => return (← dirOf g) == t
-      return if gs.isEmpty then none else some (is, gs)
-    let vs ← vars.filterMapM fun (i, vs) => do
-      let vs ← vs.filterM fun v => return (← dirOf v) == t
-      return if vs.isEmpty then none else some (i, vs)
-    return (t, ms, gs, vs)
+    return (t, ← mods.filterM fun m => return (← dirOf m) == t)
+
+/-- Every implementation of a function on a target (every artifact of its
+`Api`, `Artifact.base`) is in the list of one registration module of `all`,
+so that the order that list gives them is the one its dispatcher tries
+them in (`Rust.dispatcher`). -/
+def checkSources (all : List (String × List Artifact)) : Except String Unit := do
+  let mut seen : List ((String × String) × String) := []
+  for (m, as) in all do
+    for a in as do
+      match seen.lookup (a.target.name, a.base) with
+      | some m' =>
+        unless m' == m do
+          throw s!"{a.target.name}: the implementations of {a.base} are in two registration \
+            files, {m'} and {m}: its dispatcher tries them in the order one lists them"
+      | none => seen := ((a.target.name, a.base), m) :: seen
 
 def usage : String := "usage: lake env lean --run Emit.lean [--check] [DIR]"
 
@@ -345,21 +214,25 @@ def codeDirs (dir : FilePath) : IO (List String) := do
       ds := ds ++ (Rust.generatedDirs (e.fileName.drop (Rust.crateDir "").length).toString).toArray
   return (ds.qsort (· < ·)).toList
 
-/-- Writes the files generated from `as` (with the dispatchers that `ranking`
-orders, `Rust.Rank`) under the directory in `args` (by
+/-- Writes the files generated from the artifacts of `all` (those of each
+registration module, `checkSources`) under the directory in `args` (by
 default `../crates`), deleting any other generated file in the directories of
 generated files of a crate of generated code there (`codeDirs`, and nothing
 else: the rest of those crates, and the other crates, are not the emitter's);
 or, if `args` starts with `--check`, writes nothing and
 fails if the files on disk differ from what would be generated.
 
-With `--part FILE`, `as` are the artifacts of a part (`parts`): only the
+With `--part FILE`, `all` are the registration modules of a part (`parts`): only the
 files of their targets' crates are written or checked, and the other generated
 files in those crates' directories of generated files; then `FILE` gets their targets, for `finish`, which
 checks the rest. -/
-def run (as : List Artifact) (ranking : Rust.Ranking) (args : List String) : IO UInt32 := do
+def run (all : List (String × List Artifact)) (args : List String) : IO UInt32 := do
   let some (check, part, dir) := parseArgs args | do IO.eprintln usage; return 2
-  let files ← match Rust.files as ranking with
+  if let .error e := checkSources all then
+    IO.eprintln e
+    return 1
+  let as := all.flatMap (·.2)
+  let files ← match Rust.files as with
     | .ok files => pure files
     | .error e => do IO.eprintln e; return 1
   let targets := Rust.targetsOf as

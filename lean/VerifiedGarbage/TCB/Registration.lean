@@ -169,6 +169,13 @@ structure Artifact where
   module : String
   /-- The Rust function name. Must be unique within the target. -/
   name : String
+  /-- The name of the function it implements, its `Api`'s (`Api.artifact`),
+  which `name` extends with the implementation's suffix: the artifacts of a
+  target with the same `base` are the implementations of one function, which
+  its dispatcher may call in each other's place (`Rust.groupsOf`). By
+  default, its own name: an artifact not made from an `Api` is the only
+  implementation of its function. -/
+  base : String := name
   /-- The Rust signature, rendered as the parameter list and return type
   (`Sig.rust`). -/
   sig : Sig
@@ -344,7 +351,7 @@ structure Registration (api : Api) (target : Target) where
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
-`r.suffix`, its documentation `api`'s (`Api.doc`), and its
+`r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
 contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
 (`Api.contract`), which makes the mode public if `api.pubMode`; its code is
 printed and documented with `target`'s ISA's `Emitter` (`EmitTarget.of`). -/
@@ -353,6 +360,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   target := .of target
   module := api.module
   name := api.name ++ r.suffix
+  base := api.name
   sig := api.sig
   doc := api.doc
   consts := r.consts

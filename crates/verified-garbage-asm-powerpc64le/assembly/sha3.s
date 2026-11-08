@@ -64,6 +64,8 @@ vg_sha3_224_update:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 26:
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
@@ -173,6 +175,8 @@ vg_sha3_256_update:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 26:
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
@@ -282,6 +286,8 @@ vg_sha3_384_update:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 26:
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
@@ -391,6 +397,8 @@ vg_sha3_512_update:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 26:
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
@@ -500,6 +508,8 @@ vg_shake128_update:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 26:
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
@@ -581,6 +591,8 @@ vg_shake128_squeeze:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 24:
 	li %r10, 7
 	and %r10, %r29, %r10
@@ -685,6 +697,8 @@ vg_shake256_squeeze:
 	addi %r3, %r26, 0
 	addi %r4, %r27, 0
 	bl {vg_keccak_f1600}
+	addi %r26, %r3, 0
+	addi %r27, %r4, 0
 24:
 	li %r10, 7
 	and %r10, %r29, %r10

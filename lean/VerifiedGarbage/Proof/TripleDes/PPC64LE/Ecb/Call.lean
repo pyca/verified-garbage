@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.Pre
 
-/-! # A call of the block function from ECB on PPC64LE -/
+/-! # A call of the block function from the modes and CMAC on PPC64LE -/
 
 @[expose] public section
 

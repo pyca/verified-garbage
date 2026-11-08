@@ -12,12 +12,10 @@ namespace VG.Artifacts.AesEcb.PPC64LE
 
 def artifacts : List Artifact := [
   Spec.AesEcb.encryptApi.artifact PPC64LE.target {
-    code := Impl.AesEcb.PPC64LE.encrypt
-    stack := 48
+    code := Impl.Aes.PPC64LE.encryptBlocks
     verified := Proof.AesEcb.PPC64LE.encrypt_verified },
   Spec.AesEcb.decryptApi.artifact PPC64LE.target {
-    code := Impl.AesEcb.PPC64LE.decrypt
-    stack := 48
+    code := Impl.Aes.PPC64LE.decryptBlocks
     verified := Proof.AesEcb.PPC64LE.decrypt_verified }]
 
 end VG.Artifacts.AesEcb.PPC64LE

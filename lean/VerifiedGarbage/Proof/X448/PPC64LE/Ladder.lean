@@ -62,9 +62,9 @@ theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
     by rw [hr.gpr _ (by decide), h.r0], by rw [hr.gpr _ (by decide), h.r12], hS⟩
 
 theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
-    (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
+    (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS hq ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mulS hq ho hx hy hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
@@ -115,7 +115,7 @@ known. -/
 def opsOk : List FOp → List Nat → Bool
   | [], _ => true
   | op :: ops, qs => Sep1 op.out qs && op.out + 56 ≤ ACC && qs.contains op.x &&
-      qs.contains op.y && opsOk ops (op.out :: qs)
+      qs.contains op.y && op.x % 4 == 0 && op.y % 4 == 0 && opsOk ops (op.out :: qs)
 
 /-- The elements after the operations. -/
 def runOps : List FOp → (Nat → Fe) → Nat → Fe
@@ -129,10 +129,10 @@ def outsQ : List FOp → List Nat → List Nat
 
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep1 op.out qs = true) (ho : op.out + 56 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
-    {s : State} (h : Cur b s0 a c qs v s) :
+    (hx4 : op.x % 4 = 0) (hy4 : op.y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
-  | mul o x y => exact opMul hq ho hx hy h
+  | mul o x y => exact opMul hq ho hx hy hx4 hy4 h
   | add o x y => exact opAdd hq ho hx hy h
   | sub o x y => exact opSub hq ho hx hy h
 
@@ -142,9 +142,9 @@ theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : Sta
       WP isa (opsCode ops k) s Q
   | [], _, _, s, _, h, hk => hk s h
   | op :: ops, qs, v, s, hok, h, hk => by
-    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem] at hok
-    obtain ⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem, beq_iff_eq] at hok
+    obtain ⟨⟨⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h7⟩, h8⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h7 h8 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
 
 /-! ## One iteration -/
 

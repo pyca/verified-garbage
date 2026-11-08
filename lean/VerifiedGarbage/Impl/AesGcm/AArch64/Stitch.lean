@@ -26,6 +26,12 @@ text encrypted (or decrypted) and hashed by the interleaved loops of
 * `open` decrypts the first bytes before it knows whether the tag is right:
   it keeps the first counter block at `W + cbO`, and if the tag is wrong
   encrypts those bytes again from it, which leaves them as they were.
+* `open_to` (`openWithSG c true`, `openToWithPw`) is the same code out of
+  place, in one pass: the ciphertext is only read, the loop stores the
+  plaintext to `dst` (the destination, which `open_to` keeps at
+  `W + dstO`, where `open` keeps the counter block), the rest is hashed from
+  the ciphertext and decrypted from it to `dst` if the tag is right, and
+  `dst` is zeroed if it is wrong (`wipeG`).
 -/
 
 @[expose] public section
@@ -85,31 +91,39 @@ def runWithS (tb : List Instr) (cl : Prog isa) : Prog isa :=
   (.seq (.block tagOut)
     (.block restore)))))))))))
 
-/-- Out of place, before the loop: the text's bytes past the first
-`128 ⌊len / 128⌋` copied from the ciphertext (`x23`) to the destination (kept
-at `W + dataO`), and the destination in `x15`, where the loop stores. -/
-def tailTo : Prog isa :=
-  .seq (.block (whole ++ [.ldr .x .x11 .x19 dataO, .add .x .x11 .x11 .x9, .add .x .x12 .x23 .x9,
-      .sub .x .x13 .x26 .x9]))
-    (.seq copy (.block [.ldr .x .x15 .x19 dataO]))
+/-- Before the loop: in place, the first counter block kept at `W + cbO`;
+out of place (`to`), the destination (kept at `W + dstO`) in `x15`, where
+the loop stores. -/
+def decPre (to : Bool) : List Instr :=
+  cond to [.ldr .x .x15 .x19 dstO] [.ldrq .v0 .x20 48, .strq .v0 .x19 cbO]
 
-/-- The first bytes decrypted and hashed by the interleaved loop: in place,
-or (`to`) from the ciphertext at `x23` to the destination, after `tailTo`,
-which then takes the text's place (`x23`). -/
-def decPart (tb : List Instr) (to : Bool) : Prog isa :=
-  cond to
-    (.seq tailTo (.seq (stitched [] tb (Gcm.AArch64.Stitch.dec true)) (.block [.ldr .x .x23 .x19 dataO])))
-    (stitched [] tb Gcm.AArch64.Stitch.dec)
+/-- If the tag is wrong: in place, the first bytes encrypted again from the
+kept counter block, which leaves them as they were; out of place, the
+destination zeroed. -/
+def failS (to : Bool) : Prog isa :=
+  cond to (wipeG true)
+    (.seq (.block ([.ldrq .v0 .x19 cbO, .strq .v0 .x20 48, .ldr .x .x23 .x19 dataO,
+        .ldr .x .x26 .x19 lenO] ++ whole ++ [mov .x24 .x9, imm .x25 0])) (Tail.cryptAlT c))
 
-/-- `openRunWithP`, the first bytes decrypted and hashed by the interleaved
-loop, the first counter block kept; the rest decrypted if the tag is right,
-and the first bytes encrypted again from it if not. Out of place (`to`), the
-loop reads the ciphertext and writes the destination (`decPart`), and the
-rest is as in place, on the destination. -/
-def openRunWithS (tb : List Instr) (cl : Prog isa) (to : Bool := false) : Prog isa :=
+/-- If the tag is right: the rest of the text decrypted, the counter going on
+from the loop's; out of place to the destination past the first bytes
+(`x26`), with `cryptAlG c true`. -/
+def okS (to : Bool) : Prog isa :=
+  .seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] ++ whole ++
+      [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++
+      cond to [.ldr .x .x26 .x19 dstO, .add .x .x26 .x26 .x9] []))
+    (cond to (cryptAlG c true) (Tail.cryptAlT c))
+
+/-- `openRunWithP` with the first bytes decrypted and hashed by the
+interleaved loop: in place, over the text, the first counter block kept; out
+of place (`to`), from the ciphertext (the text, `x23`, which nothing writes)
+to the destination. The rest is hashed from the text, and decrypted only if
+the tag is right (`okS`); if it is wrong, in place the first bytes are
+encrypted again, and out of place the destination is zeroed (`failS`). -/
+def openRunWithSG (to : Bool) (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq front
-  (.seq (.block [.ldrq .v0 .x20 48, .strq .v0 .x19 cbO])
-  (.seq (decPart tb to)
+  (.seq (.block (decPre to))
+  (.seq (stitched [] tb (Gcm.AArch64.Stitch.dec to))
   (.seq (.block (whole ++ [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0] ++ absSeg2 16))
   (.seq cl
   (.seq (.block (hReload ++ loadRev Y .x20 16 ++ [mov .x13 .x24, mov .x12 .x23]))
@@ -118,17 +132,13 @@ def openRunWithS (tb : List Instr) (cl : Prog isa) (to : Bool := false) : Prog i
   (.seq (ctrCall c)
   (.seq cmp
   (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
-  (.seq (.ite (.zero .x .x27)
-      (.seq (.block ([.ldrq .v0 .x19 cbO, .strq .v0 .x20 48, .ldr .x .x23 .x19 dataO,
-          .ldr .x .x26 .x19 lenO] ++ whole ++ [mov .x24 .x9, imm .x25 0])) (Tail.cryptAlT c))
-      (.seq (.block ([.ldr .x .x23 .x19 dataO, .ldr .x .x26 .x19 lenO] ++ whole ++
-          [.add .x .x23 .x23 .x9, .sub .x .x24 .x26 .x9, imm .x25 0])) (Tail.cryptAlT c)))
+  (.seq (.ite (.zero .x .x27) (failS c to) (okS c to))
     (.block [mov .x0 .x27]))))))))))))
 
-/-- `openFastP` with `openRunWithS`. -/
-def openFastS (tb : List Instr) (cl : Prog isa) (to : Bool := false) : Prog isa :=
+/-- `openFastPG` with `openRunWithSG`. -/
+def openFastSG (to : Bool) (tb : List Instr) (cl : Prog isa) : Prog isa :=
   .seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openRunWithS c tb cl to)))
+  (.seq (.ite (.zero .x .x9) (.seq (.block [imm .x0 0]) (wipeG to)) (.seq tagIn (openRunWithSG c to tb cl)))
     (.block restore))
 
 /-! ## Short records
@@ -262,15 +272,18 @@ def sealShort (tb : List Instr) : Prog isa :=
   (.seq aadIn
     (.block (lensB ++ shortGh ++ shortTag ++ restore)))))))
 
-/-- The plaintext copied from block `p` of `B₁` to the text. -/
-def plainOut : Prog isa :=
-  .seq (.block (atP .x12 b1O 1 ++ [mov .x11 .x27, mov .x13 .x26])) copyQ
+/-- The plaintext copied from block `p` of `B₁` to the text, or out of place
+(`to`) to the destination (kept at `W + dstO`). -/
+def plainOutG (to : Bool) : Prog isa :=
+  .seq (.block (atP .x12 b1O 1 ++ cond to [.ldr .x .x11 .x19 dstO] [mov .x11 .x27] ++ [mov .x13 .x26])) copyQ
 
 /-- `open`'s path for a record of at most `shortMax` bytes, once the tag
-length is allowed and the received tag is at `W`: the ciphertext hashed from
-`B₂` and decrypted in `B₁`, the tag to `W + uO` and compared, and the
-plaintext written only if they are equal, `x0` then 1 and else 0. -/
-def openShort (tb : List Instr) : Prog isa :=
+length is allowed and the received tag is at `W`: the ciphertext (the text)
+hashed from `B₂` and decrypted in `B₁`, the tag to `W + uO` and compared, and
+the plaintext written to the text, or out of place (`to`) to the
+destination, only if they are equal, `x0` then 1 and else 0; out of place
+the destination is zeroed if they are not. -/
+def openShortG (to : Bool) (tb : List Instr) : Prog isa :=
   .seq (shortPre tb)
   (.seq textIn
   (.seq ctToB2
@@ -280,13 +293,13 @@ def openShort (tb : List Instr) : Prog isa :=
   (.seq (.block (shortTagAt uO))
   (.seq cmp
   (.seq (.block [imm .x24 1, .sub .x .x24 .x24 .x10])
-  (.seq (.ite (.zero .x .x24) (.block []) plainOut)
+  (.seq (.ite (.zero .x .x24) (wipeG to) (plainOutG to))
     (.block [mov .x0 .x24]))))))))))
 
-/-- `openShort`, after the tag length is checked and the tag read. -/
-def openShortF (tb : List Instr) : Prog isa :=
+/-- `openShortG`, after the tag length is checked and the tag read. -/
+def openShortFG (to : Bool) (tb : List Instr) : Prog isa :=
   .seq tagLenOk
-  (.seq (.ite (.zero .x .x9) (.block [imm .x0 0]) (.seq tagIn (openShort tb)))
+  (.seq (.ite (.zero .x .x9) (.seq (.block [imm .x0 0]) (wipeG to)) (.seq tagIn (openShortG to tb)))
     (.block restore))
 
 /-- `vg_aes_gcm_seal`, with `work` at `sp + k`: with `sh`, from 17 to
@@ -302,43 +315,31 @@ def sealWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) :
       else .seq (.block thr) (.ite (.zero .x .x9) (runWithP c cl) (runWithS c tb cl)))
       (sealRest c)))
 
-/-- `vg_aes_gcm_open`, with `work` at `sp + k`: with `sh`, from 17 to
-`shortMax` bytes, `openShort`; otherwise below `minLen` bytes, `Fast.lean`'s
-path (as for `sealWithS`'s `sh`). -/
-def openWithS (k : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) : Prog isa :=
-  .seq (.block (oneEntry k ++ stashArg 8 ++ ([.ldrSp .x12 0] : List Instr)))
+/-- `vg_aes_gcm_open`, or out of place (`to`) `vg_aes_gcm_open_to`, with
+`work` the stack argument `w` (`openEntryG`): with `sh`, from 17 to
+`shortMax` bytes, `openShortFG`; otherwise below `minLen` bytes,
+`Fast.lean`'s path (as for `sealWithS`'s `sh`), and from `minLen` bytes the
+interleaved loop (`openFastSG`). Out of place, the ciphertext (`src`) is only
+read, the plaintext written to `dst`, which is zeroed if the tag is wrong. -/
+def openWithSG (to : Bool) (w : Nat) (tb : List Instr) (cl : Prog isa) (sh : Bool := false) : Prog isa :=
+  .seq (.block (openEntryG to w))
     (.seq cond (.ite (.zero .x .x10)
       (if sh then
         .seq (.block shortThr) (.ite (.zero .x .x9)
-          (.seq (.block shortMin) (.ite (.zero .x .x9) (openFastP c cl) (openShortF tb)))
-          (.seq (.block thr) (.ite (.zero .x .x9) (openFastP c cl) (openFastS c tb cl))))
-      else .seq (.block thr) (.ite (.zero .x .x9) (openFastP c cl) (openFastS c tb cl)))
-      (openRest c)))
+          (.seq (.block shortMin) (.ite (.zero .x .x9) (openFastPG c to cl) (openShortFG to tb)))
+          (.seq (.block thr) (.ite (.zero .x .x9) (openFastPG c to cl) (openFastSG c to tb cl))))
+      else .seq (.block thr) (.ite (.zero .x .x9) (openFastPG c to cl) (openFastSG c to tb cl)))
+      (openRestG c to)))
 
 /-- `vg_aes_gcm_seal_with_powers`, hashing the rest by `gh`. -/
 def sealWithPw (gh : Fn) : Prog isa := sealWithS c 16 (pwTbl 8) (pwSel c 8 gh) true
 
 /-- `vg_aes_gcm_open_with_powers`, hashing the rest by `gh`. -/
-def openWithPw (gh : Fn) : Prog isa := openWithS c 24 (pwTbl 16) (pwSel c 16 gh) true
+def openWithPw (gh : Fn) : Prog isa := openWithSG c false 3 (pwTbl 16) (pwSel c 16 gh) true
 
-/-! ## Out of place
-
-`vg_aes_gcm_open_split_with_powers` `(ctx = x0, rounds = x1, nonce = x2,
-nonce_len = x3, aad = x4, aad_len = x5, dst = x6, len = x7, tag = [sp],
-tag_len = [sp + 8], pw = [sp + 16], src = [sp + 24], src_len = [sp + 32],
-work = [sp + 40])`:
-`vg_aes_gcm_open_with_powers` of the `len` bytes of ciphertext at `src`, the
-plaintext written to `dst`, for a TLS record of at least `minLen` bytes (a
-12-byte nonce, at most 16 bytes of additional data), which its only caller,
-`vg_aes_gcm_open_to_with_powers`, checks. Its entry is `open`'s, with `dst`
-kept as the text (`dataO`), then `src` in `x6`, which `front` takes as the
-text: the loop decrypts the ciphertext to `dst` (`decPart`), and the rest
-is `open`'s on `dst`. If the tag is wrong, `dst` holds the ciphertext again
-and `x0` is 0 (its caller then zeroes `dst`). -/
-
-/-- `vg_aes_gcm_open_split_with_powers`, hashing the rest by `gh`. -/
-def openSplitWithPw (gh : Fn) : Prog isa :=
-  .seq (.block (oneEntry 40 ++ stashArg 8 ++ ([.ldrSp .x12 0, .ldrSp .x6 24] : List Instr)))
-    (openFastS c (pwTbl 16) (pwSel c 16 gh) true)
+/-- `vg_aes_gcm_open_to_with_powers`, in one pass: `dst`, `dst_len`, `tag`,
+`tag_len` and `pw` (the stack argument 4, at `sp + 32`), then `work`, on the
+stack; hashing the rest by `gh`. -/
+def openToWithPw (gh : Fn) : Prog isa := openWithSG c true 5 (pwTbl 32) (pwSel c 32 gh) true
 
 end VG.Impl.AesGcm.AArch64.Stitch

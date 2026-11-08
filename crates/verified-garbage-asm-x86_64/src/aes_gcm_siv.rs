@@ -3,8 +3,8 @@
 //! `assembly/aes_gcm_siv.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -22,869 +22,23 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
 .base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
 jne 20b
 .base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
+call {vg_aes_encrypt_blocks_vaes}
 .base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 22f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 24f
-.base64 "SYneTInx"
-26:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 27f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-29:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 29b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 28f
-27:
-28:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 210f
-.base64 "SYneTInx"
-212:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
+jb 22f
 .base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 216f
-218:
-.base64 "Qb5AAAAATDnz"
-jb 219f
-jmp 220f
-219:
-.base64 "SYne"
-220:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-221:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 221b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 218b
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 222f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-224:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 224b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 223f
-222:
-223:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 225f
-227:
-.base64 "Qb5AAAAATDnz"
-jb 228f
-jmp 229f
-228:
-.base64 "SYne"
-229:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-230:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 230b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "SIXt"
-je 231f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-233:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 233b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 232f
-231:
-232:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 234f
-236:
-.base64 "Qb5AAAAATDnz"
-jb 237f
-jmp 238f
-237:
-.base64 "SYne"
-238:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-239:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 239b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-240:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 240b
-.base64 "TCnz"
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "SIXt"
-je 241f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-243:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_aesni` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3` and `aes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 22f
-24:
-.base64 "Qb5AAAAATDnz"
-jb 25f
-jmp 26f
-25:
-.base64 "SYne"
-26:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-27:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 27b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-28:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 28b
-.base64 "TCnz"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SIXt"
-je 29f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-211:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 212f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 214f
-.base64 "SYneTInx"
-216:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "SIXt"
-je 217f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-219:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 219b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 218f
-217:
-218:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 220f
-.base64 "SYneTInx"
-222:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 223f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-225:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 225b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 224f
-223:
-224:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 213f
-212:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 226f
-228:
-.base64 "Qb5AAAAATDnz"
-jb 229f
-jmp 230f
-229:
-.base64 "SYne"
-230:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-231:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 231b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SIXt"
-je 232f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-234:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 233f
-232:
-233:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 235f
-237:
-.base64 "Qb5AAAAATDnz"
-jb 238f
-jmp 239f
-238:
-.base64 "SYne"
-239:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-240:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 240b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "SIXt"
-je 241f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 242f
-241:
-242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-213:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 244f
-.base64 "ZkkPbsNmD2zA"
-246:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 246b
-jmp 245f
-244:
-245:
-.base64 "STnq"
-je 247f
-249:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 249b
-jmp 248f
-247:
-248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SItEJAhMCcBIPYAAAAA="
-jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-22:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 22b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-23:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 23b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 24f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 26f
-.base64 "SYneTInx"
-28:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 28b
-jmp 27f
-26:
-27:
-.base64 "SIXt"
-je 29f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-211:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 211b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 210f
-29:
-210:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 212f
-.base64 "SYneTInx"
-214:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 214b
-jmp 213f
-212:
-213:
-.base64 "SIXt"
-je 215f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-217:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 217b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 216f
-215:
-216:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 25f
-24:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 218f
-220:
-.base64 "Qb5AAAAATDnz"
-jb 221f
-jmp 222f
-221:
-.base64 "SYne"
-222:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-223:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 223b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 220b
-jmp 219f
-218:
-219:
-.base64 "SIXt"
-je 224f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-226:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 226b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 225f
-224:
-225:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 227f
-229:
-.base64 "Qb5AAAAATDnz"
-jb 230f
-jmp 231f
-230:
-.base64 "SYne"
-231:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-232:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 232b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 229b
-jmp 228f
-227:
-228:
-.base64 "SIXt"
-je 233f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-235:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 235b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 234f
-233:
-234:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-25:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 236f
-238:
-.base64 "Qb5AAAAATDnz"
-jb 239f
-jmp 240f
-239:
-.base64 "SYne"
-240:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-241:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 241b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-242:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 242b
-.base64 "TCnz"
-jne 238b
-jmp 237f
-236:
-237:
-.base64 "SIXt"
-je 243f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-245:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-246:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 246b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-247:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 247b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 248f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 250f
-.base64 "SYneTInxSIP5CA=="
-jb 252f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-254:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 254b
-.base64 "xfh3SIXJ"
-je 255f
-257:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 257b
-jmp 256f
-255:
-256:
-jmp 253f
-252:
-258:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 258b
-253:
-jmp 251f
-250:
-251:
-.base64 "SIXt"
-je 259f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-261:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 261b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 260f
-259:
-260:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 262f
-.base64 "SYneTInxSIP5CA=="
-jb 264f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-266:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 270b
-265:
-jmp 263f
-262:
-263:
-.base64 "SIXt"
-je 271f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-273:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 273b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 272f
-271:
-272:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 249f
-248:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 274f
-276:
-.base64 "Qb5AAAAATDnz"
-jb 277f
-jmp 278f
-277:
-.base64 "SYne"
-278:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 279f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-281:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 281b
-.base64 "xfh3SIXJ"
-je 282f
-284:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 284b
-jmp 283f
-282:
-283:
-jmp 280f
-279:
-285:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 285b
-280:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 276b
-jmp 275f
-274:
-275:
-.base64 "SIXt"
-je 286f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-288:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 288b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 287f
-286:
-287:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 289f
-291:
-.base64 "Qb5AAAAATDnz"
-jb 292f
-jmp 293f
-292:
-.base64 "SYne"
-293:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 294f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-296:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 296b
-.base64 "xfh3SIXJ"
-je 297f
-299:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 299b
-jmp 298f
-297:
-298:
-jmp 295f
-294:
-2100:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2100b
-295:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 291b
-jmp 290f
-289:
-290:
-.base64 "SIXt"
-je 2101f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-2103:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2103b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 2102f
-2101:
-2102:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-249:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 2104f
-2106:
-.base64 "Qb5AAAAATDnz"
-jb 2107f
-jmp 2108f
-2107:
-.base64 "SYne"
-2108:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-2109:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 2109b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 2110f
-2112:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 2112b
-.base64 "xfh3SIXJ"
-je 2113f
-2115:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2115b
-jmp 2114f
-2113:
-2114:
-jmp 2111f
-2110:
-2116:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2116b
-2111:
-.base64 "TCnz"
-jne 2106b
-jmp 2105f
-2104:
-2105:
-.base64 "SIXt"
-je 2117f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-2119:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 2119b
-jmp 2118f
-2117:
-2118:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
-jmp 21b
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_aesni_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SItEJAhMCcBIPYAAAAA="
-jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-22:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 22b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-23:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 23b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
 je 24f
 26:
 .base64 "Qb5AAAAATDnz"
@@ -893,179 +47,629 @@ jmp 28f
 27:
 .base64 "SYne"
 28:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 29f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+211:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 211b
+.base64 "xfh3SIXJ"
+je 212f
+214:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 214b
+jmp 213f
+212:
+213:
+jmp 210f
 29:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 29b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
+215:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 215b
 210:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 210b
-.base64 "TCnz"
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 26b
 jmp 25f
 24:
 25:
 .base64 "SIXt"
-je 211f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-213:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 213b
-jmp 212f
-211:
-212:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 214f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
 je 216f
-.base64 "SYneTInx"
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
 218:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 218b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
 jmp 217f
 216:
 217:
-.base64 "SIXt"
-je 219f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-221:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 221b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 220f
+.base64 "TIn5SIPBUE2J+EmDwEBNiftJgcPoBQAASYuX6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vOGYPOAD4"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RNsAZkUP78NmRA9v3mZEDzpE2xFmRQ/v02ZED2/eZkQPOkTbAWZFD+/LZkQPb95mRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb+JmRQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTcAGZFD+/DZkQPb95mRA86RNwRZkUP79NmRA9v3mZEDzpE3AFmRQ/vy2ZED2/eZkQPOkTcEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/qZkUP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3QBmRQ/vw2ZED2/eZkQPOkTdEWZFD+/TZkQPb95mRA86RN0BZkUP78tmRA9v3mZEDzpE3RBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v8mZFD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN4AZkUP78NmRA9v3mZEDzpE3hFmRQ/v02ZED2/eZkQPOkTeAWZFD+/LZkQPb95mRA86RN4QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/pmRQ/v+MRDBTj+AcRDFTj0AcRjTTjtAcRjXTjjAcTjfTjAAcTjdTjJAcX5b9LEwwU4/wHEQT3vwMRBNe/JxEEt79LEYwVE3wDEQT3vw8RjBUTfEcRBLe/TxGMFRN8BxEE178vEYwVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt79jEQT3vwMRBNe/JxEEt79LEYw1E3wDEQT3vw8RjDUTfEcRBLe/TxGMNRN8BxEE178vEYw1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+DEQT3vwMRBNe/JxEEt79LEYxVE3wDEQT3vw8RjFUTfEcRBLe/TxGMVRN8BxEE178vEYxVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+jEQT3vwMRBNe/JxEEt79LEYx1E3wDEQT3vw8RjHUTfEcRBLe/TxGMdRN8BxEE178vEYx1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/DEwX5/G8TBfn9jIMTBfn9rQMTBfn9zYMRBfn+7gAAAAMRBfn+zoAAAAMRBfn+rwAAAAMRBfn+j4AAAAMX6bxHE4mkA0A=="
 219:
-220:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 222f
-.base64 "SYneTInx"
-224:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 224b
-jmp 223f
+.base64 "xEE978DEQTXvycRBLe/SxEF+b2Mgxf5veiDEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm9jQMX+b3pAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vY2DF/m96YMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6OAAAAAxf5vuoAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+joAAAAMX+b7qgAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vo8AAAADF/m+6wAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6PgAAAAxf5vuuAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm8jxf5vOsXF7/rEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/jEw305+wHFoe/XSIHCAAEAAEmD6RA="
+jne 219b
+.base64 "xOJpANDF+n8Rxfh3TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
+je 220f
 222:
+.base64 "Qb5AAAAATDnz"
+jb 223f
+jmp 224f
 223:
-.base64 "SIXt"
-je 225f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+.base64 "SYne"
+224:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 225f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
 227:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 227b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 226f
-225:
-226:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 215f
-214:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 227b
+.base64 "xfh3SIXJ"
 je 228f
 230:
-.base64 "Qb5AAAAATDnz"
-jb 231f
-jmp 232f
-231:
-.base64 "SYne"
-232:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-233:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 233b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 230b
 jmp 229f
 228:
 229:
-.base64 "SIXt"
-je 234f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-236:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 236b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 235f
-234:
-235:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 237f
-239:
-.base64 "Qb5AAAAATDnz"
-jb 240f
-jmp 241f
-240:
-.base64 "SYne"
-241:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-242:
+jmp 226f
+225:
+231:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 242b
+jne 231b
+226:
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_vpclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 239b
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 232f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+234:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 234b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 233f
+232:
+233:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 235f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 237f
+.base64 "SYneTInxSIP5CA=="
+jb 239f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+241:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 241b
+.base64 "xfh3SIXJ"
+je 242f
+244:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 244b
+jmp 243f
+242:
+243:
+jmp 240f
+239:
+245:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 245b
+240:
 jmp 238f
 237:
 238:
 .base64 "SIXt"
-je 243f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-245:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 245b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 244f
-243:
-244:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-215:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
 je 246f
-.base64 "ZkkPbsNmD2zA"
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
 248:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 248b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
 jmp 247f
 246:
 247:
-.base64 "STnq"
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
 je 249f
+.base64 "SYneTInxSIP5CA=="
+jb 251f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+253:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 253b
+.base64 "xfh3SIXJ"
+je 254f
+256:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 256b
+jmp 255f
+254:
+255:
+jmp 252f
 251:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 251b
+257:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 257b
+252:
 jmp 250f
 249:
 250:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
-21:
-.base64 "ww=="
-20:
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-252:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 252b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-253:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 253b
+.base64 "SIXt"
+je 258f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+260:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 260b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 259f
+258:
+259:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 236f
+235:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 261f
+263:
+.base64 "Qb5AAAAATDnz"
+jb 264f
+jmp 265f
+264:
+.base64 "SYne"
+265:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 266f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+268:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 268b
+.base64 "xfh3SIXJ"
+je 269f
+271:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 271b
+jmp 270f
+269:
+270:
+jmp 267f
+266:
+272:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 272b
+267:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 263b
+jmp 262f
+261:
+262:
+.base64 "SIXt"
+je 273f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+275:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 275b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 274f
+273:
+274:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 276f
+278:
+.base64 "Qb5AAAAATDnz"
+jb 279f
+jmp 280f
+279:
+.base64 "SYne"
+280:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 281f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+283:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 283b
+.base64 "xfh3SIXJ"
+je 284f
+286:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 286b
+jmp 285f
+284:
+285:
+jmp 282f
+281:
+287:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 287b
+282:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 278b
+jmp 277f
+276:
+277:
+.base64 "SIXt"
+je 288f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+290:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 290b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 289f
+288:
+289:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+236:
+23:
 .base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
 call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_vaes}
+.base64 "SYuH8AAAAEg9AAEAAA=="
+jb 291f
+.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAATIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAMTjfTjAAUm6AQAAAAAAAADEQflu+sV6bzLEQQn+78RDDTj1AUm6AgAAAAAAAADEQflu+sRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJ4g=="
+293:
+.base64 "xX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abyDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvMMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab1DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvYMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9wxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar4AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVqvkAAAAMTCZdzdxMJd3OXEwlXc7cTCTdz1SIP+Cg=="
+je 294f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 296f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 297f
+296:
+297:
+jmp 295f
+294:
+295:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+byrFle/bxf5/GsV+b2ogxZXv5MX+f2IgxX5vakDFle/txf5/akDFfm9qYMWV7/bF/n9yYMV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
+je 298f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 2100f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 2101f
+2100:
+2101:
+jmp 299f
+298:
+299:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAAAAxZXv28X+f5qAAAAAxX5vqqAAAADFle/kxf5/oqAAAADFfm+qwAAAAMWV7+3F/n+qwAAAAMV+b6rgAAAAxZXv9sX+f7LgAAAASIHCAAEAAEmD6RA="
+jne 293b
+.base64 "xXp/MMX4d02Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
+je 2102f
+2104:
+.base64 "Qb5AAAAATDnz"
+jb 2105f
+jmp 2106f
+2105:
+.base64 "SYne"
+2106:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+2107:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 2107b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 2108f
+2110:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 2110b
+.base64 "xfh3SIXJ"
+je 2111f
+2113:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2113b
+jmp 2112f
+2111:
+2112:
+jmp 2109f
+2108:
+2114:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2114b
+2109:
+.base64 "TCnz"
+jne 2104b
+jmp 2103f
+2102:
+2103:
+.base64 "SIXt"
+je 2115f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+2117:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2117b
+jmp 2116f
+2115:
+2116:
+jmp 292f
+291:
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 2118f
+2120:
+.base64 "Qb5AAAAATDnz"
+jb 2121f
+jmp 2122f
+2121:
+.base64 "SYne"
+2122:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+2123:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 2123b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 2124f
+2126:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 2126b
+.base64 "xfh3SIXJ"
+je 2127f
+2129:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2129b
+jmp 2128f
+2127:
+2128:
+jmp 2125f
+2124:
+2130:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2130b
+2125:
+.base64 "TCnz"
+jne 2120b
+jmp 2119f
+2118:
+2119:
+.base64 "SIXt"
+je 2131f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+2133:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2133b
+jmp 2132f
+2131:
+2132:
+292:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
+jb 22f
+.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9Ihds="
+je 24f
+26:
+.base64 "Qb5AAAAATDnz"
+jb 27f
+jmp 28f
+27:
+.base64 "SYne"
+28:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 29f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+211:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 211b
+.base64 "xfh3SIXJ"
+je 212f
+214:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 214b
+jmp 213f
+212:
+213:
+jmp 210f
+29:
+215:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 215b
+210:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 216f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+218:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 218b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 217f
+216:
+217:
+.base64 "TIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vAA=="
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vSBDzQQ9vOGYPOAD4"
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RNsAZkUP78NmRA9v3mZEDzpE2xFmRQ/v02ZED2/eZkQPOkTbAWZFD+/LZkQPb95mRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb+JmRQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTcAGZFD+/DZkQPb95mRA86RNwRZkUP79NmRA9v3mZEDzpE3AFmRQ/vy2ZED2/eZkQPOkTcEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/qZkUP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3QBmRQ/vw2ZED2/eZkQPOkTdEWZFD+/TZkQPb95mRA86RN0BZkUP78tmRA9v3mZEDzpE3RBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v8mZFD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN4AZkUP78NmRA9v3mZEDzpE3hFmRQ/v02ZED2/eZkQPOkTeAWZFD+/LZkQPb95mRA86RN4QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/pmRQ/v+MRDBTj+AcRDFTj0AcRjTTjtAcRjXTjjAcTjfTjAAcTjdTjJAcX5b9LEwwU4/wHEQT3vwMRBNe/JxEEt79LEYwVE3wDEQT3vw8RjBUTfEcRBLe/TxGMFRN8BxEE178vEYwVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt79jEQT3vwMRBNe/JxEEt79LEYw1E3wDEQT3vw8RjDUTfEcRBLe/TxGMNRN8BxEE178vEYw1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+DEQT3vwMRBNe/JxEEt79LEYxVE3wDEQT3vw8RjFUTfEcRBLe/TxGMVRN8BxEE178vEYxVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+jEQT3vwMRBNe/JxEEt79LEYx1E3wDEQT3vw8RjHUTfEcRBLe/TxGMdRN8BxEE178vEYx1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/DEwX5/G8TBfn9jIMTBfn9rQMTBfn9zYMRBfn+7gAAAAMRBfn+zoAAAAMRBfn+rwAAAAMRBfn+j4AAAAMX6bxHE4mkA0Em6AQAAAAAAAADEQflu+sV6bzLEQQn+78RDDTj1AUm6AgAAAAAAAADEQflu+sRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJ4sV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
+je 219f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 221f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 222f
+221:
+222:
+jmp 220f
+219:
+220:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+byrFle/bxf5/GsV+b2ogxZXv5MX+f2IgxX5vakDFle/txf5/akDFfm9qYMWV7/bF/n9yYMV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
+je 223f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 225f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 226f
+225:
+226:
+jmp 224f
+223:
+224:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAAAAxZXv28X+f5qAAAAAxX5vqqAAAADFle/kxf5/oqAAAADFfm+qwAAAAMWV7+3F/n+qwAAAAMV+b6rgAAAAxZXv9sX+f7LgAAAASYP5IA=="
+jb 227f
+229:
+.base64 "xEE978DEQTXvycRBLe/SxX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vYyDF/m96IMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vY0DF/m96QMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8wxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vY2DF/m96YMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo4AAAADF/m+6gAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
+je 230f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 232f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 233f
+232:
+233:
+jmp 231f
+230:
+231:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6oAAQAAxZXv28X+f5oAAQAAxX5vqiABAADFle/kxf5/oiABAADFfm+qQAEAAMWV7+3F/n+qQAEAAMV+b6pgAQAAxZXv9sX+f7JgAQAAxX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo6AAAADF/m+6oAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo8AAAADF/m+6wAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8wxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo+AAAADF/m+64AAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vI8X+bzrFxe/6xENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEYn1ab1DEwmXc3cTCXdzlxMJV3O3Ewk3c9cTBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/jEw305+wHFoe/XxGJ9Wm9gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab3DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVqvgAAAAMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+QAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PVIg/4K"
+je 234f
+.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
+je 236f
+.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
+jmp 237f
+236:
+237:
+jmp 235f
+234:
+235:
+.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAQAAxZXv28X+f5qAAQAAxX5vqqABAADFle/kxf5/oqABAADFfm+qwAEAAMWV7+3F/n+qwAEAAMV+b6rgAQAAxZXv9sX+f7LgAQAASIHCAAEAAEmD6RBJg/kg"
+jae 229b
+jmp 228f
+227:
+228:
+.base64 "xXp/MMRBPe/AxEE178nEQS3v0sRBfm9jIMX+b3ogxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vY0DF/m96QMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b2Ngxf5vemDEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+jgAAAAMX+b7qAAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vo6AAAADF/m+6oAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6PAAAAAxf5vusAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+j4AAAAMX+b7rgAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vI8X+bzrFxe/6xENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEwSVz2QjEQS3v08TBNXP5CMRBPe/BxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/4xMN9OfsBxaHv18TiaQDQxfp/EcX4d02Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
+je 238f
+240:
+.base64 "Qb5AAAAATDnz"
+jb 241f
+jmp 242f
+241:
+.base64 "SYne"
+242:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+243:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 243b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 244f
+246:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 246b
+.base64 "xfh3SIXJ"
+je 247f
+249:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 249b
+jmp 248f
+247:
+248:
+jmp 245f
+244:
+250:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 250b
+245:
+.base64 "TCnz"
+jne 240b
+jmp 239f
+238:
+239:
+.base64 "SIXt"
+je 251f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+253:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 253b
+jmp 252f
+251:
+252:
+.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
 je 254f
 256:
 .base64 "Qb5AAAAATDnz"
@@ -1074,136 +678,141 @@ jmp 258f
 257:
 .base64 "SYne"
 258:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-259:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 259b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 260f
-262:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 262b
-.base64 "xfh3SIXJ"
-je 263f
-265:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 265b
-jmp 264f
-263:
-264:
-jmp 261f
-260:
-266:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 266b
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 259f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
 261:
-.base64 "TCnz"
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 261b
+.base64 "xfh3SIXJ"
+je 262f
+264:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 264b
+jmp 263f
+262:
+263:
+jmp 260f
+259:
+265:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 265b
+260:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 256b
 jmp 255f
 254:
 255:
 .base64 "SIXt"
-je 267f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-269:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 269b
-jmp 268f
-267:
+je 266f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
 268:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 270f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 272f
-.base64 "SYneTInxSIP5CA=="
-jb 274f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-276:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 276b
-.base64 "xfh3SIXJ"
-je 277f
-279:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 279b
-jmp 278f
-277:
-278:
-jmp 275f
-274:
-280:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 280b
-275:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 268b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 267f
+266:
+267:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 269f
+271:
+.base64 "Qb5AAAAATDnz"
+jb 272f
 jmp 273f
 272:
+.base64 "SYne"
 273:
-.base64 "SIXt"
-je 281f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-283:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 283b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 282f
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+274:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 274b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 275f
+277:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 277b
+.base64 "xfh3SIXJ"
+je 278f
+280:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 280b
+jmp 279f
+278:
+279:
+jmp 276f
+275:
 281:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 281b
+276:
+.base64 "TCnz"
+jne 271b
+jmp 270f
+269:
+270:
+.base64 "SIXt"
+je 282f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+284:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 284b
+jmp 283f
 282:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 284f
+283:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 285f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 287f
 .base64 "SYneTInxSIP5CA=="
-jb 286f
+jb 289f
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vCMTjdTjJAQ=="
-288:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 288b
-.base64 "xfh3SIXJ"
-je 289f
 291:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 291b
+.base64 "xfh3SIXJ"
+je 292f
+294:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 291b
+jne 294b
+jmp 293f
+292:
+293:
 jmp 290f
 289:
-290:
-jmp 287f
-286:
-292:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 292b
-287:
-jmp 285f
-284:
-285:
-.base64 "SIXt"
-je 293f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
 295:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 295b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 294f
-293:
-294:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 271f
-270:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+290:
+jmp 288f
+287:
+288:
+.base64 "SIXt"
 je 296f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
 298:
-.base64 "Qb5AAAAATDnz"
-jb 299f
-jmp 2100f
-299:
-.base64 "SYne"
-2100:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 298b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 297f
+296:
+297:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 299f
+.base64 "SYneTInxSIP5CA=="
 jb 2101f
 lea rax, [rip + {VG_GCM_CONSTS}]
 .base64 "8w9vCMTjdTjJAQ=="
@@ -1224,25 +833,25 @@ jmp 2102f
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 2107b
 2102:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 298b
-jmp 297f
-296:
-297:
+jmp 2100f
+299:
+2100:
 .base64 "SIXt"
 je 2108f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
 2110:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 2110b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
 jmp 2109f
 2108:
 2109:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 286f
+285:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
 je 2111f
 2113:
 .base64 "Qb5AAAAATDnz"
@@ -1273,7 +882,7 @@ jmp 2117f
 jne 2122b
 2117:
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_vpclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 2113b
 jmp 2112f
@@ -1286,46 +895,94 @@ je 2123f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 2125b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_vpclmul}
 jmp 2124f
 2123:
 2124:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-271:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
 je 2126f
-.base64 "ZkkPbsNmD2zA"
 2128:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+.base64 "Qb5AAAAATDnz"
+jb 2129f
+jmp 2130f
+2129:
+.base64 "SYne"
+2130:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 2131f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+2133:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 2133b
+.base64 "xfh3SIXJ"
+je 2134f
+2136:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2136b
+jmp 2135f
+2134:
+2135:
+jmp 2132f
+2131:
+2137:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2137b
+2132:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 2128b
 jmp 2127f
 2126:
 2127:
+.base64 "SIXt"
+je 2138f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+2140:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2140b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 2139f
+2138:
+2139:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+286:
+23:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 2141f
+.base64 "ZkkPbsNmD2zA"
+2143:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 2143b
+jmp 2142f
+2141:
+2142:
 .base64 "STnq"
-je 2129f
-2131:
+je 2144f
+2146:
 .base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 2131b
-jmp 2130f
-2129:
-2130:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
-jmp 21b
+jne 2146b
+jmp 2145f
+2144:
+2145:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -1343,16 +1000,16 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
 .base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
 jne 20b
 .base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
+call {vg_aes_encrypt_blocks_vaes}
 .base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
@@ -1361,32 +1018,30 @@ jne 21b
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
 je 24f
-.base64 "SYneTInx"
-26:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 27f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-29:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 29b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 28f
-27:
+.base64 "SYneTInxSIP5CA=="
+jb 26f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
 28:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 210f
-.base64 "SYneTInx"
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 28b
+.base64 "xfh3SIXJ"
+je 29f
+211:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 211b
+jmp 210f
+29:
+210:
+jmp 27f
+26:
 212:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 212b
-jmp 211f
-210:
-211:
+27:
+jmp 25f
+24:
+25:
 .base64 "SIXt"
 je 213f
 .base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
@@ -1397,73 +1052,143 @@ jne 215b
 jmp 214f
 213:
 214:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 216f
+.base64 "SYneTInxSIP5CA=="
+jb 218f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+220:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 220b
+.base64 "xfh3SIXJ"
+je 221f
+223:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 223b
+jmp 222f
+221:
+222:
+jmp 219f
+218:
+224:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 224b
+219:
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 225f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+227:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 227b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 226f
+225:
+226:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 jmp 23f
 22:
 .base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 216f
-218:
-.base64 "Qb5AAAAATDnz"
-jb 219f
-jmp 220f
-219:
-.base64 "SYne"
-220:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-221:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 221b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 218b
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 222f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-224:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 224b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 223f
-222:
-223:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 225f
-227:
-.base64 "Qb5AAAAATDnz"
-jb 228f
-jmp 229f
-228:
-.base64 "SYne"
-229:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+je 228f
 230:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 230b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "SIXt"
-je 231f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-233:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 233b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
+.base64 "Qb5AAAAATDnz"
+jb 231f
 jmp 232f
 231:
+.base64 "SYne"
 232:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 233f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+235:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 235b
+.base64 "xfh3SIXJ"
+je 236f
+238:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 234f
+233:
+239:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 239b
+234:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "SIXt"
+je 240f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+242:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 242b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 241f
+240:
+241:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 243f
+245:
+.base64 "Qb5AAAAATDnz"
+jb 246f
+jmp 247f
+246:
+.base64 "SYne"
+247:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 248f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+250:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 250b
+.base64 "xfh3SIXJ"
+je 251f
+253:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+jmp 249f
+248:
+254:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 254b
+249:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "SIXt"
+je 255f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+257:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 257b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 256f
+255:
+256:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
 call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
@@ -1471,53 +1196,69 @@ call {vg_ghash_pclmul}
 .base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32_vaes}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 234f
-236:
+je 258f
+260:
 .base64 "Qb5AAAAATDnz"
-jb 237f
-jmp 238f
-237:
+jb 261f
+jmp 262f
+261:
 .base64 "SYne"
-238:
+262:
 .base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-239:
+263:
 .base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 239b
+jne 263b
 .base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-240:
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 264f
+266:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
 .base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 240b
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 270b
+265:
 .base64 "TCnz"
-jne 236b
-jmp 235f
-234:
-235:
+jne 260b
+jmp 259f
+258:
+259:
 .base64 "SIXt"
-je 241f
+je 271f
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32_vaes}
 .base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-243:
+273:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 243b
-jmp 242f
-241:
-242:
+jne 273b
+jmp 272f
+271:
+272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -1535,9 +1276,578 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 22f
+24:
+.base64 "Qb5AAAAATDnz"
+jb 25f
+jmp 26f
+25:
+.base64 "SYne"
+26:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+27:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 27b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 28f
+210:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 210b
+.base64 "xfh3SIXJ"
+je 211f
+213:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 29f
+28:
+214:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 214b
+29:
+.base64 "TCnz"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SIXt"
+je 215f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+217:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 217b
+jmp 216f
+215:
+216:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 218f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 220f
+.base64 "SYneTInxSIP5CA=="
+jb 222f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+224:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 224b
+.base64 "xfh3SIXJ"
+je 225f
+227:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 227b
+jmp 226f
+225:
+226:
+jmp 223f
+222:
+228:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 228b
+223:
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 229f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+231:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 231b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 230f
+229:
+230:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 232f
+.base64 "SYneTInxSIP5CA=="
+jb 234f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+236:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 236b
+.base64 "xfh3SIXJ"
+je 237f
+239:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 239b
+jmp 238f
+237:
+238:
+jmp 235f
+234:
+240:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 240b
+235:
+jmp 233f
+232:
+233:
+.base64 "SIXt"
+je 241f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+243:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 243b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 242f
+241:
+242:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 219f
+218:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 244f
+246:
+.base64 "Qb5AAAAATDnz"
+jb 247f
+jmp 248f
+247:
+.base64 "SYne"
+248:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 249f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+251:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 251b
+.base64 "xfh3SIXJ"
+je 252f
+254:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 254b
+jmp 253f
+252:
+253:
+jmp 250f
+249:
+255:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 255b
+250:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 246b
+jmp 245f
+244:
+245:
+.base64 "SIXt"
+je 256f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+258:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 258b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 257f
+256:
+257:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 259f
+261:
+.base64 "Qb5AAAAATDnz"
+jb 262f
+jmp 263f
+262:
+.base64 "SYne"
+263:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 264f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+266:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 270b
+265:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 261b
+jmp 260f
+259:
+260:
+.base64 "SIXt"
+je 271f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 272f
+271:
+272:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+219:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 274f
+.base64 "ZkkPbsNmD2zA"
+276:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 276b
+jmp 275f
+274:
+275:
+.base64 "STnq"
+je 277f
+279:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 279b
+jmp 278f
+277:
+278:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 22f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 24f
+.base64 "SYneTInxSIP5CA=="
+jb 26f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+28:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 28b
+.base64 "xfh3SIXJ"
+je 29f
+211:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 211b
+jmp 210f
+29:
+210:
+jmp 27f
+26:
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+27:
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 216f
+.base64 "SYneTInxSIP5CA=="
+jb 218f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+220:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 220b
+.base64 "xfh3SIXJ"
+je 221f
+223:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 223b
+jmp 222f
+221:
+222:
+jmp 219f
+218:
+224:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 224b
+219:
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 225f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+227:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 227b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 226f
+225:
+226:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 228f
+230:
+.base64 "Qb5AAAAATDnz"
+jb 231f
+jmp 232f
+231:
+.base64 "SYne"
+232:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 233f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+235:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 235b
+.base64 "xfh3SIXJ"
+je 236f
+238:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 234f
+233:
+239:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 239b
+234:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "SIXt"
+je 240f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+242:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 242b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 241f
+240:
+241:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 243f
+245:
+.base64 "Qb5AAAAATDnz"
+jb 246f
+jmp 247f
+246:
+.base64 "SYne"
+247:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 248f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+250:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 250b
+.base64 "xfh3SIXJ"
+je 251f
+253:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+jmp 249f
+248:
+254:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 254b
+249:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "SIXt"
+je 255f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+257:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 257b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 256f
+255:
+256:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 258f
+260:
+.base64 "Qb5AAAAATDnz"
+jb 261f
+jmp 262f
+261:
+.base64 "SYne"
+262:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+263:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 263b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 264f
+266:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 270b
+265:
+.base64 "TCnz"
+jne 260b
+jmp 259f
+258:
+259:
+.base64 "SIXt"
+je 271f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+273:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 273b
+jmp 272f
+271:
+272:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -1566,860 +1876,246 @@ jmp 26f
 jne 27b
 .base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
 call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-28:
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 28f
+210:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 210b
+.base64 "xfh3SIXJ"
+je 211f
+213:
 .base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 28b
+jne 213b
+jmp 212f
+211:
+212:
+jmp 29f
+28:
+214:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 214b
+29:
 .base64 "TCnz"
 jne 24b
 jmp 23f
 22:
 23:
 .base64 "SIXt"
-je 29f
+je 215f
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
 call {vg_aes_ctr32_aesni}
 .base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-211:
+217:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 212f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 214f
-.base64 "SYneTInx"
-216:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 216b
-jmp 215f
-214:
+jne 217b
+jmp 216f
 215:
-.base64 "SIXt"
-je 217f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-219:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 219b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 218f
-217:
-218:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+216:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 218f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
 je 220f
-.base64 "SYneTInx"
-222:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 223f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-225:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 225b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 224f
-223:
+.base64 "SYneTInxSIP5CA=="
+jb 222f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
 224:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 213f
-212:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 226f
-228:
-.base64 "Qb5AAAAATDnz"
-jb 229f
-jmp 230f
-229:
-.base64 "SYne"
-230:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-231:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 231b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SIXt"
-je 232f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-234:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 233f
-232:
-233:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 235f
-237:
-.base64 "Qb5AAAAATDnz"
-jb 238f
-jmp 239f
-238:
-.base64 "SYne"
-239:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-240:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 240b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "SIXt"
-je 241f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 242f
-241:
-242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-213:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 244f
-.base64 "ZkkPbsNmD2zA"
-246:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 246b
-jmp 245f
-244:
-245:
-.base64 "STnq"
-je 247f
-249:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 249b
-jmp 248f
-247:
-248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
-jb 22f
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 24f
-26:
-.base64 "Qb5AAAAATDnz"
-jb 27f
-jmp 28f
-27:
-.base64 "SYne"
-28:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-29:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 29b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 210f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-212:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 212b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 211f
-210:
-211:
-.base64 "TIn5SIPBUE2J+EmDwEBNiftJgcPoBQAASYuX6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJSLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMRIuAAAAAAAAAAAZkgPbshIuAAAAAAAAADCZkwPbuBmQQ9szPNBD284Zg84APhIuAEAAAAAAAAAZkwPbuhIuAAAAAAAAADCZkwPbuBmRQ9s7Ei4//////////9mTA9u8GZFD2z2Zg9v32YPc/MBZkQPb99mQQ9z0z9mQQ9z+whmQQ/r22ZED3Df/2ZBD3LTH2ZFD/7eZkUP391mQQ/v22ZFD+/AZkUP78lmRQ/v0mZED2/bZkQPOkTbAGZFD+/DZkQPb9tmRA86RNsRZkUP79NmRA9v22ZEDzpE2wFmRQ/vy2ZED2/bZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE2wBmRQ/vw2ZED2/cZkQPOkTbEWZFD+/TZkQPb9xmRA86RNsBZkUP78tmRA9v3GZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v6mZBD+/oZkUP78BmRQ/vyWZFD+/SZkQPb9xmRA86RNwAZkUP78NmRA9v3GZEDzpE3BFmRQ/v02ZED2/cZkQPOkTcAWZFD+/LZkQPb9xmRA86RNwQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTbAGZFD+/DZkQPb95mRA86RNsRZkUP79NmRA9v3mZEDzpE2wFmRQ/vy2ZED2/eZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/iZkUP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3ABmRQ/vw2ZED2/eZkQPOkTcEWZFD+/TZkQPb95mRA86RNwBZkUP78tmRA9v3mZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v6mZFD+/oZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN0AZkUP78NmRA9v3mZEDzpE3RFmRQ/v02ZED2/eZkQPOkTdAWZFD+/LZkQPb95mRA86RN0QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/JmRQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTeAGZFD+/DZkQPb95mRA86RN4RZkUP79NmRA9v3mZEDzpE3gFmRQ/vy2ZED2/eZkQPOkTeEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/6ZkUP7/jzRQ9/O/NFD39zEPNFD39rIPNFD39jMPNBD39zQPNBD39rUPNBD39jYPNBD39bcPNBD3+LkAAAAPMPbxFmDzgA0A=="
-213:
-.base64 "xEF6b2MQxfpvehDEQ0FExADEQ0FE1BHEQ0FEzAHEQ0FE3BDEQTHvy8RBem9jIMX6b3ogxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvYzDF+m96MMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NAxfpvekDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jUMX6b3pQxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY2DF+m96YMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NwxfpvenDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem8jxfpvOsXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79LEQXpvYxDF+m+6kAAAAMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxEF6b2MgxfpvuqAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jMMX6b7qwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY0DF+m+6wAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NQxfpvutAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jYMX6b7rgAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY3DF+m+68AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6byPF+m+6gAAAAMXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79JIgcIAAQAASYPpEA=="
-jne 213b
-.base64 "SLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMTE4mkA0MX6fxFNi6foAAAASYuH8AAAAEjB6AhIweAISQHESYuv8AAAAEiB5f8AAABIietIwesESIPlD0iF2w=="
-je 214f
-216:
-.base64 "Qb5AAAAATDnz"
-jb 217f
-jmp 218f
-217:
-.base64 "SYne"
-218:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-219:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 219b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "SIXt"
-je 220f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-222:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 222b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 221f
-220:
-221:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 223f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 224b
+.base64 "xfh3SIXJ"
 je 225f
-.base64 "SYneTInx"
 227:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 227b
 jmp 226f
 225:
 226:
-.base64 "SIXt"
-je 228f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-230:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 230b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 229f
+jmp 223f
+222:
 228:
-229:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 231f
-.base64 "SYneTInx"
-233:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 233b
-jmp 232f
-231:
-232:
-.base64 "SIXt"
-je 234f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-236:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 236b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 235f
-234:
-235:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 224f
+jne 228b
 223:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 229f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+231:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 231b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 230f
+229:
+230:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 232f
+.base64 "SYneTInxSIP5CA=="
+jb 234f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+236:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 236b
+.base64 "xfh3SIXJ"
 je 237f
 239:
-.base64 "Qb5AAAAATDnz"
-jb 240f
-jmp 241f
-240:
-.base64 "SYne"
-241:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-242:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 242b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 239b
 jmp 238f
 237:
 238:
-.base64 "SIXt"
-je 243f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-245:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 245b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 244f
-243:
-244:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 246f
-248:
-.base64 "Qb5AAAAATDnz"
-jb 249f
-jmp 250f
-249:
-.base64 "SYne"
-250:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-251:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 251b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 248b
-jmp 247f
-246:
-247:
-.base64 "SIXt"
-je 252f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-254:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 254b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 253f
-252:
-253:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-224:
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
-.base64 "SYuH8AAAAEg9AAEAAA=="
-jb 255f
-.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAATIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJQboBAAAAZk0PbtrzRQ9/m4AAAABJifJJweIESQH6SInQTIni"
-257:
-.base64 "xXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
-je 258f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 260f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 261f
-260:
-261:
-jmp 259f
-258:
-259:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvAsX6fwLF4e9aEMX6f1oQxdnvYiDF+n9iIMXR72owxfp/ajDFye9yQMX6f3JAxRHvalDFen9qUMUJ73JgxXp/cmDFAe96cMV6f3pwxXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
-je 262f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 264f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 265f
-264:
-265:
-jmp 263f
-262:
-263:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoAAAADF+n+CgAAAAMXh75qQAAAAxfp/mpAAAADF2e+ioAAAAMX6f6KgAAAAxdHvqrAAAADF+n+qsAAAAMXJ77LAAAAAxfp/ssAAAADFEe+q0AAAAMV6f6rQAAAAxQnvsuAAAADFen+y4AAAAMUB77rwAAAAxXp/uvAAAABIgcIAAQAASYPpEA=="
-jne 257b
-.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
-je 266f
-268:
-.base64 "Qb5AAAAATDnz"
-jb 269f
-jmp 270f
-269:
-.base64 "SYne"
-270:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-271:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 271b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-272:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 272b
-.base64 "TCnz"
-jne 268b
-jmp 267f
-266:
-267:
-.base64 "SIXt"
-je 273f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-275:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 275b
-jmp 274f
-273:
-274:
-jmp 256f
-255:
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 276f
-278:
-.base64 "Qb5AAAAATDnz"
-jb 279f
-jmp 280f
-279:
-.base64 "SYne"
-280:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-281:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 281b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-282:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 282b
-.base64 "TCnz"
-jne 278b
-jmp 277f
-276:
-277:
-.base64 "SIXt"
-je 283f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-285:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 285b
-jmp 284f
-283:
-284:
-256:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
-jb 22f
-.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9Ihds="
-je 24f
-26:
-.base64 "Qb5AAAAATDnz"
-jb 27f
-jmp 28f
-27:
-.base64 "SYne"
-28:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-29:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 29b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 210f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-212:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 212b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 211f
-210:
-211:
-.base64 "TIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJSLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMRIuAAAAAAAAAAAZkgPbshIuAAAAAAAAADCZkwPbuBmQQ9szPNBD284Zg84APhIuAEAAAAAAAAAZkwPbuhIuAAAAAAAAADCZkwPbuBmRQ9s7Ei4//////////9mTA9u8GZFD2z2Zg9v32YPc/MBZkQPb99mQQ9z0z9mQQ9z+whmQQ/r22ZED3Df/2ZBD3LTH2ZFD/7eZkUP391mQQ/v22ZFD+/AZkUP78lmRQ/v0mZED2/bZkQPOkTbAGZFD+/DZkQPb9tmRA86RNsRZkUP79NmRA9v22ZEDzpE2wFmRQ/vy2ZED2/bZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE2wBmRQ/vw2ZED2/cZkQPOkTbEWZFD+/TZkQPb9xmRA86RNsBZkUP78tmRA9v3GZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v6mZBD+/oZkUP78BmRQ/vyWZFD+/SZkQPb9xmRA86RNwAZkUP78NmRA9v3GZEDzpE3BFmRQ/v02ZED2/cZkQPOkTcAWZFD+/LZkQPb9xmRA86RNwQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTbAGZFD+/DZkQPb95mRA86RNsRZkUP79NmRA9v3mZEDzpE2wFmRQ/vy2ZED2/eZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/iZkUP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3ABmRQ/vw2ZED2/eZkQPOkTcEWZFD+/TZkQPb95mRA86RNwBZkUP78tmRA9v3mZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v6mZFD+/oZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN0AZkUP78NmRA9v3mZEDzpE3RFmRQ/v02ZED2/eZkQPOkTdAWZFD+/LZkQPb95mRA86RN0QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/JmRQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTeAGZFD+/DZkQPb95mRA86RN4RZkUP79NmRA9v3mZEDzpE3gFmRQ/vy2ZED2/eZkQPOkTeEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/6ZkUP7/jzRQ9/O/NFD39zEPNFD39rIPNFD39jMPNBD39zQPNBD39rUPNBD39jYPNBD39bcPNBD3+LkAAAAEG6AQAAAGZND27a80UPf5uAAAAA8w9vEWYPOADQSYnyScHiBEkB+kiJ0EyJ4sV6bxjEQXpvo4AAAADFeX/YxEEh/tzFeX/bxEEh/tzFeX/cxEEh/tzFeX/dxEEh/tzFeX/exEEh/tzEQXlv68RBIf7cxEF5b/PEQSH+3MRBeW/7xEEh/tzFen8YxfpvD8X578HF4e/Zxdnv4cXR7+nFye/xxRHv6cUJ7/HFAe/5xfpvTxDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvTyDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvTzDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT0DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT1DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT2DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT3DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj4AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+Cg=="
-je 213f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 215f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 216f
-215:
-216:
-jmp 214f
-213:
-214:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvAsX6fwLF4e9aEMX6f1oQxdnvYiDF+n9iIMXR72owxfp/ajDFye9yQMX6f3JAxRHvalDFen9qUMUJ73JgxXp/cmDFAe96cMV6f3pwxXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
-je 217f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 219f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 220f
-219:
-220:
-jmp 218f
-217:
-218:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoAAAADF+n+CgAAAAMXh75qQAAAAxfp/mpAAAADF2e+ioAAAAMX6f6KgAAAAxdHvqrAAAADF+n+qsAAAAMXJ77LAAAAAxfp/ssAAAADFEe+q0AAAAMV6f6rQAAAAxQnvsuAAAADFen+y4AAAAMUB77rwAAAAxXp/uvAAAABJg/kg"
-jb 221f
-223:
-.base64 "xXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvYxDF+m96EMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxfpvTyDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2MgxfpveiDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b08wxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jMMX6b3owxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY0DF+m96QMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvT1DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2NQxfpvelDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09gxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jYMX6b3pgxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY3DF+m96cMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj4AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6byPF+m86xcHv+sRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b6OQAAAAxEM5RNwQxEF5cMBOxEEx78jEQTHvy8RDMUTcEMRBeXDJTsTBKe/RxaHv0kiD/go="
-je 224f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 226f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 227f
-226:
-227:
-jmp 225f
-224:
-225:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvggABAADF+n+CAAEAAMXh75oQAQAAxfp/mhABAADF2e+iIAEAAMX6f6IgAQAAxdHvqjABAADF+n+qMAEAAMXJ77JAAQAAxfp/skABAADFEe+qUAEAAMV6f6pQAQAAxQnvsmABAADFen+yYAEAAMUB77pwAQAAxXp/unABAADFem8YxEF6b6OAAAAAxXl/2MRBIf7cxXl/28RBIf7cxXl/3MRBIf7cxXl/3cRBIf7cxXl/3sRBIf7cxEF5b+vEQSH+3MRBeW/zxEEh/tzEQXlv+8RBIf7cxXp/GMX6bw/F+e/BxeHv2cXZ7+HF0e/pxcnv8cUR7+nFCe/xxQHv+cX6b08QxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jEMX6b7qQAAAAxENBRMQAxENBRNQRxENBRMwBxENBRNwQxEEx78vF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvYyDF+m+6oAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvTzDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2MwxfpvurAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09AxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jQMX6b7rAAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY1DF+m+60AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvT2DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2NgxfpvuuAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09wxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jcMX6b7rwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvI8X6b7qAAAAAxcHv+sRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b6OQAAAAxEM5RNwQxEF5cMBOxEEx78jEQTHvy8RDMUTcEMRBeXDJTsTBKe/RxaHv0kiD/go="
-je 228f
-.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
-je 230f
-.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
-jmp 231f
-230:
-231:
-jmp 229f
-228:
-229:
-.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoABAADF+n+CgAEAAMXh75qQAQAAxfp/mpABAADF2e+ioAEAAMX6f6KgAQAAxdHvqrABAADF+n+qsAEAAMXJ77LAAQAAxfp/ssABAADFEe+q0AEAAMV6f6rQAQAAxQnvsuABAADFen+y4AEAAMUB77rwAQAAxXp/uvABAABIgcIAAQAASYPpEEmD+SA="
-jae 223b
-jmp 222f
-221:
-222:
-.base64 "xEF6b2MQxfpvehDEQ0FExADEQ0FE1BHEQ0FEzAHEQ0FE3BDEQTHvy8RBem9jIMX6b3ogxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvYzDF+m96MMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NAxfpvekDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jUMX6b3pQxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY2DF+m96YMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NwxfpvenDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem8jxfpvOsXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79LEQXpvYxDF+m+6kAAAAMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxEF6b2MgxfpvuqAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jMMX6b7qwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY0DF+m+6wAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NQxfpvutAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jYMX6b7rgAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY3DF+m+68AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6byPF+m+6gAAAAMXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79JIuA8ODQwLCgkIZkgPbsBIuAcGBQQDAgEAZkwPbuBmQQ9sxMTiaQDQxfp/EU2Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
-je 232f
+jmp 235f
 234:
-.base64 "Qb5AAAAATDnz"
-jb 235f
-jmp 236f
+240:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 240b
 235:
-.base64 "SYne"
-236:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-237:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 237b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-238:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 238b
-.base64 "TCnz"
-jne 234b
 jmp 233f
 232:
 233:
 .base64 "SIXt"
-je 239f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-241:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 241b
-jmp 240f
-239:
-240:
-.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
-je 242f
-244:
-.base64 "Qb5AAAAATDnz"
-jb 245f
-jmp 246f
-245:
-.base64 "SYne"
-246:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-247:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 247b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 244b
-jmp 243f
-242:
+je 241f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
 243:
-.base64 "SIXt"
-je 248f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-250:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 250b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 249f
-248:
-249:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 251f
-253:
-.base64 "Qb5AAAAATDnz"
-jb 254f
-jmp 255f
-254:
-.base64 "SYne"
-255:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-256:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 256b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
-.base64 "TInxTIn+SIHG6AEAAA=="
-257:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 257b
-.base64 "TCnz"
-jne 253b
-jmp 252f
-251:
-252:
-.base64 "SIXt"
-je 258f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-260:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 261f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 263f
-.base64 "SYneTInx"
-265:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 265b
-jmp 264f
-263:
-264:
-.base64 "SIXt"
-je 266f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-268:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 268b
+jne 243b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 267f
-266:
-267:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 269f
-.base64 "SYneTInx"
-271:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 271b
-jmp 270f
-269:
-270:
-.base64 "SIXt"
-je 272f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-274:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 274b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 273f
-272:
-273:
+jmp 242f
+241:
+242:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
+call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 262f
-261:
+jmp 219f
+218:
 .base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 275f
-277:
+je 244f
+246:
 .base64 "Qb5AAAAATDnz"
-jb 278f
-jmp 279f
-278:
+jb 247f
+jmp 248f
+247:
 .base64 "SYne"
-279:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-280:
+248:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 249f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+251:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 251b
+.base64 "xfh3SIXJ"
+je 252f
+254:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 280b
+jne 254b
+jmp 253f
+252:
+253:
+jmp 250f
+249:
+255:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 255b
+250:
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
+call {vg_ghash_vpclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 277b
-jmp 276f
-275:
-276:
+jne 246b
+jmp 245f
+244:
+245:
 .base64 "SIXt"
-je 281f
+je 256f
 .base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-283:
+258:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 283b
+jne 258b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 282f
-281:
-282:
+call {vg_ghash_vpclmul}
+jmp 257f
+256:
+257:
 .base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 284f
-286:
+je 259f
+261:
 .base64 "Qb5AAAAATDnz"
-jb 287f
-jmp 288f
-287:
-.base64 "SYne"
-288:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-289:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 289b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 286b
-jmp 285f
-284:
-285:
-.base64 "SIXt"
-je 290f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-292:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 292b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 291f
-290:
-291:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jb 262f
+jmp 263f
 262:
-23:
+.base64 "SYne"
+263:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 264f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+266:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 270b
+265:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_vpclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 261b
+jmp 260f
+259:
+260:
+.base64 "SIXt"
+je 271f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+jmp 272f
+271:
+272:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_vpclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+219:
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
 call {vg_aes_ctr32_aesni}
 .base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 293f
+je 274f
 .base64 "ZkkPbsNmD2zA"
-295:
+276:
 .base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 295b
-jmp 294f
-293:
-294:
+jne 276b
+jmp 275f
+274:
+275:
 .base64 "STnq"
-je 296f
-298:
+je 277f
+279:
 .base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 298b
-jmp 297f
-296:
-297:
+jne 279b
+jmp 278f
+277:
+278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
@@ -4035,8 +3731,8 @@ jmp 21b
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
 
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
@@ -4054,9 +3750,9 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Feat
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -4064,6 +3760,2995 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_vpclmul(schedule:
 jne 20b
 .base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
 call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
+jb 22f
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 24f
+26:
+.base64 "Qb5AAAAATDnz"
+jb 27f
+jmp 28f
+27:
+.base64 "SYne"
+28:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+29:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 29b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 210f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+212:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 212b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 211f
+210:
+211:
+.base64 "TIn5SIPBUE2J+EmDwEBNiftJgcPoBQAASYuX6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJSLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMRIuAAAAAAAAAAAZkgPbshIuAAAAAAAAADCZkwPbuBmQQ9szPNBD284Zg84APhIuAEAAAAAAAAAZkwPbuhIuAAAAAAAAADCZkwPbuBmRQ9s7Ei4//////////9mTA9u8GZFD2z2Zg9v32YPc/MBZkQPb99mQQ9z0z9mQQ9z+whmQQ/r22ZED3Df/2ZBD3LTH2ZFD/7eZkUP391mQQ/v22ZFD+/AZkUP78lmRQ/v0mZED2/bZkQPOkTbAGZFD+/DZkQPb9tmRA86RNsRZkUP79NmRA9v22ZEDzpE2wFmRQ/vy2ZED2/bZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE2wBmRQ/vw2ZED2/cZkQPOkTbEWZFD+/TZkQPb9xmRA86RNsBZkUP78tmRA9v3GZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v6mZBD+/oZkUP78BmRQ/vyWZFD+/SZkQPb9xmRA86RNwAZkUP78NmRA9v3GZEDzpE3BFmRQ/v02ZED2/cZkQPOkTcAWZFD+/LZkQPb9xmRA86RNwQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTbAGZFD+/DZkQPb95mRA86RNsRZkUP79NmRA9v3mZEDzpE2wFmRQ/vy2ZED2/eZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/iZkUP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3ABmRQ/vw2ZED2/eZkQPOkTcEWZFD+/TZkQPb95mRA86RNwBZkUP78tmRA9v3mZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v6mZFD+/oZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN0AZkUP78NmRA9v3mZEDzpE3RFmRQ/v02ZED2/eZkQPOkTdAWZFD+/LZkQPb95mRA86RN0QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/JmRQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTeAGZFD+/DZkQPb95mRA86RN4RZkUP79NmRA9v3mZEDzpE3gFmRQ/vy2ZED2/eZkQPOkTeEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/6ZkUP7/jzRQ9/O/NFD39zEPNFD39rIPNFD39jMPNBD39zQPNBD39rUPNBD39jYPNBD39bcPNBD3+LkAAAAPMPbxFmDzgA0A=="
+213:
+.base64 "xEF6b2MQxfpvehDEQ0FExADEQ0FE1BHEQ0FEzAHEQ0FE3BDEQTHvy8RBem9jIMX6b3ogxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvYzDF+m96MMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NAxfpvekDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jUMX6b3pQxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY2DF+m96YMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NwxfpvenDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem8jxfpvOsXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79LEQXpvYxDF+m+6kAAAAMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxEF6b2MgxfpvuqAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jMMX6b7qwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY0DF+m+6wAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NQxfpvutAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jYMX6b7rgAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY3DF+m+68AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6byPF+m+6gAAAAMXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79JIgcIAAQAASYPpEA=="
+jne 213b
+.base64 "SLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMTE4mkA0MX6fxFNi6foAAAASYuH8AAAAEjB6AhIweAISQHESYuv8AAAAEiB5f8AAABIietIwesESIPlD0iF2w=="
+je 214f
+216:
+.base64 "Qb5AAAAATDnz"
+jb 217f
+jmp 218f
+217:
+.base64 "SYne"
+218:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+219:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 219b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SIXt"
+je 220f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+222:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 222b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 221f
+220:
+221:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 223f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 225f
+.base64 "SYneTInx"
+227:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 227b
+jmp 226f
+225:
+226:
+.base64 "SIXt"
+je 228f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+230:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 230b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 229f
+228:
+229:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 231f
+.base64 "SYneTInx"
+233:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 233b
+jmp 232f
+231:
+232:
+.base64 "SIXt"
+je 234f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+236:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 236b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 235f
+234:
+235:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 224f
+223:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 237f
+239:
+.base64 "Qb5AAAAATDnz"
+jb 240f
+jmp 241f
+240:
+.base64 "SYne"
+241:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+242:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 242b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 239b
+jmp 238f
+237:
+238:
+.base64 "SIXt"
+je 243f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+245:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 245b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 244f
+243:
+244:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 246f
+248:
+.base64 "Qb5AAAAATDnz"
+jb 249f
+jmp 250f
+249:
+.base64 "SYne"
+250:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+251:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 251b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 248b
+jmp 247f
+246:
+247:
+.base64 "SIXt"
+je 252f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+254:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 254b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 253f
+252:
+253:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+224:
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYuH8AAAAEg9AAEAAA=="
+jb 255f
+.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAATIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJQboBAAAAZk0PbtrzRQ9/m4AAAABJifJJweIESQH6SInQTIni"
+257:
+.base64 "xXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
+je 258f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 260f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 261f
+260:
+261:
+jmp 259f
+258:
+259:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvAsX6fwLF4e9aEMX6f1oQxdnvYiDF+n9iIMXR72owxfp/ajDFye9yQMX6f3JAxRHvalDFen9qUMUJ73JgxXp/cmDFAe96cMV6f3pwxXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
+je 262f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 264f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 265f
+264:
+265:
+jmp 263f
+262:
+263:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoAAAADF+n+CgAAAAMXh75qQAAAAxfp/mpAAAADF2e+ioAAAAMX6f6KgAAAAxdHvqrAAAADF+n+qsAAAAMXJ77LAAAAAxfp/ssAAAADFEe+q0AAAAMV6f6rQAAAAxQnvsuAAAADFen+y4AAAAMUB77rwAAAAxXp/uvAAAABIgcIAAQAASYPpEA=="
+jne 257b
+.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
+je 266f
+268:
+.base64 "Qb5AAAAATDnz"
+jb 269f
+jmp 270f
+269:
+.base64 "SYne"
+270:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+271:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 271b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+272:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 272b
+.base64 "TCnz"
+jne 268b
+jmp 267f
+266:
+267:
+.base64 "SIXt"
+je 273f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+275:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 275b
+jmp 274f
+273:
+274:
+jmp 256f
+255:
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 276f
+278:
+.base64 "Qb5AAAAATDnz"
+jb 279f
+jmp 280f
+279:
+.base64 "SYne"
+280:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+281:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 281b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+282:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 282b
+.base64 "TCnz"
+jne 278b
+jmp 277f
+276:
+277:
+.base64 "SIXt"
+je 283f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+285:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 285b
+jmp 284f
+283:
+284:
+256:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul_avx` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes` and `avx` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
+jb 22f
+.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9Ihds="
+je 24f
+26:
+.base64 "Qb5AAAAATDnz"
+jb 27f
+jmp 28f
+27:
+.base64 "SYne"
+28:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+29:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 29b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 210f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+212:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 212b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 211f
+210:
+211:
+.base64 "TIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJSLgPDg0MCwoJCGZID27ASLgHBgUEAwIBAGZMD27gZkEPbMRIuAAAAAAAAAAAZkgPbshIuAAAAAAAAADCZkwPbuBmQQ9szPNBD284Zg84APhIuAEAAAAAAAAAZkwPbuhIuAAAAAAAAADCZkwPbuBmRQ9s7Ei4//////////9mTA9u8GZFD2z2Zg9v32YPc/MBZkQPb99mQQ9z0z9mQQ9z+whmQQ/r22ZED3Df/2ZBD3LTH2ZFD/7eZkUP391mQQ/v22ZFD+/AZkUP78lmRQ/v0mZED2/bZkQPOkTbAGZFD+/DZkQPb9tmRA86RNsRZkUP79NmRA9v22ZEDzpE2wFmRQ/vy2ZED2/bZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/iZkEP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE2wBmRQ/vw2ZED2/cZkQPOkTbEWZFD+/TZkQPb9xmRA86RNsBZkUP78tmRA9v3GZEDzpE2xBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v6mZBD+/oZkUP78BmRQ/vyWZFD+/SZkQPb9xmRA86RNwAZkUP78NmRA9v3GZEDzpE3BFmRQ/v02ZED2/cZkQPOkTcAWZFD+/LZkQPb9xmRA86RNwQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb/JmQQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTbAGZFD+/DZkQPb95mRA86RNsRZkUP79NmRA9v3mZEDzpE2wFmRQ/vy2ZED2/eZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/iZkUP7+BmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3ABmRQ/vw2ZED2/eZkQPOkTcEWZFD+/TZkQPb95mRA86RNwBZkUP78tmRA9v3mZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v6mZFD+/oZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN0AZkUP78NmRA9v3mZEDzpE3RFmRQ/v02ZED2/eZkQPOkTdAWZFD+/LZkQPb95mRA86RN0QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/JmRQ/v8GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTeAGZFD+/DZkQPb95mRA86RN4RZkUP79NmRA9v3mZEDzpE3gFmRQ/vy2ZED2/eZkQPOkTeEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/6ZkUP7/jzRQ9/O/NFD39zEPNFD39rIPNFD39jMPNBD39zQPNBD39rUPNBD39jYPNBD39bcPNBD3+LkAAAAEG6AQAAAGZND27a80UPf5uAAAAA8w9vEWYPOADQSYnyScHiBEkB+kiJ0EyJ4sV6bxjEQXpvo4AAAADFeX/YxEEh/tzFeX/bxEEh/tzFeX/cxEEh/tzFeX/dxEEh/tzFeX/exEEh/tzEQXlv68RBIf7cxEF5b/PEQSH+3MRBeW/7xEEh/tzFen8YxfpvD8X578HF4e/Zxdnv4cXR7+nFye/xxRHv6cUJ7/HFAe/5xfpvTxDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvTyDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvTzDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT0DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT1DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT2DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvT3DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj4AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+Cg=="
+je 213f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 215f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 216f
+215:
+216:
+jmp 214f
+213:
+214:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvAsX6fwLF4e9aEMX6f1oQxdnvYiDF+n9iIMXR72owxfp/ajDFye9yQMX6f3JAxRHvalDFen9qUMUJ73JgxXp/cmDFAe96cMV6f3pwxXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PMMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PYMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnF+m+PkAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PlIg/4K"
+je 217f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 219f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 220f
+219:
+220:
+jmp 218f
+217:
+218:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoAAAADF+n+CgAAAAMXh75qQAAAAxfp/mpAAAADF2e+ioAAAAMX6f6KgAAAAxdHvqrAAAADF+n+qsAAAAMXJ77LAAAAAxfp/ssAAAADFEe+q0AAAAMV6f6rQAAAAxQnvsuAAAADFen+y4AAAAMUB77rwAAAAxXp/uvAAAABJg/kg"
+jb 221f
+223:
+.base64 "xXpvGMRBem+jgAAAAMV5f9jEQSH+3MV5f9vEQSH+3MV5f9zEQSH+3MV5f93EQSH+3MV5f97EQSH+3MRBeW/rxEEh/tzEQXlv88RBIf7cxEF5b/vEQSH+3MV6fxjF+m8PxfnvwcXh79nF2e/hxdHv6cXJ7/HFEe/pxQnv8cUB7/nF+m9PEMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvYxDF+m96EMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxfpvTyDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2MgxfpveiDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b08wxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jMMX6b3owxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PQMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY0DF+m96QMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvT1DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2NQxfpvelDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09gxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jYMX6b3pgxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PcMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY3DF+m96cMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj4AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6byPF+m86xcHv+sRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b6OQAAAAxEM5RNwQxEF5cMBOxEEx78jEQTHvy8RDMUTcEMRBeXDJTsTBKe/RxaHv0kiD/go="
+je 224f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 226f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 227f
+226:
+227:
+jmp 225f
+224:
+225:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvggABAADF+n+CAAEAAMXh75oQAQAAxfp/mhABAADF2e+iIAEAAMX6f6IgAQAAxdHvqjABAADF+n+qMAEAAMXJ77JAAQAAxfp/skABAADFEe+qUAEAAMV6f6pQAQAAxQnvsmABAADFen+yYAEAAMUB77pwAQAAxXp/unABAADFem8YxEF6b6OAAAAAxXl/2MRBIf7cxXl/28RBIf7cxXl/3MRBIf7cxXl/3cRBIf7cxXl/3sRBIf7cxEF5b+vEQSH+3MRBeW/zxEEh/tzEQXlv+8RBIf7cxXp/GMX6bw/F+e/BxeHv2cXZ7+HF0e/pxcnv8cUR7+nFCe/xxQHv+cX6b08QxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jEMX6b7qQAAAAxENBRMQAxENBRNQRxENBRMwBxENBRNwQxEEx78vF+m9PIMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvYyDF+m+6oAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvTzDE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2MwxfpvurAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09AxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jQMX6b7rAAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m9PUMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvY1DF+m+60AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxfpvT2DE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b2NgxfpvuuAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8X6b09wxOJ53MHE4mHc2cTiWdzhxOJR3OnE4knc8cRiEdzpxGIJ3PHEYgHc+cRBem9jcMX6b7rwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vF+m+PgAAAAMTiedzBxOJh3NnE4lnc4cTiUdzpxOJJ3PHEYhHc6cRiCdzxxGIB3PnEQXpvI8X6b7qAAAAAxcHv+sRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/Lxfpvj5AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xEF6b6OQAAAAxEM5RNwQxEF5cMBOxEEx78jEQTHvy8RDMUTcEMRBeXDJTsTBKe/RxaHv0kiD/go="
+je 228f
+.base64 "xfpvj6AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj7AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5SIP+DA=="
+je 230f
+.base64 "xfpvj8AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5xfpvj9AAAADE4nncwcTiYdzZxOJZ3OHE4lHc6cTiSdzxxGIR3OnEYgnc8cRiAdz5"
+jmp 231f
+230:
+231:
+jmp 229f
+228:
+229:
+.base64 "xMF6bwrE4nndwcTiYd3ZxOJZ3eHE4lHd6cTiSd3xxGIR3enEYgnd8cRiAd35xfnvgoABAADF+n+CgAEAAMXh75qQAQAAxfp/mpABAADF2e+ioAEAAMX6f6KgAQAAxdHvqrABAADF+n+qsAEAAMXJ77LAAQAAxfp/ssABAADFEe+q0AEAAMV6f6rQAQAAxQnvsuABAADFen+y4AEAAMUB77rwAQAAxXp/uvABAABIgcIAAQAASYPpEEmD+SA="
+jae 223b
+jmp 222f
+221:
+222:
+.base64 "xEF6b2MQxfpvehDEQ0FExADEQ0FE1BHEQ0FEzAHEQ0FE3BDEQTHvy8RBem9jIMX6b3ogxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvYzDF+m96MMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NAxfpvekDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jUMX6b3pQxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY2DF+m96YMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NwxfpvenDEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem8jxfpvOsXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79LEQXpvYxDF+m+6kAAAAMRDQUTEAMRDQUTUEcRDQUTMAcRDQUTcEMRBMe/LxEF6b2MgxfpvuqAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jMMX6b7qwAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY0DF+m+6wAAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6b2NQxfpvutAAAADEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem9jYMX6b7rgAAAAxENBRNwAxEE578PEQ0FE3BHEQSnv08RDQUTcAcRBMe/LxENBRNwQxEEx78vEQXpvY3DF+m+68AAAAMRDQUTcAMRBOe/DxENBRNwRxEEp79PEQ0FE3AHEQTHvy8RDQUTcEMRBMe/LxEF6byPF+m+6gAAAAMXB7/rEQ0FE3ADEQTnvw8RDQUTcEcRBKe/TxENBRNwBxEEx78vEQ0FE3BDEQTHvy8RBem+jkAAAAMRDOUTcEMRBeXDATsRBMe/IxEEx78vEQzFE3BDEQXlwyU7EwSnv0cWh79JIuA8ODQwLCgkIZkgPbsBIuAcGBQQDAgEAZkwPbuBmQQ9sxMTiaQDQxfp/EU2Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
+je 232f
+234:
+.base64 "Qb5AAAAATDnz"
+jb 235f
+jmp 236f
+235:
+.base64 "SYne"
+236:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+237:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 237b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+238:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 238b
+.base64 "TCnz"
+jne 234b
+jmp 233f
+232:
+233:
+.base64 "SIXt"
+je 239f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+241:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 241b
+jmp 240f
+239:
+240:
+.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
+je 242f
+244:
+.base64 "Qb5AAAAATDnz"
+jb 245f
+jmp 246f
+245:
+.base64 "SYne"
+246:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+247:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 247b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 244b
+jmp 243f
+242:
+243:
+.base64 "SIXt"
+je 248f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+250:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 250b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 249f
+248:
+249:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 251f
+253:
+.base64 "Qb5AAAAATDnz"
+jb 254f
+jmp 255f
+254:
+.base64 "SYne"
+255:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+256:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 256b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+257:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 257b
+.base64 "TCnz"
+jne 253b
+jmp 252f
+251:
+252:
+.base64 "SIXt"
+je 258f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+260:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 260b
+jmp 259f
+258:
+259:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 261f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 263f
+.base64 "SYneTInx"
+265:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 265b
+jmp 264f
+263:
+264:
+.base64 "SIXt"
+je 266f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+268:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 268b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 267f
+266:
+267:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 269f
+.base64 "SYneTInx"
+271:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 271b
+jmp 270f
+269:
+270:
+.base64 "SIXt"
+je 272f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+274:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 274b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 273f
+272:
+273:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 262f
+261:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 275f
+277:
+.base64 "Qb5AAAAATDnz"
+jb 278f
+jmp 279f
+278:
+.base64 "SYne"
+279:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+280:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 280b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 277b
+jmp 276f
+275:
+276:
+.base64 "SIXt"
+je 281f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+283:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 283b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 282f
+281:
+282:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 284f
+286:
+.base64 "Qb5AAAAATDnz"
+jb 287f
+jmp 288f
+287:
+.base64 "SYne"
+288:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+289:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 289b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 286b
+jmp 285f
+284:
+285:
+.base64 "SIXt"
+je 290f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+292:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 292b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 291f
+290:
+291:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+262:
+23:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 293f
+.base64 "ZkkPbsNmD2zA"
+295:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 295b
+jmp 294f
+293:
+294:
+.base64 "STnq"
+je 296f
+298:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 298b
+jmp 297f
+296:
+297:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 22f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 24f
+.base64 "SYneTInx"
+26:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 27f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+29:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 29b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 28f
+27:
+28:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 210f
+.base64 "SYneTInx"
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+jmp 211f
+210:
+211:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 216f
+218:
+.base64 "Qb5AAAAATDnz"
+jb 219f
+jmp 220f
+219:
+.base64 "SYne"
+220:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+221:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 221b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 218b
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 222f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+224:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 224b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 223f
+222:
+223:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 225f
+227:
+.base64 "Qb5AAAAATDnz"
+jb 228f
+jmp 229f
+228:
+.base64 "SYne"
+229:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+230:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 230b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 227b
+jmp 226f
+225:
+226:
+.base64 "SIXt"
+je 231f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 232f
+231:
+232:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 234f
+236:
+.base64 "Qb5AAAAATDnz"
+jb 237f
+jmp 238f
+237:
+.base64 "SYne"
+238:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+239:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 239b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+240:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 240b
+.base64 "TCnz"
+jne 236b
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 241f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+243:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 243b
+jmp 242f
+241:
+242:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 22f
+24:
+.base64 "Qb5AAAAATDnz"
+jb 25f
+jmp 26f
+25:
+.base64 "SYne"
+26:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+27:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 27b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+28:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 28b
+.base64 "TCnz"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SIXt"
+je 29f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+211:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 212f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 214f
+.base64 "SYneTInx"
+216:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SIXt"
+je 217f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 218f
+217:
+218:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 220f
+.base64 "SYneTInx"
+222:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 223f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 224f
+223:
+224:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 213f
+212:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 226f
+228:
+.base64 "Qb5AAAAATDnz"
+jb 229f
+jmp 230f
+229:
+.base64 "SYne"
+230:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+231:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 231b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SIXt"
+je 232f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+234:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 234b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 233f
+232:
+233:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 235f
+237:
+.base64 "Qb5AAAAATDnz"
+jb 238f
+jmp 239f
+238:
+.base64 "SYne"
+239:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+240:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 240b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash_pclmul}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 237b
+jmp 236f
+235:
+236:
+.base64 "SIXt"
+je 241f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+243:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 243b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+jmp 242f
+241:
+242:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash_pclmul}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+213:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 244f
+.base64 "ZkkPbsNmD2zA"
+246:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 246b
+jmp 245f
+244:
+245:
+.base64 "STnq"
+je 247f
+249:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 249b
+jmp 248f
+247:
+248:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vaes_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 22f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 24f
+.base64 "SYneTInxSIP5CA=="
+jb 26f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+28:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 28b
+.base64 "xfh3SIXJ"
+je 29f
+211:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 211b
+jmp 210f
+29:
+210:
+jmp 27f
+26:
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+27:
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 216f
+.base64 "SYneTInxSIP5CA=="
+jb 218f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+220:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 220b
+.base64 "xfh3SIXJ"
+je 221f
+223:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 223b
+jmp 222f
+221:
+222:
+jmp 219f
+218:
+224:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 224b
+219:
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 225f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+227:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 227b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 226f
+225:
+226:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 228f
+230:
+.base64 "Qb5AAAAATDnz"
+jb 231f
+jmp 232f
+231:
+.base64 "SYne"
+232:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 233f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+235:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 235b
+.base64 "xfh3SIXJ"
+je 236f
+238:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 238b
+jmp 237f
+236:
+237:
+jmp 234f
+233:
+239:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 239b
+234:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "SIXt"
+je 240f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+242:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 242b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 241f
+240:
+241:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 243f
+245:
+.base64 "Qb5AAAAATDnz"
+jb 246f
+jmp 247f
+246:
+.base64 "SYne"
+247:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 248f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+250:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 250b
+.base64 "xfh3SIXJ"
+je 251f
+253:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 253b
+jmp 252f
+251:
+252:
+jmp 249f
+248:
+254:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 254b
+249:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "SIXt"
+je 255f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+257:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 257b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 256f
+255:
+256:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_vaes}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 258f
+260:
+.base64 "Qb5AAAAATDnz"
+jb 261f
+jmp 262f
+261:
+.base64 "SYne"
+262:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+263:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 263b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 264f
+266:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 270b
+265:
+.base64 "TCnz"
+jne 260b
+jmp 259f
+258:
+259:
+.base64 "SIXt"
+je 271f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+273:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 273b
+jmp 272f
+271:
+272:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_vaes_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 22f
+24:
+.base64 "Qb5AAAAATDnz"
+jb 25f
+jmp 26f
+25:
+.base64 "SYne"
+26:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+27:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 27b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_vaes}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 28f
+210:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 210b
+.base64 "xfh3SIXJ"
+je 211f
+213:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 213b
+jmp 212f
+211:
+212:
+jmp 29f
+28:
+214:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 214b
+29:
+.base64 "TCnz"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SIXt"
+je 215f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+217:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 217b
+jmp 216f
+215:
+216:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 218f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 220f
+.base64 "SYneTInxSIP5CA=="
+jb 222f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+224:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 224b
+.base64 "xfh3SIXJ"
+je 225f
+227:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 227b
+jmp 226f
+225:
+226:
+jmp 223f
+222:
+228:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 228b
+223:
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 229f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+231:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 231b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 230f
+229:
+230:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 232f
+.base64 "SYneTInxSIP5CA=="
+jb 234f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+236:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 236b
+.base64 "xfh3SIXJ"
+je 237f
+239:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 239b
+jmp 238f
+237:
+238:
+jmp 235f
+234:
+240:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 240b
+235:
+jmp 233f
+232:
+233:
+.base64 "SIXt"
+je 241f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+243:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 243b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 242f
+241:
+242:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 219f
+218:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 244f
+246:
+.base64 "Qb5AAAAATDnz"
+jb 247f
+jmp 248f
+247:
+.base64 "SYne"
+248:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 249f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+251:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 251b
+.base64 "xfh3SIXJ"
+je 252f
+254:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 254b
+jmp 253f
+252:
+253:
+jmp 250f
+249:
+255:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 255b
+250:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 246b
+jmp 245f
+244:
+245:
+.base64 "SIXt"
+je 256f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+258:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 258b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 257f
+256:
+257:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 259f
+261:
+.base64 "Qb5AAAAATDnz"
+jb 262f
+jmp 263f
+262:
+.base64 "SYne"
+263:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 264f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+266:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 270b
+265:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 261b
+jmp 260f
+259:
+260:
+.base64 "SIXt"
+je 271f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 272f
+271:
+272:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+219:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_vaes}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 274f
+.base64 "ZkkPbsNmD2zA"
+276:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 276b
+jmp 275f
+274:
+275:
+.base64 "STnq"
+je 277f
+279:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 279b
+jmp 278f
+277:
+278:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJAhMCcBIPYAAAAA="
+jae 20f
+.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+22:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 22b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+23:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 23b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 24f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 26f
+.base64 "SYneTInx"
+28:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 28b
+jmp 27f
+26:
+27:
+.base64 "SIXt"
+je 29f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+211:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 211b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 210f
+29:
+210:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 212f
+.base64 "SYneTInx"
+214:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 214b
+jmp 213f
+212:
+213:
+.base64 "SIXt"
+je 215f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+217:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 217b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 216f
+215:
+216:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 25f
+24:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 218f
+220:
+.base64 "Qb5AAAAATDnz"
+jb 221f
+jmp 222f
+221:
+.base64 "SYne"
+222:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+223:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 223b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 220b
+jmp 219f
+218:
+219:
+.base64 "SIXt"
+je 224f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+226:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 226b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 225f
+224:
+225:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 227f
+229:
+.base64 "Qb5AAAAATDnz"
+jb 230f
+jmp 231f
+230:
+.base64 "SYne"
+231:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+232:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 232b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 229b
+jmp 228f
+227:
+228:
+.base64 "SIXt"
+je 233f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+235:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 235b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 234f
+233:
+234:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+25:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 236f
+238:
+.base64 "Qb5AAAAATDnz"
+jb 239f
+jmp 240f
+239:
+.base64 "SYne"
+240:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+241:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 241b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+242:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 242b
+.base64 "TCnz"
+jne 238b
+jmp 237f
+236:
+237:
+.base64 "SIXt"
+je 243f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+245:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 245b
+jmp 244f
+243:
+244:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+246:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 246b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+247:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 247b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 248f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 250f
+.base64 "SYneTInxSIP5CA=="
+jb 252f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+254:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 254b
+.base64 "xfh3SIXJ"
+je 255f
+257:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 257b
+jmp 256f
+255:
+256:
+jmp 253f
+252:
+258:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 258b
+253:
+jmp 251f
+250:
+251:
+.base64 "SIXt"
+je 259f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+261:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 261b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 260f
+259:
+260:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 262f
+.base64 "SYneTInxSIP5CA=="
+jb 264f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+266:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 266b
+.base64 "xfh3SIXJ"
+je 267f
+269:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 269b
+jmp 268f
+267:
+268:
+jmp 265f
+264:
+270:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 270b
+265:
+jmp 263f
+262:
+263:
+.base64 "SIXt"
+je 271f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+273:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 273b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 272f
+271:
+272:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 249f
+248:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 274f
+276:
+.base64 "Qb5AAAAATDnz"
+jb 277f
+jmp 278f
+277:
+.base64 "SYne"
+278:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 279f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+281:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 281b
+.base64 "xfh3SIXJ"
+je 282f
+284:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 284b
+jmp 283f
+282:
+283:
+jmp 280f
+279:
+285:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 285b
+280:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 276b
+jmp 275f
+274:
+275:
+.base64 "SIXt"
+je 286f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+288:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 288b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 287f
+286:
+287:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 289f
+291:
+.base64 "Qb5AAAAATDnz"
+jb 292f
+jmp 293f
+292:
+.base64 "SYne"
+293:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 294f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+296:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 296b
+.base64 "xfh3SIXJ"
+je 297f
+299:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 299b
+jmp 298f
+297:
+298:
+jmp 295f
+294:
+2100:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2100b
+295:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 291b
+jmp 290f
+289:
+290:
+.base64 "SIXt"
+je 2101f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+2103:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2103b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 2102f
+2101:
+2102:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+249:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 2104f
+2106:
+.base64 "Qb5AAAAATDnz"
+jb 2107f
+jmp 2108f
+2107:
+.base64 "SYne"
+2108:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+2109:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 2109b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 2110f
+2112:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 2112b
+.base64 "xfh3SIXJ"
+je 2113f
+2115:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2115b
+jmp 2114f
+2113:
+2114:
+jmp 2111f
+2110:
+2116:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 2116b
+2111:
+.base64 "TCnz"
+jne 2106b
+jmp 2105f
+2104:
+2105:
+.base64 "SIXt"
+je 2117f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+2119:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 2119b
+jmp 2118f
+2117:
+2118:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+jmp 21b
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3`, `aes`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SItEJAhMCcBIPYAAAAA="
+jae 20f
+.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+22:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 22b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+23:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 23b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 24f
+26:
+.base64 "Qb5AAAAATDnz"
+jb 27f
+jmp 28f
+27:
+.base64 "SYne"
+28:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+29:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 29b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+210:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 210b
+.base64 "TCnz"
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 211f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+213:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 213b
+jmp 212f
+211:
+212:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 214f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 216f
+.base64 "SYneTInx"
+218:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 218b
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 219f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+221:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 221b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 220f
+219:
+220:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 222f
+.base64 "SYneTInx"
+224:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 224b
+jmp 223f
+222:
+223:
+.base64 "SIXt"
+je 225f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+227:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 227b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 226f
+225:
+226:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 215f
+214:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 228f
+230:
+.base64 "Qb5AAAAATDnz"
+jb 231f
+jmp 232f
+231:
+.base64 "SYne"
+232:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+233:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 233b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 230b
+jmp 229f
+228:
+229:
+.base64 "SIXt"
+je 234f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+236:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 236b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 235f
+234:
+235:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 237f
+239:
+.base64 "Qb5AAAAATDnz"
+jb 240f
+jmp 241f
+240:
+.base64 "SYne"
+241:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+242:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 242b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 239b
+jmp 238f
+237:
+238:
+.base64 "SIXt"
+je 243f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+245:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 245b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 244f
+243:
+244:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+215:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 246f
+.base64 "ZkkPbsNmD2zA"
+248:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 248b
+jmp 247f
+246:
+247:
+.base64 "STnq"
+je 249f
+251:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 251b
+jmp 250f
+249:
+250:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+21:
+.base64 "ww=="
+20:
+.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+252:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 252b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+253:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 253b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 254f
+256:
+.base64 "Qb5AAAAATDnz"
+jb 257f
+jmp 258f
+257:
+.base64 "SYne"
+258:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+259:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 259b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
+jb 260f
+262:
+.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
+jae 262b
+.base64 "xfh3SIXJ"
+je 263f
+265:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 265b
+jmp 264f
+263:
+264:
+jmp 261f
+260:
+266:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 266b
+261:
+.base64 "TCnz"
+jne 256b
+jmp 255f
+254:
+255:
+.base64 "SIXt"
+je 267f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+269:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 269b
+jmp 268f
+267:
+268:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 270f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 272f
+.base64 "SYneTInxSIP5CA=="
+jb 274f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+276:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 276b
+.base64 "xfh3SIXJ"
+je 277f
+279:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 279b
+jmp 278f
+277:
+278:
+jmp 275f
+274:
+280:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 280b
+275:
+jmp 273f
+272:
+273:
+.base64 "SIXt"
+je 281f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+283:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 283b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 282f
+281:
+282:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 284f
+.base64 "SYneTInxSIP5CA=="
+jb 286f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+288:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 288b
+.base64 "xfh3SIXJ"
+je 289f
+291:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 291b
+jmp 290f
+289:
+290:
+jmp 287f
+286:
+292:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 292b
+287:
+jmp 285f
+284:
+285:
+.base64 "SIXt"
+je 293f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+295:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 295b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 294f
+293:
+294:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 271f
+270:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 296f
+298:
+.base64 "Qb5AAAAATDnz"
+jb 299f
+jmp 2100f
+299:
+.base64 "SYne"
+2100:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 2101f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+2103:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 2103b
+.base64 "xfh3SIXJ"
+je 2104f
+2106:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2106b
+jmp 2105f
+2104:
+2105:
+jmp 2102f
+2101:
+2107:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2107b
+2102:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 298b
+jmp 297f
+296:
+297:
+.base64 "SIXt"
+je 2108f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+2110:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2110b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 2109f
+2108:
+2109:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 2111f
+2113:
+.base64 "Qb5AAAAATDnz"
+jb 2114f
+jmp 2115f
+2114:
+.base64 "SYne"
+2115:
+.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
+jb 2116f
+lea rax, [rip + {VG_GCM_CONSTS}]
+.base64 "8w9vCMTjdTjJAQ=="
+2118:
+.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
+jae 2118b
+.base64 "xfh3SIXJ"
+je 2119f
+2121:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2121b
+jmp 2120f
+2119:
+2120:
+jmp 2117f
+2116:
+2122:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 2122b
+2117:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 2113b
+jmp 2112f
+2111:
+2112:
+.base64 "SIXt"
+je 2123f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+2125:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 2125b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 2124f
+2123:
+2124:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+271:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 2126f
+.base64 "ZkkPbsNmD2zA"
+2128:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 2128b
+jmp 2127f
+2126:
+2127:
+.base64 "STnq"
+je 2129f
+2131:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 2131b
+jmp 2130f
+2129:
+2130:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+jmp 21b
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
+jae 22f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 24f
+.base64 "SYneTInx"
+26:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 26b
+jmp 25f
+24:
+25:
+.base64 "SIXt"
+je 27f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+29:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 29b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 28f
+27:
+28:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 210f
+.base64 "SYneTInx"
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+jmp 211f
+210:
+211:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 216f
+218:
+.base64 "Qb5AAAAATDnz"
+jb 219f
+jmp 220f
+219:
+.base64 "SYne"
+220:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+221:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 221b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 218b
+jmp 217f
+216:
+217:
+.base64 "SIXt"
+je 222f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+224:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 224b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 223f
+222:
+223:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 225f
+227:
+.base64 "Qb5AAAAATDnz"
+jb 228f
+jmp 229f
+228:
+.base64 "SYne"
+229:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+230:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 230b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 227b
+jmp 226f
+225:
+226:
+.base64 "SIXt"
+je 231f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 232f
+231:
+232:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 234f
+236:
+.base64 "Qb5AAAAATDnz"
+jb 237f
+jmp 238f
+237:
+.base64 "SYne"
+238:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+239:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 239b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+240:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 240b
+.base64 "TCnz"
+jne 236b
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 241f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+243:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 243b
+jmp 242f
+241:
+242:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_open_aesni` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES);
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `ssse3` and `aes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch_aesni}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 22f
+24:
+.base64 "Qb5AAAAATDnz"
+jb 25f
+jmp 26f
+25:
+.base64 "SYne"
+26:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+27:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 27b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks_aesni}
+.base64 "TInxTIn+SIHG6AEAAA=="
+28:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 28b
+.base64 "TCnz"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SIXt"
+je 29f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+211:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 212f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 214f
+.base64 "SYneTInx"
+216:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SIXt"
+je 217f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 218f
+217:
+218:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 220f
+.base64 "SYneTInx"
+222:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 222b
+jmp 221f
+220:
+221:
+.base64 "SIXt"
+je 223f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 224f
+223:
+224:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 213f
+212:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 226f
+228:
+.base64 "Qb5AAAAATDnz"
+jb 229f
+jmp 230f
+229:
+.base64 "SYne"
+230:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+231:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 231b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 228b
+jmp 227f
+226:
+227:
+.base64 "SIXt"
+je 232f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+234:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 234b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 233f
+232:
+233:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 235f
+237:
+.base64 "Qb5AAAAATDnz"
+jb 238f
+jmp 239f
+238:
+.base64 "SYne"
+239:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+240:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 240b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 237b
+jmp 236f
+235:
+236:
+.base64 "SIXt"
+je 241f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+243:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 243b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 242f
+241:
+242:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+213:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32_aesni}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
+je 244f
+.base64 "ZkkPbsNmD2zA"
+246:
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
+jne 246b
+jmp 245f
+244:
+245:
+.base64 "STnq"
+je 247f
+249:
+.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
+jne 249b
+jmp 248f
+247:
+248:
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+    )
+}
+
+/// The CPU features `vg_aes_gcm_siv_seal_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks}
 .base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
@@ -4248,9 +6933,9 @@ call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
 .base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
+call {vg_aes_expand_key_scratch}
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32}
 .base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
 je 258f
 260:
@@ -4265,7 +6950,7 @@ jmp 262f
 .base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
 jne 263b
 .base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
+call {vg_aes_encrypt_blocks}
 .base64 "TInxTIn+SIHG6AEAAEiD+Qg="
 jb 264f
 266:
@@ -4293,7 +6978,7 @@ jmp 259f
 .base64 "SIXt"
 je 271f
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32}
 .base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
 273:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
@@ -4303,16 +6988,16 @@ jmp 272f
 272:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+/// The CPU features `vg_aes_gcm_siv_open_vpclmul_avx2` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -4330,22 +7015,22 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_FEATURES: verified_garbage_cpu::Feat
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
+/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul_avx2(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
 .base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
 jne 20b
 .base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_aesni}
+call {vg_aes_encrypt_blocks}
 .base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
 jne 21b
 .base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
+call {vg_aes_expand_key_scratch}
 .base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
 je 22f
 24:
@@ -4360,7 +7045,7 @@ jmp 26f
 .base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
 jne 27b
 .base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_aesni}
+call {vg_aes_encrypt_blocks}
 .base64 "TInxTIn+SIHG6AEAAEiD+Qg="
 jb 28f
 210:
@@ -4388,7 +7073,7 @@ jmp 23f
 .base64 "SIXt"
 je 215f
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32}
 .base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
 217:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
@@ -4576,7 +7261,7 @@ call {vg_ghash_vpclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 219:
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_aesni}
+call {vg_aes_ctr32}
 .base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
 je 274f
 .base64 "ZkkPbsNmD2zA"
@@ -4596,462 +7281,11 @@ jmp 278f
 278:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_aesni_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_seal_aesni_vpclmul as vg_aes_gcm_siv_seal_aesni_vpclmul_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_open_aesni_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_AESNI_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_aesni_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_open_aesni_vpclmul as vg_aes_gcm_siv_open_aesni_vpclmul_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 22f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 24f
-.base64 "SYneTInx"
-26:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 27f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-29:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 29b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 28f
-27:
-28:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 210f
-.base64 "SYneTInx"
-212:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-jmp 211f
-210:
-211:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 216f
-218:
-.base64 "Qb5AAAAATDnz"
-jb 219f
-jmp 220f
-219:
-.base64 "SYne"
-220:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-221:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 221b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 218b
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 222f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-224:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 224b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 223f
-222:
-223:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 225f
-227:
-.base64 "Qb5AAAAATDnz"
-jb 228f
-jmp 229f
-228:
-.base64 "SYne"
-229:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-230:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 230b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 227b
-jmp 226f
-225:
-226:
-.base64 "SIXt"
-je 231f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-233:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 233b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 232f
-231:
-232:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 234f
-236:
-.base64 "Qb5AAAAATDnz"
-jb 237f
-jmp 238f
-237:
-.base64 "SYne"
-238:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-239:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 239b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks}
-.base64 "TInxTIn+SIHG6AEAAA=="
-240:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 240b
-.base64 "TCnz"
-jne 236b
-jmp 235f
-234:
-235:
-.base64 "SIXt"
-je 241f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-243:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 243b
-jmp 242f
-241:
-242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 22f
-24:
-.base64 "Qb5AAAAATDnz"
-jb 25f
-jmp 26f
-25:
-.base64 "SYne"
-26:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-27:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 27b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks}
-.base64 "TInxTIn+SIHG6AEAAA=="
-28:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 28b
-.base64 "TCnz"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SIXt"
-je 29f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-211:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 211b
-jmp 210f
-29:
-210:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 212f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 214f
-.base64 "SYneTInx"
-216:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "SIXt"
-je 217f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-219:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 219b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 218f
-217:
-218:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 220f
-.base64 "SYneTInx"
-222:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 222b
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 223f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-225:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 225b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 224f
-223:
-224:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 213f
-212:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 226f
-228:
-.base64 "Qb5AAAAATDnz"
-jb 229f
-jmp 230f
-229:
-.base64 "SYne"
-230:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-231:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 231b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 228b
-jmp 227f
-226:
-227:
-.base64 "SIXt"
-je 232f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-234:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 234b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 233f
-232:
-233:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 235f
-237:
-.base64 "Qb5AAAAATDnz"
-jb 238f
-jmp 239f
-238:
-.base64 "SYne"
-239:
-.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
-240:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 240b
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 237b
-jmp 236f
-235:
-236:
-.base64 "SIXt"
-je 241f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 242f
-241:
-242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-213:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 244f
-.base64 "ZkkPbsNmD2zA"
-246:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 246b
-jmp 245f
-244:
-245:
-.base64 "STnq"
-je 247f
-249:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 249b
-jmp 248f
-247:
-248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
@@ -5975,6 +8209,9 @@ jmp 21b
     )
 }
 
+/// The CPU features `vg_aes_gcm_siv_seal_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
@@ -5991,8 +8228,9 @@ jmp 21b
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
@@ -6045,7 +8283,7 @@ jmp 214f
 213:
 214:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 jmp 23f
 22:
@@ -6063,7 +8301,7 @@ jmp 220f
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 221b
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 218b
 jmp 217f
@@ -6076,7 +8314,7 @@ je 222f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 224b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 jmp 223f
 222:
 223:
@@ -6094,7 +8332,7 @@ jmp 229f
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 230b
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 227b
 jmp 226f
@@ -6107,12 +8345,12 @@ je 231f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 233b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 jmp 232f
 231:
 232:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 23:
 .base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
@@ -6157,11 +8395,14 @@ jmp 242f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
+
+/// The CPU features `vg_aes_gcm_siv_open_pclmul` requires (`Artifact.features`).
+pub const VG_AES_GCM_SIV_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
 
 /// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
 ///
@@ -6179,8 +8420,9 @@ jmp 242f
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 20:
@@ -6270,7 +8512,7 @@ jmp 224f
 223:
 224:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 jmp 213f
 212:
@@ -6288,7 +8530,7 @@ jmp 230f
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 231b
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 228b
 jmp 227f
@@ -6301,7 +8543,7 @@ je 232f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 234b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 jmp 233f
 232:
 233:
@@ -6319,7 +8561,7 @@ jmp 239f
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 240b
 .base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 237b
 jmp 236f
@@ -6332,12 +8574,12 @@ je 241f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 243b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 jmp 242f
 241:
 242:
 .base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
+call {vg_ghash_pclmul}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
 213:
 .base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
@@ -6364,7 +8606,7 @@ jmp 248f
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
 
@@ -7288,9 +9530,6 @@ jmp 21b
     )
 }
 
-/// The CPU features `vg_aes_gcm_siv_seal_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
 /// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
 ///
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
@@ -7307,16 +9546,15 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_FEATURES: verified_garbage_cpu::Features = ve
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 20:
 .base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
 jne 20b
 .base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
+call {vg_aes_encrypt_blocks}
 .base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
 21:
 .base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
@@ -7325,1337 +9563,292 @@ jne 21b
 jae 22f
 .base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
 je 24f
-.base64 "SYneTInxSIP5CA=="
-jb 26f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-28:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 28b
-.base64 "xfh3SIXJ"
-je 29f
-211:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 211b
-jmp 210f
-29:
-210:
-jmp 27f
+.base64 "SYneTInx"
 26:
-212:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-27:
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 216f
-.base64 "SYneTInxSIP5CA=="
-jb 218f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-220:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 220b
-.base64 "xfh3SIXJ"
-je 221f
-223:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 223b
-jmp 222f
-221:
-222:
-jmp 219f
-218:
-224:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 224b
-219:
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 225f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-227:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 227b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 226f
-225:
-226:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 228f
-230:
-.base64 "Qb5AAAAATDnz"
-jb 231f
-jmp 232f
-231:
-.base64 "SYne"
-232:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 233f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-235:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 235b
-.base64 "xfh3SIXJ"
-je 236f
-238:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 238b
-jmp 237f
-236:
-237:
-jmp 234f
-233:
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-234:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 230b
-jmp 229f
-228:
-229:
-.base64 "SIXt"
-je 240f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-242:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 242b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 241f
-240:
-241:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 243f
-245:
-.base64 "Qb5AAAAATDnz"
-jb 246f
-jmp 247f
-246:
-.base64 "SYne"
-247:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 248f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-250:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 250b
-.base64 "xfh3SIXJ"
-je 251f
-253:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-jmp 249f
-248:
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-249:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "SIXt"
-je 255f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-257:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 257b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 256f
-255:
-256:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_vaes}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 258f
-260:
-.base64 "Qb5AAAAATDnz"
-jb 261f
-jmp 262f
-261:
-.base64 "SYne"
-262:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-263:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 263b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 264f
-266:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 270b
-265:
-.base64 "TCnz"
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SIXt"
-je 271f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-273:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 273b
-jmp 272f
-271:
-272:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 22f
-24:
-.base64 "Qb5AAAAATDnz"
-jb 25f
-jmp 26f
-25:
-.base64 "SYne"
-26:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-27:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 27b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 28f
-210:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 210b
-.base64 "xfh3SIXJ"
-je 211f
-213:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 29f
-28:
-214:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 214b
-29:
-.base64 "TCnz"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SIXt"
-je 215f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-217:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 218f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 220f
-.base64 "SYneTInxSIP5CA=="
-jb 222f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-224:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 224b
-.base64 "xfh3SIXJ"
-je 225f
-227:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 227b
-jmp 226f
-225:
-226:
-jmp 223f
-222:
-228:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 228b
-223:
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 229f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-231:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 231b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 230f
-229:
-230:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 232f
-.base64 "SYneTInxSIP5CA=="
-jb 234f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-236:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 236b
-.base64 "xfh3SIXJ"
-je 237f
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-jmp 235f
-234:
-240:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 240b
-235:
-jmp 233f
-232:
-233:
-.base64 "SIXt"
-je 241f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 242f
-241:
-242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 219f
-218:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 244f
-246:
-.base64 "Qb5AAAAATDnz"
-jb 247f
-jmp 248f
-247:
-.base64 "SYne"
-248:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 249f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-251:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 251b
-.base64 "xfh3SIXJ"
-je 252f
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-jmp 253f
-252:
-253:
-jmp 250f
-249:
-255:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 255b
-250:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 246b
-jmp 245f
-244:
-245:
-.base64 "SIXt"
-je 256f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-258:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 258b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 257f
-256:
-257:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 259f
-261:
-.base64 "Qb5AAAAATDnz"
-jb 262f
-jmp 263f
-262:
-.base64 "SYne"
-263:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 264f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-266:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 270b
-265:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 261b
-jmp 260f
-259:
-260:
-.base64 "SIXt"
-je 271f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-273:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 273b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash}
-jmp 272f
-271:
-272:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-219:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 274f
-.base64 "ZkkPbsNmD2zA"
-276:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 276b
-jmp 275f
-274:
-275:
-.base64 "STnq"
-je 277f
-279:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 279b
-jmp 278f
-277:
-278:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_seal_vaes as vg_aes_gcm_siv_seal_vaes_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_open_vaes as vg_aes_gcm_siv_open_vaes_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 22f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 24f
-.base64 "SYneTInxSIP5CA=="
-jb 26f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-28:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 28b
-.base64 "xfh3SIXJ"
-je 29f
-211:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 211b
-jmp 210f
-29:
-210:
-jmp 27f
-26:
-212:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-27:
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 216f
-.base64 "SYneTInxSIP5CA=="
-jb 218f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-220:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 220b
-.base64 "xfh3SIXJ"
-je 221f
-223:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 223b
-jmp 222f
-221:
-222:
-jmp 219f
-218:
-224:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 224b
-219:
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 225f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-227:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 227b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 226f
-225:
-226:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 228f
-230:
-.base64 "Qb5AAAAATDnz"
-jb 231f
-jmp 232f
-231:
-.base64 "SYne"
-232:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 233f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-235:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 235b
-.base64 "xfh3SIXJ"
-je 236f
-238:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 238b
-jmp 237f
-236:
-237:
-jmp 234f
-233:
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-234:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 230b
-jmp 229f
-228:
-229:
-.base64 "SIXt"
-je 240f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-242:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 242b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 241f
-240:
-241:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 243f
-245:
-.base64 "Qb5AAAAATDnz"
-jb 246f
-jmp 247f
-246:
-.base64 "SYne"
-247:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 248f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-250:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 250b
-.base64 "xfh3SIXJ"
-je 251f
-253:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-jmp 249f
-248:
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-249:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "SIXt"
-je 255f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-257:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 257b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 256f
-255:
-256:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_vaes}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 258f
-260:
-.base64 "Qb5AAAAATDnz"
-jb 261f
-jmp 262f
-261:
-.base64 "SYne"
-262:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-263:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 263b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 264f
-266:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 270b
-265:
-.base64 "TCnz"
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SIXt"
-je 271f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-273:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 273b
-jmp 272f
-271:
-272:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 22f
-24:
-.base64 "Qb5AAAAATDnz"
-jb 25f
-jmp 26f
-25:
-.base64 "SYne"
-26:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-27:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 27b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 28f
-210:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 210b
-.base64 "xfh3SIXJ"
-je 211f
-213:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 29f
-28:
-214:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 214b
-29:
-.base64 "TCnz"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SIXt"
-je 215f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-217:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 218f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 220f
-.base64 "SYneTInxSIP5CA=="
-jb 222f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-224:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 224b
-.base64 "xfh3SIXJ"
-je 225f
-227:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 227b
-jmp 226f
-225:
-226:
-jmp 223f
-222:
-228:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 228b
-223:
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 229f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-231:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 231b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 230f
-229:
-230:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 232f
-.base64 "SYneTInxSIP5CA=="
-jb 234f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-236:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 236b
-.base64 "xfh3SIXJ"
-je 237f
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-jmp 235f
-234:
-240:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 240b
-235:
-jmp 233f
-232:
-233:
-.base64 "SIXt"
-je 241f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 242f
-241:
-242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 219f
-218:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 244f
-246:
-.base64 "Qb5AAAAATDnz"
-jb 247f
-jmp 248f
-247:
-.base64 "SYne"
-248:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 249f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-251:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 251b
-.base64 "xfh3SIXJ"
-je 252f
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-jmp 253f
-252:
-253:
-jmp 250f
-249:
-255:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 255b
-250:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 246b
-jmp 245f
-244:
-245:
-.base64 "SIXt"
-je 256f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-258:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 258b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 257f
-256:
-257:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 259f
-261:
-.base64 "Qb5AAAAATDnz"
-jb 262f
-jmp 263f
-262:
-.base64 "SYne"
-263:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 264f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-266:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 270b
-265:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_pclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 261b
-jmp 260f
-259:
-260:
-.base64 "SIXt"
-je 271f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-273:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 273b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-jmp 272f
-271:
-272:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_pclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-219:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 274f
-.base64 "ZkkPbsNmD2zA"
-276:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 276b
-jmp 275f
-274:
-275:
-.base64 "STnq"
-je 277f
-279:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 279b
-jmp 278f
-277:
-278:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_seal_vaes_pclmul as vg_aes_gcm_siv_seal_vaes_pclmul_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes_pclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_PCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_pclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_open_vaes_pclmul as vg_aes_gcm_siv_open_vaes_pclmul_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
-jb 22f
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 24f
-26:
-.base64 "Qb5AAAAATDnz"
-jb 27f
-jmp 28f
-27:
-.base64 "SYne"
-28:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 29f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-211:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 211b
-.base64 "xfh3SIXJ"
-je 212f
-214:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 214b
-jmp 213f
-212:
-213:
-jmp 210f
-29:
-215:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 215b
-210:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 26b
 jmp 25f
 24:
 25:
 .base64 "SIXt"
-je 216f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-218:
+je 27f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+29:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 29b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 28f
+27:
+28:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 210f
+.base64 "SYneTInx"
+212:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 212b
+jmp 211f
+210:
+211:
+.base64 "SIXt"
+je 213f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+215:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 215b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 214f
+213:
+214:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 23f
+22:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 216f
+218:
+.base64 "Qb5AAAAATDnz"
+jb 219f
+jmp 220f
+219:
+.base64 "SYne"
+220:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+221:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 221b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
 jne 218b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
 jmp 217f
 216:
 217:
-.base64 "TIn5SIPBUE2J+EmDwEBNiftJgcPoBQAASYuX6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vOGYPOAD4"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RNsAZkUP78NmRA9v3mZEDzpE2xFmRQ/v02ZED2/eZkQPOkTbAWZFD+/LZkQPb95mRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb+JmRQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTcAGZFD+/DZkQPb95mRA86RNwRZkUP79NmRA9v3mZEDzpE3AFmRQ/vy2ZED2/eZkQPOkTcEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/qZkUP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3QBmRQ/vw2ZED2/eZkQPOkTdEWZFD+/TZkQPb95mRA86RN0BZkUP78tmRA9v3mZEDzpE3RBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v8mZFD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN4AZkUP78NmRA9v3mZEDzpE3hFmRQ/v02ZED2/eZkQPOkTeAWZFD+/LZkQPb95mRA86RN4QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/pmRQ/v+MRDBTj+AcRDFTj0AcRjTTjtAcRjXTjjAcTjfTjAAcTjdTjJAcX5b9LEwwU4/wHEQT3vwMRBNe/JxEEt79LEYwVE3wDEQT3vw8RjBUTfEcRBLe/TxGMFRN8BxEE178vEYwVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt79jEQT3vwMRBNe/JxEEt79LEYw1E3wDEQT3vw8RjDUTfEcRBLe/TxGMNRN8BxEE178vEYw1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+DEQT3vwMRBNe/JxEEt79LEYxVE3wDEQT3vw8RjFUTfEcRBLe/TxGMVRN8BxEE178vEYxVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+jEQT3vwMRBNe/JxEEt79LEYx1E3wDEQT3vw8RjHUTfEcRBLe/TxGMdRN8BxEE178vEYx1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/DEwX5/G8TBfn9jIMTBfn9rQMTBfn9zYMRBfn+7gAAAAMRBfn+zoAAAAMRBfn+rwAAAAMRBfn+j4AAAAMX6bxHE4mkA0A=="
-219:
-.base64 "xEE978DEQTXvycRBLe/SxEF+b2Mgxf5veiDEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm9jQMX+b3pAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vY2DF/m96YMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6OAAAAAxf5vuoAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+joAAAAMX+b7qgAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vo8AAAADF/m+6wAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6PgAAAAxf5vuuAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm8jxf5vOsXF7/rEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/jEw305+wHFoe/XSIHCAAEAAEmD6RA="
-jne 219b
-.base64 "xOJpANDF+n8Rxfh3TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
-je 220f
-222:
-.base64 "Qb5AAAAATDnz"
-jb 223f
-jmp 224f
-223:
-.base64 "SYne"
+.base64 "SIXt"
+je 222f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
 224:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 225f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 224b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 223f
+222:
+223:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 225f
 227:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 227b
-.base64 "xfh3SIXJ"
-je 228f
+.base64 "Qb5AAAAATDnz"
+jb 228f
+jmp 229f
+228:
+.base64 "SYne"
+229:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
 230:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 230b
-jmp 229f
-228:
-229:
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 227b
 jmp 226f
 225:
-231:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 231b
 226:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+.base64 "SIXt"
+je 231f
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
+233:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 233b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
+jmp 232f
+231:
+232:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+23:
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
+call {vg_aes_ctr32}
+.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
+je 234f
+236:
+.base64 "Qb5AAAAATDnz"
+jb 237f
+jmp 238f
+237:
+.base64 "SYne"
+238:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+239:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 239b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "TInxTIn+SIHG6AEAAA=="
+240:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 240b
+.base64 "TCnz"
+jne 236b
+jmp 235f
+234:
+235:
+.base64 "SIXt"
+je 241f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+243:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 243b
+jmp 242f
+241:
+242:
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.p2align 6"#,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+    )
+}
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
+20:
+.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
+jne 20b
+.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
+call {vg_aes_encrypt_blocks}
+.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
+21:
+.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
+jne 21b
+.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
+call {vg_aes_expand_key_scratch}
+.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
+je 22f
+24:
+.base64 "Qb5AAAAATDnz"
+jb 25f
+jmp 26f
+25:
+.base64 "SYne"
+26:
+.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
+27:
+.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
+jne 27b
+.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
+call {vg_aes_encrypt_blocks}
+.base64 "TInxTIn+SIHG6AEAAA=="
+28:
+.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
+jne 28b
+.base64 "TCnz"
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "SIXt"
+je 29f
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32}
+.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
+211:
+.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
+jne 211b
+jmp 210f
+29:
+210:
+.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
+jae 212f
+.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
+je 214f
+.base64 "SYneTInx"
+216:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "SIXt"
+je 217f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+219:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 219b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 218f
+217:
+218:
+.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
+je 220f
+.base64 "SYneTInx"
+222:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 222b
 jmp 221f
 220:
 221:
+.base64 "SIXt"
+je 223f
+.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+225:
+.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+jne 225b
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+jmp 224f
+223:
+224:
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
+call {vg_ghash}
+.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
+jmp 213f
+212:
+.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+je 226f
+228:
+.base64 "Qb5AAAAATDnz"
+jb 229f
+jmp 230f
+229:
+.base64 "SYne"
+230:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
+231:
+.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
+jne 231b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 228b
+jmp 227f
+226:
+227:
 .base64 "SIXt"
 je 232f
 .base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
@@ -8663,1515 +9856,72 @@ je 232f
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 234b
 .base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
+call {vg_ghash}
 jmp 233f
 232:
 233:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 235f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 237f
-.base64 "SYneTInxSIP5CA=="
-jb 239f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-241:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 241b
-.base64 "xfh3SIXJ"
-je 242f
-244:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 244b
-jmp 243f
-242:
-243:
-jmp 240f
-239:
-245:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 245b
-240:
-jmp 238f
-237:
-238:
-.base64 "SIXt"
-je 246f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-248:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 248b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 247f
-246:
-247:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 249f
-.base64 "SYneTInxSIP5CA=="
-jb 251f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-253:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 253b
-.base64 "xfh3SIXJ"
-je 254f
-256:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 256b
-jmp 255f
-254:
-255:
-jmp 252f
-251:
-257:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 257b
-252:
-jmp 250f
-249:
-250:
-.base64 "SIXt"
-je 258f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-260:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 260b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 259f
-258:
-259:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 236f
-235:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 261f
-263:
-.base64 "Qb5AAAAATDnz"
-jb 264f
-jmp 265f
-264:
-.base64 "SYne"
-265:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 266f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-268:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 268b
-.base64 "xfh3SIXJ"
-je 269f
-271:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 271b
-jmp 270f
-269:
-270:
-jmp 267f
-266:
-272:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 272b
-267:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 263b
-jmp 262f
-261:
-262:
-.base64 "SIXt"
-je 273f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-275:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 275b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 274f
-273:
-274:
 .base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 276f
-278:
-.base64 "Qb5AAAAATDnz"
-jb 279f
-jmp 280f
-279:
-.base64 "SYne"
-280:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 281f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-283:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 283b
-.base64 "xfh3SIXJ"
-je 284f
-286:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 286b
-jmp 285f
-284:
-285:
-jmp 282f
-281:
-287:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 287b
-282:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 278b
-jmp 277f
-276:
-277:
-.base64 "SIXt"
-je 288f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-290:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 290b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 289f
-288:
-289:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-236:
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32_vaes}
-.base64 "SYuH8AAAAEg9AAEAAA=="
-jb 291f
-.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAATIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAMTjfTjAAUm6AQAAAAAAAADEQflu+sV6bzLEQQn+78RDDTj1AUm6AgAAAAAAAADEQflu+sRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJ4g=="
-293:
-.base64 "xX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abyDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvMMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab1DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvYMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9wxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar4AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVqvkAAAAMTCZdzdxMJd3OXEwlXc7cTCTdz1SIP+Cg=="
-je 294f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 296f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 297f
-296:
-297:
-jmp 295f
-294:
-295:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+byrFle/bxf5/GsV+b2ogxZXv5MX+f2IgxX5vakDFle/txf5/akDFfm9qYMWV7/bF/n9yYMV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
-je 298f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 2100f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 2101f
-2100:
-2101:
-jmp 299f
-298:
-299:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAAAAxZXv28X+f5qAAAAAxX5vqqAAAADFle/kxf5/oqAAAADFfm+qwAAAAMWV7+3F/n+qwAAAAMV+b6rgAAAAxZXv9sX+f7LgAAAASIHCAAEAAEmD6RA="
-jne 293b
-.base64 "xXp/MMX4d02Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
-je 2102f
-2104:
-.base64 "Qb5AAAAATDnz"
-jb 2105f
-jmp 2106f
-2105:
-.base64 "SYne"
-2106:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-2107:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 2107b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 2108f
-2110:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 2110b
-.base64 "xfh3SIXJ"
-je 2111f
-2113:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2113b
-jmp 2112f
-2111:
-2112:
-jmp 2109f
-2108:
-2114:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2114b
-2109:
-.base64 "TCnz"
-jne 2104b
-jmp 2103f
-2102:
-2103:
-.base64 "SIXt"
-je 2115f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-2117:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 2117b
-jmp 2116f
-2115:
-2116:
-jmp 292f
-291:
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 2118f
-2120:
-.base64 "Qb5AAAAATDnz"
-jb 2121f
-jmp 2122f
-2121:
-.base64 "SYne"
-2122:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-2123:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 2123b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 2124f
-2126:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 2126b
-.base64 "xfh3SIXJ"
-je 2127f
-2129:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2129b
-jmp 2128f
-2127:
-2128:
-jmp 2125f
-2124:
-2130:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 2130b
-2125:
-.base64 "TCnz"
-jne 2120b
-jmp 2119f
-2118:
-2119:
-.base64 "SIXt"
-je 2131f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-2133:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 2133b
-jmp 2132f
-2131:
-2132:
-292:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch_aesni}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fwAAAASD0AAQAA"
-jb 22f
-.base64 "SYsHSYlHYEmLRwhIuQAAAAAAAACASAnISYlHaE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9Ihds="
-je 24f
-26:
-.base64 "Qb5AAAAATDnz"
-jb 27f
-jmp 28f
-27:
-.base64 "SYne"
-28:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 29f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-211:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 211b
-.base64 "xfh3SIXJ"
-je 212f
-214:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 214b
-jmp 213f
-212:
-213:
-jmp 210f
-29:
-215:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 215b
-210:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 26b
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 216f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-218:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 218b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 217f
-216:
-217:
-.base64 "TIn/SIHH+AAAAEmLt8gAAABMifpIg8JgTIn5SIPBUE2J+EmDwEBNiftJgcPoBgAATYun6AAAAE2Lj/AAAABJwekITQHJTQHJTQHJTQHJ"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vAA=="
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vSBDzQQ9vOGYPOAD4"
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "80QPb2ggSLj//////////2ZMD27wZkUPbPZmD2/fZg9z8wFmRA9v32ZBD3PTP2ZBD3P7CGZBD+vbZkQPcN//ZkEPctMfZkUP/t5mRQ/f3WZBD+/bZkUP78BmRQ/vyWZFD+/SZkQPb9tmRA86RNsAZkUP78NmRA9v22ZEDzpE2xFmRQ/v02ZED2/bZkQPOkTbAWZFD+/LZkQPb9tmRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkEPb+JmQQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/cZkQPOkTbAGZFD+/DZkQPb9xmRA86RNsRZkUP79NmRA9v3GZEDzpE2wFmRQ/vy2ZED2/cZkQPOkTbEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZBD2/qZkEP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3GZEDzpE3ABmRQ/vw2ZED2/cZkQPOkTcEWZFD+/TZkQPb9xmRA86RNwBZkUP78tmRA9v3GZEDzpE3BBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmQQ9v8mZBD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RNsAZkUP78NmRA9v3mZEDzpE2xFmRQ/v02ZED2/eZkQPOkTbAWZFD+/LZkQPb95mRA86RNsQZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb+JmRQ/v4GZFD+/AZkUP78lmRQ/v0mZED2/eZkQPOkTcAGZFD+/DZkQPb95mRA86RNwRZkUP79NmRA9v3mZEDzpE3AFmRQ/vy2ZED2/eZkQPOkTcEGZFD+/LZkUPb9lmQQ9z2whmRQ/v02ZBD3P5CGZFD+/BZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/qZkUP7+hmRQ/vwGZFD+/JZkUP79JmRA9v3mZEDzpE3QBmRQ/vw2ZED2/eZkQPOkTdEWZFD+/TZkQPb95mRA86RN0BZkUP78tmRA9v3mZEDzpE3RBmRQ/vy2ZFD2/ZZkEPc9sIZkUP79NmQQ9z+QhmRQ/vwWZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb9hmRA86RNkQZkUPcMBOZkUP78NmRQ9v8mZFD+/wZkUP78BmRQ/vyWZFD+/SZkQPb95mRA86RN4AZkUP78NmRA9v3mZEDzpE3hFmRQ/v02ZED2/eZkQPOkTeAWZFD+/LZkQPb95mRA86RN4QZkUP78tmRQ9v2WZBD3PbCGZFD+/TZkEPc/kIZkUP78FmRQ9v2GZEDzpE2RBmRQ9wwE5mRQ/vw2ZFD2/YZkQPOkTZEGZFD3DATmZFD+/DZkUPb/pmRQ/v+MRDBTj+AcRDFTj0AcRjTTjtAcRjXTjjAcTjfTjAAcTjdTjJAcX5b9LEwwU4/wHEQT3vwMRBNe/JxEEt79LEYwVE3wDEQT3vw8RjBUTfEcRBLe/TxGMFRN8BxEE178vEYwVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt79jEQT3vwMRBNe/JxEEt79LEYw1E3wDEQT3vw8RjDUTfEcRBLe/TxGMNRN8BxEE178vEYw1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+DEQT3vwMRBNe/JxEEt79LEYxVE3wDEQT3vw8RjFUTfEcRBLe/TxGMVRN8BxEE178vEYxVE3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7+jEQT3vwMRBNe/JxEEt79LEYx1E3wDEQT3vw8RjHUTfEcRBLe/TxGMdRN8BxEE178vEYx1E3xDEQTXvy8TBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/DEwX5/G8TBfn9jIMTBfn9rQMTBfn9zYMRBfn+7gAAAAMRBfn+zoAAAAMRBfn+rwAAAAMRBfn+j4AAAAMX6bxHE4mkA0Em6AQAAAAAAAADEQflu+sV6bzLEQQn+78RDDTj1AUm6AgAAAAAAAADEQflu+sRDBTj/AUmJ8k0B0k0B0k0B0k0B0kkB+kiJ0EyJ4sV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
-je 219f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 221f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 222f
-221:
-222:
-jmp 220f
-219:
-220:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+byrFle/bxf5/GsV+b2ogxZXv5MX+f2IgxX5vakDFle/txf5/akDFfm9qYMWV7/bF/n9yYMV9f/PEQQ3+98V9f/TEQQ3+98V9f/XEQQ3+98V9f/bEQQ3+98RifVovxZXv28WV7+TFle/txZXv9sRifVpvEMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1abzDEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvQMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
-je 223f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 225f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 226f
-225:
-226:
-jmp 224f
-223:
-224:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAAAAxZXv28X+f5qAAAAAxX5vqqAAAADFle/kxf5/oqAAAADFfm+qwAAAAMWV7+3F/n+qwAAAAMV+b6rgAAAAxZXv9sX+f7LgAAAASYP5IA=="
-jb 227f
-229:
-.base64 "xEE978DEQTXvycRBLe/SxX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vYyDF/m96IMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vY0DF/m96QMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8wxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vY2DF/m96YMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo4AAAADF/m+6gAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9QxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab2DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVpvcMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar5AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/go="
-je 230f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 232f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 233f
-232:
-233:
-jmp 231f
-230:
-231:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6oAAQAAxZXv28X+f5oAAQAAxX5vqiABAADFle/kxf5/oiABAADFfm+qQAEAAMWV7+3F/n+qQAEAAMV+b6pgAQAAxZXv9sX+f7JgAQAAxX1/88RBDf73xX1/9MRBDf73xX1/9cRBDf73xX1/9sRBDf73xGJ9Wi/Fle/bxZXv5MWV7+3Fle/2xGJ9Wm8QxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo6AAAADF/m+6oAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8gxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo8AAAADF/m+6wAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm8wxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vo+AAAADF/m+64AAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxGJ9Wm9AxMJl3N3Ewl3c5cTCVdztxMJN3PXEQX5vI8X+bzrFxe/6xENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEYn1ab1DEwmXc3cTCXdzlxMJV3O3Ewk3c9cTBJXPZCMRBLe/TxME1c/kIxEE978HEYz1E2RDEQX1wwE7EQT3vw8RjPUTZEMRBfXDATsRBPe/DxMEt7/jEw305+wHFoe/XxGJ9Wm9gxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ab3DEwmXc3cTCXdzlxMJV3O3Ewk3c9cRifVqvgAAAAMTCZdzdxMJd3OXEwlXc7cTCTdz1xGJ9Wq+QAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PVIg/4K"
-je 234f
-.base64 "xGJ9Wq+gAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar7AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9UiD/gw="
-je 236f
-.base64 "xGJ9Wq/AAAAAxMJl3N3Ewl3c5cTCVdztxMJN3PXEYn1ar9AAAADEwmXc3cTCXdzlxMJV3O3Ewk3c9Q=="
-jmp 237f
-236:
+je 235f
 237:
-jmp 235f
-234:
-235:
-.base64 "xEJ9WirEwmXd3cTCXd3lxMJV3e3Ewk3d9cV+b6qAAQAAxZXv28X+f5qAAQAAxX5vqqABAADFle/kxf5/oqABAADFfm+qwAEAAMWV7+3F/n+qwAEAAMV+b6rgAQAAxZXv9sX+f7LgAQAASIHCAAEAAEmD6RBJg/kg"
-jae 229b
-jmp 228f
-227:
-228:
-.base64 "xXp/MMRBPe/AxEE178nEQS3v0sRBfm9jIMX+b3ogxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vY0DF/m96QMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b2Ngxf5vemDEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+jgAAAAMX+b7qAAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vo6AAAADF/m+6oAAAAMRDRUTcAMRBPe/DxENFRNwRxEEt79PEQ0VE3AHEQTXvy8RDRUTcEMRBNe/LxEF+b6PAAAAAxf5vusAAAADEQ0VE3ADEQT3vw8RDRUTcEcRBLe/TxENFRNwBxEE178vEQ0VE3BDEQTXvy8RBfm+j4AAAAMX+b7rgAAAAxENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEQX5vI8X+bzrFxe/6xENFRNwAxEE978PEQ0VE3BHEQS3v08RDRUTcAcRBNe/LxENFRNwQxEE178vEwSVz2QjEQS3v08TBNXP5CMRBPe/BxGM9RNkQxEF9cMBOxEE978PEYz1E2RDEQX1wwE7EQT3vw8TBLe/4xMN9OfsBxaHv18TiaQDQxfp/EcX4d02Lp+gAAABJi4fwAAAASMHoCEjB4AhJAcRJi6/wAAAASIHl/wAAAEiJ60jB6wRIg+UPSIXb"
-je 238f
-240:
 .base64 "Qb5AAAAATDnz"
-jb 241f
-jmp 242f
-241:
-.base64 "SYne"
-242:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-243:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 243b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 244f
-246:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 246b
-.base64 "xfh3SIXJ"
-je 247f
-249:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 249b
-jmp 248f
-247:
-248:
-jmp 245f
-244:
-250:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 250b
-245:
-.base64 "TCnz"
-jne 240b
+jb 238f
 jmp 239f
 238:
+.base64 "SYne"
 239:
-.base64 "SIXt"
-je 251f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-253:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 253b
-jmp 252f
-251:
-252:
-.base64 "TYun6AAAAEmLh/AAAABIwegISMHgCEkBxEmLr/AAAABIgeX/AAAASInrSMHrBEiD5Q9Ihds="
-je 254f
-256:
-.base64 "Qb5AAAAATDnz"
-jb 257f
-jmp 258f
-257:
-.base64 "SYne"
-258:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 259f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-261:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 261b
-.base64 "xfh3SIXJ"
-je 262f
-264:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 264b
-jmp 263f
-262:
-263:
-jmp 260f
-259:
-265:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 265b
-260:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 256b
-jmp 255f
-254:
-255:
-.base64 "SIXt"
-je 266f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-268:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 268b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 267f
-266:
-267:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 269f
-271:
-.base64 "Qb5AAAAATDnz"
-jb 272f
-jmp 273f
-272:
-.base64 "SYne"
-273:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-274:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 274b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks_vaes}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 275f
-277:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 277b
-.base64 "xfh3SIXJ"
-je 278f
-280:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 280b
-jmp 279f
-278:
-279:
-jmp 276f
-275:
-281:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 281b
-276:
-.base64 "TCnz"
-jne 271b
-jmp 270f
-269:
-270:
-.base64 "SIXt"
-je 282f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-284:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 284b
-jmp 283f
-282:
-283:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 285f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 287f
-.base64 "SYneTInxSIP5CA=="
-jb 289f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-291:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 291b
-.base64 "xfh3SIXJ"
-je 292f
-294:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 294b
-jmp 293f
-292:
-293:
-jmp 290f
-289:
-295:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 295b
-290:
-jmp 288f
-287:
-288:
-.base64 "SIXt"
-je 296f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-298:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 298b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 297f
-296:
-297:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 299f
-.base64 "SYneTInxSIP5CA=="
-jb 2101f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-2103:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 2103b
-.base64 "xfh3SIXJ"
-je 2104f
-2106:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2106b
-jmp 2105f
-2104:
-2105:
-jmp 2102f
-2101:
-2107:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2107b
-2102:
-jmp 2100f
-299:
-2100:
-.base64 "SIXt"
-je 2108f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-2110:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2110b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 2109f
-2108:
-2109:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 286f
-285:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 2111f
-2113:
-.base64 "Qb5AAAAATDnz"
-jb 2114f
-jmp 2115f
-2114:
-.base64 "SYne"
-2115:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 2116f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-2118:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 2118b
-.base64 "xfh3SIXJ"
-je 2119f
-2121:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2121b
-jmp 2120f
-2119:
-2120:
-jmp 2117f
-2116:
-2122:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2122b
-2117:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 2113b
-jmp 2112f
-2111:
-2112:
-.base64 "SIXt"
-je 2123f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-2125:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2125b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 2124f
-2123:
-2124:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 2126f
-2128:
-.base64 "Qb5AAAAATDnz"
-jb 2129f
-jmp 2130f
-2129:
-.base64 "SYne"
-2130:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 2131f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-2133:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 2133b
-.base64 "xfh3SIXJ"
-je 2134f
-2136:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2136b
-jmp 2135f
-2134:
-2135:
-jmp 2132f
-2131:
-2137:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 2137b
-2132:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 2128b
-jmp 2127f
-2126:
-2127:
-.base64 "SIXt"
-je 2138f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-2140:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 2140b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 2139f
-2138:
-2139:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-286:
-23:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32_vaes}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 2141f
-.base64 "ZkkPbsNmD2zA"
-2143:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 2143b
-jmp 2142f
-2141:
-2142:
-.base64 "STnq"
-je 2144f
-2146:
-.base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 2146b
-jmp 2145f
-2144:
-2145:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_seal_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_seal_vaes_vpclmul as vg_aes_gcm_siv_seal_vaes_vpclmul_avx512;
-
-/// The CPU features `vg_aes_gcm_siv_open_vaes_vpclmul_avx512` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vaes_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `aes`, `vaes`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_open_vaes_vpclmul as vg_aes_gcm_siv_open_vaes_vpclmul_avx512;
-
-/// The CPU features `vg_aes_gcm_siv_seal_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJi4fgAAAASMHoBEmLl/AAAABIweoESAHQSIP4Pg=="
-jae 22f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 24f
-.base64 "SYneTInxSIP5CA=="
-jb 26f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-28:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 28b
-.base64 "xfh3SIXJ"
-je 29f
-211:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 211b
-jmp 210f
-29:
-210:
-jmp 27f
-26:
-212:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 212b
-27:
-jmp 25f
-24:
-25:
-.base64 "SIXt"
-je 213f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-215:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 215b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 214f
-213:
-214:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 216f
-.base64 "SYneTInxSIP5CA=="
-jb 218f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-220:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 220b
-.base64 "xfh3SIXJ"
-je 221f
-223:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 223b
-jmp 222f
-221:
-222:
-jmp 219f
-218:
-224:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 224b
-219:
-jmp 217f
-216:
-217:
-.base64 "SIXt"
-je 225f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-227:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 227b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 226f
-225:
-226:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 23f
-22:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
-je 228f
-230:
-.base64 "Qb5AAAAATDnz"
-jb 231f
-jmp 232f
-231:
-.base64 "SYne"
-232:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 233f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-235:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 235b
-.base64 "xfh3SIXJ"
-je 236f
-238:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 238b
-jmp 237f
-236:
-237:
-jmp 234f
-233:
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-234:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 230b
-jmp 229f
-228:
-229:
-.base64 "SIXt"
-je 240f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-242:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 242b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 241f
-240:
-241:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 243f
-245:
-.base64 "Qb5AAAAATDnz"
-jb 246f
-jmp 247f
-246:
-.base64 "SYne"
-247:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 248f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-250:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 250b
-.base64 "xfh3SIXJ"
-je 251f
-253:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 253b
-jmp 252f
-251:
-252:
-jmp 249f
-248:
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-249:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 245b
-jmp 244f
-243:
-244:
-.base64 "SIXt"
-je 255f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-257:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 257b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 256f
-255:
-256:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-23:
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD38HTIn/SIHH+AAAAEmLt8gAAABMifpIg8JwQbgBAAAATYn5SYHB6AYAAEyJ+UiDwQA="
-call {vg_aes_ctr32}
-.base64 "SYsHSYtXCEi5AAAAAAAAAIBICcpmSA9uwGZID27KZg9swfNBD39HYE2Lp+gAAABJi6/wAAAASInrSMHrBEiD5Q9Ihds="
-je 258f
-260:
-.base64 "Qb5AAAAATDnz"
-jb 261f
-jmp 262f
-261:
-.base64 "SYne"
-262:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-263:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 263b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 264f
-266:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 270b
-265:
-.base64 "TCnz"
-jne 260b
-jmp 259f
-258:
-259:
-.base64 "SIXt"
-je 271f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-273:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 273b
-jmp 272f
-271:
-272:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
-.p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
-    )
-}
-
-/// The CPU features `vg_aes_gcm_siv_open_vpclmul` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vpclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
-    core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
-20:
-.base64 "SYuH0AAAAIsISMHhIEgJ2UiLUARmSA9uwWZID27KZg9swfMPfwdIg8cQSIPDAUg56w=="
-jne 20b
-.base64 "TInvSYu3yAAAAEyJ+kiBwugBAABIielNifhJgcDoBgAA"
-call {vg_aes_encrypt_blocks}
-.base64 "TIn+SIHG6AEAAEyJ/0iDxxBIiek="
-21:
-.base64 "8w9vBvMPb04QZg9swfMPfwdIg8YgSIPHEEiD6QI="
-jne 21b
-.base64 "TIn/SIPHIEmLt8gAAABIg+4GSAH2SAH2TIn6SIHC+AAAAEyJ+UiBwegGAAA="
-call {vg_aes_expand_key_scratch}
-.base64 "SYtHEEmLVxhIicFIg+EBQbgAAAAASSnISNHoSInRSIPhAUjRyUgJyEjR6ki5AAAAAAAAAOFMIcFIMcpID8pID8hmSA9uwmZID27IZg9swfNBD39HQGYP78DzQQ9/R1BJiwdJi1cISLkAAAAAAAAAgEgJymZID27AZkgPbspmD2zB80EPf0dgTYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 22f
-24:
-.base64 "Qb5AAAAATDnz"
-jb 25f
-jmp 26f
-25:
-.base64 "SYne"
-26:
-.base64 "80EPb0dgQbgBAAAAZkkPbshMifFMif9IgcfoAQAA"
-27:
-.base64 "8w9/B2YP/sFIg8cQSIPpAQ=="
-jne 27b
-.base64 "80EPf0dgTIn/SIHH+AAAAEmLt8gAAABMifpIgcLoAQAATInxTYn4SYHA6AYAAA=="
-call {vg_aes_encrypt_blocks}
-.base64 "TInxTIn+SIHG6AEAAEiD+Qg="
-jb 28f
-210:
-.base64 "xf5vDsTBfm8EJMX178jEwX5/DCTF/m9OIMTBfm9EJCDF9e/IxMF+f0wkIEmDxEBIg8ZASIPpBEiD+QQ="
-jae 210b
-.base64 "xfh3SIXJ"
-je 211f
-213:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 213b
-jmp 212f
-211:
-212:
-jmp 29f
-28:
-214:
-.base64 "80EPbwQk8w9vDmYP78HzQQ9/BCRJg8QQSIPGEEiD6QE="
-jne 214b
-29:
-.base64 "TCnz"
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "SIXt"
-je 215f
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "TInnTIn+SIHGgAAAAEiJ6UG6AAAAAA=="
-217:
-.base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
-jne 217b
-jmp 216f
-215:
-216:
-.base64 "SYuH4AAAAEjB6ARJi5fwAAAASMHqBEgB0EiD+D4="
-jae 218f
-.base64 "TIn/SIHH6AEAAE2Lp9gAAABJi6/gAAAASInrSMHrBEiD5Q9MieZIhds="
-je 220f
-.base64 "SYneTInxSIP5CA=="
-jb 222f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-224:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 224b
-.base64 "xfh3SIXJ"
-je 225f
-227:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 227b
-jmp 226f
-225:
-226:
-jmp 223f
-222:
-228:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 228b
-223:
-jmp 221f
-220:
-221:
-.base64 "SIXt"
-je 229f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
-231:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 231b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
-jmp 230f
-229:
-230:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0yJ5kiF2w=="
-je 232f
-.base64 "SYneTInxSIP5CA=="
-jb 234f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-236:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 236b
-.base64 "xfh3SIXJ"
-je 237f
-239:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 239b
-jmp 238f
-237:
-238:
-jmp 235f
-234:
+.base64 "TInmTIn/SIHH6AEAAEyJ8Q=="
 240:
 .base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
 jne 240b
+.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
+call {vg_ghash}
+.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+jne 237b
+jmp 236f
 235:
-jmp 233f
-232:
-233:
+236:
 .base64 "SIXt"
 je 241f
-.base64 "SIn7Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABIielBugAAAAA="
+.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
 243:
 .base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
 jne 243b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfMPfwNIid9Ig8cQ"
+.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
+call {vg_ghash}
 jmp 242f
 241:
 242:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfMPfwdIiflMKflIwekESIPpHUyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAA="
-call {vg_ghash_vpclmul}
+.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
+call {vg_ghash}
 .base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-jmp 219f
-218:
-.base64 "TYun2AAAAEmLr+AAAABIietIwesESIPlD0iF2w=="
+213:
+.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
+call {vg_aes_ctr32}
+.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
 je 244f
+.base64 "ZkkPbsNmD2zA"
 246:
-.base64 "Qb5AAAAATDnz"
-jb 247f
-jmp 248f
-247:
-.base64 "SYne"
-248:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 249f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-251:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 251b
-.base64 "xfh3SIXJ"
-je 252f
-254:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 254b
-jmp 253f
-252:
-253:
-jmp 250f
-249:
-255:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 255b
-250:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
+.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
 jne 246b
 jmp 245f
 244:
 245:
-.base64 "SIXt"
-je 256f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-258:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 258b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 257f
-256:
-257:
-.base64 "TYun6AAAAEmLr/AAAABIietIwesESIPlD0iF2w=="
-je 259f
-261:
-.base64 "Qb5AAAAATDnz"
-jb 262f
-jmp 263f
-262:
-.base64 "SYne"
-263:
-.base64 "TInmTIn/SIHH6AEAAEyJ8UiD+Qg="
-jb 264f
-lea rax, [rip + {VG_GCM_CONSTS}]
-.base64 "8w9vCMTjdTjJAQ=="
-266:
-.base64 "xf5vBsTifQDBxf5/B8X+b0YgxOJ9AMHF/n9HIEiDxkBIg8dASIPpBEiD+QQ="
-jae 266b
-.base64 "xfh3SIXJ"
-je 267f
-269:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 269b
-jmp 268f
-267:
-268:
-jmp 265f
-264:
-270:
-.base64 "SIsGSItWCEgPyEgPymZID27CZkgPbshmD2zB8w9/B0iDxhBIg8cQSIPpAQ=="
-jne 270b
-265:
-.base64 "TIn/SIPHQEyJ/kiDxlBNifhJgcDoBQAATIn6SIHC6AEAAEyJ8Q=="
-call {vg_ghash_vpclmul}
-.base64 "TInwSAHASAHASAHASAHASQHETCnz"
-jne 261b
-jmp 260f
-259:
-260:
-.base64 "SIXt"
-je 271f
-.base64 "Zg/vwPNBD3+HgAAAAEyJ/0iBx4AAAABMieZIielBugAAAAA="
-273:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
-jne 273b
-.base64 "SYuHgAAAAEmLl4gAAABID8hID8pmSA9uwmZID27IZg9swfNBD3+H6AEAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwugBAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-jmp 272f
-271:
-272:
-.base64 "SYuH8AAAAEgBwEgBwEgBwEgPyEmLl+AAAABIAdJIAdJIAdJID8pmSA9uwGZID27KZg9swfNBD3+HgAAAAEyJ/0iDx0BMif5Ig8ZQTYn4SYHA6AUAAEyJ+kiBwoAAAAC5AQAAAA=="
-call {vg_ghash_vpclmul}
-.base64 "SYtHWEgPyEmLV1BID8pJi4/QAAAASDMBRItBCEwxwkm4/////////39MIcJmSA9uwGZID27KZg9swfNBD39HYA=="
-219:
-.base64 "80EPb0dg80EPf0dwZg/vwPNBD3+HgAAAAEyJ/0iBx/gAAABJi7fIAAAATIn6SIPCcEG4AQAAAE2J+UmBwegGAABMiflIgcGAAAAA"
-call {vg_aes_ctr32}
-.base64 "SYsHSTOHgAAAAEmLVwhJM5eIAAAASAnQSIP4AbgAAAAAg9AASYmHwAAAAE2Lp+gAAABJi6/wAAAAQbsAAAAATSufwAAAAEG6AAAAAEiJ6UjB6QRIhck="
-je 274f
-.base64 "ZkkPbsNmD2zA"
-276:
-.base64 "80MPbwwUZg/byPNDD38MFEmDwhBIg+kB"
-jne 276b
-jmp 275f
-274:
-275:
 .base64 "STnq"
-je 277f
-279:
+je 247f
+249:
 .base64 "Qw+2BBRMIdhDiAQUSYPCAUk56g=="
-jne 279b
-jmp 278f
-277:
-278:
+jne 249b
+jmp 248f
+247:
+248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
 .p2align 6"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
-        vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
+        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
-
-/// The CPU features `vg_aes_gcm_siv_seal_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_SEAL_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
-///
-/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_seal_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_seal_vpclmul as vg_aes_gcm_siv_seal_vpclmul_avx2;
-
-/// The CPU features `vg_aes_gcm_siv_open_vpclmul_avx2` requires (`Artifact.features`).
-pub const VG_AES_GCM_SIV_OPEN_VPCLMUL_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::VPCLMULQDQ | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
-
-/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
-///
-/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
-///
-/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
-///
-/// The machine code of this function is that of `vg_aes_gcm_siv_open_vpclmul`, which is emitted once and named both ways: the two are the same function.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `nonce` must be valid for reads of 12 bytes.
-/// * `aad` must be valid for reads of `aad_len` bytes.
-/// * `data` must be valid for reads and writes of `len` bytes.
-/// * `tag` must be valid for reads of 16 bytes.
-/// * `rounds` must be 10 or 14.
-/// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq`, `ssse3`, `vpclmulqdq`, `avx` and `avx2` target features.
-#[allow(unused_imports)]
-pub(crate) use self::vg_aes_gcm_siv_open_vpclmul as vg_aes_gcm_siv_open_vpclmul_avx2;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]

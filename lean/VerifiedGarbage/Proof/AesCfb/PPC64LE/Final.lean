@@ -804,8 +804,9 @@ theorem encrypt_noFrames : Impl.AesCfb.PPC64LE.encrypt.noFrames = true := by
   exact Proof.AesCbc.PPC64LE.encryptBlocks_noFrames
 
 theorem decrypt_noFrames : Impl.AesCfb.PPC64LE.decrypt.noFrames = true := by
-  simp only [Impl.AesCfb.PPC64LE.decrypt, Impl.AesCbc.PPC64LE.whole, Impl.AesCfb.PPC64LE.body,
-    Impl.AesCbc.PPC64LE.encCall, Code.noFrames, Bool.true_and, Bool.and_true]
+  simp only [Impl.AesCfb.PPC64LE.decrypt, Impl.AesCbc.PPC64LE.batched, Impl.AesCbc.PPC64LE.groups,
+    Impl.AesCfb.PPC64LE.decGroup, Impl.AesCfb.PPC64LE.body, Impl.AesCbc.PPC64LE.encCall, Code.noFrames,
+    Bool.true_and, Bool.and_true]
   exact Proof.AesCbc.PPC64LE.encryptBlocks_noFrames
 
 /-! ## Constant time -/
@@ -943,7 +944,7 @@ theorem encryptFinal_verified :
 theorem decryptFinal_verified :
     Verified PPC64LE.target Impl.AesCfb.PPC64LE.decryptFinal (finalScratchContract false) :=
   Verified.of_correct (final_correct decrypt_correct decrypt_noFrames)
-    (final_ct decrypt_correct (Proof.AesCbc.PPC64LE.whole_ct decBody_ok decBody_ct) decrypt_noFrames)
+    (final_ct decrypt_correct decrypt_ct decrypt_noFrames)
     (final_implies false)
 
 /-! ## With `save` on the stack

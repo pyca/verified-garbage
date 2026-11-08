@@ -14,9 +14,11 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Block
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+meta import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Contract
 public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Vmx4.Xor
 
 /-!
 # Streaming ChaCha20 on PPC64LE: `apply`, constant time
@@ -223,12 +225,12 @@ theorem part1_rel (hle : L a ≤ N a) :
       wp_sp (part1_ok h.pb (by rw [← h.eqL, ← h.hleft]; exact hle) hy) sy⟩
 
 theorem xor_rel :
-    RelCT isa (fun x y => Sp Args a x ∧ Sp Args b y) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)
+    RelCT isa (fun x y => Sp Args a x ∧ Sp Args b y) (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor)
       fun _ _ => True := by
   have ecp : cpR b = cpR a := by simp only [cpR, h.hst]
   have ebl : blR b = blR a := by simp only [blR, h.hdp, h.eqH, h.eqNB]
   have ewk : wkR b = wkR a := by simp only [wkR, h.hst]
-  refine RelCT.call Proof.ChaCha20.PPC64LE.Xor.xor_correct Proof.ChaCha20.PPC64LE.Xor.xor_ct [blR a]
+  refine RelCT.call Proof.ChaCha20.PPC64LE.Vmx4.xor_correct Proof.ChaCha20.PPC64LE.Vmx4.xor_ct [blR a]
     [cpR a, blR a, wkR a] fun x y ⟨⟨hx, sx⟩, ⟨hy, sy⟩⟩ => ?_
   have py := hy.pre h.pb
   have cy := hy.covers

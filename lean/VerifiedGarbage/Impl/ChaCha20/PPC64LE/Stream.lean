@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Vmx4
 
 /-!
 # Streaming ChaCha20: PPC64LE implementation
@@ -47,7 +47,7 @@ namespace VG.Impl.ChaCha20.PPC64LE.Stream
 
 open VG.PPC64LE
 open VG.Impl.ChaCha20.PPC64LE (block)
-open VG.Impl.ChaCha20.PPC64LE.Xor (mov xor)
+open VG.Impl.ChaCha20.PPC64LE.Xor (mov)
 
 /-- The 32-bit word `v` into `off(r3)`, built in `r10`. -/
 def word (v : BitVec 32) (off : Nat) : List Instr :=
@@ -124,7 +124,7 @@ def blocksArgs : List Instr :=
    .add .r25 .r25 .r5, .sub .r26 .r26 .r5, mov .r7 .r4]
 
 def part2 : Prog isa :=
-  .ite (.zero .d .r5) (.block []) (.seq (.block blocksArgs) (.call "vg_chacha20_xor" xor))
+  .ite (.zero .d .r5) (.block []) (.seq (.block blocksArgs) (.call "vg_chacha20_xor" VG.Impl.ChaCha20.PPC64LE.Vmx4.xor))
 
 /-- The arguments of the block function: the state and the buffer. -/
 def tailArgs : List Instr := [mov .r3 .r24, .addi .r4 .r24 64]

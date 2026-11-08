@@ -3,9 +3,8 @@ import VerifiedGarbage.TCB.Emit
 /-!
 # The emitter
 
-Renders every artifact (those of each registration file under `VerifiedGarbage/Artifacts/`, and of each
-generic file under `VerifiedGarbage/Generic/` for each variant under
-`VerifiedGarbage/Variants/`, see `VerifiedGarbage/TCB/Emit.lean`) into Rust: each target's
+Renders every artifact (those of each registration file under `VerifiedGarbage/Artifacts/`,
+see `VerifiedGarbage/TCB/Emit.lean`) into Rust: each target's
 functions into a crate of its own, `crates/verified-garbage-asm-<target>/src/` (DIR, by
 default `../crates`, relative to `lean/`). Run it from `lean/` after
 `lake build` (which checks every proof):
@@ -104,19 +103,18 @@ def main (args : List String) : IO UInt32 := do
     return 1
   let some (check, none, _) := VG.Emit.parseArgs args
     | IO.eprintln VG.Emit.usage; return 2
-  let parts ← match VG.Emit.parts (← VG.Emit.registrations)
-      (← VG.Emit.genericGroups VG.Emit.genericDir) (← VG.Emit.grouped VG.Emit.variantDir) with
+  let parts ← match VG.Emit.parts (← VG.Emit.registrations) with
     | .ok parts => pure parts
     | .error e => do IO.eprintln e; return 1
   let emitDir : System.FilePath := ".lake" / "emit"
   IO.FS.createDirAll emitDir
   let lean ← IO.appPath
   -- Each part's driver, and the arguments of its run.
-  let jobs ← parts.mapM fun (t, mods, gens, vars) => do
+  let jobs ← parts.mapM fun (t, mods) => do
     let driver := emitDir / s!"Driver{t}.lean"
     let setup := emitDir / s!"Driver{t}.json"
     let targets := emitDir / s!"{t}.targets"
-    let text := VG.Emit.driver mods gens vars
+    let text := VG.Emit.driver mods
     -- Only if it changed, so that Lake does not take it for a new file.
     let old ← if ← driver.pathExists then some <$> IO.FS.readFile driver else pure none
     unless old == some text do IO.FS.writeFile driver text

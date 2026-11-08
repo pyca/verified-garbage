@@ -15,6 +15,16 @@ def artifacts : List Artifact := [
     code := Impl.Dit.AArch64.enter
     verified := Proof.Dit.AArch64.enter_verified
     features := ["dit"] },
+  Spec.Dit.enterApi.artifact AArch64.target {
+    suffix := "_dsb"
+    code := Impl.Dit.AArch64.enterDsb
+    verified := Proof.Dit.AArch64.enterDsb_verified
+    features := ["dit"] },
+  Spec.Dit.enterApi.artifact AArch64.target {
+    suffix := "_sb"
+    code := Impl.Dit.AArch64.enterSb
+    verified := Proof.Dit.AArch64.enterSb_verified
+    features := ["dit", "sb"] },
   Spec.Dit.clearApi.artifact AArch64.target {
     code := Impl.Dit.AArch64.clear
     verified := Proof.Dit.AArch64.clear_verified

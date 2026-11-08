@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Ofb.aesContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ofb_aes` if the CPU supports its features (`VG_AES_OFB_AES_FEATURES`); or else `vg_aes_ofb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ofb_aes` if the CPU supports its features (`VG_AES_OFB_AES_FEATURES`); or else `vg_aes_ofb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -58,7 +58,7 @@ pub unsafe fn vg_aes_ofb_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *co
 ///
 /// Contract: `VG.Spec.Ofb.aesFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_ofb_final_aes` if the CPU supports its features (`VG_AES_OFB_FINAL_AES_FEATURES`); or else `vg_aes_ofb_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ofb_final_aes` if the CPU supports its features (`VG_AES_OFB_FINAL_AES_FEATURES`); or else `vg_aes_ofb_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

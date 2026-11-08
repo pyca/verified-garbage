@@ -192,45 +192,49 @@ def accInit (a b : XReg) : List Instr :=
    .vop (.vpclmulqdq .l128 .xmm11 a b 0x10),
    .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11)]
 
-/-- The product of the `k`-th block of eight from `rdx + d` (byte-reversed
-with the mask at `r11 + 768`, since every block register holds an AES state)
-with its power. -/
-def gh8 (d k : Nat) : List Instr :=
+/-- The product of the `k`-th block of eight from `rdx + d`, or, out of
+place (`hs`), from `rdx + rbx + d` (`srcAt`), byte-reversed with the mask at
+`r11 + 768`, since every block register holds an AES state, with its
+power. -/
+def gh8 (d k : Nat) (hs : Bool := false) : List Instr :=
   ([.vmovdquLoad .l128 .xmm12 (at_ .r11 (16*(8+k%8))),
-   .vmovdquLoad .l128 .xmm7 (at_ .rdx (d+16*(k%8))),
+   .vmovdquLoad .l128 .xmm7 (srcAt hs (d+16*(k%8))),
    .vbinLoad .vpshufb .l128 .xmm7 .xmm7 (at_ .r11 768)] : List Instr) ++
    (if k % 8 = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else []) ++ (if k%8 = 1 then accInit .xmm7 .xmm12 else acc .xmm7 .xmm12)
 
-def q8 (nr : Nat) (j : Nat) : List Instr :=
+/-- The GHASH work after AES round `j` of a batch: the products of its
+eight blocks, read from `rdx`, or, out of place (`hs`), from `rdx + rbx`,
+and their reduction. -/
+def q8 (nr : Nat) (hs : Bool) (j : Nat) : List Instr :=
   if nr = 10 then
-    if 1 ≤ j ∧ j ≤ 8 then gh8 0 (j%8)
+    if 1 ≤ j ∧ j ≤ 8 then gh8 0 (j%8) hs
     else if j = 9 then reduceFinal else []
   else if nr = 12 then
-    if j = 1 then gh8 0 1 else
-    if j = 2 then gh8 0 2 else
-    if j = 3 then gh8 0 3 else
-    if j = 5 then gh8 0 4 else
-    if j = 6 then gh8 0 5 else
-    if j = 7 then gh8 0 6 else
-    if j = 9 then gh8 0 7 else
-    if j = 10 then gh8 0 0 else
+    if j = 1 then gh8 0 1 hs else
+    if j = 2 then gh8 0 2 hs else
+    if j = 3 then gh8 0 3 hs else
+    if j = 5 then gh8 0 4 hs else
+    if j = 6 then gh8 0 5 hs else
+    if j = 7 then gh8 0 6 hs else
+    if j = 9 then gh8 0 7 hs else
+    if j = 10 then gh8 0 0 hs else
     if j = 11 then reduceFinal else []
   else
-    if j = 1 then gh8 0 1 else
-    if j = 2 then gh8 0 2 else
-    if j = 4 then gh8 0 3 else
-    if j = 6 then gh8 0 4 else
-    if j = 8 then gh8 0 5 else
-    if j = 10 then gh8 0 6 else
-    if j = 11 then gh8 0 7 else
-    if j = 12 then gh8 0 0 else
+    if j = 1 then gh8 0 1 hs else
+    if j = 2 then gh8 0 2 hs else
+    if j = 4 then gh8 0 3 hs else
+    if j = 6 then gh8 0 4 hs else
+    if j = 8 then gh8 0 5 hs else
+    if j = 10 then gh8 0 6 hs else
+    if j = 11 then gh8 0 7 hs else
+    if j = 12 then gh8 0 0 hs else
     if j = 13 then reduceFinal else []
 
 /-- The eight blocks from `rdx + d` hashed, and the product reduced into `Y`. -/
 def hash8 (d : Nat) : List Instr := (List.range 8).flatMap (fun i => gh8 d ((i+1)%8)) ++ reduceFinal
 
 def encBody8 (nr : Nat) (ix : Bool := false) : Prog isa :=
-  .seq (.block []) (.seq (batch nr 8 16 (q8 nr) ix)
+  .seq (.block []) (.seq (batch nr 8 16 (q8 nr false) ix)
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 24)]))
 
 /-- The keystream of the eight counters prepared after the last batch,
@@ -277,27 +281,31 @@ def encRest (nr : Nat) (ix : Bool := false) : Prog isa :=
         (.seq (.block (hash8 0 ++ hash8 128))
           (.seq (tailT nr ix) (.block finish))))))
 
-def decBody8 (nr : Nat) : Prog isa :=
-  .seq (.block []) (.seq (batch nr 8 0 (q8 nr))
+/-- A batch of decryption of the data read from `srcAt ix`, which it hashes
+there before decrypting it. -/
+def decBody8 (nr : Nat) (ix : Bool := false) : Prog isa :=
+  .seq (.block []) (.seq (batch nr 8 0 (q8 nr ix) ix)
     (.block [.alu .add .rdx (.imm 128), .alu .sub .r9 (.imm 8), .alu .cmp .r9 (.imm 16)]))
 
 /-- The blocks after the last batch of decryption, if any: `r9 - 8` of them,
 at `rdx + 128`, as `tailT` takes them once `r9` and `rdx` are moved to where
 encryption leaves them (`16` more blocks and `256` bytes before them), each
-hashed before it is decrypted (`StitchZH.remBodyD`). -/
-def tailD (nr : Nat) : Prog isa :=
+hashed before it is decrypted (`StitchZH.remBodyD`), read there or, out of
+place (`ix`), at `rbx` moved to `rdx + rbx` for the loop. -/
+def tailD (nr : Nat) (ix : Bool := false) : Prog isa :=
   .seq (.block [.alu .add .r9 (.imm 8), .alu .sub .rdx (.imm 128), .alu .cmp .r9 (.imm 16)])
     (.ite .e (.block [])
       (.seq (ksTail nr)
-        (.seq (.block (tailSetup ++ StitchAvx.zero))
-          (.seq (.loop (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)) .ne)
-            (.block (tailEnd nr))))))
+        (.seq (.block (tailSetup ++ (if ix then [.alu .add .rbx (.reg .rdx)] else []) ++ StitchAvx.zero))
+          (.seq (.loop (.block (StitchZH.remBodyD (if ix then .rbx else .rdx) ++ StitchZH.remNext)) .ne)
+            (.block ((if ix then [.alu .sub .rbx (.reg .rdx)] else []) ++ tailEnd nr))))))
 
-/-- Decryption, after the setup: of any number of blocks from 16 on with
-`rem`, and of a multiple of 16 without it. -/
-def decRest (nr : Nat) (rem : Bool) : Prog isa :=
-  .seq (.block []) (.seq (.loop (decBody8 nr) .ae) (.seq (.block [])
-    (.seq (batch nr 8 0 (q8 nr)) (.seq (if rem then tailD nr else .block []) (.block finish)))))
+/-- Decryption, after the setup, of the data read from `srcAt ix`: of any
+number of blocks from 16 on with `rem`, and of a multiple of 16 without
+it. -/
+def decRest (nr : Nat) (rem : Bool) (ix : Bool := false) : Prog isa :=
+  .seq (.block []) (.seq (.loop (decBody8 nr ix) .ae) (.seq (.block [])
+    (.seq (batch nr 8 0 (q8 nr ix) ix) (.seq (if rem then tailD nr ix else .block []) (.block finish)))))
 
 /-! ## Fewer blocks than the pipeline takes
 
@@ -368,6 +376,8 @@ def decRS : Prog isa := dispatch setupR (small 10 true) (small 12 true) (small 1
 uses, and holds `src - dst`; `r8` holds `dst`, where the loop writes the
 ciphertext and the hash reads it back, as in place. Each batch reads its
 data at `rdx + rbx` (`srcAt`), and so do the blocks after the pipeline's.
+`vg_aes_gcm_decrypt_blocks_to`'s (`decToR`) likewise, but hashes the
+ciphertext where it reads it, at `rdx + rbx`.
 -/
 
 /-- `rbx` kept, `src - dst` in `rbx` and `dst` in `r8`. -/
@@ -377,12 +387,20 @@ def toEntry : List Instr :=
 /-- `rbx` restored. -/
 def toExit : List Instr := [.mov .rbx (.mem (at_ .r11 816))]
 
+/-- Out of place, after the setup `su`: `rest nr` for the key size, between
+`toEntry` and `toExit`. -/
+def toWith (su : List Instr) (rest : Nat → Prog isa) : Prog isa :=
+  .seq (.block toEntry) (.seq (dispatch su (rest 10) (rest 12) (rest 14)) (.block toExit))
+
 /-- Encryption out of place, after the setup `su`. -/
-def encToWith (su : List Instr) : Prog isa :=
-  .seq (.block toEntry)
-    (.seq (dispatch su (encRest 10 true) (encRest 12 true) (encRest 14 true)) (.block toExit))
+def encToWith (su : List Instr) : Prog isa := toWith su fun nr => encRest nr true
 
 def encTo : Prog isa := encToWith setup
 /-- Encryption out of place with a prepared key context. -/
 def encToR : Prog isa := encToWith setupR
+
+/-- Decryption out of place with a prepared key context, of any number of
+blocks from 16 on: as `decR`, but each batch, and each block after the last
+batch, read and hashed at `rdx + rbx` (`srcAt`). -/
+def decToR : Prog isa := toWith setupR fun nr => decRest nr true true
 end VG.Impl.Gcm.X86_64.StitchAvx8

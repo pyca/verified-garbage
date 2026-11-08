@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Prepared.GatherSeal
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
 import VerifiedGarbage.Proof.AesGcm.X86_64.Short.SealFin
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
-import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
+public import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ok
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchAvx8.Ct
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.Ok
@@ -585,11 +585,12 @@ where
   code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared true)
     | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 24, q.dec⟩
     | .vaesAvx512, q => some ⟨_, Proof.Gcm.X86_64.StitchZH.decToR_ok powFinZ, q.dec⟩
-    | .aesniAvx, _ => none
+    | .aesniAvx, q => some ⟨_, fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.decToR_okN 24 (by decide) s₀ hp (Nat.mod_one _),
+        q.dec⟩
 
 /-- The out-of-place decryption loop of a variant, for a key context of
-`vg_aes_gcm_prepare16`: the 256-bit loop's only (the 512-bit loop reads
-more powers than that context holds). -/
+`vg_aes_gcm_prepare16`: the 256-bit loop's and the eight-state AVX loop's
+(the 512-bit loop reads more powers than that context holds). -/
 def GcmVariant.stitchToDecR16 (v : GcmVariant) :
     Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true) :=
   (v.stitch.bind (·.toPart)).bind fun p => p.pieceToDecR.bind (code p.name)
@@ -597,6 +598,8 @@ where
   /-- The loop named `n` and its proof. -/
   code : (n : StitchToName) → PieceToDecR n → Option (StitchToDecCode Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 true)
     | .vaes, q => some ⟨_, Proof.Gcm.X86_64.StitchToDec.decToR_okN powFinD 8, q.dec⟩
+    | .aesniAvx, q => some ⟨_, fun s₀ hp _ => Proof.Gcm.X86_64.StitchAvx8.decToR_okN 8 (by decide) s₀ hp (Nat.mod_one _),
+        q.dec⟩
     | _, _ => none
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to_prepared` of a variant. -/
@@ -610,11 +613,11 @@ def openSplitFnR (v : GcmVariant) : OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Sti
 /-! ## `vg_aes_gcm_open_to` in one pass -/
 
 /-- The out-of-place counter mode `vg_aes_gcm_open_to` of a variant decrypts
-with, in one pass and with no copy: that of its `vg_aes_ctr32`, if it has
-one (`Ctr32Impl.ctrTo`), for a variant with no interleaved loops, whose
-`vg_aes_gcm_decrypt_blocks` hashes and decrypts in two calls too. -/
-def GcmVariant.ctrTo (v : GcmVariant) : Option Proof.Aes.X86_64.Ctr32ToImpl :=
-  if v.stitch.isNone then v.ctr.ctrTo else none
+with on the key context, in one pass and with no copy: that of its
+`vg_aes_ctr32` (`Ctr32Impl.ctrTo`). A variant with interleaved loops runs it
+only where its prepared key context holds fewer powers than they read,
+which the `vg_aes_gcm_prepare` its CPU runs never leaves. -/
+def GcmVariant.ctrTo (v : GcmVariant) : Proof.Aes.X86_64.Ctr32ToImpl := v.ctr.ctrTo
 
 /-- The instance of `vg_aes_gcm_decrypt_blocks_to` of a variant, for a key
 context of `vg_aes_gcm_init`: `vg_ghash` on the blocks at `src`, then `c`
@@ -628,44 +631,29 @@ def openSplitFnB (v : GcmVariant) (c : Proof.Aes.X86_64.Ctr32ToImpl) :
     OpenToSplit.OpenSplitFn Proof.Gcm.X86_64.Stitch.CtxMode.base :=
   .of ("vg_aes_gcm_open_split" ++ v.impl.suffix) v.impl v.impl.blkB (blkToDecB v c)
 
-/-- `vg_aes_gcm_open_to` of a variant: in one pass, whatever the length, if
-it has an out-of-place counter mode (`GcmVariant.ctrTo`), by `open`'s body
-out of place (`vg_aes_gcm_open_split`) in a frame holding its working space;
-otherwise by a copy. -/
+/-- `vg_aes_gcm_open_to` of a variant: in one pass, whatever the length, by
+`open`'s body out of place (`vg_aes_gcm_open_split`) with its out-of-place
+counter mode (`GcmVariant.ctrTo`), in a frame holding its working space. -/
 def openToCode (v : GcmVariant) : Prog VG.X86_64.isa :=
-  match v.ctrTo with
-  | some c => Impl.StackScratch.X86_64.withStackArgScratch Impl.AesGcm.X86_64.OpenToSplit.scratchBytes 6
-      (Impl.AesGcm.X86_64.OpenToSplit.openToSplit (openSplitFnB v c).fn)
-  | none => Impl.AesGcm.X86_64.OpenTo.openTo v.impl.copyW (openFn v.impl).fn
+  Impl.StackScratch.X86_64.withStackArgScratch Impl.AesGcm.X86_64.OpenToSplit.scratchBytes 6
+    (Impl.AesGcm.X86_64.OpenToSplit.openToSplit (openSplitFnB v v.ctrTo).fn)
 
 /-- The stack `openToCode` uses. -/
-def openToStack (v : GcmVariant) : Nat := if v.ctrTo.isSome then 2776 else 2728
+def openToStack (_ : GcmVariant) : Nat := 2776
 
 theorem openToCode_verified (v : GcmVariant) :
-    Verified X86_64.target (openToCode v) (Proof.AesGcm.openToRoundsContract X86_64.abi (openToStack v)) := by
-  unfold openToCode openToStack
-  split
-  · next c h => simp only [h, Option.isSome_some, ↓reduceIte]
-                exact OpenToSplit.openToSplitBase_framed (openSplitFnB v c)
-  · next h => simp only [h, Option.isSome_none, Bool.false_eq_true, ↓reduceIte]
-              exact OpenTo.openTo_verified v.impl.copyW (openFn v.impl)
+    Verified X86_64.target (openToCode v) (Proof.AesGcm.openToRoundsContract X86_64.abi (openToStack v)) :=
+  OpenToSplit.openToSplitBase_framed (openSplitFnB v v.ctrTo)
 
 theorem openToCode_spAll (v : GcmVariant) :
-    (openToCode v).all (fun i => !VG.X86_64.isa.writesSp i) = true := by
-  unfold openToCode; split
-  · exact X86_64.withStackArgScratch_spSafe (OpenToSplit.openToSplit_spAll _ (openSplitFnB v _).spAll)
-  · exact OpenTo.openTo_spAll v.impl.copyW _ (openFn v.impl).spAll
+    (openToCode v).all (fun i => !VG.X86_64.isa.writesSp i) = true :=
+  X86_64.withStackArgScratch_spSafe (OpenToSplit.openToSplit_spAll _ (openSplitFnB v _).spAll)
 
 /-- `openToCode` against the prepared contract, for the implementations
-that read only the key context: in one pass, with 2776 bytes of stack, if the
-variant has an out-of-place counter mode, else by a copy, with 2728. -/
+that read only the key context. -/
 theorem openToCode_keyed (v : GcmVariant) :
-    Verified X86_64.target (openToCode v) (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStack v)) := by
-  have h := openToCode_verified v
-  unfold openToStack at h ⊢
-  cases hc : v.ctrTo.isSome <;> simp only [hc, Bool.false_eq_true, ↓reduceIte] at h ⊢
-  · exact Flag.openTo_of_base h
-  · exact Flag.openTo_of_base2776 h
+    Verified X86_64.target (openToCode v) (VG.Proof.AesGcm.Flag.openToRoundsContract X86_64.abi (openToStack v)) :=
+  Flag.openTo_of_base2776 (openToCode_verified v)
 
 /-- `vg_aes_gcm_open_to_prepared` of a variant: in one pass from
 `OpenToSplit.thr` bytes on if it has the out-of-place decryption loop
@@ -921,7 +909,7 @@ def openToStackF (v : GcmVariant) : Nat := max (openToStackR v) (openToStack v)
 
 /-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read the 48 powers: by
 the count, its code calling `vg_aes_gcm_open_prepared`, or `openToCode` on
-the key context, which decrypts in one pass if the variant has an
+the key context, which decrypts in one pass with the variant's
 out-of-place counter mode. Both branches are proven at the larger of their
 stacks. -/
 theorem openToCodeR_onFlag (v : GcmVariant) :
@@ -931,12 +919,10 @@ theorem openToCodeR_onFlag (v : GcmVariant) :
   have h := openToCodeF_verified v
   have hb := openToCode_verified v
   unfold openToStackF openToStackR openToStack at *
-  cases hc : v.stitchToDecR.isSome <;> cases hd : v.ctrTo.isSome <;>
-    simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
-  · exact Flag.openTo_onFlagF (Or.inr rfl) h hb
+  cases hc : v.stitchToDecR.isSome <;>
+    simp only [hc, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
   · exact Flag.openTo_onFlagF2776 (Or.inr rfl) (VG.X86_64.Verified.stack_mono (by decide) h
       (OpenToSplit.toSatF2776_pre (by decide))) hb
-  · exact Flag.openTo_onFlagF2776 (Or.inr rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
   · exact Flag.openTo_onFlagF2776 (Or.inr rfl) h hb
 
 theorem openToCodeR_onFlag_spAll (v : GcmVariant) :
@@ -1252,7 +1238,7 @@ def openToStackF16 (v : GcmVariant) : Nat := max (openToStackR16 v) (openToStack
 
 /-- `vg_aes_gcm_open_to_prepared` of a variant whose loops read 16 powers: by
 the count, its code calling `vg_aes_gcm_open_prepared`, or `openToCode` on
-the key context, which decrypts in one pass if the variant has an
+the key context, which decrypts in one pass with the variant's
 out-of-place counter mode. Both branches are proven at the larger of their
 stacks. -/
 theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
@@ -1262,12 +1248,10 @@ theorem openToCodeR16_onFlag (v : GcmVariant) (r : R16 v) :
   have h := openToCodeF16_verified v r
   have hb := openToCode_verified v
   unfold openToStackF16 openToStackR16 openToStack at *
-  cases hc : v.stitchToDecR16.isSome <;> cases hd : v.ctrTo.isSome <;>
-    simp only [hc, hd, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
-  · exact Flag.openTo_onFlagF (Or.inl rfl) h hb
+  cases hc : v.stitchToDecR16.isSome <;>
+    simp only [hc, Bool.false_eq_true, ↓reduceIte] at h hb ⊢
   · exact Flag.openTo_onFlagF2776 (Or.inl rfl) (VG.X86_64.Verified.stack_mono (by decide) h
       (OpenToSplit.toSatF2776_pre (by decide))) hb
-  · exact Flag.openTo_onFlagF2776 (Or.inl rfl) h (VG.X86_64.Verified.stack_mono (by decide) hb Flag.openTo_satK2776)
   · exact Flag.openTo_onFlagF2776 (Or.inl rfl) h hb
 
 theorem openToCodeR16_onFlag_spAll (v : GcmVariant) (r : R16 v) :

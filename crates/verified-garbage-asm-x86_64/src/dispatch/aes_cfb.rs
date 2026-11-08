@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_encrypt_vaes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_VAES_FEATURES`); `vg_aes_cfb128_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_vaes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_VAES_FEATURES`); `vg_aes_cfb128_encrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -63,7 +63,7 @@ pub unsafe fn vg_aes_cfb128_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_decrypt_vaes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_VAES_FEATURES`); `vg_aes_cfb128_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_vaes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_VAES_FEATURES`); `vg_aes_cfb128_decrypt_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -120,7 +120,7 @@ pub unsafe fn vg_aes_cfb128_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sc
 ///
 /// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_encrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_encrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_encrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_encrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_ENCRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_encrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -177,7 +177,7 @@ pub unsafe fn vg_aes_cfb128_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'
 ///
 /// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_aes_cfb128_decrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_decrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_cfb128_decrypt_final_vaes` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_VAES_FEATURES`); `vg_aes_cfb128_decrypt_final_aesni` if the CPU supports its features (`VG_AES_CFB128_DECRYPT_FINAL_AESNI_FEATURES`); or else `vg_aes_cfb128_decrypt_final`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

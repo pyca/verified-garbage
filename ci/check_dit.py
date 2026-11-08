@@ -2,8 +2,9 @@
 """Checks that each Rust module of the library decides about data independent
 timing (`src/dit.rs`) as its algorithms' family requires.
 
-Every verified function takes a `Dit` token. An operation that may process
-secrets makes it with `dit::enter!`, which turns the mode on; one whose
+Every generated dispatcher, through which alone the library calls verified
+code, takes a `Dit` token. An operation that may process secrets makes it
+with `dit::enter!`, which turns the mode on; one whose
 inputs and outputs are all public makes it with `dit::public(Why::…)`, or
 `dit::enter_if!(…, Why::…)` for a type that is either, which names why. This
 checks the reasons each file gives against the families of its algorithms

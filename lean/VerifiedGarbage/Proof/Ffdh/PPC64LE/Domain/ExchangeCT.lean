@@ -144,7 +144,7 @@ def X5 (x : XD) (s : State) : Prop :=
   (s.gpr .r30 = off x.X 0 ∧ s.gpr .r31 = BitVec.ofNat 64 x.xl ∧ s.gpr .r10 = off x.c.S (slot x.c.w 0) ∧
     s.gpr .r29 = BitVec.ofNat 64 (8 * (x.c.w + 2)) ∧ s.gpr .r11 = BitVec.ofNat 64 (2 * x.c.w) ∧
     s.gpr .r23 = x.c.S ∧ s.gpr .r28 = BitVec.ofNat 64 x.c.k) ∧
-  WP isa ModExp.powSecret s (X6 x)
+  WP isa ModExp.powWin s (X6 x)
 
 /-- `Pins` from registers that the predicate fixes as functions of the data. -/
 theorem pins_of {α : Type} {Φ : α → State → Prop} {rs : List Reg} (f : α → Reg → BitVec 64)
@@ -358,7 +358,8 @@ theorem T5 {x : XD} {s : State} (h : X4 x s ∧ s.gpr .r0 = 0) : WP isa exPre s 
     have := VG.Proof.Bignum.os2ip_lt (x.c.db.take x.c.k)
     rwa [hb.take_len] at this
   refine WP.mono (exPower_split hb.env hb.r23 he.r9 hb.r28 (by omega_arith) (by omega_arith) he.xl1 (by omega_arith) hb.rdY hb.sepY
-    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2))
+    he.rdX he.sepX he.wX he.wXL (by rw [hp]; exact hf.1) (by rw [hp]; exact hf.2)
+    (by rw [hp]; exact top_of_valid hv (by omega) (by omega)))
     fun s₆ ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, hw⟩ => ⟨⟨a30, a31, g10, g29, g11, g23, g28⟩, WP.mono hw
       fun t ⟨⟨z5, p5, b5, r10₅⟩, k5⟩ => ?_⟩
   have k29 := (k5.gpr .r29 (by decide)).trans hb.env.h29

@@ -18,7 +18,7 @@ vg_sha1_init:
 	ret
 	.p2align 6
 
-vg_sha1_update:
+vg_sha1_update_shani:
 	lea rsp, [rsp-168]
 	mov r8, rsp
 	add r8, 8
@@ -148,7 +148,7 @@ vg_sha1_update:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha1_compress}
+	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -164,7 +164,7 @@ vg_sha1_update:
 	ret
 	.p2align 6
 
-vg_sha1_finalize:
+vg_sha1_finalize_shani:
 	lea rsp, [rsp-168]
 	mov rcx, rsp
 	add rcx, 8
@@ -269,7 +269,7 @@ vg_sha1_finalize:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress}
+	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -301,7 +301,7 @@ vg_sha1_finalize:
 	ret
 	.p2align 6
 
-vg_sha1_digest:
+vg_sha1_digest_shani:
 	lea rsp, [rsp-280]
 	mov rcx, rsp
 	add rcx, 8
@@ -337,7 +337,7 @@ vg_sha1_digest:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha1_compress}
+	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -438,7 +438,7 @@ vg_sha1_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress}
+	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -462,7 +462,7 @@ vg_sha1_digest:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress}
+	call {vg_sha1_compress_shani}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]
@@ -976,7 +976,7 @@ vg_sha1_digest_avx_bmi:
 	ret
 	.p2align 6
 
-vg_sha1_update_shani:
+vg_sha1_update:
 	lea rsp, [rsp-168]
 	mov r8, rsp
 	add r8, 8
@@ -1106,7 +1106,7 @@ vg_sha1_update_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha1_compress_shani}
+	call {vg_sha1_compress}
 	mov rbx, rdi
 	mov r15, rcx
 226:
@@ -1122,7 +1122,7 @@ vg_sha1_update_shani:
 	ret
 	.p2align 6
 
-vg_sha1_finalize_shani:
+vg_sha1_finalize:
 	lea rsp, [rsp-168]
 	mov rcx, rsp
 	add rcx, 8
@@ -1227,7 +1227,7 @@ vg_sha1_finalize_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress_shani}
+	call {vg_sha1_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov r13d, 0
@@ -1259,7 +1259,7 @@ vg_sha1_finalize_shani:
 	ret
 	.p2align 6
 
-vg_sha1_digest_shani:
+vg_sha1_digest:
 	lea rsp, [rsp-280]
 	mov rcx, rsp
 	add rcx, 8
@@ -1295,7 +1295,7 @@ vg_sha1_digest_shani:
 	mov rdi, rbx
 	mov rdx, r14
 	mov rcx, r15
-	call {vg_sha1_compress_shani}
+	call {vg_sha1_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov rax, r14
@@ -1396,7 +1396,7 @@ vg_sha1_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress_shani}
+	call {vg_sha1_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	pxor xmm0, xmm0
@@ -1420,7 +1420,7 @@ vg_sha1_digest_shani:
 	mov rdi, rbx
 	mov edx, 1
 	mov rcx, r15
-	call {vg_sha1_compress_shani}
+	call {vg_sha1_compress}
 	mov rbx, rdi
 	mov r15, rcx
 	mov eax, DWORD PTR [rbx]

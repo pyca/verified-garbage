@@ -192,14 +192,9 @@ impl Memory {
 
 impl Drop for Memory {
     fn drop(&mut self) {
-        for chunk in self
-            .b
-            .iter_mut()
-            .chain(&mut self.v)
-            .chain(&mut self.scratch)
-        {
-            crate::zeroize::zeroize(&mut chunk.0);
-        }
+        crate::zeroize::zeroize(&mut self.b);
+        crate::zeroize::zeroize(&mut self.v);
+        crate::zeroize::zeroize(&mut self.scratch);
     }
 }
 

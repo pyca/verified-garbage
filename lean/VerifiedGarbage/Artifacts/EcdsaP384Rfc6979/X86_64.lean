@@ -1,0 +1,42 @@
+module
+
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384Adx
+public import VerifiedGarbage.Proof.P384.Comb7
+public import VerifiedGarbage.TCB.X86_64.Print
+import Mathlib.Data.Finset.Card
+import Mathlib.Data.Nat.Find
+public import VerifiedGarbage.Proof.P384.X86_64.Law
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+
+/-! # Deterministic ECDSA (RFC 6979) over P-384 on x86-64, with HMAC as a table -/
+
+@[expose] public section
+
+namespace VG.Artifacts.EcdsaP384Rfc6979.X86_64
+
+open VG.Proof.P384.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p384Of p384T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+
+/-- The signature with P-384's multiplication with BMI2 and ADX (`adx`,
+`_adx`) or not, and the tables of `vs`. -/
+def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hv : OK vs ∧ "VG_P384_COMB" ∉ names vs) (adx : Bool) : Artifact :=
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target {
+    suffix := if adx then "_adx" else ""
+    tables := [("hmac", tables vs)]
+    code := signCodeT (p384Of adx h.law (Proof.P384.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
+    stack := stackT
+    verified := p384T_verified adx h.law (Proof.P384.combOk7 h.law) h.inv vs hv
+    spSafe := signCode_sp _ _ _
+    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if hv : OK vs ∧ "VG_P384_COMB" ∉ names vs then [withMul hasLaw vs hv false, withMul hasLaw vs hv true] else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+
+end VG.Artifacts.EcdsaP384Rfc6979.X86_64

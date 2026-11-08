@@ -48,7 +48,7 @@ macro_rules
   | `(tactic| brun) => `(tactic| brun [])
   | `(tactic| brun [$ls,*]) => `(tactic|
       crun [List.cons_append, List.nil_append, ↓read_one, ↓read_four, ↓read_eight, write_eight,
-        write_four, false_implies, zero, sch, xL, xR, fReg, pPtr, qReg, acc, mReg, tmp, lane, rowPtr,
+        write_four, false_implies, zero, sch, xL, xR, fReg, pPtr, qReg, acc, tmp, rowPtr, o16, o256, o272,
         ptr, cnt, $ls,*])
 
 theorem WP.reassoc {a b c : Prog isa} {s : State} {Q : State → Prop}

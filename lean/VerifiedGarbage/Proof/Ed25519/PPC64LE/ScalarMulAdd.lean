@@ -372,7 +372,7 @@ theorem mulAddArgs_ok {s : State} (hp : MulAddPre s) {b : Addr} (hb : b = s.gpr 
 theorem mulAddEngine_ok {b : Addr} {s : State} (hc : Ctx b s) {R K Sc : Nat} (hVr : V s.mem b 64 = R)
     (hVk : V s.mem b 96 = K) (hVs : V s.mem b 128 = Sc) :
     WP isa scalarMulAddEngine s fun t =>
-      Rest [.r4, .r5, .r7, .r8, .r9, .r10, .r11, .r14, .r15, .r16] s t ∧ Frame [⟨b, 1024⟩] s.mem t.mem ∧
+      Rest [.r3, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r19] s t ∧ Frame [⟨b, 1024⟩] s.mem t.mem ∧
       V t.mem b SR = (K * Sc + R) % L := by
   have hA := ACC_eq
   have hS := SR_eq
@@ -396,11 +396,8 @@ theorem mulAddEngine_ok {b : Addr} {s : State} (hc : Ctx b s) {R K Sc : Nat} (hV
       ∃ r' ∈ ([⟨b, 1024⟩] : List Region), r.Sub r' := fun o n ho r hr =>
     ⟨_, List.mem_singleton_self _, by rw [List.mem_singleton.mp hr]; exact lowsub b ho⟩
   refine WP.mono (engine_ok hc10 (p := b + BitVec.ofNat 64 512) e10
-    (fun i hi => by rw [Offset.add_add]; exact hc10.inR (by omega_arith))
-    (fun i hi => by
-      rw [Offset.add_add]
-      exact fun hc => Offset.disjoint b (d := 512 + i) (n := 1) (e := SR) (k := 64) (.inr (by omega_arith))
-        (by omega_arith) (by omega_arith) _ (Region.contains_self _ _) hc)) fun t ⟨rt, ft, vt⟩ => ⟨?_, ?_, ?_⟩
+    (fun i hi => by rw [Offset.add_add]; exact hc10.inR (by omega_arith))) fun t ⟨rt, ft, vt⟩ =>
+      ⟨?_, ?_, ?_⟩
   · exact (h8.rest.mono (by decide)).trans ((r9.mono (by decide)).trans ((r10.mono (by decide)).trans
       (rt.mono (by decide))))
   · exact (h8.frame.sub (sub1 ACC 64 (by omega_arith))).trans ((f9.sub (sub1 ACC 64 (by omega_arith))).trans
@@ -467,7 +464,7 @@ theorem mulAdd_ok {s : State} (hp : MulAddPre s) :
     · exact hg r hm
     · have h1 : r ≠ .r7 := by revert hr; cases r <;> decide
       have h2 : r ≠ .r14 := by revert hm; cases r <;> decide
-      have h3 : r ∉ ([.r4, .r5, .r7, .r8, .r9, .r10, .r11, .r14, .r15, .r16] : List Reg) := by
+      have h3 : r ∉ ([.r3, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r19] : List Reg) := by
         revert hr hm; cases r <;> decide
       have h4 : r ∉ ([.r6, .r7, .r14, .r17, .r18] : List Reg) := by revert hr hm; cases r <;> decide
       rw [ho r hm h1 h2, r11.gpr _ h3, h7.rest.gpr _ h4]

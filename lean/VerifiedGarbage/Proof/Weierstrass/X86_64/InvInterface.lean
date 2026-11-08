@@ -13,9 +13,8 @@ contracts and the TCB unchanged. -/
 namespace VG.Proof.Weierstrass.X86_64
 
 /-- The group law of `C`, the soundness of the inversions, and that `C` has
-prime order `n`, which kills every point: the variant of a prime-order
-curve's interface on x86-64 (`Variants/<Curve>/X86_64/Law.lean`, see
-`TCB/Emit.lean`). -/
+prime order `n`, which kills every point: what a prime-order
+curve's proofs on x86-64 take (`Proof/<Curve>/X86_64/Law.lean`). -/
 structure HasLawInvOrd (C : Spec.Weierstrass.Curve) extends HasLawInv C where
   prime : PrimeOrder C
   killed : KilledByN C

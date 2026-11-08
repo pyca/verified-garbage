@@ -3,98 +3,6 @@
 //! `assembly/hmac_sha224.s`.
 #![allow(dead_code)]
 
-/// Starts an HMAC-SHA-224 computation with a key of any length: makes the SHA-224 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-224 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha224_finalize`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads and writes of 96 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 1700 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
-    core::arch::naked_asm!(
-        r#".base64 "i0QkEIP4QQ=="
-jae 20f
-.base64 "jaQkqPz//4uEJFwDAACJRCQEi4QkYAMAAIlEJAiLhCRkAwAAiUQkDIuEJGgDAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
-call {vg_sha224_init}
-.base64 "WFY="
-call {vg_sha224_init}
-.base64 "WLk2NjY2iUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtci3wkDItMJBCJ2oPCIIXJ"
-je 22f
-24:
-.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
-jne 24b
-jmp 23f
-22:
-23:
-.base64 "i0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCLQ1Q1ampqaolGVItDWDVqampqiUZYi0NcNWpqamqJRlyJ2IPAILkBAAAAVVFQUw=="
-call {vg_sha256_compress}
-.base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
-call {vg_sha256_compress}
-.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkWAMAAA=="
-21:
-.base64 "ww=="
-20:
-.base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
-jae 25f
-.base64 "i1QkDA=="
-jmp 26f
-25:
-.base64 "ie+Bx3AEAABX"
-call {vg_sha224_init}
-.base64 "WLgAAAAAvgAAAACLTCQQi1QkDFVRUlBWVw=="
-call {vg_sha256_update_scratch}
-.base64 "WFhYWFhYi0QkELkAAAAAieqBwggFAABVUlFQVw=="
-call {vg_sha256_finalize_scratch}
-.base64 "WFhYWFiJ6oHCCAUAALkcAAAA"
-26:
-.base64 "i3wkBIt0JAhVUVJWVw=="
-call {vg_hmac_sha224_init_scratch}
-.base64 "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"
-jmp 21b
-.p2align 6"#,
-        vg_sha224_init = sym super::sha256::vg_sha224_init,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
-        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
-    )
-}
-
-/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
-///
-/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
-///
-/// The function may overwrite the arguments on the stack, as the calling convention lets it.
-///
-/// # Safety
-///
-/// * `inner` must be valid for reads and writes of 96 bytes.
-/// * `outer` must be valid for reads of 96 bytes.
-/// * `out` must be valid for reads and writes of 28 bytes.
-/// * The contents of `inner` on return are unspecified.
-/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
-/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
-    core::arch::naked_asm!(
-        r#".base64 "jaQkpPz//4uEJGADAACJRCQEi4QkZAMAAIlEJAiLhCRoAwAAiUQkDIuEJGwDAACJRCQQi4QkcAMAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
-call {vg_sha256_finalize_scratch}
-.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4uYAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAALgiUtcidiDwCC5AQAAAFVRUFM="
-call {vg_sha256_compress}
-.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkXAMAAMM="
-.p2align 6"#,
-        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
-        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
-    )
-}
-
 /// The CPU features `vg_hmac_sha224_init_shani` requires (`Artifact.features`).
 pub const VG_HMAC_SHA224_INIT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
 
@@ -192,6 +100,98 @@ call {vg_sha256_compress_shani}
 .p2align 6"#,
         vg_sha256_finalize_scratch_shani = sym super::sha256::vg_sha256_finalize_scratch_shani::vg_sha256_finalize_scratch_shani,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
+    )
+}
+
+/// Starts an HMAC-SHA-224 computation with a key of any length: makes the SHA-224 streaming state `*inner` represent `K₀ ⊕ ipad` and `*outer` represent `K₀ ⊕ opad`, where `K₀` is the `key_len` bytes at `key` (or their SHA-224 digest, if there are more than 64) padded with zeros to 64 bytes (FIPS 198-1 §4, steps 1–3). The text is then absorbed with `vg_sha256_update` on `*inner` (its `count` starting at 64), and the MAC computed with `vg_hmac_sha224_finalize`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.initAnyKeyContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads and writes of 96 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `inner` and `outer` must not overlap each other or `key` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `key` may overlap the arguments on the stack, overlap the return address on the stack or the 1700 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_init(inner: *mut [u8; 96], outer: *mut [u8; 96], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r#".base64 "i0QkEIP4QQ=="
+jae 20f
+.base64 "jaQkqPz//4uEJFwDAACJRCQEi4QkYAMAAIlEJAiLhCRkAwAAiUQkDIuEJGgDAACJRCQQieCDwBiJRCQUi0QkFImYoAAAAImwpAAAAIm4qAAAAImorAAAAInFi1wkBIt0JAhT"
+call {vg_sha224_init}
+.base64 "WFY="
+call {vg_sha224_init}
+.base64 "WLk2NjY2iUsgiUskiUsoiUssiUswiUs0iUs4iUs8iUtAiUtEiUtIiUtMiUtQiUtUiUtYiUtci3wkDItMJBCJ2oPCIIXJ"
+je 22f
+24:
+.base64 "D7YHg/A2iAKDxwGDwgGD6QE="
+jne 24b
+jmp 23f
+22:
+23:
+.base64 "i0MgNWpqamqJRiCLQyQ1ampqaolGJItDKDVqampqiUYoi0MsNWpqamqJRiyLQzA1ampqaolGMItDNDVqampqiUY0i0M4NWpqamqJRjiLQzw1ampqaolGPItDQDVqampqiUZAi0NENWpqamqJRkSLQ0g1ampqaolGSItDTDVqampqiUZMi0NQNWpqamqJRlCLQ1Q1ampqaolGVItDWDVqampqiUZYi0NcNWpqamqJRlyJ2IPAILkBAAAAVVFQUw=="
+call {vg_sha256_compress}
+.base64 "WFhYWInzidiDwCC5AQAAAFVRUFM="
+call {vg_sha256_compress}
+.base64 "WFhYWInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkWAMAAA=="
+21:
+.base64 "ww=="
+20:
+.base64 "jaQkqPn//4uEJFwGAACJRCQEi4QkYAYAAIlEJAiLhCRkBgAAiUQkDIuEJGgGAACJRCQQieCDwBiJRCQUi0QkFImYQAMAAImwRAMAAIm4SAMAAImoTAMAAInFi0wkEIP5QQ=="
+jae 25f
+.base64 "i1QkDA=="
+jmp 26f
+25:
+.base64 "ie+Bx3AEAABX"
+call {vg_sha224_init}
+.base64 "WLgAAAAAvgAAAACLTCQQi1QkDFVRUlBWVw=="
+call {vg_sha256_update_scratch}
+.base64 "WFhYWFhYi0QkELkAAAAAieqBwggFAABVUlFQVw=="
+call {vg_sha256_finalize_scratch}
+.base64 "WFhYWFiJ6oHCCAUAALkcAAAA"
+26:
+.base64 "i3wkBIt0JAhVUVJWVw=="
+call {vg_hmac_sha224_init_scratch}
+.base64 "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"
+jmp 21b
+.p2align 6"#,
+        vg_sha224_init = sym super::sha256::vg_sha224_init,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
+        vg_sha256_update_scratch = sym super::sha256::vg_sha256_update_scratch::vg_sha256_update_scratch,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_hmac_sha224_init_scratch = sym super::hmac_sha224::vg_hmac_sha224_init_scratch::vg_hmac_sha224_init_scratch,
+    )
+}
+
+/// Finishes an HMAC-SHA-224 computation: if, for a 64-byte key `K₀` and a text of fewer than 2⁶⁴ − 64 bytes, the SHA-224 streaming state `*inner` represents `(K₀ ⊕ ipad) ‖ text`, of `count` bytes, and `*outer` represents `K₀ ⊕ opad`, writes the HMAC-SHA-224 of the text under `K₀` (28 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Hmac.Instance.finalizeContract` of `VG.Spec.Hmac.sha224I`. Constant time: only the pointers and `count` may affect timing, not the states.
+///
+/// The function may overwrite the arguments on the stack, as the calling convention lets it.
+///
+/// # Safety
+///
+/// * `inner` must be valid for reads and writes of 96 bytes.
+/// * `outer` must be valid for reads of 96 bytes.
+/// * `out` must be valid for reads and writes of 28 bytes.
+/// * The contents of `inner` on return are unspecified.
+/// * `inner` and `out` must not overlap each other or `outer` (distinct Rust objects never do).
+/// * None of `inner`, `outer` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 908 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_hmac_sha224_finalize(inner: *mut [u8; 96], outer: *const [u8; 96], count: u64, out: *mut [u8; 28]) {
+    core::arch::naked_asm!(
+        r#".base64 "jaQkpPz//4uEJGADAACJRCQEi4QkZAMAAIlEJAiLhCRoAwAAiUQkDIuEJGwDAACJRCQQi4QkcAMAAIlEJBSJ4IPAHIlEJBiLRCQYiZigAAAAibCkAAAAibioAAAAiaisAAAAicWLXCQEi3QkCIt8JBSLRCQMi0wkEInqgcKwAAAAVVJRUFM="
+call {vg_sha256_finalize_scratch}
+.base64 "WFhYWFiLDokLi04EiUsEi04IiUsIi04MiUsMi04QiUsQi04UiUsUi04YiUsYi04ciUsci42wAAAAiUsgi420AAAAiUski424AAAAiUsoi428AAAAiUssi43AAAAAiUswi43EAAAAiUs0i43IAAAAiUs4uYAAAACJSzy5AAAAAIlLQLkAAAAAiUtEuQAAAACJS0i5AAAAAIlLTLkAAAAAiUtQuQAAAACJS1S5AAAAAIlLWLkAAALgiUtcidiDwCC5AQAAAFVRUFM="
+call {vg_sha256_compress}
+.base64 "WFhYWInYg8AgiwsPyYkIi0sED8mJSASLSwgPyYlICItLDA/JiUgMi0sQD8mJSBCLSxQPyYlIFItLGA/JiUgYi0scD8mJSByLSyCJD4tLJIlPBItLKIlPCItLLIlPDItLMIlPEItLNIlPFItLOIlPGInoi5igAAAAi7CkAAAAi7ioAAAAi6isAAAAjaQkXAMAAMM="
+.p2align 6"#,
+        vg_sha256_finalize_scratch = sym super::sha256::vg_sha256_finalize_scratch::vg_sha256_finalize_scratch,
+        vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
 }
 

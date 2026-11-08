@@ -1,0 +1,20 @@
+module
+
+public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
+
+/-! # The implementations of `CmacAesUpdate` on AArch64 -/
+
+@[expose] public section
+
+namespace VG.Proof.Variants.CmacAesUpdate.AArch64
+
+def aese : Proof.CmacAes.AArch64.UpdateImpl := .aese
+
+def scalar : Proof.CmacAes.AArch64.UpdateImpl := .ctr32 .scalar
+
+/-- Every implementation, best first: each function generic over them is
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
+def variants := [aese, scalar]
+
+end VG.Proof.Variants.CmacAesUpdate.AArch64

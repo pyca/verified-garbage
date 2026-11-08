@@ -21,6 +21,8 @@ meta import VerifiedGarbage.Proof.Blowfish.PPC64LE.Lit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Impl.Blowfish.PPC64LE
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 
 /-! # Blowfish ECB on PPC64LE meets its contract, with the working space as an argument -/
 
@@ -85,10 +87,10 @@ theorem ecb_agree (up : Bool) : ∀ s₁ s₂, (ecbC up).pre s₁ → (ecbC up).
   · exact h.2.2.2.1
 
 theorem encrypt_ct : ConstantTime isa (ecbC true).pre (ecbC true).pub encrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (ecb_agree true) (by taint_decide)
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (ecb_agree true) (by taint_decide)
 
 theorem decrypt_ct : ConstantTime isa (ecbC false).pre (ecbC false).pub decrypt :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (ecb_agree false) (by taint_decide)
+  VG.Taint.constantTime (A := vectorTaint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) (ecb_agree false) (by taint_decide)
 
 def ecbSat : State where
   gpr r := match r with

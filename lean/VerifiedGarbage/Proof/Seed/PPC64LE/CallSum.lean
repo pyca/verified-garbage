@@ -19,7 +19,9 @@ or `vg_seed_decrypt_blocks` at the same taint (`τCall`): the arguments
 `r4` and the working space in `r6` at known offsets of the scratch buffer,
 no slot public. The analysis of each call is a summary (`taint_summary`),
 which the modes' checks use (`taint_decide_sum`) in place of the analysis of
-the function in each.
+the function in each. CBC and CFB decryption, whose scratch buffer holds
+sixteen blocks, call them at `τCallW`, the same but for the scratch
+buffer's length.
 -/
 
 @[expose] public section
@@ -35,5 +37,11 @@ def τCall : SlotTaint.T :=
 
 taint_summary encryptSum : slotTaint τCall (Impl.Seed.PPC64LE.blockCall .encrypt)
 taint_summary decryptSum : slotTaint τCall (Impl.Seed.PPC64LE.blockCall .decrypt)
+
+/-- `τCall`, with the scratch buffer of the core on sixteen blocks. -/
+def τCallW : SlotTaint.T := { τCall with lens := [16, 0, 8 * 174] }
+
+taint_summary encryptSumW : slotTaint τCallW (Impl.Seed.PPC64LE.blockCall .encrypt)
+taint_summary decryptSumW : slotTaint τCallW (Impl.Seed.PPC64LE.blockCall .decrypt)
 
 end VG.Proof.Seed.PPC64LE

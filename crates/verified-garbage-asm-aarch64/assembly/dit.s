@@ -15,6 +15,31 @@ vg_dit_enter:
 	ret
 	.p2align 6
 
+vg_dit_enter_dsb:
+	mrs x0, DIT
+	lsr x0, x0, #24
+	cbz x0, 20f
+	b 21f
+20:
+	msr DIT, #1
+	dsb sy
+	isb
+21:
+	ret
+	.p2align 6
+
+vg_dit_enter_sb:
+	mrs x0, DIT
+	lsr x0, x0, #24
+	cbz x0, 20f
+	b 21f
+20:
+	msr DIT, #1
+	sb
+21:
+	ret
+	.p2align 6
+
 vg_dit_clear:
 	msr DIT, #0
 	ret

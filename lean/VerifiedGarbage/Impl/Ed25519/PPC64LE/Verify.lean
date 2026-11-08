@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Scalar
+public import VerifiedGarbage.Impl.Ed25519.PPC64LE.VerifyWindow
 
 /-!
 # `vg_ed25519_verify_equation(pk = r3, signature = r4, challenge = r5, scratch = r6)` on PPC64LE
 
-ARMv7's (`Impl/Ed25519/Arm/Verify.lean`): `S < L`, then `A` and `R`
-decoded by one loop of two iterations into the tables at 7776 and 7904
-(their results ANDed in `r18`; the pointers in `r29`–`r31`), then `[S] B` (to 8032), `[k] A`, the sum
-with `R` and the projective comparison. The result, 1 or 0, is in `r17`,
-and returned in `r3`.
+`S < L`, then `A` and `R` decoded by one loop of two iterations into the
+tables at 7776 and 7904 (their results ANDed in `r18`; the pointers in
+`r29`–`r31`), then `[k] A - [S] B` by 4-bit windows (`VerifyWindow.lean`),
+compared projectively with `-R`. The result, 1 or 0, is in `r17`, and
+returned in `r3`. `lr` is saved at `LRS` before the static's address
+(`adrSym`) changes it.
 -/
 
 @[expose] public section
@@ -22,20 +24,26 @@ open VG.PPC64LE
 /-- `r8` zero exactly when `S < L`. -/
 def verifyScalar : List Instr := [.addi .r14 .r30 32] ++ unpackField SR 0 ++ scalarCompare
 
-def verifyLhs : Prog isa :=
-  .seq (.block [.addi .r14 .r30 32])
-    (.seq (constPoint Spec.Ed25519.basePoint)
-      (.seq (pointFromScalar 16) (.block (pointTableWrite 8032))))
+/-- The bytes of the top half of the challenge (at `r31`), or-ed into `r8`: zero exactly when the
+challenge is below `2^256`. -/
+def challengeHigh : List Instr :=
+  [.li .r8 0] ++ (List.range 32).flatMap fun i => [.lbz .r9 .r31 (32 + i), .logic .or .r8 .r8 .r9]
 
-def verifyCombine : Prog isa :=
-  .seq copyPointToQ (.seq (.block (pointTableRead 7904))
-    (.seq addCall (.seq copyPointToQ (.block (pointTableRead 8032)))))
+/-- The windows' count: 64 when the challenge is below `2^256` (always, from
+`vg_ed25519_verify`, which reduces it modulo `L`), 128 otherwise. The challenge is public. -/
+def windowCount : Prog isa :=
+  .seq (.block challengeHigh) (.ite (.zero .d .r8) (.block [.li .r15 64]) (.block [.li .r15 128]))
 
+/-- `-R` from the table at 7904 into slots 4–7. -/
+def negR : Prog isa :=
+  .seq (.block (scratchAddr 7904 ++ pointFromTableQ)) (fieldCode [.const 8 0, .sub 4 8 4, .sub 7 8 7])
+
+/-- `[k]A - [S]B` (`strausPrep`, `windowCount`, `windows`) compared with `-R`. -/
 def verifyRhs : Prog isa :=
-  .seq (.block (pointTableRead 7776 ++ [.addi .r14 .r31 0]))
-    (.seq (pointFromScalar 32) (.seq verifyCombine pointEqual))
+  .seq (.block (pointTableRead 7776))
+    (.seq strausPrep (.seq windowCount (.seq windows (.seq negR pointEqual))))
 
-def verifyEquationPoints : Prog isa := .seq verifyLhs verifyRhs
+def verifyEquationPoints : Prog isa := verifyRhs
 
 /-! ## Decoding `A` and `R` -/
 

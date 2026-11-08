@@ -50,8 +50,8 @@ jmp 21f
     )
 }
 
-/// The CPU features `vg_poly1305_update_avx2` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
+/// The CPU features `vg_poly1305_update_ifma` requires (`Artifact.features`).
+pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
@@ -63,9 +63,9 @@ pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx` and `avx2` target features.
+/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f
@@ -94,7 +94,7 @@ jmp 21f
 21:
 .base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
 jb 29f
-call {vg_poly1305_blocks_avx2}
+call {vg_poly1305_blocks_ifma}
 jmp 210f
 29:
 210:
@@ -109,7 +109,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
+        vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
 }
 
@@ -176,8 +176,8 @@ jmp 212f
     )
 }
 
-/// The CPU features `vg_poly1305_update_ifma` requires (`Artifact.features`).
-pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512IFMA);
+/// The CPU features `vg_poly1305_update_avx2` requires (`Artifact.features`).
+pub const VG_POLY1305_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Absorbs data into a Poly1305 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴) under a key, it then represents that message followed by the `len` bytes at `data`, under the same key.
 ///
@@ -189,9 +189,9 @@ pub const VG_POLY1305_UPDATE_IFMA_FEATURES: verified_garbage_cpu::Features = ver
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx2` and `avx512ifma` target features.
+/// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_ifma(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "sysv64" fn vg_poly1305_update_avx2(state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r#".base64 "SI2kJHj///9JieBJg8AISYkYSYloCE2JYBBNiWgYTYlwIE2JeChJifRJg+QPSInWTYXk"
 je 20f
@@ -220,7 +220,7 @@ jmp 21f
 21:
 .base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
 jb 29f
-call {vg_poly1305_blocks_ifma}
+call {vg_poly1305_blocks_avx2}
 jmp 210f
 29:
 210:
@@ -235,7 +235,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMM="
 .p2align 6"#,
-        vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
+        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
 }
 

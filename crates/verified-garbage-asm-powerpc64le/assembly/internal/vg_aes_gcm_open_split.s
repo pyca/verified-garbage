@@ -333,58 +333,122 @@ vg_aes_gcm_open_split:
 	b 246f
 245:
 246:
-	or %r24, %r27, %r27
-	or %r25, %r23, %r23
-	li %r26, 0
-	cmpldi %cr0, %r25, 0
-	beq %cr0, 248f
-	cmpldi %cr0, %r26, 0
-	beq %cr0, 250f
-	li %r5, 16
-	subf %r5, %r26, %r5
-	rldicl %r6, %r25, 60, 4
-	cmpldi %cr0, %r6, 0
-	bne %cr0, 252f
-	subf %r6, %r5, %r25
-	rldicl %r6, %r6, 1, 63
-	cmpldi %cr0, %r6, 0
-	bne %cr0, 254f
-	b 255f
-254:
-	or %r5, %r25, %r25
-255:
-	b 253f
-252:
-253:
-	addi %r4, %r30, 32
-	add %r4, %r4, %r26
-	or %r3, %r24, %r24
-	add %r24, %r24, %r5
-	subf %r25, %r5, %r25
-	add %r26, %r26, %r5
-256:
+	li %r0, 0
+	std %r0, 256(%r31)
+	std %r0, 264(%r31)
+	or %r3, %r20, %r20
+	addi %r4, %r31, 256
+	or %r5, %r19, %r19
+248:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r4)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 256b
+	bne %cr0, 248b
+	cmpldi %cr0, %r23, 0
+	beq %cr0, 249f
+	addi %r12, %r1, 0
+	ld %r26, 120(%r12)
+	or %r3, %r29, %r29
+	or %r4, %r28, %r28
+	addi %r5, %r30, 16
+	or %r6, %r27, %r27
+	rldicl %r7, %r23, 60, 4
+	or %r8, %r26, %r26
+	or %r9, %r7, %r7
+	addi %r10, %r31, 448
+	bl {vg_aes_gcm_decrypt_blocks_to}
+	li %r0, 15
+	and %r25, %r23, %r0
+	subf %r12, %r25, %r23
+	add %r24, %r27, %r12
+	add %r26, %r26, %r12
+	cmpldi %cr0, %r25, 0
+	beq %cr0, 251f
+	li %r0, 0
+	std %r0, 64(%r30)
+	std %r0, 72(%r30)
+	addi %r6, %r30, 64
+	li %r7, 1
+	or %r3, %r29, %r29
+	or %r4, %r28, %r28
+	addi %r5, %r30, 48
+	addi %r8, %r31, 512
+	bl {vg_aes_ctr32}
+	addi %r3, %r30, 64
+	or %r4, %r24, %r24
+	or %r5, %r25, %r25
+	or %r7, %r26, %r26
+253:
+	lbz %r0, 0(%r4)
+	lbz %r6, 0(%r3)
+	xor %r0, %r0, %r6
+	stb %r0, 0(%r7)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r7, %r7, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 253b
+	b 252f
+251:
+252:
+	li %r0, 15
+	and %r25, %r23, %r0
+	subf %r12, %r25, %r23
+	add %r24, %r27, %r12
+	li %r26, 0
+	cmpldi %cr0, %r25, 0
+	beq %cr0, 254f
+	cmpldi %cr0, %r26, 0
+	beq %cr0, 256f
+	li %r5, 16
+	subf %r5, %r26, %r5
+	rldicl %r6, %r25, 60, 4
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 258f
+	subf %r6, %r5, %r25
+	rldicl %r6, %r6, 1, 63
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 260f
+	b 261f
+260:
+	or %r5, %r25, %r25
+261:
+	b 259f
+258:
+259:
+	addi %r4, %r30, 32
+	add %r4, %r4, %r26
+	or %r3, %r24, %r24
+	add %r24, %r24, %r5
+	subf %r25, %r5, %r25
+	add %r26, %r26, %r5
+262:
+	lbz %r0, 0(%r3)
+	stb %r0, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 262b
 	addi %r6, %r26, -16
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 257f
-	b 258f
-257:
+	beq %cr0, 263f
+	b 264f
+263:
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
 	addi %r5, %r30, 32
 	li %r6, 1
 	addi %r7, %r31, 512
 	bl {vg_ghash}
-258:
-	b 251f
-250:
-251:
+264:
+	b 257f
+256:
+257:
 	or %r5, %r24, %r24
 	rldicl %r6, %r25, 60, 4
 	li %r0, 15
@@ -393,60 +457,67 @@ vg_aes_gcm_open_split:
 	add %r24, %r24, %r9
 	or %r25, %r8, %r8
 	cmpldi %cr0, %r6, 0
-	beq %cr0, 259f
+	beq %cr0, 265f
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
 	addi %r7, %r31, 512
 	bl {vg_ghash}
-	b 260f
-259:
-260:
+	b 266f
+265:
+266:
 	cmpldi %cr0, %r25, 0
-	beq %cr0, 261f
+	beq %cr0, 267f
 	or %r3, %r24, %r24
 	addi %r4, %r30, 32
 	or %r5, %r25, %r25
-263:
+269:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r4)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 263b
-	b 262f
-261:
-262:
-	b 249f
-248:
-249:
+	bne %cr0, 269b
+	b 268f
+267:
+268:
+	b 255f
+254:
+255:
+	cmpldi %cr0, %r23, 0
+	beq %cr0, 270f
 	li %r0, 15
 	and %r26, %r23, %r0
+	b 271f
+270:
+	li %r0, 15
+	and %r26, %r22, %r0
+271:
 	cmpldi %cr0, %r26, 0
-	beq %cr0, 264f
+	beq %cr0, 272f
 	li %r0, 0
 	std %r0, 96(%r31)
 	std %r0, 104(%r31)
 	addi %r3, %r30, 32
 	addi %r4, %r31, 96
 	or %r5, %r26, %r26
-266:
+274:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r4)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 266b
+	bne %cr0, 274b
 	addi %r3, %r29, 240
 	addi %r4, %r30, 16
 	addi %r5, %r31, 96
 	li %r6, 1
 	addi %r7, %r31, 512
 	bl {vg_ghash}
-	b 265f
-264:
-265:
+	b 273f
+272:
+273:
 	or %r24, %r22, %r22
 	or %r26, %r23, %r23
 	rldicr %r3, %r24, 3, 60
@@ -473,34 +544,163 @@ vg_aes_gcm_open_split:
 	li %r7, 1
 	addi %r8, %r31, 512
 	bl {vg_aes_ctr32}
-	li %r0, 0
-	std %r0, 256(%r31)
-	std %r0, 264(%r31)
-	or %r3, %r20, %r20
-	addi %r4, %r31, 256
-	or %r5, %r19, %r19
-267:
+	b 250f
+249:
+	or %r24, %r27, %r27
+	or %r25, %r23, %r23
+	li %r26, 0
+	cmpldi %cr0, %r25, 0
+	beq %cr0, 275f
+	cmpldi %cr0, %r26, 0
+	beq %cr0, 277f
+	li %r5, 16
+	subf %r5, %r26, %r5
+	rldicl %r6, %r25, 60, 4
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 279f
+	subf %r6, %r5, %r25
+	rldicl %r6, %r6, 1, 63
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 281f
+	b 282f
+281:
+	or %r5, %r25, %r25
+282:
+	b 280f
+279:
+280:
+	addi %r4, %r30, 32
+	add %r4, %r4, %r26
+	or %r3, %r24, %r24
+	add %r24, %r24, %r5
+	subf %r25, %r5, %r25
+	add %r26, %r26, %r5
+283:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r4)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 267b
+	bne %cr0, 283b
+	addi %r6, %r26, -16
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 284f
+	b 285f
+284:
+	addi %r3, %r29, 240
+	addi %r4, %r30, 16
+	addi %r5, %r30, 32
+	li %r6, 1
+	addi %r7, %r31, 512
+	bl {vg_ghash}
+285:
+	b 278f
+277:
+278:
+	or %r5, %r24, %r24
+	rldicl %r6, %r25, 60, 4
+	li %r0, 15
+	and %r8, %r25, %r0
+	subf %r9, %r8, %r25
+	add %r24, %r24, %r9
+	or %r25, %r8, %r8
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 286f
+	addi %r3, %r29, 240
+	addi %r4, %r30, 16
+	addi %r7, %r31, 512
+	bl {vg_ghash}
+	b 287f
+286:
+287:
+	cmpldi %cr0, %r25, 0
+	beq %cr0, 288f
+	or %r3, %r24, %r24
+	addi %r4, %r30, 32
+	or %r5, %r25, %r25
+290:
+	lbz %r0, 0(%r3)
+	stb %r0, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 290b
+	b 289f
+288:
+289:
+	b 276f
+275:
+276:
+	li %r0, 15
+	and %r26, %r23, %r0
+	cmpldi %cr0, %r26, 0
+	beq %cr0, 291f
+	li %r0, 0
+	std %r0, 96(%r31)
+	std %r0, 104(%r31)
+	addi %r3, %r30, 32
+	addi %r4, %r31, 96
+	or %r5, %r26, %r26
+293:
+	lbz %r0, 0(%r3)
+	stb %r0, 0(%r4)
+	addi %r3, %r3, 1
+	addi %r4, %r4, 1
+	addi %r5, %r5, -1
+	cmpldi %cr0, %r5, 0
+	bne %cr0, 293b
+	addi %r3, %r29, 240
+	addi %r4, %r30, 16
+	addi %r5, %r31, 96
+	li %r6, 1
+	addi %r7, %r31, 512
+	bl {vg_ghash}
+	b 292f
+291:
+292:
+	or %r24, %r22, %r22
+	or %r26, %r23, %r23
+	rldicr %r3, %r24, 3, 60
+	rldicr %r4, %r26, 3, 60
+	addi %r5, %r31, 96
+	li %r6, 0
+	stdbrx %r3, %r5, %r6
+	li %r6, 8
+	stdbrx %r4, %r5, %r6
+	addi %r3, %r29, 240
+	addi %r4, %r30, 16
+	addi %r5, %r31, 96
+	li %r6, 1
+	addi %r7, %r31, 512
+	bl {vg_ghash}
+	ld %r3, 16(%r30)
+	std %r3, 112(%r31)
+	ld %r3, 24(%r30)
+	std %r3, 120(%r31)
+	or %r3, %r29, %r29
+	or %r4, %r28, %r28
+	or %r5, %r30, %r30
+	addi %r6, %r31, 112
+	li %r7, 1
+	addi %r8, %r31, 512
+	bl {vg_aes_ctr32}
+250:
 	li %r0, 0
 	std %r0, 272(%r31)
 	std %r0, 280(%r31)
 	addi %r3, %r31, 112
 	addi %r4, %r31, 272
 	or %r5, %r19, %r19
-268:
+294:
 	lbz %r0, 0(%r3)
 	stb %r0, 0(%r4)
 	addi %r3, %r3, 1
 	addi %r4, %r4, 1
 	addi %r5, %r5, -1
 	cmpldi %cr0, %r5, 0
-	bne %cr0, 268b
+	bne %cr0, 294b
 	ld %r3, 272(%r31)
 	ld %r4, 256(%r31)
 	xor %r3, %r3, %r4
@@ -514,71 +714,6 @@ vg_aes_gcm_open_split:
 	rldicl %r3, %r3, 1, 63
 	li %r4, 1
 	subf %r3, %r3, %r4
-	or %r19, %r3, %r3
-	cmpldi %cr0, %r19, 0
-	beq %cr0, 269f
-	or %r24, %r27, %r27
-	or %r25, %r23, %r23
-	addi %r12, %r1, 0
-	ld %r26, 120(%r12)
-	cmpldi %cr0, %r25, 0
-	beq %cr0, 271f
-	or %r6, %r24, %r24
-	rldicl %r7, %r25, 60, 4
-	li %r0, 15
-	and %r8, %r25, %r0
-	subf %r9, %r8, %r25
-	add %r24, %r24, %r9
-	or %r25, %r8, %r8
-	or %r10, %r26, %r26
-	add %r26, %r26, %r9
-	cmpldi %cr0, %r7, 0
-	beq %cr0, 273f
-	or %r3, %r29, %r29
-	or %r4, %r28, %r28
-	addi %r5, %r30, 48
-	or %r8, %r10, %r10
-	bl {vg_aes_ctr32_to}
-	b 274f
-273:
-274:
-	cmpldi %cr0, %r25, 0
-	beq %cr0, 275f
-	li %r0, 0
-	std %r0, 64(%r30)
-	std %r0, 72(%r30)
-	addi %r6, %r30, 64
-	li %r7, 1
-	or %r3, %r29, %r29
-	or %r4, %r28, %r28
-	addi %r5, %r30, 48
-	addi %r8, %r31, 512
-	bl {vg_aes_ctr32}
-	addi %r3, %r30, 64
-	or %r4, %r24, %r24
-	or %r5, %r25, %r25
-	or %r7, %r26, %r26
-277:
-	lbz %r0, 0(%r4)
-	lbz %r6, 0(%r3)
-	xor %r0, %r0, %r6
-	stb %r0, 0(%r7)
-	addi %r3, %r3, 1
-	addi %r4, %r4, 1
-	addi %r7, %r7, 1
-	addi %r5, %r5, -1
-	cmpldi %cr0, %r5, 0
-	bne %cr0, 277b
-	b 276f
-275:
-276:
-	b 272f
-271:
-272:
-	b 270f
-269:
-270:
-	or %r3, %r19, %r19
 	b 27f
 26:
 	li %r3, 0

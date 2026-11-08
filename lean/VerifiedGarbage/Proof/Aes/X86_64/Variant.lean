@@ -82,9 +82,9 @@ structure Ctr32Impl where
   expandMxcsr : expand.code.allInstrs (fun i => !loadsMxcsr i) = true
   expandSpSafe : expand.code.all (fun i => !isa.writesSp i) = true
   expandNoStack : expand.code.x86_64Depth = 0 := by lit_decide
-  /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features,
-  if any: AES-GCM's `open_to` decrypts with it in one pass. -/
-  ctrTo : Option Ctr32ToImpl := none
+  /-- Its form out of place (`vg_aes_ctr32_to`), with the same CPU features:
+  AES-GCM's `open_to` decrypts with it in one pass. -/
+  ctrTo : Ctr32ToImpl
 
 namespace Ctr32Impl
 
@@ -124,7 +124,7 @@ def scalar : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := ""
   features := []
-  ctrTo := some scalarTo
+  ctrTo := scalarTo
   expand := .scalar
   expandDepth := by lit_decide
   expandOk := expandKey_correct
@@ -188,7 +188,7 @@ def aesni : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_aesni"
   features := ["aes", "ssse3"]
-  ctrTo := some aesniTo
+  ctrTo := aesniTo
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok
@@ -235,7 +235,7 @@ def vaes : Ctr32Impl where
   spSafe := Code.all_of_allInstrs (by lit_decide)
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "ssse3", "vaes"]
-  ctrTo := some vaesTo
+  ctrTo := vaesTo
   expand := .aesni
   expandDepth := by lit_decide
   expandOk := aesni_expandKey_ok

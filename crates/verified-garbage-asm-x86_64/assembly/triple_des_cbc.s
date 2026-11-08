@@ -285,7 +285,7 @@ vg_triple_des_cbc_encrypt_chained:
 	ret
 	.p2align 6
 
-vg_triple_des_cbc_decrypt_chained_avx2:
+vg_triple_des_cbc_decrypt_chained_avx512:
 	lea rsp, [rsp-2128]
 	mov r8, rsp
 	add r8, 8
@@ -337,7 +337,7 @@ vg_triple_des_cbc_decrypt_chained_avx2:
 	mov rdi, r15
 	mov rsi, r12
 	mov rdx, r10
-	call {vg_triple_des_ecb_decrypt_avx2}
+	call {vg_triple_des_ecb_decrypt_avx512}
 	mov r9, r13
 	movabs rcx, 256
 	cmp r14, 256
@@ -644,7 +644,7 @@ vg_triple_des_cbc_decrypt_chained_avx2:
 	ret
 	.p2align 6
 
-vg_triple_des_cbc_decrypt_chained_avx512:
+vg_triple_des_cbc_decrypt_chained_avx2:
 	lea rsp, [rsp-2128]
 	mov r8, rsp
 	add r8, 8
@@ -696,7 +696,7 @@ vg_triple_des_cbc_decrypt_chained_avx512:
 	mov rdi, r15
 	mov rsi, r12
 	mov rdx, r10
-	call {vg_triple_des_ecb_decrypt_avx512}
+	call {vg_triple_des_ecb_decrypt_avx2}
 	mov r9, r13
 	movabs rcx, 256
 	cmp r14, 256

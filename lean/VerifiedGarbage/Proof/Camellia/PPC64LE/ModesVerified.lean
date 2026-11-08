@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Camellia.FbScratch
 public import VerifiedGarbage.Proof.Camellia.CtrScratch
 public import VerifiedGarbage.Proof.Camellia.PPC64LE.ModeCore
 import VerifiedGarbage.Proof.Modes.PPC64LE.Modes
-import VerifiedGarbage.Proof.Modes.PPC64LE.Ctr
+import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Proof.Modes.Steps
 import VerifiedGarbage.Spec.Camellia.Cfb
@@ -202,10 +202,10 @@ theorem keyArgs_of (hs : (modeContract post).pre s) {M : Mode} (d : Dir) (hstep 
 
 /-- A mode over the core, wrapped: its results on the entry's memory. -/
 theorem run_wrapped (hs : (modeContract post).pre s) {d : Dir} {M : Mode} (hstep : M.step = 16)
-    {X : State → Prop}
-    (hres : WP isa ((dirCore d).seq M) (entry s) fun s' => abiPreserved (entry s) s' ∧ X s')
-    (hch : WP isa ((dirCore d).seq M) (entry s) (Changes (dirCore d) M (entry s))) :
-    WP isa (wrap ((dirCore d).seq M)) s fun s' => abiPreserved s s' ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧ X s₂ := by
+    {X : State → Prop} {p : Prog isa}
+    (hres : WP isa p (entry s) fun s' => abiPreserved (entry s) s' ∧ X s')
+    (hch : WP isa p (entry s) (Changes (dirCore d) M (entry s))) :
+    WP isa (wrap p) s fun s' => abiPreserved s s' ∧ ∃ s₂ : State, s₂.mem = s'.mem ∧ X s₂ := by
   have h := hs
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS, -⟩ := h
   refine wrap_wp (Q := fun m => ∃ s₂ : State, s₂.mem = m ∧ X s₂) (extra_in hs) ?_
@@ -270,13 +270,12 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pr
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cbcDecChained_wp (dirCoreSpec .decrypt)
-    (seqPre_of hs .decrypt (M := Mode.cbcDecChained 4) rfl) (keyArgs_of hs .decrypt (M := Mode.cbcDecChained 4) rfl)
-  have hc := Proof.Modes.PPC64LE.cbcDecChained_changes (dirCoreSpec .decrypt)
+  have hw := Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 3) (by decide) (by decide) (by decide)
     (seqPre_of hs .decrypt (M := Mode.cbcDecChained 4) rfl) (keyArgs_of hs .decrypt (M := Mode.cbcDecChained 4) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
+    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
       show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_dec] at h2
@@ -322,13 +321,12 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract cfbEncPost).pre s) :
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbDecPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cfbDec_wp (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cfbDec 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbDec 4) rfl)
-  have hc := Proof.Modes.PPC64LE.cfbDec_changes (dirCoreSpec .encrypt)
-    (seqPre_of hs .encrypt (M := Mode.cfbDec 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbDec 4) rfl)
+  have hw := Proof.Modes.PPC64LE.cfbDecWide_wp (dirCoreSpec .encrypt) (lg := 3) (by decide) (by decide) (by decide)
+    (seqPre_of hs .encrypt (M := Mode.cfbDecEarly 4) rfl) (keyArgs_of hs .encrypt (M := Mode.cfbDecEarly 4) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
+    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
       show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2
@@ -339,13 +337,12 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.ctr_wp (dirCoreSpec .encrypt) rfl
-    (seqPre_of hs .encrypt (M := Mode.ctr) rfl) (keyArgs_of hs .encrypt (M := Mode.ctr) rfl)
-  have hc := Proof.Modes.PPC64LE.ctr_changes (dirCoreSpec .encrypt) rfl
-    (seqPre_of hs .encrypt (M := Mode.ctr) rfl) (keyArgs_of hs .encrypt (M := Mode.ctr) rfl)
+  have hw := Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 3) rfl (by decide) (by decide) (by decide)
+    (seqPre_of hs .encrypt (M := Mode.ctrEarly) rfl) (keyArgs_of hs .encrypt (M := Mode.ctrEarly) rfl)
   obtain ⟨eP, eD, eN⟩ := entry_args s
   rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl hw hc) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
+  refine WP.mono (run_wrapped hs rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
+    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
   all_goals rw [← hm]
   · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
       show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_enc] at h2

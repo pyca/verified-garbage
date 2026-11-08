@@ -37,7 +37,7 @@ a literal (as `VG.codeModule` in `Proof/Framework/Lit.lean`). -/
 def codeModule (m : Name) : Bool :=
   match m.components with
   | `VerifiedGarbage :: `Proof :: `Framework :: _ => false
-  | `VerifiedGarbage :: k :: _ => k ∈ [`Impl, `Proof, `Variants, `Generic, `Artifacts]
+  | `VerifiedGarbage :: k :: _ => k ∈ [`Impl, `Proof, `Artifacts]
   | _ => false
 
 /-- The constants with a literal (`c.lit_eq : c = c.lit`, or `c x₁ … = N.lit`

@@ -3314,7 +3314,8 @@ vg_camellia_cfb128_decrypt:
 	or %r29, %r9, %r9
 	or %r30, %r10, %r10
 	or %r31, %r11, %r11
-	cmpldi %cr0, %r30, 0
+	rldicl %r8, %r30, 61, 3
+	cmpldi %cr0, %r8, 0
 	beq %cr0, 28f
 210:
 	lwz %r8, 3344(%r5)
@@ -3325,6 +3326,126 @@ vg_camellia_cfb128_decrypt:
 	stw %r8, 3096(%r5)
 	lwz %r8, 3356(%r5)
 	stw %r8, 3100(%r5)
+	lwz %r8, 0(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 4(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 8(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 12(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3104(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3108(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3112(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3116(%r5)
+	lwz %r8, 16(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 20(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 24(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 28(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3120(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3124(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3128(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3132(%r5)
+	lwz %r8, 32(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 36(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 40(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 44(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3136(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3140(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3144(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3148(%r5)
+	lwz %r8, 48(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 52(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 56(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 60(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3152(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3156(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3160(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3164(%r5)
+	lwz %r8, 64(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 68(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 72(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 76(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3168(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3172(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3176(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3180(%r5)
+	lwz %r8, 80(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 84(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 88(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 92(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3184(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3188(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3192(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3196(%r5)
+	lwz %r8, 96(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 100(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 104(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 108(%r31)
+	stw %r8, 3356(%r5)
+	lwz %r8, 3344(%r5)
+	stw %r8, 3200(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3204(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3208(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3212(%r5)
+	lwz %r8, 112(%r31)
+	stw %r8, 3344(%r5)
+	lwz %r8, 116(%r31)
+	stw %r8, 3348(%r5)
+	lwz %r8, 120(%r31)
+	stw %r8, 3352(%r5)
+	lwz %r8, 124(%r31)
+	stw %r8, 3356(%r5)
 	or %r10, %r3, %r3
 	or %r6, %r5, %r5
 	or %r3, %r28, %r28
@@ -3334,6 +3455,153 @@ vg_camellia_cfb128_decrypt:
 	or %r5, %r6, %r6
 	or %r3, %r10, %r10
 	lwz %r8, 0(%r31)
+	lwz %r9, 3088(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 0(%r31)
+	lwz %r8, 4(%r31)
+	lwz %r9, 3092(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 4(%r31)
+	lwz %r8, 8(%r31)
+	lwz %r9, 3096(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 8(%r31)
+	lwz %r8, 12(%r31)
+	lwz %r9, 3100(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 12(%r31)
+	lwz %r8, 16(%r31)
+	lwz %r9, 3104(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 16(%r31)
+	lwz %r8, 20(%r31)
+	lwz %r9, 3108(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 20(%r31)
+	lwz %r8, 24(%r31)
+	lwz %r9, 3112(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 24(%r31)
+	lwz %r8, 28(%r31)
+	lwz %r9, 3116(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 28(%r31)
+	lwz %r8, 32(%r31)
+	lwz %r9, 3120(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 32(%r31)
+	lwz %r8, 36(%r31)
+	lwz %r9, 3124(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 36(%r31)
+	lwz %r8, 40(%r31)
+	lwz %r9, 3128(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 40(%r31)
+	lwz %r8, 44(%r31)
+	lwz %r9, 3132(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 44(%r31)
+	lwz %r8, 48(%r31)
+	lwz %r9, 3136(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 48(%r31)
+	lwz %r8, 52(%r31)
+	lwz %r9, 3140(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 52(%r31)
+	lwz %r8, 56(%r31)
+	lwz %r9, 3144(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 56(%r31)
+	lwz %r8, 60(%r31)
+	lwz %r9, 3148(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 60(%r31)
+	lwz %r8, 64(%r31)
+	lwz %r9, 3152(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 64(%r31)
+	lwz %r8, 68(%r31)
+	lwz %r9, 3156(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 68(%r31)
+	lwz %r8, 72(%r31)
+	lwz %r9, 3160(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 72(%r31)
+	lwz %r8, 76(%r31)
+	lwz %r9, 3164(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 76(%r31)
+	lwz %r8, 80(%r31)
+	lwz %r9, 3168(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 80(%r31)
+	lwz %r8, 84(%r31)
+	lwz %r9, 3172(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 84(%r31)
+	lwz %r8, 88(%r31)
+	lwz %r9, 3176(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 88(%r31)
+	lwz %r8, 92(%r31)
+	lwz %r9, 3180(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 92(%r31)
+	lwz %r8, 96(%r31)
+	lwz %r9, 3184(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 96(%r31)
+	lwz %r8, 100(%r31)
+	lwz %r9, 3188(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 100(%r31)
+	lwz %r8, 104(%r31)
+	lwz %r9, 3192(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 104(%r31)
+	lwz %r8, 108(%r31)
+	lwz %r9, 3196(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 108(%r31)
+	lwz %r8, 112(%r31)
+	lwz %r9, 3200(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 112(%r31)
+	lwz %r8, 116(%r31)
+	lwz %r9, 3204(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 116(%r31)
+	lwz %r8, 120(%r31)
+	lwz %r9, 3208(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 120(%r31)
+	lwz %r8, 124(%r31)
+	lwz %r9, 3212(%r5)
+	xor %r8, %r8, %r9
+	stw %r8, 124(%r31)
+	addi %r31, %r31, 128
+	addi %r30, %r30, -8
+	rldicl %r8, %r30, 61, 3
+	cmpldi %cr0, %r8, 0
+	bne %cr0, 210b
+	b 29f
+28:
+29:
+	cmpldi %cr0, %r30, 0
+	beq %cr0, 211f
+213:
+	lwz %r8, 3344(%r5)
+	stw %r8, 3088(%r5)
+	lwz %r8, 3348(%r5)
+	stw %r8, 3092(%r5)
+	lwz %r8, 3352(%r5)
+	stw %r8, 3096(%r5)
+	lwz %r8, 3356(%r5)
+	stw %r8, 3100(%r5)
+	lwz %r8, 0(%r31)
 	stw %r8, 3344(%r5)
 	lwz %r8, 4(%r31)
 	stw %r8, 3348(%r5)
@@ -3341,6 +3609,14 @@ vg_camellia_cfb128_decrypt:
 	stw %r8, 3352(%r5)
 	lwz %r8, 12(%r31)
 	stw %r8, 3356(%r5)
+	or %r10, %r3, %r3
+	or %r6, %r5, %r5
+	or %r3, %r28, %r28
+	or %r4, %r5, %r5
+	li %r5, 414
+	bl {vg_camellia_crypt_prepared}
+	or %r5, %r6, %r6
+	or %r3, %r10, %r10
 	lwz %r8, 0(%r31)
 	lwz %r9, 3088(%r5)
 	xor %r8, %r8, %r9
@@ -3360,10 +3636,10 @@ vg_camellia_cfb128_decrypt:
 	addi %r31, %r31, 16
 	addi %r30, %r30, -1
 	cmpldi %cr0, %r30, 0
-	bne %cr0, 210b
-	b 29f
-28:
-29:
+	bne %cr0, 213b
+	b 212f
+211:
+212:
 	or %r31, %r29, %r29
 	lwz %r8, 3344(%r5)
 	stw %r8, 0(%r31)

@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Weierstrass.Cubic
 curve has no point of order 2 (a certificate for `noTwoTorsion_of_cert`:
 `g = x^p` and the inverse `v` of `g - x` modulo `x³ + 7`, found by
 computer algebra and checked by the kernel). So its group law is the one the
-proofs of the code take (`law`), which only the variant files
-`Variants/Secp256k1/<Target>/Law.lean` import (the registration files are generic over it).
+proofs of the code take (`law`), which only the modules
+`Proof/Secp256k1/<Target>/Law.lean` import, privately (the registration files import those).
 -/
 
 @[expose] public section

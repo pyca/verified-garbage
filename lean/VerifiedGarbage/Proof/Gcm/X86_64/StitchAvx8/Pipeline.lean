@@ -194,11 +194,11 @@ open VG.Spec.Gcm (Block blockAt)
 open VG.Impl.Gcm.X86_64.StitchAvx8 (gh8)
 open VG.Proof.Aes.X86_64.AesNi (ea_at ofInt_natCast)
 
-/-- What `gh8` reads from the data at `rdx + d`, byte-reversed with the
-mask, is the block in GHASH order. -/
-theorem dataIn_eq {s₀ s : State} {P : Nat → Block} (hE : Env s₀ P s) (d k : Nat) :
-    dataIn s d k = blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (d + 16 * (k % 8))) := by
-  rw [dataIn, ea_at, ea_at, ofInt_natCast, ofInt_natCast, hE.r11,
+/-- What `gh8` reads from the data at `hashBase s hs + d`, byte-reversed
+with the mask, is the block in GHASH order. -/
+theorem dataIn_eq {s₀ s : State} {P : Nat → Block} (hE : Env s₀ P s) (d k : Nat) (hs : Bool) :
+    dataIn s d k hs = blockAt s.mem (hashBase s hs + BitVec.ofNat 64 (d + 16 * (k % 8))) := by
+  rw [dataIn, ea_srcAtH, ea_at, ofInt_natCast, hE.r11,
     VG.Proof.Gcm.X86_64.blockAt_eq]
   exact congrArg _ hE.mask
 
@@ -210,12 +210,12 @@ structure HashSrc (s₀ : State) (a : Addr) (m : Mem) (X : Nat → Block) : Prop
   val : ∀ k < 8, blockAt m (a + BitVec.ofNat 64 (16 * k)) = X k
 
 theorem hashStep_ok {s₀ s : State} {P X : Nat → Block} {y : Block}
-    (hp : SPre s₀) (hE : Env s₀ P s) (n : Nat) (hn : n < 8)
-    (hR : InRegions (s.rd ++ s.wr) (s.gpr .rdx + BitVec.ofNat 64 (16 * ((n + 1) % 8))) 16)
-    (hX : blockAt s.mem (s.gpr .rdx + BitVec.ofNat 64 (16 * ((n + 1) % 8))) = X ((n + 1) % 8))
+    (hp : SPre s₀) (hE : Env s₀ P s) (n : Nat) (hn : n < 8) (hs : Bool)
+    (hR : InRegions (s.rd ++ s.wr) (hashBase s hs + BitVec.ofNat 64 (16 * ((n + 1) % 8))) 16)
+    (hX : blockAt s.mem (hashBase s hs + BitVec.ofNat 64 (16 * ((n + 1) % 8))) = X ((n + 1) % 8))
     (hy : s.lane .xmm2 0 = y)
     (ha : n ≠ 0 → prod (s.proj 0) = accN X P y n) :
-    WP isa (.block (gh8 0 ((n + 1) % 8))) s fun t =>
+    WP isa (.block (gh8 0 ((n + 1) % 8) hs)) s fun t =>
       Env s₀ P t ∧ prod (t.proj 0) = accN X P y (n + 1) ∧
       t.lane .xmm2 0 = y ∧ YFrame ghRegs s t := by
   have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
@@ -223,13 +223,13 @@ theorem hashStep_ok {s₀ s : State} {P X : Nat → Block} {y : Block}
     simp only [power, ea_at, ofInt_natCast, hE.r11, Nat.mod_mod]
     rw [show 16 * (8 + (n + 1) % 8) = 128 + 16 * ((n + 1) % 8) by omega_arith]
     exact hE.powers _ hk
-  have hin : input s 0 ((n + 1) % 8) = hashInput X y ((n + 1) % 8) := by
+  have hin : input s 0 ((n + 1) % 8) hs = hashInput X y ((n + 1) % 8) := by
     rw [input, dataIn_eq hE, Nat.mod_mod, Nat.zero_add, hX, hy]
     rfl
-  refine WP.mono (gh8_ok s 0 ((n + 1) % 8) (by
+  refine WP.mono (gh8_ok s 0 ((n + 1) % 8) hs (by
     simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11, Nat.mod_mod]
     exact in_rdwr (in_sub hp.p_in (by omega_arith))) (by
-    simpa only [ea_at, ofInt_natCast, Nat.mod_mod, Nat.zero_add] using hR) (by
+    simpa only [ea_srcAtH, Nat.mod_mod, Nat.zero_add] using hR) (by
     simp only [ea_at, ofInt_natCast, hE.rd, hE.wr, hE.r11]
     exact in_rdwr (in_sub hp.p_in (off := 768) (by decide)))) fun t ⟨hv, hf⟩ => ?_
   refine ⟨hE.yframe hf, ?_, (hf.lane .xmm2 (by decide) 0 (by decide)).trans hy, hf⟩
@@ -312,14 +312,16 @@ theorem StageInv.counters {s₀ start s : State} {P X : Nat → Block} {y : Bloc
 
 theorem StageInv.hashStep {s₀ start s : State} {P X : Nat → Block} {y : Block}
     {c nc nh : Nat} (hp : SPre s₀) (h : StageInv s₀ start P X y c nc nh false s)
-    (hn : nh < 8) (hx : HashSrc s₀ (start.gpr .rdx) start.mem X) :
-    WP isa (.block (gh8 0 ((nh + 1) % 8))) s fun t =>
+    (hn : nh < 8) (hs : Bool) (hx : HashSrc s₀ (hashBase start hs) start.mem X) :
+    WP isa (.block (gh8 0 ((nh + 1) % 8) hs)) s fun t =>
       StageInv s₀ start P X y c nc (nh + 1) false t ∧ FlowFrame ghRegs s t := by
   have hk : (nh + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
-  refine WP.mono (hashStep_ok hp h.env nh hn
-    (by rw [h.env.rd, h.env.wr, h.regs .rdx (by decide)]; exact hx.rd _ hk)
+  have hb : hashBase s hs = hashBase start hs := by
+    simp only [hashBase, h.regs .rdx (by decide), h.regs .rbx (by decide)]
+  refine WP.mono (hashStep_ok hp h.env nh hn hs
+    (by rw [h.env.rd, h.env.wr, hb]; exact hx.rd _ hk)
     (by
-      rw [h.regs .rdx (by decide)]
+      rw [hb]
       exact (VG.Proof.Aes.X86_64.AesNi.blockAt_frame h.frame (fun r hr' => by
         simp only [List.mem_singleton] at hr'
         subst r

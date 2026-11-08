@@ -10,7 +10,7 @@ it, in every check (.agents/skills/proof-performance/SKILL.md, "Code
 without its literal").
 
 For each target, this runs `lean/CheckLitImports.lean` over the target's
-registration files (`Artifacts/`, `Generic/`, `Variants/`), which lists each
+registration files (`Artifacts/`), which lists each
 proposition the kernel decides that reaches code with a literal the module
 could import, and weighs each by the build's profile (`lean_profile.py`, so
 restore the CI cache or build first): the kernel time of the declaration,
@@ -55,7 +55,7 @@ import lean_cache
 import lean_profile
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
-ROOT_DIRS = ("Artifacts", "Generic", "Variants")
+ROOT_DIRS = ("Artifacts",)
 LITERAL = re.compile(r"\[line \d+\] materialize_\w+ ([\w.']+)")
 
 

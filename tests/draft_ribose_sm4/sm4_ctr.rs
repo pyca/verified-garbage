@@ -66,3 +66,18 @@ fn unaligned_buffers() {
         }
     }
 }
+
+/// Fifty blocks at once, three groups of sixteen and two more, agree with
+/// each counter block's own keystream (`crate::modes::check_counter`).
+#[test]
+fn batches() {
+    // Generated inputs test agreement between lengths, not known answers.
+    let key = [7; 16];
+    crate::modes::check_counter(
+        [0x3c; 16],
+        50,
+        &|c| Sm4Ctr::new(&key, c),
+        Sm4Ctr::apply_keystream,
+        Sm4Ctr::apply_keystream_final,
+    );
+}

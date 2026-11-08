@@ -1,6 +1,6 @@
 ---
 name: adding-a-primitive
-description: "Use before adding a new primitive or algorithm, a new target for one, a CPU-feature variant, or any file under lean/VerifiedGarbage/Artifacts/, Generic/ or Variants/: the steps, what a registration states, and how generic callers and variants are registered."
+description: "Use before adding a new primitive or algorithm, a new target for one, a CPU-feature variant, or any file under lean/VerifiedGarbage/Artifacts/ or Proof/Variants/: the steps, what a registration states, and how generic callers and variants are registered."
 ---
 
 # Adding a primitive
@@ -85,36 +85,40 @@ instructions in an ISA model) go in their own PR before either.
    the target's baseline ISA, list the CPU features they require in
    `features` (the emitter rejects anything but the exact set).
    A function that calls another one with several implementations (e.g.
-   scalar and SHA-NI compression) is proven once for any of them and
-   registered in `Generic/<Iface>/<Target>/<Alg>.lean`, which the emitter
-   applies to every implementation in `Variants/<Iface>/<Target>/` (see
-   `TCB/Emit.lean`), and so is a function that calls a generic caller
-   (e.g. HMAC's `init`, calling SHA-256's `update`). A function that calls
-   functions of several such interfaces is generic over all of them, in
-   `Generic/<Iface₁>/…/<Ifaceₙ>/<Target>/<Alg>.lean`, whose `artifacts`
-   takes a variant of each, in path order: the emitter applies it to every
-   combination (e.g. Argon2's x86-64 derivation,
-   `Generic/Blake2b/Argon2Compress/X86_64/Argon2.lean`, calling BLAKE2b's
-   streaming functions and Argon2's `G`). Its instances are named by
+   scalar and SHA-NI compression) is proven once for any of them, and its
+   registration file applies it to each: the implementations of the callee
+   on a target are one list, `variants` in
+   `Proof/Variants/<Iface>/<Target>.lean`, which the caller's registration
+   maps over (`def artifacts : List Artifact :=
+   Proof.Variants.<Iface>.<Target>.variants.flatMap artifactsFor`), and so
+   is a function that calls such a caller (e.g. HMAC's `init`, calling
+   SHA-256's `update`). A function that calls functions of several such
+   interfaces maps over each of their lists, nested (e.g. Argon2's x86-64
+   derivation, `Artifacts/Argon2/X86_64.lean`, calling BLAKE2b's streaming
+   functions and Argon2's `G`); its instances are named by
    `Emit.qualifiedName`: the function's name, then a tag and the suffix of
-   each interface whose variant is not the baseline, in path order
-   (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline),
-   since variants of different interfaces may share a suffix; callers of one
-   interface append the suffix alone. Never list the
-   implementations in the caller: a new implementation is a new variant
-   file, and its callers follow.
+   each interface whose variant is not the baseline
+   (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline), since
+   variants of different interfaces may share a suffix; callers of one
+   interface append the suffix alone. A function that takes every
+   implementation at once, through a table of functions (`Abi.withTables`),
+   takes the list itself. Never list the implementations in the caller: a
+   new implementation is a new element of its interface's list, and its
+   callers follow.
    The emitter writes each function's dispatcher, `<name>_auto` (in
-   `crate::arch::dispatch::<module>`), which
-   tries its implementations in the order `Dispatch.lean` ranks their
-   suffixes on the target (a suffix of several parts by the rank of each
-   part's): a variant with a suffix it does not rank yet fails the
-   emitter, so rank it there, best first (`VG.Rust.Rank`). Extra
-   features or a `vendor` it is chosen only with go in its registration
-   (`Registration.extra`, `Registration.vendor`).
-   Registration files (`Artifacts/`, `Generic/`) and variant files
-   (`Variants/`) are reviewed by hand, so they only bind: no theorems, no
-   tactic proofs beyond the defaults (not even a `(by decide)` argument),
-   no definitions but the artifacts and the variant, and no module
+   `crate::arch::dispatch::<module>`), which tries its implementations (the
+   artifacts of its `Api`, all in one registration file) in the order that
+   file lists them: so list them best first, and put a new variant in its
+   interface's list where it ranks, which orders its callers' instances
+   too (those of a caller of several interfaces by the first list, then the
+   next). One the dispatcher would never choose (it needs every feature of
+   one before it, or more) fails the emitter. Extra features or a `vendor`
+   it is chosen only with go in its registration (`Registration.extra`,
+   `Registration.vendor`).
+   Registration files (`Artifacts/`) are reviewed by hand, so they only
+   bind: no theorems, no tactic proofs beyond the defaults (not even a
+   `(by decide)` argument), no definitions but those of its artifacts, and
+   no module
    docstring but its title (`/-! # SHA-256 (FIPS 180-4) on x86-64 -/`):
    what the code does is in the code and its proofs. A lemma
    whose side conditions a registration would decide takes them as
@@ -122,19 +126,17 @@ instructions in an ISA model) go in their own PR before either.
    algorithm's proofs state the instance as a theorem
    (`Proof/Rsa/X86_64/Instances.lean`); `ci/check_registrations.py` checks
    it. Build a variant with its proofs under `Proof/`
-   (`Proof/Variants/<Iface>/<Target>/<Name>.lean`, as the variant file's
-   path) and bind it in the variant file
-   (`def variant : … := Proof.Variants.<Iface>.<Target>.<Name>.variant`);
+   (`Proof/Variants/<Iface>/<Target>/<Name>.lean`) and add it to its
+   interface's list (`Proof/Variants/<Iface>/<Target>.lean`);
    put what a generic caller's artifacts are built from (instances of the
    functions it calls, lemmas about its code) in a module of the
    algorithm's proofs, as `Proof/AesGcm/X86_64/Instances.lean` does.
    A function whose proof takes a Weierstrass curve's group law (`Law`,
-   `Proof/Weierstrass/Law.lean`) is registered generic over it the same
-   way: the law is the one variant of the interface `<Curve>` on each target
-   (`Variants/<Curve>/<Target>/Law.lean`, the only files that import the
-   Mathlib algebra of its proof), and the registration file is
-   `Generic/<Curve>/<Target>/<Alg>.lean` (`Generic/<Iface>/<Curve>/<Target>/`
-   when it is generic over an implementation too). The law has no suffix.
+   `Proof/Weierstrass/Law.lean`) is registered as any other, passing the
+   law: its registration file imports `Proof/<Curve>/<Target>/Law.lean`,
+   which defines it (`hasLaw`) and is the only module that imports the
+   Mathlib algebra of its proof, privately, exposing only its type. A law
+   is not a variant: there is one per curve and target, with no suffix.
 5. Regenerate the generated crates, build the public Rust API on top of the primitive
    (calling each function's dispatcher, `<name>_auto`, where it has variants;
    the Rust only checks arguments, lays out buffers and calls: see "The

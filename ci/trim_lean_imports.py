@@ -27,11 +27,11 @@ when a round finds nothing, or makes no change that builds.
                     kept only if everything importing the module builds
   trim_lean_imports.py --replay FILE [--report FILE]  no Lake calls
 
-It never edits registrations or variants (`Artifacts/`, `Generic/`,
-`Variants/`). Its state is in `lean/.lake/trim-imports.json`: each module's
-`lake shake` suggestions and uses, keyed by the hash Lake records of the
-module's inputs and outputs (its `.trace`), so a round or a rerun analyses
-again only the modules whose build changed. Analyzer/toolchain changes
+It never edits registrations (`Artifacts/`). Its state is in
+`lean/.lake/trim-imports.json`: each module's `lake shake` suggestions and
+uses, keyed by the hash Lake records of the module's inputs and outputs (its
+`.trace`), so a round or a rerun analyses again only the modules whose build
+changed. Analyzer/toolchain changes
 invalidate that state. Rejected batches are retried only when their context
 changes. Run it after building; it prints its phases and
 writes its builds' output to `lean/.lake/check-imports-build.log`.

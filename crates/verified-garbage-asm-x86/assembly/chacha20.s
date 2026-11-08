@@ -77,129 +77,6 @@ vg_chacha20_set_nonce:
 	ret
 	.p2align 6
 
-vg_chacha20_apply:
-	mov eax, DWORD PTR [esp+4]
-	mov ecx, DWORD PTR [eax+128]
-	mov edx, DWORD PTR [eax+132]
-	sub ecx, DWORD PTR [esp+12]
-	sbb edx, 0
-	jb 20f
-	mov DWORD PTR [eax+576], ebx
-	mov DWORD PTR [eax+580], esi
-	mov DWORD PTR [eax+584], edi
-	mov DWORD PTR [eax+588], ebp
-	mov DWORD PTR [eax+600], ecx
-	mov DWORD PTR [eax+604], edx
-	mov ebx, eax
-	mov esi, DWORD PTR [esp+8]
-	mov ebp, DWORD PTR [esp+12]
-	mov eax, DWORD PTR [ebx+128]
-	and eax, 63
-	mov ecx, ebp
-	cmp eax, ebp
-	jb 22f
-	jmp 23f
-22:
-	mov ecx, eax
-23:
-	mov edx, ebx
-	add edx, 128
-	sub edx, eax
-	sub ebp, ecx
-	test ecx, ecx
-	je 24f
-26:
-	movzx eax, BYTE PTR [esi]
-	xor eax, DWORD PTR [edx]
-	mov BYTE PTR [esi], al
-	add esi, 1
-	add edx, 1
-	sub ecx, 1
-	jne 26b
-	jmp 25f
-24:
-25:
-	mov ecx, ebp
-	and ecx, -64
-	je 27f
-	movdqu xmm0, XMMWORD PTR [ebx]
-	movdqu xmm1, XMMWORD PTR [ebx+16]
-	movdqu xmm2, XMMWORD PTR [ebx+32]
-	movdqu xmm3, XMMWORD PTR [ebx+48]
-	movdqu XMMWORD PTR [ebx+192], xmm0
-	movdqu XMMWORD PTR [ebx+208], xmm1
-	movdqu XMMWORD PTR [ebx+224], xmm2
-	movdqu XMMWORD PTR [ebx+240], xmm3
-	mov eax, ecx
-	shr eax, 6
-	add eax, DWORD PTR [ebx+48]
-	mov DWORD PTR [ebx+48], eax
-	mov edi, ecx
-	mov eax, ebx
-	add eax, 256
-	mov edx, ebx
-	add edx, 192
-	push eax
-	push ecx
-	push esi
-	push edx
-	call {vg_chacha20_xor}
-	pop eax
-	pop eax
-	pop eax
-	pop eax
-	add esi, edi
-	sub ebp, edi
-	jmp 28f
-27:
-28:
-	test ebp, ebp
-	je 29f
-	mov eax, ebx
-	add eax, 64
-	push eax
-	push ebx
-	call {vg_chacha20_block}
-	pop eax
-	pop eax
-	mov eax, DWORD PTR [ebx+48]
-	add eax, 1
-	mov DWORD PTR [ebx+48], eax
-	mov edx, ebx
-	add edx, 64
-	mov ecx, ebp
-	test ecx, ecx
-	je 211f
-213:
-	movzx eax, BYTE PTR [esi]
-	xor eax, DWORD PTR [edx]
-	mov BYTE PTR [esi], al
-	add esi, 1
-	add edx, 1
-	sub ecx, 1
-	jne 213b
-	jmp 212f
-211:
-212:
-	jmp 210f
-29:
-210:
-	mov eax, DWORD PTR [ebx+600]
-	mov DWORD PTR [ebx+128], eax
-	mov eax, DWORD PTR [ebx+604]
-	mov DWORD PTR [ebx+132], eax
-	mov esi, DWORD PTR [ebx+580]
-	mov edi, DWORD PTR [ebx+584]
-	mov ebp, DWORD PTR [ebx+588]
-	mov ebx, DWORD PTR [ebx+576]
-	mov eax, 1
-	jmp 21f
-20:
-	mov eax, 0
-21:
-	ret
-	.p2align 6
-
 vg_chacha20_apply_ssse3:
 	mov eax, DWORD PTR [esp+4]
 	mov ecx, DWORD PTR [eax+128]
@@ -267,6 +144,129 @@ vg_chacha20_apply_ssse3:
 	push esi
 	push edx
 	call {vg_chacha20_xor_ssse3}
+	pop eax
+	pop eax
+	pop eax
+	pop eax
+	add esi, edi
+	sub ebp, edi
+	jmp 28f
+27:
+28:
+	test ebp, ebp
+	je 29f
+	mov eax, ebx
+	add eax, 64
+	push eax
+	push ebx
+	call {vg_chacha20_block}
+	pop eax
+	pop eax
+	mov eax, DWORD PTR [ebx+48]
+	add eax, 1
+	mov DWORD PTR [ebx+48], eax
+	mov edx, ebx
+	add edx, 64
+	mov ecx, ebp
+	test ecx, ecx
+	je 211f
+213:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [edx]
+	mov BYTE PTR [esi], al
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 213b
+	jmp 212f
+211:
+212:
+	jmp 210f
+29:
+210:
+	mov eax, DWORD PTR [ebx+600]
+	mov DWORD PTR [ebx+128], eax
+	mov eax, DWORD PTR [ebx+604]
+	mov DWORD PTR [ebx+132], eax
+	mov esi, DWORD PTR [ebx+580]
+	mov edi, DWORD PTR [ebx+584]
+	mov ebp, DWORD PTR [ebx+588]
+	mov ebx, DWORD PTR [ebx+576]
+	mov eax, 1
+	jmp 21f
+20:
+	mov eax, 0
+21:
+	ret
+	.p2align 6
+
+vg_chacha20_apply:
+	mov eax, DWORD PTR [esp+4]
+	mov ecx, DWORD PTR [eax+128]
+	mov edx, DWORD PTR [eax+132]
+	sub ecx, DWORD PTR [esp+12]
+	sbb edx, 0
+	jb 20f
+	mov DWORD PTR [eax+576], ebx
+	mov DWORD PTR [eax+580], esi
+	mov DWORD PTR [eax+584], edi
+	mov DWORD PTR [eax+588], ebp
+	mov DWORD PTR [eax+600], ecx
+	mov DWORD PTR [eax+604], edx
+	mov ebx, eax
+	mov esi, DWORD PTR [esp+8]
+	mov ebp, DWORD PTR [esp+12]
+	mov eax, DWORD PTR [ebx+128]
+	and eax, 63
+	mov ecx, ebp
+	cmp eax, ebp
+	jb 22f
+	jmp 23f
+22:
+	mov ecx, eax
+23:
+	mov edx, ebx
+	add edx, 128
+	sub edx, eax
+	sub ebp, ecx
+	test ecx, ecx
+	je 24f
+26:
+	movzx eax, BYTE PTR [esi]
+	xor eax, DWORD PTR [edx]
+	mov BYTE PTR [esi], al
+	add esi, 1
+	add edx, 1
+	sub ecx, 1
+	jne 26b
+	jmp 25f
+24:
+25:
+	mov ecx, ebp
+	and ecx, -64
+	je 27f
+	movdqu xmm0, XMMWORD PTR [ebx]
+	movdqu xmm1, XMMWORD PTR [ebx+16]
+	movdqu xmm2, XMMWORD PTR [ebx+32]
+	movdqu xmm3, XMMWORD PTR [ebx+48]
+	movdqu XMMWORD PTR [ebx+192], xmm0
+	movdqu XMMWORD PTR [ebx+208], xmm1
+	movdqu XMMWORD PTR [ebx+224], xmm2
+	movdqu XMMWORD PTR [ebx+240], xmm3
+	mov eax, ecx
+	shr eax, 6
+	add eax, DWORD PTR [ebx+48]
+	mov DWORD PTR [ebx+48], eax
+	mov edi, ecx
+	mov eax, ebx
+	add eax, 256
+	mov edx, ebx
+	add edx, 192
+	push eax
+	push ecx
+	push esi
+	push edx
+	call {vg_chacha20_xor}
 	pop eax
 	pop eax
 	pop eax

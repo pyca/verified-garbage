@@ -52,6 +52,7 @@ mod chacha20;
 mod chacha20poly1305;
 mod cmac_aes;
 mod cmac_triple_des;
+mod dit;
 mod dsa;
 mod dsa_parameters;
 mod ec_compressed;
@@ -645,6 +646,7 @@ benches! {
     (chacha20poly1305::USES, chacha20poly1305::bench),
     (cmac_aes::USES, cmac_aes::bench),
     (cmac_triple_des::USES, cmac_triple_des::bench),
+    (dit::USES, dit::bench),
     (hmac_md5::USES, hmac_md5::bench),
     (hmac_sha1::USES, hmac_sha1::bench),
     (hmac_sha224::USES, hmac_sha224::bench),

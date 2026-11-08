@@ -126,14 +126,14 @@ theorem Mid.cryptS {H : Block} {R n n₂ P : Nat} {D D₂ Tg X : Addr} {ρ s s' 
   · exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
 
 /-- `Mid.absorbX`, for the whole blocks of part `⟨D₂, n₂⟩` of the text. -/
-theorem Mid.absorbXS {H : Block} {R n n₂ : Nat} {D D₂ Tg X : Addr} {ρ s s' : State} {x : List Byte} {j : Nat}
-    {ex : List Region} (h : Mid Ctx W SP H R n D Tg X ρ s)
+theorem Mid.absorbXS {to : Bool} {H : Block} {R n n₂ : Nat} {D D₂ Tg X : Addr} {ρ s s' : State} {x : List Byte}
+    {j : Nat} {ex : List Region} (h : MidG to Ctx W SP H R n D Tg X ρ s)
     (o : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s.gpr 16 H x D₂ n₂ 0 s.mem j s' ex)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hexK : ∀ r ∈ ex, (keyR W).Disjoint r) :
-    Mid Ctx W SP H R n D Tg X s' s' := by
+    MidG to Ctx W SP H R n D Tg X s' s' := by
   refine ⟨o.env, by rw [o.kept .x22 (by decide), h.x22], h.rounds, by rw [o.kept .x26 (by decide), h.x26],
     by rw [o.kept .x27 (by decide), h.x27], by rw [o.kept .x28 (by decide), h.x28], o.hH,
-    h.key.frame o.frame fun r hr => ?_, h.data.of_eq hrd hwr, Frame.refl _ _, rfl, rfl⟩
+    h.key.frame o.frame fun r hr => ?_, data_of_eq h.data hrd hwr, Frame.refl _ _, rfl, rfl⟩
   simp only [List.mem_cons] at hr
   rcases hr with rfl | rfl | rfl | hr
   · exact (L.st_w (a := 16) (n := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm
@@ -142,9 +142,9 @@ theorem Mid.absorbXS {H : Block} {R n n₂ : Nat} {D D₂ Tg X : Addr} {ρ s s' 
   · exact hexK r hr
 
 /-- `ctE_ok`, for the whole blocks of part `⟨D₂, n₂⟩` of the text. -/
-theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {R n n₂ : Nat} {D D₂ Tg X : Addr}
-    {ρ s₄ s₇ : State} {x : List Byte} {j : Nat} {ex : List Region}
-    (h : Mid Ctx W SP H R n D Tg X ρ s₇)
+theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {to : Bool} {H : Block} {R n n₂ : Nat}
+    {D D₂ Tg X : Addr} {ρ s₄ s₇ : State} {x : List Byte} {j : Nat} {ex : List Region}
+    (h : MidG to Ctx W SP H R n D Tg X ρ s₇)
     (hm : AbsMid Ctx (W + BitVec.ofNat 64 16) W SP s₄.gpr 16 H x D₂ n₂ 0 s₄.mem j s₇ ex)
     (hlt : n₂ - j < 16) (hD₂ : D₂ = D + BitVec.ofNat 64 (n - n₂)) (hn₂ : n₂ ≤ n) :
     WP isa (.seq (.block (Impl.AesGcm.AArch64.Fast.hReload ++ Impl.Gcm.AArch64.Pmull.loadRev Y .x20 16 ++
@@ -180,8 +180,9 @@ theorem ctE'_ok (hMK : MulKey) {o : Nat} (ho : o = 0 ∨ o = 112) {H : Block} {R
     rw [r₁₀.others _ (by decide), o₉.gpr, g₈ _ (by decide), h.x26]
   refine WP.seq (WP.mono (WP.with_rdwr (padMulT_ok hMK (y := blockAt s₈.mem (s₈.gpr .x20 + BitVec.ofNat 64 16)) he₁₀ hk₁₀
     (by rw [v₁₀, l₉, rev64b_read]) x12₁₀ x13₁₀ (by omega) hdj.rd
-    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ h.data.ok.lt
-    (pad_big (h.data.ok.of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd h.data.ok.lt
+    (hdj.w.sub_right (Lay.wSub (by decide))) x26₁₀ (dataOk_of h.data).lt
+    (pad_big ((dataOk_of h.data).of_eq (by rw [r₁₀.rd, o₉.rd, rd₈]) (by rw [r₁₀.wr, o₉.wr, wr₈])).rd
+      (dataOk_of h.data).lt
       (by rw [hD₂, Offset.add_add]; congr 2; omega) (by omega))))
     fun s₁₁ ⟨⟨y₁₁, hk₁₁, he₁₁, og₁₁, f₁₁, v₁₁⟩, rd₁₁, wr₁₁⟩ => ?_)
   unfold Impl.AesGcm.AArch64.Fast.lensTagAt

@@ -11,10 +11,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 
 ECB runs its code, proved with the working space as an argument, in a frame
 that allocates it and zeroes it after the code (`Verified.stackScratchWiped`),
-since it may hold the data and the saved registers of the block functions:
-1056 bytes, the frame's 32-byte header and the 1024 of working space. The
-code uses no other stack: its calls keep the return address in the link
-register.
+since it holds the bitsliced state, and so the data, and the caller's
+registers that the code saves: 1056 bytes, the frame's 32-byte header and
+the 1024 of working space. The code uses no other stack and makes no
+calls.
 -/
 
 @[expose] public section

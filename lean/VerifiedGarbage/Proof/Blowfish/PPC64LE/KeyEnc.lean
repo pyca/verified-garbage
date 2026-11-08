@@ -51,7 +51,7 @@ theorem enc_cipher {key : List Byte} {S : Addr} {s₀ : State} (E : EncEnv S s�
         encryptWords (ksIter key j).1 (ksIter key j).2.1 (ksIter key j).2.2 ∧
         Keep cRegs u u' ∧ u'.mem = u.mem := by
   have LE : LookEnv u := by
-    refine ⟨fun o ho => ?_, by rw [I.keep.gpr (by decide)]; exact E.r0⟩
+    refine ⟨fun o n ho => ?_, by rw [I.keep.gpr (by decide)]; exact E.r0⟩
     rw [I.keep.gpr (by decide), E.r3, I.keep.2.1, I.keep.2.2]
     exact ⟨_, List.mem_append_right _ E.wS, Offset.contains_base S ho (by omega_arith)⟩
   refine WP.mono (cipher_run LE true) fun u' ⟨h, k, m⟩ => ⟨?_, k, m⟩

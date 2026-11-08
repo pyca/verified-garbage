@@ -206,12 +206,8 @@ struct Derivation<'a> {
 
 impl Drop for Derivation<'_> {
     fn drop(&mut self) {
-        for block in &mut self.matrix {
-            crate::zeroize::zeroize(&mut block.0);
-        }
-        for block in &mut self.scratch {
-            crate::zeroize::zeroize(&mut block.0);
-        }
+        crate::zeroize::zeroize(&mut self.matrix);
+        crate::zeroize::zeroize(&mut self.scratch);
     }
 }
 

@@ -3,126 +3,6 @@
 //! `assembly/cmac_aes.s`.
 #![allow(dead_code)]
 
-/// The CPU features `vg_cmac_aes_init_aes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
-///
-/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
-bl {vg_aes_expand_key_scratch_aes}
-.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
-bl {vg_cmac_aes_subkeys_aes}
-.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
-        vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
-    )
-}
-
-/// The CPU features `vg_cmac_aes_finish_aes` requires (`Artifact.features`).
-pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
-///
-/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes` target feature.
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
-cbz x4, 20f
-.inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
-b 21f
-20:
-21:
-bl {vg_cmac_aes_finalize_aes}
-.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
-.p2align 6",
-        vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
-    )
-}
-
-/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
-///
-/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `key_len` must be 16, 24 or 32.
-/// * `state` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
-    core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
-.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
-bl {vg_aes_expand_key_scratch}
-.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
-bl {vg_cmac_aes_subkeys}
-.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
-.inst 0xd65f03c0
-.p2align 6",
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
-    )
-}
-
-/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
-///
-/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
-///
-/// # Safety
-///
-/// * `state` must be valid for reads and writes of 304 bytes.
-/// * `out` must be valid for reads and writes of 16 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * The contents of `state` on return are unspecified.
-/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
-/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
-    core::arch::naked_asm!(
-        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
-.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
-cbz x4, 20f
-.inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
-b 21f
-20:
-21:
-bl {vg_cmac_aes_finalize}
-.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
-.p2align 6",
-        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-    )
-}
-
 /// The CPU features `vg_cmac_aes_absorb_aes` requires (`Artifact.features`).
 pub const VG_CMAC_AES_ABSORB_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
 
@@ -272,6 +152,126 @@ b 214f
 .inst 0xd65f03c0
 .p2align 6",
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+    )
+}
+
+/// The CPU features `vg_cmac_aes_init_aes` requires (`Artifact.features`).
+pub const VG_CMAC_AES_INIT_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
+///
+/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init_aes(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+bl {vg_aes_expand_key_scratch_aes}
+.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+bl {vg_cmac_aes_subkeys_aes}
+.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch_aes = sym super::aes::vg_aes_expand_key_scratch_aes::vg_aes_expand_key_scratch_aes,
+        vg_cmac_aes_subkeys_aes = sym super::cmac_aes::vg_cmac_aes_subkeys_aes::vg_cmac_aes_subkeys_aes,
+    )
+}
+
+/// The CPU features `vg_cmac_aes_finish_aes` requires (`Artifact.features`).
+pub const VG_CMAC_AES_FINISH_AES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES);
+
+/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish_aes(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
+.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+cbz x4, 20f
+.inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
+b 21f
+20:
+21:
+bl {vg_cmac_aes_finalize_aes}
+.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_finalize_aes = sym super::cmac_aes::vg_cmac_aes_finalize_aes::vg_cmac_aes_finalize_aes,
+    )
+}
+
+/// Starts an AES-CMAC computation (NIST SP 800-38B, RFC 4493): makes the streaming state `*state` represent the empty message under the AES key of `key_len` bytes at `key` (AES-128, AES-192 or AES-256). The state holds the key schedule of AES (FIPS 197) with `key_len / 4 + 6` rounds, the subkeys `K1 ‖ K2` (§6.1), the chaining value and the message's last bytes, held back (`VG.Spec.Cmac.Repr`). Continue with `vg_cmac_aes_absorb` and `vg_cmac_aes_finish`, passing them `key_len / 4 + 6` as `rounds`.
+///
+/// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `key_len` must be 16, 24 or 32.
+/// * `state` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `state` nor `key` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd12403ff,0x910003e3,0xf9044073,0xf9044474,0xf9044875,0xf9044c7e,0x91000013,0x91000074
+.inst 0xd342fc55,0x91001ab5,0x91000020,0x91000041,0x91000262
+bl {vg_aes_expand_key_scratch}
+.inst 0x91000260,0x910002a1,0x9103c262,0x91000283
+bl {vg_cmac_aes_subkeys}
+.inst 0xd2800009,0xf9008a69,0xf9008e69,0xf9444e9e,0xf9444293,0xf9444a95,0xf9444694,0x912403ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+    )
+}
+
+/// Finishes an AES-CMAC computation (NIST SP 800-38B §6.2, with `Tlen = 128`): if the streaming state `*state` represents a message of `count` bytes, shorter than 2⁶⁴ bytes, under an AES key with `rounds` rounds (as `vg_cmac_aes_init` and `vg_cmac_aes_absorb` set it up), writes the MAC of that message under that key to `*out`: `Cₙ = CIPH_K(Cₙ₋₁ ⊕ Mₙ)`, where `Mₙ = K1 ⊕ Mₙ*` if the message's last bytes `Mₙ*` are a complete block, and `Mₙ = K2 ⊕ (Mₙ* ‖ 10ʲ)` otherwise (step 4). The caller truncates it (step 7) and compares it (§6.3).
+///
+/// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 304 bytes.
+/// * `out` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 2304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd12403ff,0x910003e4,0xf9408809,0xf9000069,0xf9408c09,0xf9000469,0xf9044093,0xf904449e
+.inst 0x91000093,0x91000085,0x91000044,0x91000062,0x91048003
+cbz x4, 20f
+.inst 0xd1000484,0xd28001e9,0x8a090084,0x91000484
+b 21f
+20:
+21:
+bl {vg_cmac_aes_finalize}
+.inst 0xf944467e,0xf9444273,0x912403ff,0xd65f03c0
+.p2align 6",
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }
 

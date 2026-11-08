@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
+public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Verified
+public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 /-! # Finite-field Diffie–Hellman on PPC64LE -/
 
@@ -19,7 +21,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 
 namespace VG.Artifacts.Ffdh.PPC64LE
 
-def artifacts : List Artifact := [
+def direct : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Ffdh.PPC64LE.Generation.init
     verified := Proof.Ffdh.PPC64LE.Generation.init_verified },
@@ -51,5 +53,26 @@ def artifacts : List Artifact := [
     stack := 192
     code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
     verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }]
+
+end VG.Artifacts.Ffdh.PPC64LE
+
+-- FFDH parameter generation calls each shared Miller–Rabin implementation
+namespace VG.Artifacts.Ffdh.PPC64LE.MillerRabin
+
+def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
+  Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target {
+    suffix := v.suffix
+    stack := 336
+    code := Proof.Ffdh.PPC64LE.Generation.searchCode v
+    verified := Proof.Ffdh.PPC64LE.Generation.search_verified v
+    features := v.features }]
+
+end VG.Artifacts.Ffdh.PPC64LE.MillerRabin
+
+namespace VG.Artifacts.Ffdh.PPC64LE
+
+def artifacts : List Artifact :=
+  direct ++
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun v => MillerRabin.artifacts v)
 
 end VG.Artifacts.Ffdh.PPC64LE

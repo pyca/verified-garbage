@@ -3,6 +3,117 @@
 //! `assembly/aes_ecb.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_aes_ecb_decrypt_vaes` requires (`Artifact.features`).
+pub const VG_AES_ECB_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r#".base64 "SI1kJPBMiUQkCA=="
+call {vg_aes_decrypt_blocks_vaes}
+.base64 "SIkEJEiLfCQIvuAAAAA="
+call {vg_zeroize_avx}
+.base64 "SIsEJEiNZCQQww=="
+.p2align 6"#,
+        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
+        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
+    )
+}
+
+/// The CPU features `vg_aes_ecb_encrypt_vaes` requires (`Artifact.features`).
+pub const VG_AES_ECB_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
+
+/// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
+///
+/// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2048 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
+#[unsafe(naked)]
+pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
+    core::arch::naked_asm!(
+        r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
+jb 20f
+22:
+.base64 "xf5vAsX+b0ogxf5vUkDF/m9aYMX+b6KAAAAAxf5vqqAAAADF/m+ywAAAAMX+b7rgAAAAxGJ9WgfFve/Axb3vycW979LFve/bxb3v5MW97+3Fve/2xb3v/8RifVpHEMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1aRyDEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WkcwxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVpHQMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1aR1DEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WkdgxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVpHcMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1ah4AAAADEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WoeQAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+EiD/go="
+je 23f
+.base64 "xGJ9WoegAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVqHsAAAAMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PhIg/4M"
+je 25f
+.base64 "xGJ9WofAAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVqH0AAAAMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3Pg="
+jmp 26f
+25:
+26:
+jmp 24f
+23:
+24:
+.base64 "xEJ9WgLEwn3dwMTCdd3IxMJt3dDEwmXd2MTCXd3gxMJV3ejEwk3d8MTCRd34xf5/AsX+f0ogxf5/UkDF/n9aYMX+f6KAAAAAxf5/qqAAAADF/n+ywAAAAMX+f7rgAAAASIHCAAEAAEiD6RBIg/kQ"
+jae 22b
+jmp 21f
+20:
+21:
+.base64 "xfh3SIP5CA=="
+jb 27f
+29:
+.base64 "8w9vAvMPb0oQ8w9vUiDzD29aMPMPb2JA8w9valDzD29yYPMPb3pw80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8GZBD+/480QPb0cQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+Cg=="
+je 210f
+.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+DA=="
+je 212f
+.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4"
+jmp 213f
+212:
+213:
+jmp 211f
+210:
+211:
+.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmQQ843fjzD38C8w9/ShDzD39SIPMPf1ow8w9/YkDzD39qUPMPf3Jg8w9/enBIgcKAAAAASIPpCEiD+Qg="
+jae 29b
+jmp 28f
+27:
+28:
+.base64 "SIXJ"
+je 214f
+216:
+.base64 "8w9vAvNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
+je 217f
+.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
+je 219f
+.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
+jmp 220f
+219:
+220:
+jmp 218f
+217:
+218:
+.base64 "80UPbwJmQQ843cDzD38CSIPCEEiD6QE="
+jne 216b
+jmp 215f
+214:
+215:
+.base64 "ww=="
+.p2align 6"#,
+    )
+}
+
 /// The CPU features `vg_aes_ecb_decrypt_aesni_avx` requires (`Artifact.features`).
 pub const VG_AES_ECB_DECRYPT_AESNI_AVX_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX);
 
@@ -234,116 +345,5 @@ call {vg_zeroize}
 .p2align 6"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
-    )
-}
-
-/// The CPU features `vg_aes_ecb_decrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_ECB_DECRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// AES-ECB decryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its decryption by AES (FIPS 197 §5.3, `INVCIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (the forward cipher's schedule). No padding is removed. Each byte of `scratch` is unchanged or zero on return.
-///
-/// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_decrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "SI1kJPBMiUQkCA=="
-call {vg_aes_decrypt_blocks_vaes}
-.base64 "SIkEJEiLfCQIvuAAAAA="
-call {vg_zeroize_avx}
-.base64 "SIsEJEiNZCQQww=="
-.p2align 6"#,
-        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
-        vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
-    )
-}
-
-/// The CPU features `vg_aes_ecb_encrypt_vaes` requires (`Artifact.features`).
-pub const VG_AES_ECB_ENCRYPT_VAES_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES);
-
-/// AES-ECB encryption (NIST SP 800-38A §6.1) of whole blocks, in place: replaces each of the `n` 16-byte blocks at `data` with its encryption by AES (FIPS 197 §5.1, `CIPHER`) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added. Each byte of `scratch` is unchanged or zero on return.
-///
-/// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
-///
-/// # Safety
-///
-/// * `schedule` must be valid for reads of 240 bytes.
-/// * `data` must be valid for reads and writes of `16 * n` bytes.
-/// * `scratch` must be valid for reads and writes of 2048 bytes.
-/// * `rounds` must be 10, 12 or 14.
-/// * `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2` and `vaes` target features.
-#[unsafe(naked)]
-pub(crate) unsafe extern "sysv64" fn vg_aes_ecb_encrypt_vaes(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
-    core::arch::naked_asm!(
-        r#".base64 "SYnyTQHSTQHSTQHSTQHSSQH6SIP5EA=="
-jb 20f
-22:
-.base64 "xf5vAsX+b0ogxf5vUkDF/m9aYMX+b6KAAAAAxf5vqqAAAADF/m+ywAAAAMX+b7rgAAAAxGJ9WgfFve/Axb3vycW979LFve/bxb3v5MW97+3Fve/2xb3v/8RifVpHEMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1aRyDEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WkcwxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVpHQMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1aR1DEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WkdgxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVpHcMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PjEYn1ah4AAAADEwn3cwMTCddzIxMJt3NDEwmXc2MTCXdzgxMJV3OjEwk3c8MTCRdz4xGJ9WoeQAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+EiD/go="
-je 23f
-.base64 "xGJ9WoegAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVqHsAAAAMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3PhIg/4M"
-je 25f
-.base64 "xGJ9WofAAAAAxMJ93MDEwnXcyMTCbdzQxMJl3NjEwl3c4MTCVdzoxMJN3PDEwkXc+MRifVqH0AAAAMTCfdzAxMJ13MjEwm3c0MTCZdzYxMJd3ODEwlXc6MTCTdzwxMJF3Pg="
-jmp 26f
-25:
-26:
-jmp 24f
-23:
-24:
-.base64 "xEJ9WgLEwn3dwMTCdd3IxMJt3dDEwmXd2MTCXd3gxMJV3ejEwk3d8MTCRd34xf5/AsX+f0ogxf5/UkDF/n9aYMX+f6KAAAAAxf5/qqAAAADF/n+ywAAAAMX+f7rgAAAASIHCAAEAAEiD6RBIg/kQ"
-jae 22b
-jmp 21f
-20:
-21:
-.base64 "xfh3SIP5CA=="
-jb 27f
-29:
-.base64 "8w9vAvMPb0oQ8w9vUiDzD29aMPMPb2JA8w9valDzD29yYPMPb3pw80QPbwdmQQ/vwGZBD+/IZkEP79BmQQ/v2GZBD+/gZkEP7+hmQQ/v8GZBD+/480QPb0cQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0cwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dQZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dgZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb0dwZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4eQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+Cg=="
-je 210f
-.base64 "80QPb4egAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4ewAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4SIP+DA=="
-je 212f
-.base64 "80QPb4fAAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz480QPb4fQAAAAZkEPONzAZkEPONzIZkEPONzQZkEPONzYZkEPONzgZkEPONzoZkEPONzwZkEPONz4"
-jmp 213f
-212:
-213:
-jmp 211f
-210:
-211:
-.base64 "80UPbwJmQQ843cBmQQ843chmQQ843dBmQQ843dhmQQ843eBmQQ843ehmQQ843fBmQQ843fjzD38C8w9/ShDzD39SIPMPf1ow8w9/YkDzD39qUPMPf3Jg8w9/enBIgcKAAAAASIPpCEiD+Qg="
-jae 29b
-jmp 28f
-27:
-28:
-.base64 "SIXJ"
-je 214f
-216:
-.base64 "8w9vAvNED28HZkEP78DzRA9vRxBmQQ843MDzRA9vRyBmQQ843MDzRA9vRzBmQQ843MDzRA9vR0BmQQ843MDzRA9vR1BmQQ843MDzRA9vR2BmQQ843MDzRA9vR3BmQQ843MDzRA9vh4AAAABmQQ843MDzRA9vh5AAAABmQQ843MBIg/4K"
-je 217f
-.base64 "80QPb4egAAAAZkEPONzA80QPb4ewAAAAZkEPONzASIP+DA=="
-je 219f
-.base64 "80QPb4fAAAAAZkEPONzA80QPb4fQAAAAZkEPONzA"
-jmp 220f
-219:
-220:
-jmp 218f
-217:
-218:
-.base64 "80UPbwJmQQ843cDzD38CSIPCEEiD6QE="
-jne 216b
-jmp 215f
-214:
-215:
-.base64 "ww=="
-.p2align 6"#,
     )
 }

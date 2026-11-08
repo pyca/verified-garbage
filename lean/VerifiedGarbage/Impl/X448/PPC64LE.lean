@@ -27,7 +27,9 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   `2³²`, and the carry out in `r8`;
 * `fold`: the carry out `c` folded in as `c + 2²²⁴ c`: added to limbs 0 and
   7 and carried again; `tail` folds twice, after which nothing carries out;
-* `mul`: the 28 limbs of the product row by row (Knuth's algorithm M), then,
+* `mul`: the product's fourteen doublewords row by row (a row is seven
+  products of doublewords, `mulld` and `mulhdu`, added with `addc` and
+  `addze`), the same bytes as its 28 limbs; then,
   for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
   once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
   `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
@@ -42,9 +44,9 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
 multiplication by the constant element `A24`), over the bits of the scalar
 from 447 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
-The inversion `z2^(p-2)` is square-and-multiply over the bits of `p - 2 =
-2⁴⁴⁸ - 2²²⁴ - 3` from 447 down to 0 (the counter `r12`): every bit but 224
-and 1 is 1.
+The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
+multiplications, in the ladder's temporaries), its runs of squarings counted
+by `r12`.
 
 The function uses only volatile registers. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
@@ -125,7 +127,8 @@ def sub (o a b : Nat) : List Instr :=
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
 
-/-- The words `ACC[0, 14)` zeroed. -/
+/-- The words `ACC[0, 14)` zeroed (Ed448's scalar arithmetic on PPC64LE uses
+this and `row`). -/
 def zeroAcc : List Instr := .li .r7 0 :: storeN .r7 ACC 14
 
 /-- Limb `j` of row `i` (`r9` = the base plus `4 i`, `a_i` in `r4`) into
@@ -144,10 +147,27 @@ def mulSrc (k : Nat) : List Instr :=
   (if k < 7 then [.load .w .r5 .r6 (ACC + 56 + 4 * (k + 7)), .add .r7 .r7 .r5]
    else [.add .r7 .r7 .r5, .load .w .r5 .r6 (ACC + 56 + 4 * (k - 7)), .add .r7 .r7 .r5])
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`. -/
+/-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
+carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
+word stored over `acc[i + j]` and its high word the next carry (`mulld`,
+`mulhdu`, and `addc`/`addze` of the doubleword and the carry). -/
+def rowStep64 (b j : Nat) : List Instr :=
+  [.load .d .r5 .r6 (b + 8 * j), .mul .r7 .r4 .r5, .mulhu .r5 .r4 .r5,
+    .load .d .r10 .r9 (ACC + 8 * j), .addc .r7 .r7 .r10, .addze .r5 .r5, .addc .r7 .r7 .r8,
+    .addze .r8 .r5, .store .d .r7 .r9 (ACC + 8 * j)]
+
+/-- Row `i` of the product of doublewords: `acc[i, i + 8) = acc[i, i + 7) + a_i · b`. -/
+def row64 (a b : Nat) : List Instr :=
+  [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
+    [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
+fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
+products (a loop, so that the ladder's loop stays within the reach of its
+branch), then the reduction of its 28 limbs. -/
 def mul (o a b : Nat) : Prog isa :=
-  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 14]))
-    (.seq (.loop (.block (row a b)) (.nonzero .d .r11))
+  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
+    (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
       (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o)))
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
@@ -190,21 +210,55 @@ def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
 
 /-! ## Inversion
 
-`[R] = [Z2]^(p-2)`, square-and-multiply over the bits of `p - 2` from 447
-down to 0 (`t = r12 - 1`): `R = R²`, then `R = R · Z2` unless `t` is 224 or 1. -/
+`[R] = [Z2]^(p-2)` by the addition chain of `Proof/X448/Invert.lean`, as
+RISC-V's `R64` implementation has it. -/
 
-/-- `[R] = 1`. -/
+/-- `[R] = 1` (Ed448's verification uses it). -/
 def one : List Instr :=
   [.li .r4 1, .li .r5 0, .store .w .r4 .r6 R] ++ storeN .r5 (R + 4) 13
 
-def invStep : Prog isa :=
-  .seq (.block [.subi .r12 .r12 1]) <| .seq (mul R R R) <|
-  .seq (.block [.subi .r5 .r12 224]) <|
-  .seq (.ite (.zero .d .r5) (.block [])
-    (.seq (.block [.subi .r5 .r12 1]) (.ite (.zero .d .r5) (.block []) (mul R R Z2))))
-    (.block [])
+/-- The inversion's temporaries: the ladder's `A`, `B`, `C`, `D`, `AA`, `BB`
+and `E`, free after it. -/
+def T0 : Nat := A
+def T1 : Nat := B
+def T2 : Nat := C
+def T3 : Nat := D
+def T4 : Nat := AA
+def T5 : Nat := BB
+def T6 : Nat := E
 
-def invert : Prog isa := .seq (.block (one ++ [.li .r12 448])) (.loop invStep (.nonzero .d .r12))
+/-- A squaring of a run after its first: the counter `r12` down by one, then `[o] = [o]²`. -/
+def sqStep (o : Nat) : Prog isa := .seq (.block [.subi .r12 .r12 1]) (mul o o o)
+
+/-- `[o] = [x]^(2^n)`, the squarings after the first in a loop counted by `r12`. -/
+def sqn (o x n : Nat) : Prog isa :=
+  if n = 1 then mul o x x
+  else .seq (mul o x x) (.seq (.block [.li .r12 (n - 1)]) (.loop (sqStep o) (.nonzero .d .r12)))
+
+/-- `[R] = [z]^(2²²³ - 1)` and `[T6] = [z]^(2²²² - 1)`, through `T0`–`T5`
+(`Proof/X448/Invert.lean`'s `c223`, as RISC-V's `R64` implementation has it). -/
+def chain223 (z : Nat) : Prog isa :=
+  .seq (sqn T0 z 1) <| .seq (mul T0 T0 z) <|          -- z^(2^2 - 1)
+  .seq (sqn T1 T0 2) <| .seq (mul T1 T1 T0) <|        -- z^(2^4 - 1)
+  .seq (sqn T2 T1 4) <| .seq (mul T2 T2 T1) <|        -- z^(2^8 - 1)
+  .seq (sqn T3 T2 8) <| .seq (mul T3 T3 T2) <|        -- z^(2^16 - 1)
+  .seq (sqn T4 T3 16) <| .seq (mul T4 T4 T3) <|       -- z^(2^32 - 1)
+  .seq (sqn T5 T4 32) <| .seq (mul T5 T5 T4) <|       -- z^(2^64 - 1)
+  .seq (sqn T6 T5 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^128 - 1)
+  .seq (sqn T6 T6 64) <| .seq (mul T6 T6 T5) <|       -- z^(2^192 - 1)
+  .seq (sqn T6 T6 16) <| .seq (mul T6 T6 T3) <|       -- z^(2^208 - 1)
+  .seq (sqn T6 T6 8) <| .seq (mul T6 T6 T2) <|        -- z^(2^216 - 1)
+  .seq (sqn T6 T6 4) <| .seq (mul T6 T6 T1) <|        -- z^(2^220 - 1)
+  .seq (sqn T6 T6 2) <| .seq (mul T6 T6 T0) <|        -- z^(2^222 - 1)
+  .seq (sqn R T6 1) (mul R R z)                       -- z^(2^223 - 1)
+
+/-- From `chain223 Z2`: `[R] = [Z2]^(p - 2)`. -/
+def invTail : Prog isa :=
+  .seq (sqn R R 225) <| .seq (sqn T6 T6 2) <| .seq (mul T6 T6 Z2) (mul R R T6)
+
+/-- `[R] = [Z2]^(p-2)`, by the addition chain: 446 squarings and 15
+multiplications. -/
+def invert : Prog isa := .seq (chain223 Z2) invTail
 
 /-! ## Encoding and decoding -/
 

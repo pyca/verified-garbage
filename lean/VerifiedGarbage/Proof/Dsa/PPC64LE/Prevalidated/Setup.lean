@@ -50,7 +50,7 @@ theorem setup_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q : State
   have K₂ := K₁.trans (qb₂.body hL)
   have k₁₂ := k₁.trans k₂
   refine WP.seq (WP.mono (setupP_ok hL (hs.congr k₁₂.wr) (hr₁.keep k₂) (hk2.keep k₁₂.rd k₁₂.wr)
-      (by rw [(vals K₂).1]; exact hp2)) fun t₃ ⟨⟨ip₃, p0₃, ptop₃, p8₃, pb₃⟩, k₃⟩ => ?_)
+      (by rw [(vals K₂).1]; exact hp2) (by rw [(vals K₂).1]; exact hK.1.2.2)) fun t₃ ⟨⟨ip₃, p0₃, ptop₃, p8₃, pb₃⟩, k₃⟩ => ?_)
   rw [(vals K₂).1] at p0₃ p8₃
   rw [(vals K₁).2] at q0₂
   have k₁₃ := k₁₂.trans k₃

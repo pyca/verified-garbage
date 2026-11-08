@@ -16,7 +16,7 @@ zero, so `[n]G = O` (`mul_n`); `n` is prime (`Prime.lean`), the curve has no
 point of order 2 (`Curve.lean`), and `2p + 1 < 3n`, so the group of points
 has `n` elements, and every point but `O` has order `n`
 (`Weierstrass.primeOrder_of`), which the window method in Jacobian
-coordinates needs. Only the variant files `Variants/P521/<Target>/Law.lean`
+coordinates needs. Only the modules `Proof/P521/<Target>/Law.lean`
 import this algebra.
 public import Aesop.BuiltinRules
 -/
