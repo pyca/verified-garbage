@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Xor
+public import VerifiedGarbage.Impl.ChaCha20.PPC64LE.Vmx4
 public import VerifiedGarbage.Impl.Poly1305.PPC64LE
 public import VerifiedGarbage.Impl.StackScratch.PPC64LE
 
@@ -174,7 +174,7 @@ the destination (`vg_chacha20_xor` from `r27` to `r31`). -/
 def crypt : Prog isa :=
   .seq (.block [.li .r12 1, .store .w .r12 .r24 (stOff + 48), .addi .r3 .r24 stOff,
     mov .r4 .r27, mov .r5 .r28, mov .r6 .r24, mov .r7 .r31])
-    (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Xor.xor)
+    (.call "vg_chacha20_xor" Impl.ChaCha20.PPC64LE.Vmx4.xor)
 
 /-- The lengths block, absorbed. -/
 def lengths : Prog isa :=
