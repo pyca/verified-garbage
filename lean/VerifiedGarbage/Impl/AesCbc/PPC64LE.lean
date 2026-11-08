@@ -138,6 +138,20 @@ def callArgs8 : List Instr := [mov .r3 .r14, mov .r4 .r15, mov .r5 .r17, .li .r6
 /-- On to the block after the eight. -/
 def advance8 : List Instr := [.addi .r17 .r17 128, .subi .r18 .r18 8]
 
+/-- The registers of `Impl.Aes.PPC64LE.Crypto`'s rounds for the eight blocks
+at `r17`: the schedule, the rounds and the blocks (`r6`), and the
+byte-order mask. -/
+def vsetup : List Instr :=
+  [mov .r3 .r14, mov .r4 .r15, mov .r6 .r17] ++ Impl.Aes.PPC64LE.Crypto.setup
+
+/-- Slot `j` XORed into `breg j`, through `v9` and `r7`. -/
+def xorSlot (j : Nat) : List Instr :=
+  [.addi .r7 .r19 (slot j)] ++ Impl.Aes.PPC64LE.Crypto.load Impl.Aes.PPC64LE.Crypto.data .r7 ++
+    [.vop (.logic .xor (Impl.Aes.PPC64LE.Crypto.breg j) (Impl.Aes.PPC64LE.Crypto.breg j)
+      Impl.Aes.PPC64LE.Crypto.data)]
+
+def xorSlots : List Instr := (List.range 8).flatMap xorSlot
+
 /-- How many groups of eight blocks are left, in `r9`. -/
 def countG : List Instr := [.lsr .d .r9 .r18 3]
 

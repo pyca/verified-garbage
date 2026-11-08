@@ -15,7 +15,8 @@ def aesSha3 : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, true⟩
 def scalar : Proof.AesGcm.AArch64.GcmVariant := ⟨.scalar, .scalar, .scalar, false⟩
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [aesSha3, aes, scalar]
 
 end VG.Proof.Variants.AesGcm.AArch64

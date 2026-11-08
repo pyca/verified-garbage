@@ -38,25 +38,6 @@ pub unsafe fn vg_sha1_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *m
     unsafe { crate::sha1::vg_sha1_update(state, count, data, len) }
 }
 
-/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
-///
-/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
-///
-/// It runs `vg_sha1_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `data` must be valid for reads of `len` bytes.
-/// * `out` must be valid for reads and writes of 20 bytes.
-/// * `out` must not overlap `data` (distinct Rust objects never do).
-/// * Neither `data` nor `out` may overlap the 320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_sha1_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sha1::vg_sha1_digest(data, len, out) }
-}
-
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Sha1.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
@@ -75,4 +56,23 @@ pub unsafe fn vg_sha1_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *co
 pub unsafe fn vg_sha1_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::sha1::vg_sha1_finalize(state, count, out) }
+}
+
+/// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
+///
+/// Contract: `VG.Spec.Sha1.digestContract`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It runs `vg_sha1_digest`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `data` must be valid for reads of `len` bytes.
+/// * `out` must be valid for reads and writes of 20 bytes.
+/// * `out` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `data` nor `out` may overlap the 320 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_sha1_digest_auto(_dit: verified_garbage_cpu::Dit<'_>, data: *const u8, len: usize, out: *mut [u8; 20]) {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::sha1::vg_sha1_digest(data, len, out) }
 }

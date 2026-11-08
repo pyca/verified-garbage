@@ -225,7 +225,7 @@ theorem checkParams_ok {s : State} {L : Lay} {key sig dig : Addr} {d : Nat} {Q :
   have pm : p % q = 1 := r0₃.mp (by simpa using hb₃)
   -- The P space.
   refine WP.seq (WP.mono (setupP_ok hL hs₃ hr₃ (hk.keep k₁₃.rd k₁₃.wr)
-      (by rw [(vals K₃).1]; omega_arith)) fun t₄ ⟨⟨ip₄, p0₄, ptop₄, p8₄, pb₄⟩, k₄⟩ => ?_)
+      (by rw [(vals K₃).1]; omega_arith) (by rw [(vals K₃).1]; exact hpo)) fun t₄ ⟨⟨ip₄, p0₄, ptop₄, p8₄, pb₄⟩, k₄⟩ => ?_)
   rw [(vals K₃).1] at p0₄ p8₄
   have B₄ : Body L t₃.mem t₄.mem := pb₄.body hL
   have K₄ := K₃.trans B₄

@@ -14,7 +14,8 @@ def base : Proof.Ffdh.X86_64.ExpImpl := Proof.Variants.FfdhExp.X86_64.Base.varia
 def ifma : Proof.Ffdh.X86_64.ExpImpl := Proof.Variants.FfdhExp.X86_64.Ifma.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [ifma, base]
 
 end VG.Proof.Variants.FfdhExp.X86_64

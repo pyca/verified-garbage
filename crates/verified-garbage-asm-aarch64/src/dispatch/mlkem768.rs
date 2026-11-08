@@ -2,11 +2,28 @@
 //! The dispatchers of the verified `mlkem768` functions for `aarch64`
 //! (`crate::mlkem768`, `VG.Rust.dispatcher`).
 
+/// The ML-KEM-768 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1152 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem768_encaps`.
+///
+/// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
+///
+/// It runs `vg_mlkem768_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `ek` must be valid for reads of 1184 bytes.
+/// * `ek` must not wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mlkem768_check_ek_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184]) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::mlkem768::vg_mlkem768_check_ek(ek) }
+}
+
 /// ML-KEM-768 key generation from a seed, `ML-KEM.KeyGen_internal(d, z)` (FIPS 203 Algorithm 16): with `d` in bytes 0–31 of `*seed` and `z` in bytes 32–63, writes the encapsulation key to `*ek` and the decapsulation key to `*dk`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.keyGenContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of the encapsulation key), but not on anything else of the seed or the keys.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem768_keygen_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_keygen_x2_sha3` if the CPU supports its features (`VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES`); or else `vg_mlkem768_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem768_keygen_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_KEYGEN_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_keygen_x2_sha3` if the CPU supports its features (`VG_MLKEM768_KEYGEN_X2_SHA3_FEATURES`); or else `vg_mlkem768_keygen`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -64,7 +81,7 @@ pub unsafe fn vg_mlkem768_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed:
 ///
 /// Contract: `VG.Spec.MlKem.encapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on the randomness or on the outputs.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem768_encaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_encaps_x2_sha3` if the CPU supports its features (`VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES`); or else `vg_mlkem768_encaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem768_encaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_ENCAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_encaps_x2_sha3` if the CPU supports its features (`VG_MLKEM768_ENCAPS_X2_SHA3_FEATURES`); or else `vg_mlkem768_encaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -120,86 +137,11 @@ pub unsafe fn vg_mlkem768_encaps_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ek, m, key, ct, scratch) }
 }
 
-/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
-///
-/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
-///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem768_decaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_decaps_x2_sha3` if the CPU supports its features (`VG_MLKEM768_DECAPS_X2_SHA3_FEATURES`); or else `vg_mlkem768_decaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
-///
-/// # Safety
-///
-/// * `dk` must be valid for reads of 2400 bytes.
-/// * `ct` must be valid for reads of 1088 bytes.
-/// * `key` must be valid for reads and writes of 32 bytes.
-/// * `scratch` must be valid for reads and writes of 32768 bytes.
-/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
-/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
-/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_mlkem768_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
-    /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32;
-    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
-    /// features the CPU has.
-    #[cold]
-    fn select() -> Impl {
-        let cpu = verified_garbage_cpu::detected();
-        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
-            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) }
-            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
-        {
-            return crate::mlkem768::vg_mlkem768_decaps_x2_sha3_keccak_sha3;
-        }
-        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES) }
-            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES)
-        {
-            return crate::mlkem768::vg_mlkem768_decaps_x2_sha3;
-        }
-        crate::mlkem768::vg_mlkem768_decaps
-    }
-    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
-    /// after it, and runs it.
-    #[cold]
-    unsafe extern "C" fn first(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
-        let f = select();
-        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
-        // SAFETY: the caller's obligations, which are those of every implementation, `f`
-        // among them, and the CPU has the features `f` needs.
-        unsafe { f(dk, ct, key, scratch) }
-    }
-    /// The function to call: `first`, until it records the implementation it chose.
-    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
-        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
-    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
-    // or an implementation `select` returned, which needs only features the CPU has. Calling
-    // either carries the caller's obligations, which are those of every implementation.
-    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(dk, ct, key, scratch) }
-}
-
-/// The ML-KEM-768 encapsulation key check (FIPS 203 §7.2): returns 1 if every 12-bit integer that the first 1152 bytes of `*ek` encode is less than `q` = 3329 (the modulus check), and 0 otherwise. An encapsulation key must pass it before it is given to `vg_mlkem768_encaps`.
-///
-/// Contract: `VG.Spec.MlKem.checkEkContract`. Constant time: only the pointer may affect timing.
-///
-/// It runs `vg_mlkem768_check_ek`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `ek` must be valid for reads of 1184 bytes.
-/// * `ek` must not wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_mlkem768_check_ek_auto(_dit: verified_garbage_cpu::Dit<'_>, ek: *const [u8; 1184]) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::mlkem768::vg_mlkem768_check_ek(ek) }
-}
-
 /// ML-KEM-768 encapsulation with given randomness and the hash of the key, `ML-KEM.Encaps_internal(ek, m)` (FIPS 203 Algorithm 17): with the encapsulation key `*ek`, its hash `H(ek)` in `*h` and the randomness `*m`, writes the shared secret key to `*key` and the ciphertext to `*ct`, as `vg_mlkem768_encaps` does, using `*h` instead of hashing `*ek`. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
 ///
 /// Contract: `VG.Spec.MlKem.encapsHContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (the last 32 bytes of `*ek`), but not on anything else of the key, on its hash, on the randomness or on the outputs.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_mlkem768_encaps_h_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_encaps_h_x2_sha3` if the CPU supports its features (`VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES`); or else `vg_mlkem768_encaps_h`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem768_encaps_h_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_ENCAPS_H_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_encaps_h_x2_sha3` if the CPU supports its features (`VG_MLKEM768_ENCAPS_H_X2_SHA3_FEATURES`); or else `vg_mlkem768_encaps_h`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -255,4 +197,62 @@ pub unsafe fn vg_mlkem768_encaps_h_auto(_dit: verified_garbage_cpu::Dit<'_>, ek:
     // or an implementation `select` returned, which needs only features the CPU has. Calling
     // either carries the caller's obligations, which are those of every implementation.
     unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(ek, h, m, key, ct, scratch) }
+}
+
+/// ML-KEM-768 decapsulation, `ML-KEM.Decaps_internal(dk, c)` (FIPS 203 Algorithm 18): with the decapsulation key `*dk` and the ciphertext `*ct`, writes the shared secret key to `*key`, which is the implicit rejection key `J(z ‖ c)` if the ciphertext does not re-encrypt to itself. Returns 1 on success. Returns 0 if a `SampleNTT` (FIPS 203 Algorithm 7) reaches the bound on its loop's iterations, which is at least 280 (FIPS 203 Appendix B; this happens with probability less than 2^-261): the outputs are then unspecified, and the caller must destroy them and treat the operation as failed.
+///
+/// Contract: `VG.Spec.MlKem.decapsContract`. Constant time but for `ρ`: timing may depend on the pointers and on `ρ` (bytes 2304–2335 of `*dk`), but not on anything else of the key, on the ciphertext, or on whether it was rejected.
+///
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mlkem768_decaps_x2_sha3_keccak_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES`); `vg_mlkem768_decaps_x2_sha3` if the CPU supports its features (`VG_MLKEM768_DECAPS_X2_SHA3_FEATURES`); or else `vg_mlkem768_decaps`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// # Safety
+///
+/// * `dk` must be valid for reads of 2400 bytes.
+/// * `ct` must be valid for reads of 1088 bytes.
+/// * `key` must be valid for reads and writes of 32 bytes.
+/// * `scratch` must be valid for reads and writes of 32768 bytes.
+/// * `dk` must have been written by `vg_mlkem768_keygen` (so that it passes the checks of FIPS 203 §7.3).
+/// * `scratch` is working space: on return each of its bytes is unchanged or zero.
+/// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_mlkem768_decaps_auto(_dit: verified_garbage_cpu::Dit<'_>, dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32;
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_KECCAK_SHA3_FEATURES))
+        {
+            return crate::mlkem768::vg_mlkem768_decaps_x2_sha3_keccak_sha3;
+        }
+        if const { verified_garbage_cpu::target_contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES) }
+            || cpu.contains(crate::mlkem768::VG_MLKEM768_DECAPS_X2_SHA3_FEATURES)
+        {
+            return crate::mlkem768::vg_mlkem768_decaps_x2_sha3;
+        }
+        crate::mlkem768::vg_mlkem768_decaps
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(dk: *const [u8; 2400], ct: *const [u8; 1088], key: *mut [u8; 32], scratch: *mut [u64; 4096]) -> u32 {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(dk, ct, key, scratch) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(dk, ct, key, scratch) }
 }

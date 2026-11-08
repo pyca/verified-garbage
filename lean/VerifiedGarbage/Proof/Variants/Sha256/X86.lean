@@ -14,7 +14,8 @@ def scalar : Proof.Sha256.X86.Variants.Backend := Proof.Variants.Sha256.X86.Scal
 def shaNi : Proof.Sha256.X86.Variants.Backend := Proof.Variants.Sha256.X86.ShaNi.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [shaNi, scalar]
 
 end VG.Proof.Variants.Sha256.X86

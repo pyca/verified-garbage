@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_oaep_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_oaep_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_oaep_decrypt_crt_ifma` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES`); `vg_rsa_oaep_decrypt_crt_adx` if the CPU supports its features (`VG_RSA_OAEP_DECRYPT_CRT_ADX_FEATURES`); or else `vg_rsa_oaep_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -82,7 +82,7 @@ pub unsafe fn vg_rsa_oaep_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, out:
 ///
 /// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
-/// It runs the first of these implementations that applies, which `VG.Dispatch.ranking` orders (`VG.Rust.Rank`): `vg_rsa_oaep_encrypt_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_oaep_encrypt_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_oaep_encrypt_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_oaep_encrypt_precomputed_rsa_ifma` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES`); `vg_rsa_oaep_encrypt_precomputed_rsa_adx` if the CPU supports its features (`VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_ADX_FEATURES`); or else `vg_rsa_oaep_encrypt_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///

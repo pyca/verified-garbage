@@ -37,7 +37,8 @@ def vaesVpclmulAvx512 : Proof.AesGcm.X86_64.GcmVariant := Proof.Variants.AesGcm.
 def vpclmul : Proof.AesGcm.X86_64.GcmVariant := ⟨.scalar, .scalar, .vpclmul, none⟩
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [vaesVpclmulAvx512, vaesVpclmul, vaesPclmul, aesNiVpclmul, aesNiPclmulAvx, aesNiPclmul, vaes, aesNi, vpclmul, pclmul, scalar]
 
 end VG.Proof.Variants.AesGcm.X86_64

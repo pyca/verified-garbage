@@ -66,7 +66,8 @@ theorem setupS_rel :
   unfold Prevalidated.setup
   refine sizes_rel ?_ fun _ h => zero_rel fun v s h' => ⟨(h v s h').1, (h v s h').2.1⟩
   refine RelCT.seq (two_postG (rel_pins pins_S5' tQ) fun _ _ h => w_LQ h)
-    (RelCT.seq (two_post (rel_pins (pins_and pins_LQ) t4) fun _ _ h => w_PVS h) ?_)
+    (RelCT.seq (two_post (setupP_rel (pins_and pins_LQ)
+      fun _ _ ⟨⟨B, r2, _, _⟩, g⟩ => ⟨B, r2, (B.pk g.2).1.1.1.2.1⟩) fun _ _ h => w_PVS h) ?_)
   exact sbody_rel.mono (fun _ _ => two_mono fun _ s ⟨⟨B, r2, _, pf, _⟩, sg, kv⟩ =>
     ⟨⟨B, r2, fixL_nil s, pf, B.pk kv⟩, sg⟩) fun _ _ h => h
 

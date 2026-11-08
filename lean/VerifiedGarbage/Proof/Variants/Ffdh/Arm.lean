@@ -14,7 +14,8 @@ def base : Proof.Ffdh.Arm.Backend := Proof.Variants.Ffdh.Arm.Base.variant
 def umaal : Proof.Ffdh.Arm.Backend := Proof.Variants.Ffdh.Arm.Umaal.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [umaal, base]
 
 end VG.Proof.Variants.Ffdh.Arm

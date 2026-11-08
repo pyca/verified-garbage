@@ -248,6 +248,66 @@ def sRot : State := { sVec with vpr := fun r =>
 #guard Instr.asm (.vop (.rlw .v19 .v0 .v17)) == ["vrlw %v19, %v0, %v17"]
 -- The same word as LLVM 18's `llvm-mc -triple=powerpc64le -show-encoding`.
 #guard Instr.encode (.vop (.rlw .v19 .v0 .v17)) == some [0x12608884]
+-- The halfword and word arithmetic, multiplies and splats, each worked from
+-- its Book I RTL (§§6.8.4, 6.9.1.1–6.9.1.4, 6.9.2.2, 6.9.6) on halfwords
+-- A = 0001 0002 ffff 8000 1234 0000 7fff 00ff (words 00010002 ffff8000
+-- 12340000 7fff00ff), B = 0003 ffff 0002 8000 0010 0001 0002 0101 and
+-- C = fffe 0000 0001 0000 0000 ffff 0000 0005. For example `vmuleuh`'s word
+-- 1 is A's halfword 2 times B's, 0xffff · 2 = 0x1fffe, and `vslh`'s
+-- halfword 3 is 0x8000 shifted by 0x8000's low four bits, zero.
+def sInt : State := { sVec with vpr := fun r =>
+  if r = .v0 then 0x00010002ffff8000123400007fff00ff
+  else if r = .v1 then 0x0003ffff000280000010000100020101
+  else 0xfffe0000000100000000ffff00000005 }
+def intCases : List (VOp × BitVec 128) := [
+  (.addh .v3 .v0 .v1, 0x00040001000100001244000180010200),
+  (.sub false .v3 .v0 .v1, 0xfffe0003fffd00001224ffff7ffdfffe),
+  (.sub true .v3 .v0 .v1, 0xfffd0003fffd00001223ffff7ffcfffe),
+  (.minu false .v3 .v0 .v1, 0x000100020002800000100000000200ff),
+  (.minu true .v3 .v0 .v1, 0x00010002000280000010000100020101),
+  (.mulu false false .v3 .v0 .v1, 0x000000030001fffe000123400000fffe),
+  (.mulu true false .v3 .v0 .v1, 0x0001fffe40000000000000000000ffff),
+  (.mulu false true .v3 .v0 .v1, 0x000000040006fffe0001234012340000),
+  (.mulu true true .v3 .v0 .v1, 0x00027ffec00000000001007e80fdffff),
+  (.muluwm .v3 .v0 .v1, 0x0006fffec00000001234000080fdffff),
+  (.mladduhm .v3 .v0 .v1 .v2, 0x0001fffeffff00002340fffffffe0004),
+  (.shifth false .v3 .v0 .v1, 0x00080000fffc800012340000fffc01fe),
+  (.shifth true .v3 .v0 .v1, 0x000000003fff8000123400001fff007f),
+  (.splat false .v3 .v0 7, 0x00ff00ff00ff00ff00ff00ff00ff00ff),
+  (.splat true .v3 .v1 3, 0x00020101000201010002010100020101),
+  (.splatImm false .v3 (-16), 0xfff0fff0fff0fff0fff0fff0fff0fff0),
+  (.splatImm true .v3 15, 0x0000000f0000000f0000000f0000000f),
+  (.splatImm true .v3 (-1), 0xffffffffffffffffffffffffffffffff)]
+#guard intCases.all fun (op, x) => (exec (.vop op) sInt).map (·.vpr .v3) == some x
+-- Element indices and immediates the instructions cannot encode fault.
+#guard (exec (.vop (.splat false .v3 .v0 8)) sInt).isNone
+#guard (exec (.vop (.splat true .v3 .v0 4)) sInt).isNone
+#guard (exec (.vop (.splatImm false .v3 16)) sInt).isNone
+#guard (exec (.vop (.splatImm true .v3 (-17))) sInt).isNone
+#guard (Instr.encode (.vop (.splat true .v3 .v0 4))).isNone
+#guard (Instr.encode (.vop (.splatImm false .v3 16))).isNone
+-- The same words as LLVM 18's `llvm-mc -triple=powerpc64le -mcpu=pwr8
+-- -show-encoding` for the text each prints (`%v` dropped).
+def intEnc : List (VOp × String × Nat) := [
+  (.addh .v19 .v0 .v17, "vadduhm %v19, %v0, %v17", 0x12608840),
+  (.sub false .v19 .v0 .v17, "vsubuhm %v19, %v0, %v17", 0x12608c40),
+  (.sub true .v19 .v0 .v17, "vsubuwm %v19, %v0, %v17", 0x12608c80),
+  (.minu false .v19 .v0 .v17, "vminuh %v19, %v0, %v17", 0x12608a42),
+  (.minu true .v19 .v0 .v17, "vminuw %v19, %v0, %v17", 0x12608a82),
+  (.mulu false false .v19 .v0 .v17, "vmuleuh %v19, %v0, %v17", 0x12608a48),
+  (.mulu true false .v19 .v0 .v17, "vmulouh %v19, %v0, %v17", 0x12608848),
+  (.mulu false true .v19 .v0 .v17, "vmuleuw %v19, %v0, %v17", 0x12608a88),
+  (.mulu true true .v19 .v0 .v17, "vmulouw %v19, %v0, %v17", 0x12608888),
+  (.muluwm .v19 .v0 .v17, "vmuluwm %v19, %v0, %v17", 0x12608889),
+  (.mladduhm .v19 .v0 .v17 .v5, "vmladduhm %v19, %v0, %v17, %v5", 0x12608962),
+  (.shifth false .v19 .v0 .v17, "vslh %v19, %v0, %v17", 0x12608944),
+  (.shifth true .v19 .v0 .v17, "vsrh %v19, %v0, %v17", 0x12608a44),
+  (.splat false .v19 .v17 7, "vsplth %v19, %v17, 7", 0x12678a4c),
+  (.splat true .v19 .v17 3, "vspltw %v19, %v17, 3", 0x12638a8c),
+  (.splatImm false .v19 (-16), "vspltish %v19, -16", 0x1270034c),
+  (.splatImm true .v19 15, "vspltisw %v19, 15", 0x126f038c),
+  (.splatImm true .v19 (-1), "vspltisw %v19, -1", 0x127f038c)]
+#guard intEnc.all fun (op, a, w) => Instr.asm (.vop op) == [a] && Instr.encode (.vop op) == some [w]
 -- Both 64x64 polynomial products contribute; the highest possible bit is 126.
 def sPoly : State := { sVec with vpr := fun r =>
   if r = .v0 then 0x80000000000000000000000000000001

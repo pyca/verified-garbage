@@ -102,7 +102,8 @@ theorem domainTail_rel {rest fail : Prog isa} {Q : State → State → Prop}
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
   refine RelCT.seq (two_postG (rel_pins (pins_and pins_O2) t3) fun _ _ h => w_OM h)
     (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2) ?_ (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩))
-  refine RelCT.seq (two_postG (rel_pins (pins_and pins_OM) t4) fun _ _ h => w_P h) (RelCT.seq
+  refine RelCT.seq (two_postG (setupP_rel (pins_and pins_OM)
+      fun _ _ ⟨⟨B, r2, _, ⟨ko, _⟩, _⟩, _⟩ => ⟨B, r2, ko.2.1⟩) fun _ _ h => w_P h) (RelCT.seq
     rangeG_rel (rel_ite_zeroG (zero_iff_agree _ fun _ _ h => h.2.2.2.2.2) ?_
       (hfail _ fun _ _ h => ⟨h.1.1.1, h.2⟩)))
   exact hrest.mono (fun _ _ => two_mono fun _ _ ⟨⟨⟨B, r2, fx, pf, k, e⟩, z⟩, g⟩ =>

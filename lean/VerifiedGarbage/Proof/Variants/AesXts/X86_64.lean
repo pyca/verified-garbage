@@ -21,7 +21,8 @@ def vaesVpclmul : Proof.AesXts.X86_64.XtsImpl := .vaesVpclmul
 def vaesVpclmulAvx512 : Proof.AesXts.X86_64.XtsImpl := .vaesVpclmulAvx512
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [vaesVpclmulAvx512, vaesVpclmul, aesNiPclmul, vaes, aesNi, scalar]
 
 end VG.Proof.Variants.AesXts.X86_64

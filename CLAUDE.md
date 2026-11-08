@@ -144,11 +144,13 @@ own changes are rebuilt either way, on top of the restored build.
   So does each table of functions' (`<table>_auto()`, in
   `crate::arch::dispatch::fn_tables`, `Rust.tableDispatcher`), which
   returns the best of the tables of its interface and data.
-  Which is best is not trusted: `lean/VerifiedGarbage/Dispatch.lean` ranks
-  the suffixes of each target, and the emitter fails on a suffix it does
-  not rank. A choice that only some algorithms' implementations need is
-  their registration's (`Registration.extra` features, and its `vendor`
-  for a choice by compilation target), never the ranking's.
+  Which is best is not trusted: the dispatcher tries a function's
+  implementations in the order its registration file lists them (a
+  generic caller's in the order of its callees' variants, best first in
+  `Proof/Variants/<Iface>/<Target>.lean`), and the emitter fails on one
+  it would never choose. A choice that only some algorithms'
+  implementations need is their registration's (`Registration.extra`
+  features, and its `vendor` for a choice by compilation target).
   A variant is chosen by the CPU's features; only when no feature tells
   apart the CPUs it is faster on may the choice also depend on the
   compilation target (`vg_poly1305_update_neon`, faster on Apple's cores and

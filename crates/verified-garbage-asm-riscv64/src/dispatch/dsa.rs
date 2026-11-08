@@ -24,6 +24,51 @@ pub unsafe fn vg_dsa_derive_key_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *
     unsafe { crate::dsa::vg_dsa_derive_key(out, out_len, params, params_len, p_len, x, q_len, scratch, scratch_len) }
 }
 
+/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
+///
+/// It runs `vg_dsa_validate_private_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
+/// * `scratch` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::dsa::vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) }
+}
+
+/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
+///
+/// It runs `vg_dsa_sign_random_prevalidated`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+///
+/// # Safety
+///
+/// * `out` must be valid for reads and writes of `out_len` bytes.
+/// * `used` must be valid for reads and writes of 8 bytes, and aligned for `u64`.
+/// * `key` must be valid for reads of `key_len` bytes.
+/// * `digest` must be valid for reads of `digest_len` bytes.
+/// * `rand` must be valid for reads of `rand_len` bytes.
+/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
+/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
+/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
+/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
+/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
+/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
+/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
+/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[allow(clippy::too_many_arguments)]
+#[inline]
+pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
+    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
+    unsafe { crate::dsa::vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
+}
+
 /// Generate a DSA private key from p||q||g and fresh independent random bytes. Uses at most 128 rejection-sampling draws, computes y=g^x mod p, and checks algebraic consistency, not primality. Returns 1 with p||q||g||y||x, 0 for invalid input/draw limit, or 2 for insufficient randomness. Failure zeros out; used counts consumed complete draws on every return. Timing may depend on public parameters, sampling decisions, consumption and success, not otherwise on x or randomness. Contract: `VG.Spec.Dsa.generateKeyContract`.
 ///
 /// It runs `vg_dsa_generate_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
@@ -88,49 +133,4 @@ pub unsafe fn vg_dsa_validate_public_key_auto(_dit: verified_garbage_cpu::Dit<'_
 pub unsafe fn vg_dsa_verify_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, signature: *const u8, signature_len: usize, digest: *const u8, digest_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
     unsafe { crate::dsa::vg_dsa_verify_prevalidated(key, key_len, p_len, q_len, signature, signature_len, digest, digest_len, scratch, scratch_len) }
-}
-
-/// Validate packed DSA p||q||g||y||x as signing checks it: domain consistency, including g^q mod p = 1, 1 < y < p, 0 < x < q and g^x mod p = y. Returns 1 exactly when validation succeeds, otherwise 0. Does not test primality. Timing may depend on p,q,g,y and the result, not otherwise on x. Scratch contents are unspecified on return and may hold secrets. Contract: `VG.Spec.Dsa.validatePrivateKeyContract`.
-///
-/// It runs `vg_dsa_validate_private_key`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; scratch_len must be at least 16*p_len words; destroy scratch after use.
-/// * `scratch` must not overlap `key` (distinct Rust objects never do).
-/// * Neither `key` nor `scratch` may wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_dsa_validate_private_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const u8, key_len: usize, p_len: usize, q_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_validate_private_key(key, key_len, p_len, q_len, scratch, scratch_len) }
-}
-
-/// Randomized DSA signing of a prehashed digest, for an already validated packed private key (big-endian p||q||g||y||x; vg_dsa_validate_private_key validates it). Up to eight signing attempts, each with 128 nonce draws. Returns 1 with fixed-width r||s, 0 for retry exhaustion, or 2 for insufficient random bytes; out is zero on failure and used counts consumed complete draws on every return. Timing may depend on public p,q,g,y, sampling decisions, signing success bits and consumption, not otherwise on secrets. Contract: `VG.Spec.Dsa.randomSignPrevalidatedContract`.
-///
-/// It runs `vg_dsa_sign_random_prevalidated`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
-///
-/// # Safety
-///
-/// * `out` must be valid for reads and writes of `out_len` bytes.
-/// * `used` must be valid for reads and writes of 8 bytes, and aligned for `u64`.
-/// * `key` must be valid for reads of `key_len` bytes.
-/// * `digest` must be valid for reads of `digest_len` bytes.
-/// * `rand` must be valid for reads of `rand_len` bytes.
-/// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes, and aligned for `u64`.
-/// * (p_len, q_len) must be (128,20), (256,20), (256,28), (256,32), or (384,32).
-/// * key_len must be 3*p_len + 2*q_len; out_len must be 2*q_len.
-/// * scratch_len must be at least 16*p_len + 64 words; destroy scratch after use.
-/// * The exact key bytes must satisfy validatePrivateKeyBytes p_len q_len key = true. A successful vg_dsa_validate_private_key call establishes this only while the key bytes remain unchanged. Primality remains the caller's responsibility.
-/// * Provide fresh independent random octets; never reuse a completed signing tape for another signature.
-/// * `out`, `used` and `scratch` must not overlap each other, `key`, `digest`, `rand` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `out`, `used`, `key`, `digest`, `rand` and `scratch` may overlap the 192 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-#[allow(clippy::too_many_arguments)]
-#[inline]
-pub unsafe fn vg_dsa_sign_random_prevalidated_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, used: *mut [u64; 1], key: *const u8, key_len: usize, p_len: usize, q_len: usize, digest: *const u8, digest_len: usize, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::dsa::vg_dsa_sign_random_prevalidated(out, out_len, used, key, key_len, p_len, q_len, digest, digest_len, rand, rand_len, scratch, scratch_len) }
 }

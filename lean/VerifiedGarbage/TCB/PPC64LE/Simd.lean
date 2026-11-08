@@ -5,8 +5,10 @@ public import VerifiedGarbage.TCB.VectorCrypto
 /-!
 # POWER8 vector cryptography values
 
-**Trusted.** Power ISA v3.1C, Book I §§6.9.1.1 (modular adds), 6.9.4
-(logical), 6.9.5.1 (rotate), 6.8.5/6.8.7 (permute/shift), 6.11.1 (AES), 6.11.2 (SHA sigma), 6.11.3
+**Trusted.** Power ISA v3.1C, Book I §§6.9.1.1 (modular adds), 6.9.1.2
+(modular subtracts), 6.9.1.3 (multiplies), 6.9.1.4 (multiply-low-add), 6.9.2.2
+(minimum), 6.9.4 (logical), 6.9.5.1 (rotate), 6.9.6 (halfword shifts), 6.8.4
+(splats), 6.8.5/6.8.7 (permute/shift), 6.11.1 (AES), 6.11.2 (SHA sigma), 6.11.3
 (polynomial multiply). All were available on POWER8 / ISA 2.07.
 https://openpower.foundation/specifications/isa/
 https://www.ibm.com/support/pages/power8-cryptography-core-instructions
@@ -37,8 +39,18 @@ def vbyte (x : BitVec 128) (i : Nat) : BitVec 8 := x.extractLsb' (8 * (15 - i)) 
 def vword (x : BitVec 128) (i : Nat) : BitVec 32 := x.extractLsb' (32 * (3 - i)) 32
 def vdword (x : BitVec 128) (i : Nat) : BitVec 64 := x.extractLsb' (64 * (1 - i)) 64
 
+def vhword (x : BitVec 128) (i : Nat) : BitVec 16 := x.extractLsb' (16 * (7 - i)) 16
+
 def ofVBytes (f : Nat → BitVec 8) : BitVec 128 :=
   (List.range 16).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (8 * (15 - i)))) 0
+
+/-- The vector whose halfword element `i` (from the most significant) is `f i`. -/
+def ofVHwords (f : Nat → BitVec 16) : BitVec 128 :=
+  (List.range 8).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (16 * (7 - i)))) 0
+
+/-- The vector whose word element `i` (from the most significant) is `f i`. -/
+def ofVWords (f : Nat → BitVec 32) : BitVec 128 :=
+  (List.range 4).foldl (fun x i => x ||| ((f i).setWidth 128 <<< (32 * (3 - i)))) 0
 
 def rev128 (x : BitVec 128) : BitVec 128 := ofVBytes fun i => vbyte x (15 - i)
 
@@ -98,6 +110,38 @@ inductive VOp
   each word of VA rotated left by the low five bits of the same word of VB.
   Baseline AltiVec (Power ISA v2.03). -/
   | rlw (d n m : VReg)
+  /-- `vadduhm` (§6.9.1.1, p. 315): add modulo 2^16 per halfword. Baseline
+  AltiVec (v2.03). -/
+  | addh (d n m : VReg)
+  /-- `vsubuhm` / `vsubuwm` (§6.9.1.2, pp. 323–324): VA minus VB modulo
+  2^16 / 2^32 per element. Baseline AltiVec (v2.03). -/
+  | sub (word : Bool) (d n m : VReg)
+  /-- `vminuh` / `vminuw` (§6.9.2.2, pp. 375–376): the unsigned minimum per
+  element. Baseline AltiVec (v2.03). -/
+  | minu (word : Bool) (d n m : VReg)
+  /-- `vmuleuh` / `vmulouh` / `vmuleuw` / `vmulouw` (§6.9.1.3, pp. 332,
+  334): the full unsigned product of the even (`odd = false`: elements
+  `2i`) or odd (`2i + 1`) halfwords / words of VA and VB, into word /
+  doubleword element `i`. Halfwords baseline AltiVec (v2.03), words v2.07
+  (POWER8). -/
+  | mulu (odd word : Bool) (d n m : VReg)
+  /-- `vmuluwm` (§6.9.1.3, p. 337): the low 32 bits of each word's product.
+  v2.07 (POWER8). -/
+  | muluwm (d n m : VReg)
+  /-- `vmladduhm` (§6.9.1.4, p. 341): `VA · VB + VC` modulo 2^16 per
+  halfword. Baseline AltiVec (v2.03). -/
+  | mladduhm (d n m c : VReg)
+  /-- `vslh` / `vsrh` (§6.9.6, pp. 402, 405): each halfword of VA shifted
+  left / logically right by the low four bits of the same halfword of VB.
+  Baseline AltiVec (v2.03). -/
+  | shifth (right : Bool) (d n m : VReg)
+  /-- `vsplth` / `vspltw` (§6.8.4, pp. 283–284): every halfword / word is
+  element `uim` of VB; `uim < 8` / `uim < 4`. Baseline AltiVec (v2.03). -/
+  | splat (word : Bool) (d n : VReg) (uim : Nat)
+  /-- `vspltish` / `vspltisw` (§6.8.4, p. 285): every halfword / word is the
+  five-bit signed immediate `sim`, sign-extended; `-16 ≤ sim < 16`.
+  Baseline AltiVec (v2.03). -/
+  | splatImm (word : Bool) (d : VReg) (sim : Int)
   deriving DecidableEq, Repr
 
 /-- The destination and result; reject unencodable and reserved immediates.
@@ -132,5 +176,29 @@ def VOp.eval (v : VReg → BitVec 128) : VOp → Option (VReg × BitVec 128)
     else none
   | .rlw d n m => some (d, (List.range 4).foldl (fun x i => x |||
       (((vword (v n) i).rotateLeft ((vword (v m) i).toNat % 32)).setWidth 128 <<< (32 * (3 - i)))) 0)
+  | .addh d n m => some (d, ofVHwords fun i => vhword (v n) i + vhword (v m) i)
+  | .sub w d n m => some (d, if w then ofVWords fun i => vword (v n) i - vword (v m) i
+      else ofVHwords fun i => vhword (v n) i - vhword (v m) i)
+  | .minu w d n m => some (d, if w then
+      ofVWords fun i => if (vword (v n) i).toNat < (vword (v m) i).toNat then vword (v n) i else vword (v m) i
+    else
+      ofVHwords fun i => if (vhword (v n) i).toNat < (vhword (v m) i).toNat then vhword (v n) i else vhword (v m) i)
+  | .mulu odd w d n m => some (d, if w then
+      let p := fun i => BitVec.ofNat 64
+        ((vword (v n) (2 * i + odd.toNat)).toNat * (vword (v m) (2 * i + odd.toNat)).toNat)
+      p 0 ++ p 1
+    else ofVWords fun i => BitVec.ofNat 32
+      ((vhword (v n) (2 * i + odd.toNat)).toNat * (vhword (v m) (2 * i + odd.toNat)).toNat))
+  | .muluwm d n m => some (d, ofVWords fun i => vword (v n) i * vword (v m) i)
+  | .mladduhm d n m c => some (d, ofVHwords fun i => vhword (v n) i * vhword (v m) i + vhword (v c) i)
+  | .shifth r d n m => some (d, ofVHwords fun i =>
+      if r then vhword (v n) i >>> ((vhword (v m) i).toNat % 16)
+      else vhword (v n) i <<< ((vhword (v m) i).toNat % 16))
+  | .splat w d n uim =>
+    if w then (if uim < 4 then some (d, ofVWords fun _ => vword (v n) uim) else none)
+    else if uim < 8 then some (d, ofVHwords fun _ => vhword (v n) uim) else none
+  | .splatImm w d sim => if -16 ≤ sim ∧ sim < 16 then
+      some (d, if w then ofVWords fun _ => BitVec.ofInt 32 sim else ofVHwords fun _ => BitVec.ofInt 16 sim)
+    else none
 
 end VG.PPC64LE

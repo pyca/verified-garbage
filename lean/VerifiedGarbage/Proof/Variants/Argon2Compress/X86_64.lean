@@ -20,7 +20,8 @@ open VG VG.X86_64 VG.Proof.Argon2.X86_64 in
 @[instance_reducible] def scalar : CompressImpl := Proof.Variants.Argon2Compress.X86_64.Scalar.variant
 
 /-- Every implementation, best first: each function generic over them is
-emitted with each (the registration files that import this). -/
+emitted with each (the registration files that import this), and its
+dispatcher tries them in this order. -/
 def variants := [avx512, avx2, scalar]
 
 end VG.Proof.Variants.Argon2Compress.X86_64

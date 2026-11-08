@@ -70,6 +70,18 @@ Modelling choices:
   successor; it does not cover POWER10 or later. The 32-bit `mullw` is left
   out: the survey notes that older cores may terminate it early depending
   on its operands.
+  The vector multiplies (`vmuleuh`, `vmulouh`, `vmuleuw`, `vmulouw`,
+  `vmuluwm`, `vmladduhm`; `VOp.mulu`, `.muluwm`, `.mladduhm`) multiply
+  several elements at once, which the same survey assumes constant time
+  ("When a vector instruction performs two or more multiplications in
+  parallel, it can be assumed that they are constant-time"). IBM's
+  "POWER9 Processor User's Manual" (OpenPOWER, v2.0, 9 April 2018),
+  Appendix A, Table A-1 "Instruction Properties", gives each of them a
+  minimum latency equal to its maximum (7 cycles, in the DP-XC pipe), as it
+  does the halfword and word adds, subtracts, minimums, shifts and splats
+  added with them (2 or 3 cycles), where an instruction whose timing
+  depends on its operands has a range (`divd`: 12 to 24). No such table
+  for POWER8 or POWER10 was found.
 * Calls are `bl`, or indirect through `r12` (`bctrl`, `mtctr r12` then
   `bctrl`: `icall`, the instruction of an indirect call, `Code.icall`), and
   returns `blr` (Book I §2.4, "Branch Instructions"). An indirect call puts
