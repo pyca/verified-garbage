@@ -85,8 +85,14 @@ def aesDecryptContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       Zeroize.scrubbed m m' scratch 2176)
     (stack := stack)
 
-/-- The `# Safety` items the two functions share. -/
+/-- The `# Safety` items of the functions of the AES modes whose contracts
+leave `scratch` unspecified. -/
 def aesSafety : List String := [
+  "`rounds` must be 10, 12 or 14.",
+  "The contents of `scratch` on return are unspecified."]
+
+/-- The `# Safety` items the two CBC functions share. -/
+def cbcSafety : List String := [
   "`rounds` must be 10, 12 or 14.",
   "On return each byte of `scratch` is unchanged or zero."]
 
@@ -104,7 +110,7 @@ def aesEncryptApi : Api where
     writes it. No padding is added.\n\n\
     Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` \
     and `n` may affect timing, not the key schedule, the chaining value or the data."
-  safety := aesSafety
+  safety := cbcSafety
 
 /-- `vg_aes_cbc_decrypt` on every target. -/
 def aesDecryptApi : Api where
@@ -121,6 +127,6 @@ def aesDecryptApi : Api where
     padding is removed.\n\n\
     Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` \
     and `n` may affect timing, not the key schedule, the chaining value or the data."
-  safety := aesSafety
+  safety := cbcSafety
 
 end VG.Spec.Cbc
