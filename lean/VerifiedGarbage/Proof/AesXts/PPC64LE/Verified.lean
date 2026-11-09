@@ -9,11 +9,17 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
 public import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
+public import VerifiedGarbage.Proof.AesXts.PPC64LE.Rounds
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Vec
 import VerifiedGarbage.Proof.AesXts.PPC64LE.Steps
 import VerifiedGarbage.Proof.AesXts.Alpha
 meta import VerifiedGarbage.Proof.AesXts.Alpha
 import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Groups
 meta import VerifiedGarbage.Impl.AesXts.PPC64LE
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Call
 meta import VerifiedGarbage.Proof.AesXts.Spec
@@ -24,6 +30,12 @@ meta import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
 meta import VerifiedGarbage.Proof.AesXts.PPC64LE.Steps
 meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.AesXts.PPC64LE.Rounds
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Groups
 
 /-!
 # XTS-AES on PPC64LE: the contracts
@@ -34,6 +46,11 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 tweaks doubled in two words and saved in the slots, then the blocks in
 vector registers through `Proof/Aes/PPC64LE/Crypto/`'s rounds), and the
 contracts of `Spec/Xts/Contract.lean` from `modePPC64LE (xtsMode enc)`.
+
+The groups keep round keys 1–9 in `kreg 1` … `kreg 9` (`KeysIn`), which
+`preload` loads once before the first group (`preload_ok`): AES-CBC's
+`batchedX_wp` and `batchedX_ct` carry them from group to group, and the
+rounds with them are `Rounds.lean`'s `aesRes_ok`.
 -/
 
 @[expose] public section
@@ -99,18 +116,84 @@ theorem wb_alpha (a b : BitVec 64) : wb (aLo a b) (aHi a b) = Spec.Xts.mulAlpha 
   rw [ha, hb, bytes_pair, bytes_pair] at e
   exact e
 
+/-! ## Steps that leave the vector registers as they were -/
+
+section
+variable {is : List Instr} {s : State} {Q : State → Prop}
+
+theorem wpV_li {d : Reg} {imm : Nat} (h : imm < 2 ^ 15)
+    (k : ∀ s', Upd s s' d (BitVec.ofNat 64 imm) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.li d imm :: is)) s Q :=
+  WP.cons (exec_li h) (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_sub {d n m : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n - s.gpr m) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.sub d n m :: is)) s Q :=
+  WP.cons exec_sub (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_and {d n m : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n &&& s.gpr m) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .and d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_xor {d n m : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n ^^^ s.gpr m) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .xor d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_or {d n m : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n ||| s.gpr m) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n m :: is)) s Q :=
+  WP.cons exec_logic (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_lsr {d n : Reg} {sh : Nat} (h : sh < 64)
+    (k : ∀ s', Upd s s' d (s.gpr n >>> sh) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.lsr .d d n sh :: is)) s Q :=
+  WP.cons (exec_lsr_d h) (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_lsl {d n : Reg} {sh : Nat} (h : sh < 64)
+    (k : ∀ s', Upd s s' d (s.gpr n <<< sh) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.lsl d n sh :: is)) s Q :=
+  WP.cons (exec_lsl h) (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_addi {d n : Reg} {imm : Nat} (hn : n ≠ .r0) (h : imm < 2 ^ 15)
+    (k : ∀ s', Upd s s' d (s.gpr n + BitVec.ofNat 64 imm) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.addi d n imm :: is)) s Q :=
+  WP.cons (exec_addi hn h) (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_subi {d n : Reg} {imm : Nat} (hn : n ≠ .r0) (h : imm ≤ 2 ^ 15)
+    (k : ∀ s', Upd s s' d (s.gpr n - BitVec.ofNat 64 imm) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.subi d n imm :: is)) s Q :=
+  WP.cons (exec_subi hn h) (k _ (Upd.write _ _ _) rfl)
+
+theorem wpV_ld {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15 ∧ off % 4 = 0)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hin : InRegions (s.rd ++ s.wr) a 8)
+    (k : ∀ s', Upd s s' t (s.mem.readW a 64) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.load .d t n off :: is)) s Q := by
+  refine WP.cons (s' := s.write t (s.mem.readW a 64)) ?_ (k _ (Upd.write _ _ _) rfl)
+  rw [exec_load_d hn ho (by rw [ha]; exact hin), ha]
+
+theorem wpV_std {t n : Reg} {off : Nat} {a : Addr} (hn : n ≠ .r0) (ho : off < 2 ^ 15 ∧ off % 4 = 0)
+    (ha : s.gpr n + BitVec.ofNat 64 off = a) (hout : InRegions s.wr a 8)
+    (k : ∀ s', Mupd s s' (s.mem.writeW a (s.gpr t)) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.store .d t n off :: is)) s Q := by
+  refine WP.cons (s' := { s with mem := s.mem.writeW a (s.gpr t) }) ?_ (k _ ⟨rfl, rfl, rfl, rfl⟩ rfl)
+  rw [exec_store_d hn ho (by rw [ha]; exact hout), ha]
+
+end
+
 /-- `dbl`: the tweak in `r9` and `r10` times `α`. -/
 theorem dbl_wp {s : State} {rest : List Instr} {Φ : State → Prop}
     (k : ∀ s', s'.gpr .r9 = aLo (s.gpr .r9) (s.gpr .r10) → s'.gpr .r10 = aHi (s.gpr .r9) (s.gpr .r10) →
       (∀ r, r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → r ≠ .r12 → s'.gpr r = s.gpr r) →
-      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → WP isa (.block rest) s' Φ) :
+      s'.mem = s.mem → s'.rd = s.rd → s'.wr = s.wr → s'.vpr = s.vpr → WP isa (.block rest) s' Φ) :
     WP isa (.block (dbl ++ rest)) s Φ := by
   simp only [dbl, List.cons_append, List.nil_append]
-  refine wp_lsr (by decide) fun s₃ u₃ => wp_li (by decide) fun s₄ u₄ => wp_sub fun s₅ u₅ => ?_
-  refine wp_li (by decide) fun s₆ u₆ => wp_and fun s₇ u₇ => ?_
-  refine wp_lsr (by decide) fun s₈ u₈ => wp_lsl (by decide) fun s₉ u₉ => wp_xor fun s₁₀ u₁₀ => ?_
-  refine wp_lsl (by decide) fun s₁₁ u₁₁ => wp_or fun s₁₂ u₁₂ => ?_
-  refine k s₁₂ ?_ ?_ (fun r h9 h10 h11 h12 => ?_) ?_ ?_ ?_
+  refine wpV_lsr (by decide) fun s₃ u₃ v₃ => wpV_li (by decide) fun s₄ u₄ v₄ => wpV_sub fun s₅ u₅ v₅ => ?_
+  refine wpV_li (by decide) fun s₆ u₆ v₆ => wpV_and fun s₇ u₇ v₇ => ?_
+  refine wpV_lsr (by decide) fun s₈ u₈ v₈ => wpV_lsl (by decide) fun s₉ u₉ v₉ => wpV_xor fun s₁₀ u₁₀ v₁₀ => ?_
+  refine wpV_lsl (by decide) fun s₁₁ u₁₁ v₁₁ => wpV_or fun s₁₂ u₁₂ v₁₂ => ?_
+  refine k s₁₂ ?_ ?_ (fun r h9 h10 h11 h12 => ?_) ?_ ?_ ?_ ?_
   · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, u₉.gpr, u₉.other .r11 (by decide),
       u₈.other .r9 (by decide), u₈.other .r11 (by decide), u₇.gpr, u₇.other .r9 (by decide), u₆.gpr,
       u₆.other .r11 (by decide), u₆.other .r9 (by decide), u₅.gpr, u₅.other .r9 (by decide), u₄.gpr,
@@ -125,6 +208,7 @@ theorem dbl_wp {s : State} {rest : List Instr} {Φ : State → Prop}
   · rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem]
   · rw [u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd]
   · rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr]
+  · rw [v₁₂, v₁₁, v₁₀, v₉, v₈, v₇, v₆, v₅, v₄, v₃]
 
 /-! ## The tweaks of a group, in registers -/
 
@@ -144,6 +228,7 @@ structure TJ (enc : Bool) (s₀ : State) (k m : Nat) (s t : State) : Prop where
   frame : Frame [⟨S s₀, 144⟩] s.mem t.mem
   slot : ∀ j < m, bytesAt t.mem (sl s₀ j) 16 = chainK (AesXts.xtsMode enc) s₀ (k + j)
   w : wb (t.gpr .r9) (t.gpr .r10) = chainK (AesXts.xtsMode enc) s₀ (k + m)
+  v : t.vpr = s.vpr
 
 theorem tweakRegs_wp (enc : Bool) {s₀ : State} {k : Nat} (hk : k + 8 ≤ N s₀) {s : State}
     (hW₀ : s.wr = [ivR s₀, dataR s₀, scrR s₀]) (hS : s.gpr .r19 = S s₀)
@@ -154,7 +239,7 @@ theorem tweakRegs_wp (enc : Bool) {s₀ : State} {k : Nat} (hk : k + 8 ≤ N s�
   induction m generalizing rest Φ with
   | zero =>
     exact cont s ⟨fun _ _ _ _ _ => rfl, rfl, rfl, Frame.refl _ _, fun j hj => absurd hj (Nat.not_lt_zero _),
-      by simpa using h0⟩
+      by simpa using h0, rfl⟩
   | succ m ih =>
     rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
       List.append_assoc]
@@ -162,17 +247,17 @@ theorem tweakRegs_wp (enc : Bool) {s₀ : State} {k : Nat} (hk : k + 8 ≤ N s�
     have hW : t.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [ht.wr, hW₀]
     have r19 : t.gpr .r19 = S s₀ := by rw [ht.g _ (by decide) (by decide) (by decide) (by decide), hS]
     simp only [tweakReg, List.cons_append, List.nil_append]
-    refine wp_std (a := sl s₀ m) (by decide) ⟨by simp only [slot]; omega, by simp only [slot]; omega⟩
-      (by rw [r19]) (by rw [hW]; exact in_rw (by simp) (cSl s₀ (by omega))) fun t₁ u₁ => ?_
-    refine wp_std (a := sl s₀ m + BitVec.ofNat 64 8) (by decide)
+    refine wpV_std (a := sl s₀ m) (by decide) ⟨by simp only [slot]; omega, by simp only [slot]; omega⟩
+      (by rw [r19]) (by rw [hW]; exact in_rw (by simp) (cSl s₀ (by omega))) fun t₁ u₁ v₁ => ?_
+    refine wpV_std (a := sl s₀ m + BitVec.ofNat 64 8) (by decide)
       ⟨by simp only [slot]; omega, by simp only [slot]; omega⟩
       (by rw [u₁.gpr, r19, sl8]) (by rw [u₁.wr, hW]; exact in_rw (by simp) (cSl8 s₀ (by omega)))
-      fun t₂ u₂ => ?_
+      fun t₂ u₂ v₂ => ?_
     have hm₂ : t₂.mem = (t.mem.writeW (sl s₀ m) (t.gpr .r9)).writeW (sl s₀ m + BitVec.ofNat 64 8)
         (t.gpr .r10) := by rw [u₂.mem, u₁.mem, u₁.gpr]
-    refine dbl_wp fun t₃ g9 g10 g₃ mem₃ rd₃ wr₃ => cont t₃ ?_
+    refine dbl_wp fun t₃ g9 g10 g₃ mem₃ rd₃ wr₃ v₃ => cont t₃ ?_
     refine ⟨fun r h9 h10 h11 h12 => ?_, by rw [rd₃, u₂.rd, u₁.rd, ht.rd], by rw [wr₃, u₂.wr, u₁.wr, ht.wr],
-      ?_, fun j hj => ?_, ?_⟩
+      ?_, fun j hj => ?_, ?_, by rw [v₃, v₂, v₁, ht.v]⟩
     · rw [g₃ r h9 h10 h11 h12, u₂.gpr, u₁.gpr, ht.g r h9 h10 h11 h12]
     · rw [mem₃, hm₂]
       exact ht.frame.trans ((pair_frame _ _ _ _).sub fun r hr => by
@@ -195,6 +280,7 @@ structure TW (enc : Bool) (s₀ : State) (k : Nat) (s t : State) : Prop where
   frame : Frame [ivR s₀, ⟨S s₀, 144⟩] s.mem t.mem
   slot : ∀ j < 8, bytesAt t.mem (sl s₀ j) 16 = chainK (AesXts.xtsMode enc) s₀ (k + j)
   iv : bytesAt t.mem (Iv s₀) 16 = chainK (AesXts.xtsMode enc) s₀ (k + 8)
+  v : t.vpr = s.vpr
 
 theorem tweaks8_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s₀) {s : State}
     (h : LInv (AesXts.xtsMode enc) s₀ k s) {rest : List Instr} {Φ : State → Prop}
@@ -203,10 +289,10 @@ theorem tweaks8_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
   have hR : s.rd ++ s.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀] := h.regs hp
   have hW : s.wr = [ivR s₀, dataR s₀, scrR s₀] := h.wrs hp
   simp only [tweaks8, List.cons_append, List.nil_append, List.append_assoc]
-  refine wp_ld (a := Iv s₀) (by decide) (by decide) (by rw [h.r16, ofNat_zero_add])
-    (by rw [hR]; exact in_rw (by simp) cIv0) fun t₁ u₁ => ?_
-  refine wp_ld (a := Iv s₀ + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₁.other _ (by decide), h.r16])
-    (by rw [u₁.rd, u₁.wr, hR]; exact in_rw (by simp) cIv8) fun t₂ u₂ => ?_
+  refine wpV_ld (a := Iv s₀) (by decide) (by decide) (by rw [h.r16, ofNat_zero_add])
+    (by rw [hR]; exact in_rw (by simp) cIv0) fun t₁ u₁ v₁ => ?_
+  refine wpV_ld (a := Iv s₀ + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₁.other _ (by decide), h.r16])
+    (by rw [u₁.rd, u₁.wr, hR]; exact in_rw (by simp) cIv8) fun t₂ u₂ v₂ => ?_
   have w₂ : wb (t₂.gpr .r9) (t₂.gpr .r10) = chainK (AesXts.xtsMode enc) s₀ k := by
     rw [u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, ← bytes_read, h.iv]
   refine tweakRegs_wp enc hk (by rw [u₂.wr, u₁.wr, hW]) (by rw [u₂.other _ (by decide),
@@ -215,15 +301,15 @@ theorem tweaks8_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : 
     rw [ht.g _ (by decide) (by decide) (by decide) (by decide), u₂.other _ (by decide), u₁.other _ (by decide),
       h.r16]
   have hW₃ : t₃.wr = [ivR s₀, dataR s₀, scrR s₀] := by rw [ht.wr, u₂.wr, u₁.wr, hW]
-  refine wp_std (a := Iv s₀) (by decide) (by decide) (by rw [r16, ofNat_zero_add])
-    (by rw [hW₃]; exact in_rw (by simp) cIv0) fun t₄ u₄ => ?_
-  refine wp_std (a := Iv s₀ + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₄.gpr, r16])
-    (by rw [u₄.wr, hW₃]; exact in_rw (by simp) cIv8) fun t₅ u₅ => cont t₅ ?_
+  refine wpV_std (a := Iv s₀) (by decide) (by decide) (by rw [r16, ofNat_zero_add])
+    (by rw [hW₃]; exact in_rw (by simp) cIv0) fun t₄ u₄ v₄ => ?_
+  refine wpV_std (a := Iv s₀ + BitVec.ofNat 64 8) (by decide) (by decide) (by rw [u₄.gpr, r16])
+    (by rw [u₄.wr, hW₃]; exact in_rw (by simp) cIv8) fun t₅ u₅ v₅ => cont t₅ ?_
   have hm₅ : t₅.mem = (t₃.mem.writeW (Iv s₀) (t₃.gpr .r9)).writeW (Iv s₀ + BitVec.ofNat 64 8)
       (t₃.gpr .r10) := by rw [u₅.mem, u₄.mem, u₄.gpr]
   have hm₂ : t₂.mem = s.mem := by rw [u₂.mem, u₁.mem]
   refine ⟨fun r h9 h10 h11 h12 => ?_, by rw [u₅.rd, u₄.rd, ht.rd, u₂.rd, u₁.rd],
-    by rw [u₅.wr, u₄.wr, ht.wr, u₂.wr, u₁.wr], ?_, fun j hj => ?_, ?_⟩
+    by rw [u₅.wr, u₄.wr, ht.wr, u₂.wr, u₁.wr], ?_, fun j hj => ?_, ?_, by rw [v₅, v₄, ht.v, v₂, v₁]⟩
   · rw [u₅.gpr, u₄.gpr, ht.g r h9 h10 h11 h12, u₂.other _ h10, u₁.other _ h9]
   · rw [hm₅, ← hm₂]
     refine (ht.frame.sub fun r hr => ?_).trans ((pair_frame _ _ _ _).sub fun r hr => ?_)
@@ -238,6 +324,123 @@ section Vec
 open VG.Proof.Aes.PPC64LE.Crypto (Local Inputs aesState result schedule BatchRead readValue Stored
   batchFacts breg_mem breg_ne load_state aesState_byte)
 open VG.Impl.Aes.PPC64LE.Crypto (breg batchRegs key mask byteMask)
+open VG.Proof.Aes.PPC64LE.Crypto (IsKey Local)
+
+/-- Round keys 1–9 of the schedule in `kreg 1` … `kreg 9`, as `preload`
+leaves them and the groups keep them. -/
+def KeysIn (s₀ : State) (v : VReg → BitVec 128) : Prop :=
+  ∀ i, 1 ≤ i → i ≤ 9 → IsKey (v (kreg i)) (Spec.Aes.roundKey (wK s₀) i)
+
+/-- The registers of the round keys are none of the others the groups use. -/
+theorem kreg_out (i : Nat) {l : List VReg}
+    (hl : ∀ r ∈ l, r ∈ ([.v0, .v1, .v2, .v3, .v4, .v5, .v6, .v7, .v8, .v9, .v19] : List VReg)) :
+    kreg i ∉ l := fun h => by
+  have h1 := kreg_mem i
+  have h2 := hl _ h
+  revert h1 h2
+  generalize kreg i = r
+  cases r <;> decide
+
+theorem kreg_inj {i j : Nat} (hi : 1 ≤ i ∧ i ≤ 9) (hj : 1 ≤ j ∧ j ≤ 9) (h : kreg i = kreg j) : i = j := by
+  have : ∀ i < 10, ∀ j < 10, 1 ≤ i → 1 ≤ j → kreg i = kreg j → i = j := by decide
+  exact this i (by omega) j (by omega) hi.1 hj.1 h
+
+/-- `advance8_regs`, which leaves the vector registers as they were. -/
+theorem advance8_regsV {s₀ : State} {k : Nat} (hk : k + 8 ≤ N s₀) {s : State} {Φ : State → Prop}
+    (h17 : s.gpr .r17 = blk s₀ k) (h18 : s.gpr .r18 = BitVec.ofNat 64 (N s₀ - k))
+    (h : ∀ s', s'.gpr .r17 = blk s₀ (k + 8) → s'.gpr .r18 = BitVec.ofNat 64 (N s₀ - (k + 8)) →
+      (∀ r, r ≠ .r17 → r ≠ .r18 → s'.gpr r = s.gpr r) → s'.mem = s.mem → s'.rd = s.rd →
+      s'.wr = s.wr → s'.vpr = s.vpr → Φ s') :
+    WP isa (.block advance8) s Φ := by
+  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
+  unfold advance8
+  refine wpV_addi (by decide) (by decide) fun s₁ u₁ v₁ => wpV_subi (by decide) (by decide) fun s₂ u₂ v₂ =>
+    wp_nil ?_
+  refine h s₂ ?_ ?_ (fun r h₁ h₂ => ?_) ?_ ?_ ?_ ?_
+  · rw [u₂.other _ (by decide), u₁.gpr, h17, Offset.add_add_eq _ (c := 16 * (k + 8)) (by omega)]
+  · rw [u₂.gpr, u₁.other _ (by decide), h18, Offset.ofNat_sub_ofNat (by omega)]; rfl
+  · rw [u₂.other _ h₂, u₁.other _ h₁]
+  · rw [u₂.mem, u₁.mem]
+  · rw [u₂.rd, u₁.rd]
+  · rw [u₂.wr, u₁.wr]
+  · rw [v₂, v₁]
+
+/-- The invariant holds after code that writes only `r0`, `r9`, `r11`, `r12`
+and vector registers. -/
+theorem linv_ofLocal {M : AesCbc.Mode} {s₀ : State} {k : Nat} {s t : State} {vs : List VReg}
+    (h : LInv M s₀ k s) (hl : Local [.r0, .r9, .r11, .r12] vs s t) : LInv M s₀ k t where
+  r14 := (hl.keep.gpr (by decide)).trans h.r14
+  r15 := (hl.keep.gpr (by decide)).trans h.r15
+  r16 := (hl.keep.gpr (by decide)).trans h.r16
+  r17 := (hl.keep.gpr (by decide)).trans h.r17
+  r18 := (hl.keep.gpr (by decide)).trans h.r18
+  r19 := (hl.keep.gpr (by decide)).trans h.r19
+  keep r hr hv := by
+    obtain ⟨h0, -, -, -, -, -, h9, -, h11, h12⟩ := pres_ne hr
+    exact (hl.keep.gpr (by simp [h0, h9, h11, h12])).trans (h.keep r hr hv)
+  rd := hl.keep.2.1.trans h.rd
+  wr := hl.keep.2.2.trans h.wr
+  frame := by rw [hl.mem]; exact h.frame
+  data := by rw [hl.mem]; exact h.data
+  iv := by rw [hl.mem]; exact h.iv
+
+/-- After the mask and the first `c` round keys of `preload`. -/
+structure PInv (s₀ s : State) (c : Nat) (u : State) : Prop where
+  loc : Local [.r0, .r9, .r11, .r12] [.v0, .v1, .v19, .v10, .v11, .v12, .v13, .v14, .v15, .v16, .v17, .v18] s u
+  r0 : u.gpr .r0 = 0
+  mask : u.vpr mask = byteMask
+  keys : ∀ i, 1 ≤ i → i ≤ c → IsKey (u.vpr (kreg i)) (Spec.Aes.roundKey (wK s₀) i)
+
+theorem preload_ok (M : AesCbc.Mode) : PreOk M KeysIn preload := by
+  intro s₀ hp k s h
+  have hR := h.regs hp
+  have hw : bytesAt s.mem (W s₀) (16 * (R s₀ + 1)) = wK s₀ := UPre.sched_bytes hp (UPre.big_of h.frame)
+  have hR₀ := hp.rounds
+  rw [preload, WP.block_append_iff]
+  refine WP.mono (Proof.Aes.PPC64LE.Crypto.setup_ok s) fun t ⟨h0, hm, _, hl⟩ => ?_
+  refine WP.mono (wp_range_flatMap (M := isa) (PInv s₀ s) (fun c u hc hu => ?_) 9 (Nat.le_refl _) t
+    ⟨hl.weaken (by simp) (by simp), h0, hm, fun i h1 h2 => absurd h2 (by omega)⟩) fun u hu =>
+      ⟨linv_ofLocal h hu.loc, hu.keys⟩
+  refine wpV_addi (by decide) (by omega) fun u₁ up₁ uv₁ => ?_
+  have l₁ : Local [.r9] [] u u₁ :=
+    ⟨⟨fun r hr => up₁.other r (by simpa using hr), up₁.rd, up₁.wr⟩, fun r _ => congrFun uv₁ r, up₁.mem⟩
+  have r9 : u₁.gpr .r9 = W s₀ + BitVec.ofNat 64 (16 * (c + 1)) := by
+    rw [up₁.gpr, hu.loc.keep.gpr (by decide), h.r14]
+  refine WP.mono (Proof.Aes.PPC64LE.Crypto.load_ok (kreg (c + 1)) .r9 u₁ (by decide) (kreg_ne_mask _)
+    ((l₁.keep.gpr (by decide)).trans hu.r0) ((l₁.v _ (by simp)).trans hu.mask) (by
+      rw [l₁.keep.2.1, l₁.keep.2.2, hu.loc.keep.2.1, hu.loc.keep.2.2, hR, r9]
+      have : c + 1 ≤ 14 := by omega
+      exact in_rw (r := schR s₀) (by simp) (Offset.contains_base (d := 16 * (c + 1)) (n := 16) (k := 240) _
+        (by omega) (by omega)))) fun u₂ ⟨hv, ho⟩ => ?_
+  have l₂ := Local.of_vector ho
+  refine ⟨(hu.loc.trans (l₁.trans l₂)).weaken (by simp) fun r hr => ?_, (l₂.keep.gpr (by decide)).trans
+    ((l₁.keep.gpr (by decide)).trans hu.r0), (l₂.v _ (by simpa using (kreg_ne_mask (c + 1)).symm)).trans
+    ((l₁.v _ (by simp)).trans hu.mask), fun i h1 h2 => ?_⟩
+  · simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with h | h | h
+    · simpa using h
+    · simp at h
+    · subst h
+      have := kreg_mem (c + 1)
+      revert this
+      generalize kreg (c + 1) = r
+      cases r <;> decide
+  · by_cases hi : i = c + 1
+    · subst hi
+      rw [hv, r9, l₁.mem, hu.loc.mem, ← hw]
+      exact Proof.Aes.PPC64LE.Crypto.key_read s.mem (W s₀) (by rcases hR₀ with e | e | e <;> omega)
+    · rw [l₂.v _ (by simpa using fun e => hi (kreg_inj ⟨h1, by omega⟩ ⟨by omega, by omega⟩ e)),
+        l₁.v _ (by simp)]
+      exact hu.keys i h1 (by omega)
+
+theorem preload_taint :
+    ∃ h, (vectorTaint.check (Taint.ofRegs vars) (.block preload) h).isSome = true := ⟨_, by taint_decide⟩
+
+theorem preload_ct (M : AesCbc.Mode) : PreCt M preload := fun {_} {_} _ _ hq _ => by
+  obtain ⟨_, ht⟩ := preload_taint
+  exact RelCT.taint (A := vectorTaint) (Taint.ofRegs vars)
+    (fun _ _ h => ⟨by rw [h.1.2, h.2.2, pub_sp hq],
+      fun r h' => LInv.agree hq h.1.1 h.2.1 r (Taint.mem_ofRegs.mp h')⟩) ht
 
 /-- A block of XTS from the vectors: `x` the block, `c` its tweak. -/
 theorem xts_vec (enc : Bool) (R : Nat) (w : List Byte) (m : Mem) (P Q : Addr) (res : BitVec 128)
@@ -265,6 +468,7 @@ structure Front (enc : Bool) (s₀ : State) (k : Nat) (s u : State) : Prop where
   iv : bytesAt u.mem (Iv s₀) 16 = chainK (AesXts.xtsMode enc) s₀ (k + 8)
   val : ∀ j < 8, u.vpr (breg j) =
     rev128 (u.mem.read (blk s₀ (k + j)) 16) ^^^ rev128 (u.mem.read (sl s₀ j) 16)
+  kv : ∀ i, u.vpr (kreg i) = s.vpr (kreg i)
 
 theorem front_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s₀) {s : State}
     (h : LInv (AesXts.xtsMode enc) s₀ k s) :
@@ -287,7 +491,8 @@ theorem front_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k 
   refine ⟨fun r hr => ?_, by rw [hx.loc.keep.gpr (by decide), hu.r6], by rw [hx.loc.keep.gpr (by decide), hu.r3],
     inputs_of_local hu.inp hx.loc (by decide) (by decide) (by decide) (by simp [(batchFacts ⟨8, by decide⟩).2.2.1]),
     by rw [hx.loc.keep.2.1, hu.rd, ht.rd], by rw [hx.loc.keep.2.2, hu.wr, ht.wr],
-    by rw [mx]; exact ht.frame, by rw [mx]; exact ht.slot, by rw [mx]; exact ht.iv, fun j hj => ?_⟩
+    by rw [mx]; exact ht.frame, by rw [mx]; exact ht.slot, by rw [mx]; exact ht.iv, fun j hj => ?_,
+    fun i => by rw [hx.loc.v _ (kreg_out i (by decide)), hu.vs _ (kreg_out i (by decide)), ht.v]⟩
   · obtain ⟨-, -, -, -, h7, -⟩ := pres_ne hr
     rw [hx.loc.keep.gpr (by simpa using h7), hu.g r hr, gt r hr]
   · rw [hx.val j hj, ite_eq_left hj, hu.val j hj, mx, hu.mem]
@@ -296,15 +501,15 @@ theorem back_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k +
     (h : LInv (AesXts.xtsMode enc) s₀ k s) (hu : Front enc s₀ k s u)
     (hv : ∀ b ∈ batchRegs 8, aesState (v.vpr b) =
       result (!enc) (R s₀) (schedule (R s₀) u) (aesState (u.vpr b)))
-    (hl : Local [.r9, .r10] (key :: batchRegs 8) u v) :
+    (hl : Local [.r9, .r10, .r12] (key :: batchRegs 8) u v) (hx₀ : KeysIn s₀ v.vpr) :
     WP isa (.block (xorSlots ++ (batchRegs 8).flatMap (fun b => Impl.Aes.PPC64LE.Crypto.storeAdvance b) ++
-      advance8)) v (LInv (AesXts.xtsMode enc) s₀ (k + 8)) := by
+      advance8)) v fun t => LInv (AesXts.xtsMode enc) s₀ (k + 8) t ∧ KeysIn s₀ t.vpr := by
   have hR := h.regs hp
   have hW := h.wrs hp
   have facts := batchFacts ⟨8, by decide⟩
   have gv (r : Reg) (hr : r ∈ preserved) : v.gpr r = s.gpr r := by
-    obtain ⟨-, -, -, -, -, -, h9, h10, -⟩ := pres_ne hr
-    rw [hl.keep.gpr (by simp [h9, h10]), hu.g r hr]
+    obtain ⟨-, -, -, -, -, -, h9, h10, -, h12⟩ := pres_ne hr
+    rw [hl.keep.gpr (by simp [h9, h10, h12]), hu.g r hr]
   have h0 : v.gpr .r0 = 0 := (hl.keep.gpr (by decide)).trans hu.inp.zero
   have hm : v.vpr mask = byteMask := (hl.v _ (by simp [facts.2.2.1])).trans hu.inp.mask
   have rwv : v.rd ++ v.wr = s.rd ++ s.wr := by rw [hl.keep.2.1, hl.keep.2.2, hu.rd, hu.wr]
@@ -320,8 +525,11 @@ theorem back_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k +
   have gy (r : Reg) (hr : r ∈ preserved) : y.gpr r = s.gpr r := by
     obtain ⟨-, -, -, h6, h7, -⟩ := pres_ne hr
     rw [hy.keep.gpr (by simpa using h6), hx.loc.keep.gpr (by simpa using h7), gv r hr]
-  refine advance8_regs hk (by rw [gy _ (by decide), h.r17]) (by rw [gy _ (by decide), h.r18])
-    fun z r17 r18 keep mz rdz wrz => ?_
+  refine advance8_regsV hk (by rw [gy _ (by decide), h.r17]) (by rw [gy _ (by decide), h.r18])
+    fun z r17 r18 keep mz rdz wrz vz => ⟨?_, fun i h1 h9 => ?_⟩
+  swap
+  · rw [vz, hy.vs _ (kreg_out i (by decide)), hx.loc.v _ (kreg_out i (by decide))]
+    exact hx₀ i h1 h9
   have gz (r : Reg) (hr : r ∈ preserved) (h17 : r ≠ .r17) (h18 : r ≠ .r18) : z.gpr r = s.gpr r := by
     rw [keep r h17 h18, gy r hr]
   have mu : x.mem = u.mem := by rw [hx.loc.mem, hl.mem]
@@ -361,13 +569,24 @@ theorem back_wp (enc : Bool) {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k +
     · exact hp.dBG hi
   · rw [mz, bytesAt_frame hy.frame (one_disj (hp.dIB hk)) (by decide), mu, hu.iv]
 
-theorem vgroup_ok (enc : Bool) : GroupOk (AesXts.xtsMode enc) (vgroup (!enc)) := by
-  intro s₀ hp k hk s h
+theorem vgroup_ok (enc : Bool) : GroupOkX (AesXts.xtsMode enc) KeysIn (vgroup (!enc)) := by
+  intro s₀ hp k hk s h hx
   have facts := batchFacts ⟨8, by decide⟩
   rw [vgroup]
   refine WP.seq (WP.mono (front_wp enc hp hk h) fun u hu => ?_)
-  exact WP.seq (WP.mono (Proof.Aes.PPC64LE.Crypto.aes_ok (!enc) (batchRegs 8) facts.1 facts.2.1 facts.2.2.1
-    hu.inp) fun v ⟨hv, hl⟩ => back_wp enc hp hk h hu hv hl)
+  have big : Frame (Big s₀) s₀.mem u.mem :=
+    (UPre.big_of h.frame).trans (hu.frame.sub fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact ⟨ivR s₀, by simp, fun _ h => h⟩
+      · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
+  have hw : schedule (R s₀) u = wK s₀ := by
+    rw [Proof.Aes.PPC64LE.Crypto.schedule, hu.r3, UPre.sched_bytes hp big]
+  have hkr (i : Nat) : kreg i ∉ batchRegs 8 := kreg_out i (by decide)
+  exact WP.seq (WP.mono (aesRes_ok (!enc) (batchRegs 8) facts.1 facts.2.1 facts.2.2.1 hkr hu.inp hp.rounds
+    fun i h1 h9 => by rw [hw, hu.kv]; exact hx i h1 h9) fun v ⟨hv, hl⟩ =>
+      back_wp enc hp hk h hu hv hl fun i h1 h9 => by
+        rw [hl.v _ (kreg_out i (by decide)), hu.kv]; exact hx i h1 h9)
 
 end Vec
 
@@ -386,9 +605,9 @@ theorem encGroup_taint :
 theorem decGroup_taint :
     ∃ h, (vectorTaint.check (Taint.ofRegs vars) (vgroup true) h).isSome = true := ⟨_, by taint_decide⟩
 
-theorem encGroup_ok : GroupOk (AesXts.xtsMode true) (vgroup false) := vgroup_ok true
+theorem encGroup_ok : GroupOkX (AesXts.xtsMode true) KeysIn (vgroup false) := vgroup_ok true
 
-theorem decGroup_ok : GroupOk (AesXts.xtsMode false) (vgroup true) := vgroup_ok false
+theorem decGroup_ok : GroupOkX (AesXts.xtsMode false) KeysIn (vgroup true) := vgroup_ok false
 
 theorem encGroup_ct : GroupCt (AesXts.xtsMode true) (vgroup false) :=
   vgroup_ct false encGroup_taint
@@ -398,21 +617,21 @@ theorem decGroup_ct : GroupCt (AesXts.xtsMode false) (vgroup true) :=
 
 theorem encrypt_correct (s : State) (hs : (modePPC64LE (AesXts.xtsMode true)).pre s) :
     ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (modePPC64LE (AesXts.xtsMode true)).post s s' := by
-  obtain ⟨t, s', he, hg, hlr, hp⟩ := batched_wp encGroup_ok encBody_ok hs
+  obtain ⟨t, s', he, hg, hlr, hp⟩ := batchedX_wp encGroup_ok (preload_ok _) encBody_ok hs
   exact ⟨t, s', he, ⟨hg, Exec.sp he, hlr⟩, hp⟩
 
 theorem decrypt_correct (s : State) (hs : (modePPC64LE (AesXts.xtsMode false)).pre s) :
     ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (modePPC64LE (AesXts.xtsMode false)).post s s' := by
-  obtain ⟨t, s', he, hg, hlr, hp⟩ := batched_wp decGroup_ok decBody_ok hs
+  obtain ⟨t, s', he, hg, hlr, hp⟩ := batchedX_wp decGroup_ok (preload_ok _) decBody_ok hs
   exact ⟨t, s', he, ⟨hg, Exec.sp he, hlr⟩, hp⟩
 
 theorem encrypt_ct : ConstantTime isa (modePPC64LE (AesXts.xtsMode true)).pre
     (modePPC64LE (AesXts.xtsMode true)).pub encrypt :=
-  batched_ct encGroup_ok encGroup_ct encBody_ok encBody_ct
+  batchedX_ct encGroup_ok encGroup_ct (preload_ok _) (preload_ct _) encBody_ok encBody_ct
 
 theorem decrypt_ct : ConstantTime isa (modePPC64LE (AesXts.xtsMode false)).pre
     (modePPC64LE (AesXts.xtsMode false)).pub decrypt :=
-  batched_ct decGroup_ok decGroup_ct decBody_ok decBody_ct
+  batchedX_ct decGroup_ok decGroup_ct (preload_ok _) (preload_ct _) decBody_ok decBody_ct
 
 theorem encrypt_noFrames : encrypt.noFrames = true := by decide +kernel
 
