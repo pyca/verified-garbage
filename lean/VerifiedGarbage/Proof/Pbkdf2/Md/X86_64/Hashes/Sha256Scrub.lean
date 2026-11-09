@@ -10,11 +10,11 @@ import VerifiedGarbage.Proof.Framework.InstancePriority
 import VerifiedGarbage.Proof.Framework.GetElem
 
 /-!
-# SHA-256's streaming and one-shot functions on x86-64, without secret residue
+# SHA-224's and SHA-256's streaming and one-shot functions on x86-64, without secret residue
 
-What `StreamFn.scrub` needs of `updFn`, `finFn` and `digFn` beyond their
-code: their postconditions read the memory on return only within the
-buffers (`X86_64.Scrub.PostOut`). Each variant
+What `StreamFn.scrub` needs of SHA-256's `updFn`, `finFn` and `digFn`, and
+SHA-224's `finFn` and `digFn`, beyond their code: their postconditions read
+the memory on return only within the buffers (`X86_64.Scrub.PostOut`). Each variant
 (`Proof/Variants/MdHash/X86_64/Sha256*.lean`) scrubs them with the granules
 the residue analysis of its own code selects.
 -/
