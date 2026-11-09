@@ -24,4 +24,10 @@ emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
 def variants := [ifma, adx, base]
 
+/-- The implementations of the arithmetic, best first: those of `variants`
+but `ifma`, which differs from `adx` only in its round, for the functions
+that call the arithmetic but never the round (whose instances for `ifma`
+would be `adx`'s). -/
+def arithVariants := [adx, base]
+
 end VG.Proof.Variants.MillerRabin.X86_64

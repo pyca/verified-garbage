@@ -38,8 +38,7 @@ end VG.Artifacts.Ffdh.X86_64
 -- Emit FFDH domain operations for every shared arithmetic backend and exponentiation
 namespace VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact :=
-  if v.roundOnly then [] else [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact := [
   Spec.Ffdh.checkPublicApi.artifact X86_64.target {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
@@ -76,8 +75,7 @@ end VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 namespace VG.Artifacts.Ffdh.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
-    if v.roundOnly then [] else [
+  (VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
       suffix := v.suffix
       stack := 8
@@ -98,7 +96,7 @@ def artifacts : List Artifact :=
       spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v }]) ++
   direct ++
   (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
-    VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
+    VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target {
       suffix := v.suffix

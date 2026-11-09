@@ -109,8 +109,7 @@ open VG.Proof.MlDsa.X86_64.Verify (primsWith prims_okWith)
 open VG.Proof.MlDsa.X86_64.Verify.Prepare (preparePublic_verified prepareSecret_verified preparePublic_spSafe
   prepareSecret_spSafe)
 
-def artifactsFor (v : ArithImpl) : List Artifact :=
-  if v.samplersOnly then [] else [
+def artifactsFor (v : ArithImpl) : List Artifact := [
   (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.PreparedKey.preparePublic (primsWith v.code) Spec.MlDsa.mlDsa44
@@ -153,7 +152,7 @@ def artifactsFor (v : ArithImpl) : List Artifact :=
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) }]
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.MlDsaArith.X86_64.samplerFreeVariants.flatMap fun v => artifactsFor v
 
 end VG.Artifacts.MlDsa.X86_64.PreparedKey
 
