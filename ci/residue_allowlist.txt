@@ -431,8 +431,6 @@ x86_64 vg_ffdh_exchange
 x86_64 vg_ffdh_exchange_exp_ifma
 x86_64 vg_ffdh_exchange_mr_adx
 x86_64 vg_ffdh_exchange_mr_adx_exp_ifma
-x86_64 vg_ffdh_generate_key_cached
-x86_64 vg_ffdh_generate_key_cached_adx
 x86_64 vg_ffdh_generate_key_precompute
 x86_64 vg_ffdh_generate_key_precompute_adx
 x86_64 vg_ffdh_generate_key_search_cached

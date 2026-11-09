@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Ffdh.AArch64.Cached.SatWitness
@@ -36,9 +37,9 @@ private theorem attempt_domain : Spec.Rsa.bytesAt attemptSat.mem 0x3000 128=Sat.
  unfold Sat.domain
  decide +kernel
 
-theorem attempt_shared_sat : ∃ s,(Spec.Ffdh.cachedGenerateKeyContract abi).pre s :=by
+theorem attempt_shared_sat : ∃ s,(Proof.Ffdh.cachedGenerateKeyContract abi).pre s :=by
  refine ⟨attemptSat,?_⟩
- sig_pre [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
+ sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
   Spec.Ffdh.pLenValid,Spec.Ffdh.domainLenValid,abi,argRegs]
  simp only [attempt_arg 0 (by decide),attempt_arg 1 (by decide),attempt_arg 2 (by decide),attempt_arg 3 (by decide),attempt_arg 4 (by decide)]
  have a0 : stackArg attemptBase 0=64 :=by decide

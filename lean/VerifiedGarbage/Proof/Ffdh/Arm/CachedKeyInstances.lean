@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeyBackend
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedKeyGenerate
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedPrepare
@@ -1217,8 +1218,8 @@ theorem cachedKeyGenerate_post (s t : State) {p : Inputs} {rb : List Byte}
     (randLength : (stackArg s 4).toNat=(stackArg s 2).toNat) (size : rb.length=p.k)
     (valid : Spec.Ffdh.domainValid p.k p.dom=true)
     (result : sampleResult p (ScalarLayout.vetted p) rb t) :
-    (Spec.Ffdh.cachedGenerateKeyContract abi 176).post s t := by
-  sig_post [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,
+    (Proof.Ffdh.cachedGenerateKeyContract abi 176).post s t := by
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,
     Spec.Ffdh.generateKeySig,abi,argRegs,reduceClassify,Loc.val,State.addr]
   rw [BitVec.setWidth_append_eq_right]
   simp only [State.addr] at domainBytes entropyBytes
@@ -1244,9 +1245,9 @@ theorem cachedKeyGenerate_correct (prepare sample tail : Prog isa)
     (prep : EnvironmentPrepareLaw cachedGenerationEnvironment prepare)
     (sampler : EnvironmentSampleLaw cachedGenerationEnvironment ScalarLayout.vetted sample)
     (law : EnvironmentTailLaw cachedGenerationEnvironment ScalarLayout.vetted tail)
-    (s : State) (pre : (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre s) :
+    (s : State) (pre : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre s) :
     ∃tr t,Exec isa (VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample tail) s tr t ∧
-      abiPreserved s t ∧ (Spec.Ffdh.cachedGenerateKeyContract abi 176).post s t := by
+      abiPreserved s t ∧ (Proof.Ffdh.cachedGenerateKeyContract abi 176).post s t := by
   obtain ⟨p,rb,_,privateValue,publicValue,domain,count,_,entropy,domainBytes,entropyBytes,input,cached,valid,_cache,_words⟩ :=
     cachedKeyGenerate_data s pre
   have modValid := VG.Proof.Ffdh.domainValid_mod valid
@@ -1255,7 +1256,7 @@ theorem cachedKeyGenerate_correct (prepare sample tail : Prog isa)
     ScalarLayout.vetted prep sampler law CachedSample.layoutBound s input cached modValid
   refine ⟨tr,t,run,preserved,?_⟩
   have randLength : (stackArg s 4).toNat=(stackArg s 2).toNat := by
-    sig_pre [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
+    sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
       abi,argRegs,reduceClassify,Loc.val,State.addr] at pre
     obtain ⟨_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,rLen,_,_,_⟩ := pre
     exact rLen
@@ -1281,7 +1282,7 @@ theorem cachedKeyGenerate_verified (prepare sample tail : Prog isa)
     (sampler : EnvironmentSampleLaw cachedGenerationEnvironment ScalarLayout.vetted sample)
     (law : EnvironmentTailLaw cachedGenerationEnvironment ScalarLayout.vetted tail) :
     Verified target (VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample tail)
-      (Spec.Ffdh.cachedGenerateKeyContract abi 176) :=
+      (Proof.Ffdh.cachedGenerateKeyContract abi 176) :=
   ⟨cachedKeyGenerate_correct prepare sample tail prep sampler law,
     cachedKeyGenerate_contract_ct prepare sample tail prep sampler law,cachedKeyGenerate_sat⟩
 
@@ -1297,7 +1298,7 @@ open VG VG.Arm VG.Proof.Bignum.Arm
 def native (b : MontBackend) : Prog isa := b.caller.code (code b)
 
 theorem native_verified (b : MontBackend) : Verified target (native b)
-    (Spec.Ffdh.cachedGenerateKeyContract abi 176) :=
+    (Proof.Ffdh.cachedGenerateKeyContract abi 176) :=
   b.caller.verified (cachedKeyGenerate_verified prepare sample (tail b) prepareLaw sampleLaw (tailLaw b))
 
 theorem native_stack (b : MontBackend) : FrameStack.armStack (native b)≤176 :=

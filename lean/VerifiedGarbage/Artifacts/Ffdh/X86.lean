@@ -11,7 +11,6 @@ public import VerifiedGarbage.Proof.Ffdh.X86.ParamInit
 public import VerifiedGarbage.Proof.Ffdh.X86.Cand.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.PSearch.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.PreVerified
-public import VerifiedGarbage.Proof.Ffdh.X86.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Verified
 public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
@@ -57,11 +56,6 @@ def artifacts : List Artifact := [
     code := Impl.Ffdh.X86.Cached.Precompute.code
     verified := Proof.Ffdh.X86.Cached.Pre.pc_verified
     spSafe := Proof.Ffdh.X86.Shape.cachedPrecompute_spSafe
-    stack := 172 },
-  Spec.Ffdh.cachedGenerateKeyApi.artifact X86.target {
-    code := Impl.Ffdh.X86.Cached.Generate.code
-    verified := Proof.Ffdh.X86.Cached.verified
-    spSafe := Proof.Ffdh.X86.Shape.cachedGenerate_spSafe
     stack := 172 },
   Spec.Ffdh.cachedKeySearchApi.artifact X86.target {
     code := Impl.Ffdh.X86.Cached.Search.code

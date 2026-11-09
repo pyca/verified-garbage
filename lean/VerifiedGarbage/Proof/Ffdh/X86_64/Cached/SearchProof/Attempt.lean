@@ -45,7 +45,7 @@ def attemptContract : Contract isa where
 
 /-- The attempt, as the controller calls it. -/
 def attemptCall (v : RoundImpl) : Prog isa :=
-  .call (Spec.Ffdh.cachedGenerateKeyApi.name ++ v.suffix) (attemptCode v)
+  .call ("vg_ffdh_generate_key_cached" ++ v.suffix) (attemptCode v)
 
 private theorem inline_correct (v : RoundImpl) (s : State) (h : cgContract.pre s) :
     ∃ tr t, Exec isa (attemptInline v) s tr t ∧ abiPreserved s t ∧ cgContract.post s t :=

@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86-64 -/
@@ -82,12 +81,6 @@ def artifacts : List Artifact :=
       code := Proof.Ffdh.X86_64.Cached.precomputeCode v
       verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
       spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v },
-    Spec.Ffdh.cachedGenerateKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      stack := 8
-      code := Proof.Ffdh.X86_64.Cached.attemptCode v
-      verified := Proof.Ffdh.X86_64.Cached.attemptCode_verified v
-      spSafe := Proof.Ffdh.X86_64.Cached.attemptCode_sp v },
     Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
       suffix := v.suffix
       stack := 72

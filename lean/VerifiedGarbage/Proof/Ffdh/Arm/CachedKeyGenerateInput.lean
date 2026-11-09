@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateFn
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 
@@ -77,7 +78,7 @@ namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem cachedKeyGenerate_input (s : State)
-    (pre : (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre s) {p : Inputs} {rb : List Byte}
+    (pre : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre s) {p : Inputs} {rb : List Byte}
     (base : stackArg s 5=p.base) (privateValue : s.gpr .r0=p.privateValue)
     (publicValue : s.gpr .r2=p.publicValue) (domain : stackArg s 0=p.domain)
     (count : (stackArg s 2).toNat=p.k) (capacity : (stackArg s 6).toNat=p.len)
@@ -89,7 +90,7 @@ theorem cachedKeyGenerate_input (s : State)
   have plain := cachedKeyGenerate_plain_pre s pre
   have inputPlain := keyGenerate_input (cachedPlainState s) plain base privateValue publicValue domain count capacity
     entropy outputY privateLength domainBytes entropyBytes
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract,Spec.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract,Proof.Ffdh.cachedGenerateKeySig,Spec.Ffdh.generateKeySig,
     abi,argRegs,reduceClassify,Loc.val,State.addr] at pre
   obtain ⟨stackFit,argFit,rd,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_stackArgs,_⟩ := pre
   have input := cachedKeyGenerate_lift rd inputPlain
