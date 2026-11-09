@@ -17,8 +17,9 @@ from its base, which stays in `r6` (`out` stays in `r3`):
 * `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
   inversion's result and the final reduction's temporary, 56 bytes each
   (`X1`, …);
-* the 28 limbs of a product (`ACC`, 112 bytes) and the bits of the scalar
-  (`BITS`, byte `t` is bit `t` of the clamped scalar).
+* the registers `r14`–`r27` a multiplication saves (`ACC`, 112 bytes; Ed448's
+  scalar arithmetic keeps the limbs of its products there) and the bits of
+  the scalar (`BITS`, byte `t` is bit `t` of the clamped scalar).
 
 The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²⁴ + 1`:
 
@@ -27,12 +28,19 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   `2³²`, and the carry out in `r8`;
 * `fold`: the carry out `c` folded in as `c + 2²²⁴ c`: added to limbs 0 and
   7 and carried again; `tail` folds twice, after which nothing carries out;
-* `mul`: the product's fourteen doublewords row by row (a row is seven
-  products of doublewords, `mulld` and `mulhdu`, added with `addc` and
-  `addze`), the same bytes as its 28 limbs; then,
-  for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
-  once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
-  `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
+* `mul` (`mulR`), in registers: `r14`–`r27` saved at `ACC`, the operands'
+  seven doublewords each loaded into `opA` and `opB`, and `r28`–`r31` saved
+  over the result's first four doublewords (the operands are loaded, so the
+  result may be one of them); the product's fourteen doublewords column by
+  column into `pw` (a column's products of doublewords, `mulld` and
+  `mulhdu`, added into three registers with `addc`, `adde` and `addze`;
+  the later words in the registers of operands' words no later column
+  reads); then, with `H = Hₗ + 2²²⁴ Hₕ` its high half,
+  `L + 2⁴⁴⁸ H ≡ L + H + (2²²⁴ Hₗ + Hₕ) + 2²²⁴ Hₕ` by three carry chains
+  (the second adds `H` rotated by 224 bits, computed into `rotReg` first),
+  their carry `c` folded in as `c + 2²²⁴ c` twice; finally `r28`–`r31`
+  restored, the result stored and `r14`–`r27` restored, so that it changes
+  only the volatile registers `r4`, `r5` and `r7`–`r11`;
 * `add`, `sub`: the seven doublewords of `a + b` (carry chain, `addc`/`adde`)
   and of `a - b` modulo `2⁴⁴⁸` (borrow chain, `subc`/`sube`), each stored as
   it is made, then the carry `c` added as `c + 2²²⁴ c`, or the borrow `β`
@@ -50,7 +58,8 @@ The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
 by `r12`.
 
-The function uses only volatile registers. The only branches are on the loop
+The function changes only volatile registers (a multiplication restores the
+others it uses). The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
 only the pointers can affect timing.
 -/
@@ -183,61 +192,95 @@ def row (a b : Nat) : List Instr :=
   [.load .w .r4 .r9 a, .li .r8 0] ++ pass .r9 ACC (rowSrc b) ++
     [.store .w .r8 .r9 (ACC + 56), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
-/-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
-carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
-word stored over `acc[i + j]` and its high word the next carry (`mulld`,
-`mulhdu`, and `addc`/`addze` of the doubleword and the carry). -/
-def rowStep64 (b j : Nat) : List Instr :=
-  [.load .d .r5 .r6 (b + 8 * j), .mul .r7 .r4 .r5, .mulhu .r5 .r4 .r5,
-    .load .d .r10 .r9 (ACC + 8 * j), .addc .r7 .r7 .r10, .addze .r5 .r5, .addc .r7 .r7 .r8,
-    .addze .r8 .r5, .store .d .r7 .r9 (ACC + 8 * j)]
+/-! ## Multiplication in registers -/
 
-/-- Row `i` of the product of doublewords: `acc[i, i + 8) = acc[i, i + 7) + a_i · b`. -/
-def row64 (a b : Nat) : List Instr :=
-  [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
-    [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
+/-- The registers of the operands' words: `a_i` in `opA i`, `b_j` in `opB j`. -/
+def opA (i : Nat) : Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20].getD i .r14
+def opB (j : Nat) : Reg := [.r21, .r22, .r23, .r24, .r25, .r26, .r27].getD j .r21
 
-/-- Doubleword `k` of the high half `H` of the product rotated by 224 bits,
-`(H₍ₖ₊₃₎ mod 7 >> 32) + (H₍ₖ₊₄₎ mod 7 << 32)`, into `r8`. -/
-def rotSrc (k : Nat) : List Instr :=
-  [.load .d .r5 .r6 (ACC + 56 + 8 * ((k + 3) % 7)), .load .d .r10 .r6 (ACC + 56 + 8 * ((k + 4) % 7)),
-    .lsr .d .r5 .r5 32, .lsl .r10 .r10 32, .add .r8 .r5 .r10]
+/-- The registers of the product's words `0, …, 14`: from word 9 on, those
+of operands' words no later column reads (`a_0`, `b_0`, `a_1`, `b_1`, `a_2`,
+`a_3`). -/
+def pw (k : Nat) : Reg :=
+  [.r7, .r8, .r9, .r10, .r11, .r28, .r29, .r30, .r31, .r14, .r21, .r15, .r22, .r16, .r17].getD k .r7
 
-/-- Doubleword `k ≥ 3` of the high half `H` of the product with its low 224
-bits cleared, into `r8`. -/
-def hiSrc (k : Nat) : List Instr :=
-  if k = 3 then [.load .d .r8 .r6 (ACC + 56 + 24), .lsr .d .r8 .r8 32, .lsl .r8 .r8 32]
-  else [.load .d .r8 .r6 (ACC + 56 + 8 * k)]
+/-- The pairs `(i, j)` of column `k`: `i + j = k`, `i, j < 7`. -/
+def pairs (k : Nat) : List (Nat × Nat) :=
+  ((List.range 7).filter fun i => i ≤ k ∧ k - i < 7).map fun i => (i, k - i)
 
-/-- Doubleword `k` of `[o]` plus what `src k` leaves in `r8`, by the carry chain. -/
-def accStep (src : Nat → List Instr) (o k : Nat) : List Instr :=
-  .load .d .r7 .r6 (o + 8 * k) :: src k ++ [chainOp false k .r8, .store .d .r7 .r6 (o + 8 * k)]
+/-- The term `a_i b_j` of column `k`, added into `pw k, pw (k + 1), pw (k + 2)`. -/
+def termR (k : Nat) (p : Nat × Nat) : List Instr :=
+  [.mul .r4 (opA p.1) (opB p.2), .mulhu .r5 (opA p.1) (opB p.2),
+    .addc (pw k) (pw k) .r4, .adde (pw (k + 1)) (pw (k + 1)) .r5, .addze (pw (k + 2)) (pw (k + 2))]
 
-/-- The sums of the reduction of the product `L + 2⁴⁴⁸ H` at `ACC` into `[o]`:
-with `H = Hₗ + 2²²⁴ Hₕ`, `2⁴⁴⁸ H ≡ H + 2²²⁴ Hₗ + Hₕ + 2²²⁴ Hₕ`, so `[o] = L + H`,
-then `+= 2²²⁴ Hₗ + Hₕ` (`H` rotated by 224 bits), then `+= 2²²⁴ Hₕ` (`H` with
-its low 224 bits cleared), three carry chains whose carries `c ≤ 3` are summed
-in `r4`; `2³² c` into `r5` and zero into `r8`, as `carryPrep` leaves them. -/
-def sums (o : Nat) : List Instr :=
-  (List.range 7).flatMap (chainStep false o ACC (ACC + 56)) ++ [.li .r4 0, .addze .r4 .r4] ++
-    (List.range 7).flatMap (accStep rotSrc o) ++ [.addze .r4 .r4] ++
-    (List.range 4).flatMap (fun j => accStep hiSrc o (j + 3)) ++
-    [.addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
+/-- Column `k`: `pw (k + 2)` cleared, then its terms. -/
+def colR (k : Nat) : List Instr := .li (pw (k + 2)) 0 :: (pairs k).flatMap (termR k)
 
-/-- The reduction of the product at `ACC` into `[o]`: the `sums`, then their
-carry folded in as `c + 2²²⁴ c` twice, as `add` does. -/
-def reduce (o : Nat) : List Instr :=
-  sums o ++ (List.range 7).flatMap (foldStep false o) ++ carryPrep ++
-    (List.range 7).flatMap (foldStep false o)
+/-- The registers the reduction's chains add from. -/
+def rotReg (k : Nat) : Reg := [.r18, .r19, .r20, .r23, .r24, .r25, .r26].getD k .r18
 
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
-fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
-products (a loop, so that the ladder's loop stays within the reach of its
-branch), then its reduction (`reduce`). -/
-def mul (o a b : Nat) : Prog isa :=
-  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
-    (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
-      (.block (reduce o)))
+/-- Step `k` of a carry chain into `pw k` from `src`. -/
+def chainR (k : Nat) (src : Reg) : Instr := if k = 0 then .addc (pw k) (pw k) src else .adde (pw k) (pw k) src
+
+/-- The carry chain `pw 0, …, pw 6 += src 0, …, src 6`. -/
+def chain7 (src : Nat → Reg) : List Instr := (List.range 7).map fun k => chainR k (src k)
+
+/-- Doubleword `k` of the product's high half `H = pw 7, …, pw 13` rotated by
+224 bits into `rotReg k` (`r27` scratch). -/
+def rotR (k : Nat) : List Instr :=
+  [.lsr .d (rotReg k) (pw (7 + (k + 3) % 7)) 32, .lsl .r27 (pw (7 + (k + 4) % 7)) 32,
+    .add (rotReg k) (rotReg k) .r27]
+
+/-- What the third chain adds: `H` with its low 224 bits cleared (zero in
+`r18`, doubleword 3 in `r19`). -/
+def hiReg (k : Nat) : Reg := if k < 3 then .r18 else if k = 3 then .r19 else pw (7 + k)
+
+/-- What a fold adds: the carry `c` (`r4`) to word 0, `2³² c` (`r5`) to word
+3, zero (`r18`) to the others. -/
+def foldReg (k : Nat) : Reg := if k = 0 then .r4 else if k = 3 then .r5 else .r18
+
+/-- The reduction of the product in `pw` into `pw 0, …, pw 6`, as `reduce`'s
+on memory: `L + H`, `+= 2²²⁴ Hₗ + Hₕ`, `+= 2²²⁴ Hₕ` (carries summed in
+`r4`), then the carry folded in as `c + 2²²⁴ c` twice. -/
+def reduceR : List Instr :=
+  chain7 (fun k => pw (7 + k)) ++ [.li .r4 0, .addze .r4 .r4] ++
+  (List.range 7).flatMap rotR ++ chain7 rotReg ++ [.addze .r4 .r4] ++
+  [.li .r18 0, .lsr .d .r19 (pw 10) 32, .lsl .r19 .r19 32] ++ chain7 hiReg ++ [.addze .r4 .r4] ++
+  [.lsl .r5 .r4 32] ++ chain7 foldReg ++ [.li .r4 0, .addze .r4 .r4, .lsl .r5 .r4 32] ++ chain7 foldReg
+
+/-- Registers `regs 0`, …, `regs (n - 1)` at consecutive doublewords. -/
+def slotsOf (regs : Nat → Reg) (n : Nat) : List (Reg × Nat) := (List.range n).map fun i => (regs i, 8 * i)
+
+/-- Each `(r, d)`'s register stored at `base + d` of the working space. -/
+def stdsAt (base : Nat) (l : List (Reg × Nat)) : List Instr := l.map fun (r, d) => .store .d r .r6 (base + d)
+
+/-- Each `(r, d)`'s register loaded from `base + d` of the working space. -/
+def ldsAt (base : Nat) (l : List (Reg × Nat)) : List Instr := l.map fun (r, d) => .load .d r .r6 (base + d)
+
+/-- `r14`–`r27`, saved at `ACC`. -/
+def loR (i : Nat) : Reg :=
+  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27].getD i .r14
+
+/-- `r28`–`r31`, saved over the first four doublewords of the result. -/
+def hiR (i : Nat) : Reg := [.r28, .r29, .r30, .r31].getD i .r28
+
+/-- Where the result's words are before it is stored: `pw 5` and `pw 6`
+(`r28`, `r29`, which are restored first) moved into `r23` and `r24`. -/
+def outR (k : Nat) : Reg := [.r7, .r8, .r9, .r10, .r11, .r23, .r24].getD k .r7
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`) in registers: `r14`–`r27`
+saved at `ACC`; the operands' words loaded; `r28`–`r31` saved at `o`; the
+product's fifteen words column by column (`colR`) and their reduction
+(`reduceR`); `r28`–`r31` restored, the result stored at `o`, and
+`r14`–`r27` restored. -/
+def mulR (o a b : Nat) : List Instr :=
+  stdsAt ACC (slotsOf loR 14) ++ ldsAt a (slotsOf opA 7) ++ ldsAt b (slotsOf opB 7) ++
+  stdsAt o (slotsOf hiR 4) ++ [.li (pw 0) 0, .li (pw 1) 0] ++ (List.range 13).flatMap colR ++ reduceR ++
+  [.addi .r23 (pw 5) 0, .addi .r24 (pw 6) 0] ++ ldsAt o (slotsOf hiR 4) ++ stdsAt o (slotsOf outR 7) ++
+  ldsAt ACC (slotsOf loR 14)
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`): `mulR`. -/
+def mul (o a b : Nat) : Prog isa := .block (mulR o a b)
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
