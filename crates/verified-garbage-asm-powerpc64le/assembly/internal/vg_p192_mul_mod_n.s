@@ -11,24 +11,6 @@ vg_p192_mul_mod_n:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, -19246
-	ori %r11, %r11, 10289
-	stw %r11, 3984(%r3)
-	lis %r11, 5227
-	ori %r11, %r11, 51633
-	stw %r11, 3988(%r3)
-	lis %r11, -26146
-	ori %r11, %r11, 63542
-	stw %r11, 3992(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3996(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 4000(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 4004(%r3)
 	lis %r11, 3547
 	ori %r11, %r11, 53039
 	stw %r11, 3960(%r3)
@@ -49,9 +31,18 @@ vg_p192_mul_mod_n:
 	ld %r19, 0(%r6)
 	ld %r20, 8(%r6)
 	ld %r21, 16(%r6)
-	ld %r6, 3984(%r3)
-	ld %r7, 3992(%r3)
-	ld %r10, 4000(%r3)
+	lis %r6, 5227
+	ori %r6, %r6, 51633
+	rldicr %r6, %r6, 32, 31
+	oris %r6, %r6, 46290
+	ori %r6, %r6, 10289
+	lis %r7, -1
+	ori %r7, %r7, 65535
+	rldicr %r7, %r7, 32, 31
+	oris %r7, %r7, 39390
+	ori %r7, %r7, 63542
+	lis %r10, -1
+	ori %r10, %r10, 65535
 	li %r8, 3
 20:
 	ld %r9, 0(%r5)

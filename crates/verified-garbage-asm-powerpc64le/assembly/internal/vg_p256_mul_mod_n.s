@@ -11,30 +11,6 @@ vg_p256_mul_mod_n:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, -925
-	ori %r11, %r11, 9553
-	stw %r11, 3944(%r3)
-	lis %r11, -3143
-	ori %r11, %r11, 51906
-	stw %r11, 3948(%r3)
-	lis %r11, -22761
-	ori %r11, %r11, 40580
-	stw %r11, 3952(%r3)
-	lis %r11, -17178
-	ori %r11, %r11, 64173
-	stw %r11, 3956(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3960(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3964(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 3968(%r3)
-	lis %r11, -1
-	ori %r11, %r11, 65535
-	stw %r11, 3972(%r3)
 	lis %r11, -4608
 	ori %r11, %r11, 48207
 	stw %r11, 3912(%r3)
@@ -59,10 +35,23 @@ vg_p256_mul_mod_n:
 	ld %r21, 8(%r6)
 	ld %r22, 16(%r6)
 	ld %r23, 24(%r6)
-	ld %r6, 3944(%r3)
-	ld %r7, 3952(%r3)
-	ld %r10, 3960(%r3)
-	ld %r0, 3968(%r3)
+	lis %r6, -3143
+	ori %r6, %r6, 51906
+	rldicr %r6, %r6, 32, 31
+	oris %r6, %r6, 64611
+	ori %r6, %r6, 9553
+	lis %r7, -17178
+	ori %r7, %r7, 64173
+	rldicr %r7, %r7, 32, 31
+	oris %r7, %r7, 42775
+	ori %r7, %r7, 40580
+	lis %r10, -1
+	ori %r10, %r10, 65535
+	lis %r0, -1
+	ori %r0, %r0, 65535
+	rldicr %r0, %r0, 32, 31
+	oris %r0, %r0, 0
+	ori %r0, %r0, 0
 	li %r8, 4
 20:
 	ld %r9, 0(%r5)
