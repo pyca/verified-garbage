@@ -22,7 +22,7 @@ open VG.PPC64LE
 
 /-- `vg_sm4_ctr`, with its scratch buffer as the fifth argument. -/
 def ctr : Prog isa :=
-  Modes.PPC64LE.pick 4 (Serial.core.seq Modes.Mode.ctrEarly)
+  Modes.PPC64LE.pick 4 ((Serial.core .encrypt).seq Modes.Mode.ctrEarly)
     ((dirCore .encrypt).seq2 (Modes.Mode.ctrWide 16) Modes.Mode.ctrEarly 4)
 
 end VG.Impl.Sm4.PPC64LE

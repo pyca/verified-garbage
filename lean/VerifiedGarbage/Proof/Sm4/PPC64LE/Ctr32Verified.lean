@@ -68,9 +68,9 @@ theorem ctr32_correct (s : State) (hs : (modeContract 16 ctr32Post).pre s) :
   refine pick_correct fun v => ?_
   obtain ⟨-, eP, eD, eN, eM, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
   split
-  · refine WP.mono (Proof.Modes.PPC64LE.ctr32Seq_wp Serial.coreSpec rfl
-      ((seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ctr32Early) rfl hs).write_r8 v)
-      (keyArgs_r8 v (keyArgs_of Serial.core rfl (M := Mode.ctr32Early) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+  · refine WP.mono (Proof.Modes.PPC64LE.ctr32Seq_wp (Serial.coreSpec .encrypt) rfl
+      ((seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.ctr32Early) rfl hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.ctr32Early) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
     simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_ser] at h2 h3
     refine ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ?_, h3⟩
     rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
