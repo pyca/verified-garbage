@@ -60,7 +60,7 @@ open VG.Impl.Weierstrass.AArch64.P521Native
 
 def buildSeed : Prog isa := .seq (.block [.str .x .x20 .x0 3944]) (.block buildSeedStore)
 
-theorem build_seed_source : outerBlock007.take 55=[.str .x .x20 .x0 3944]++buildSeedStore := by lit_decide
+theorem build_seed_source : outerBlock007.take 55=([.str .x .x20 .x0 3944] : List Instr)++buildSeedStore := by lit_decide
 
 theorem build_seed_ok {base table : Addr} {s : State}
     (hs : Scr s base 8192) (pt : PtrW s .x26 table 216)

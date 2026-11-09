@@ -16,7 +16,7 @@ open VG.Impl.Ecdh.AArch64 (QY R2P BP QXM QYM W0 W1 W2 W3 PX PY)
 open VG.Impl.Weierstrass.AArch64.P521Native (config outerBlock003 outerBlock004 callCheckPoint sequence)
 
 theorem prepare_peer_source : outerBlock003=VG.Impl.Ecdh.AArch64.Cfg.peer config++
-    [.vop (.ins .d2 .v28 0 .x30)] := by lit_decide
+    ([.vop (.ins .d2 .v28 0 .x30)] : List Instr) := by lit_decide
 
 theorem prepare_check_curve : VG.Impl.Ecdh.AArch64.Cfg.checkCurve config=
     some VG.Impl.Weierstrass.CheckPoint.p521 := by

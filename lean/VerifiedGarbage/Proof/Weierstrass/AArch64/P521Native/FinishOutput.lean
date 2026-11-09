@@ -16,7 +16,7 @@ open VG.Impl.Weierstrass.AArch64.P521Native (config outerBlock171)
 open VG.Impl.Ecdsa.AArch64 (D RZ)
 
 theorem finish_output_source : outerBlock171=
-    [.umov .x .x30 .v29 0]++
+    ([.umov .x .x30 .v29 0] : List Instr)++
     (config.checkRange (config.sl D)++config.checkNonzero (config.sl RZ)++
       VG.Impl.Ecdh.AArch64.Cfg.finish config) := by lit_decide
 

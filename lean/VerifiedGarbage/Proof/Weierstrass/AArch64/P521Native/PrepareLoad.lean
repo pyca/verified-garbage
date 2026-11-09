@@ -18,10 +18,10 @@ open VG.Impl.Weierstrass.AArch64.P521Native (config outerBlock001 outerBlock002 
 
 /-- The frame-relative pointer setup and original ECDH argument shuffle. -/
 theorem prepare_args_source : outerBlock001.take 5=
-    [.addSp .x26 0]++VG.Impl.Ecdh.AArch64.Cfg.args := by lit_decide
+    ([.addSp .x26 0] : List Instr)++VG.Impl.Ecdh.AArch64.Cfg.args := by lit_decide
 
 theorem prepare_load_source : outerBlock001.drop 5=config.setupWith none++
-    [.movz .x .x19 72 0,.movz .x .x5 1 0] := by lit_decide
+    ([.movz .x .x19 72 0,.movz .x .x5 1 0] : List Instr) := by lit_decide
 
 theorem prepare_bits_source : outerBlock002=bitsBody 2296 3304 := by lit_decide
 

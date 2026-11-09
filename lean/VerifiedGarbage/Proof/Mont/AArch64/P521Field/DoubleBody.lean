@@ -103,7 +103,7 @@ theorem double_step3 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
   have ni := inv.point_update (.sub 10 0 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -155,7 +155,7 @@ theorem double_step5 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
   have ni := inv.point_update (.add 11 1 2)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -251,7 +251,7 @@ theorem double_step4 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4224+0+72<2^64)
   have ni := inv.point_update (.mul 8 11 10 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -302,7 +302,7 @@ theorem double_step9 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+432+72<2^64)
   have ni := inv.point_update (.cms 12 12 9 9 12)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inr ⟨12,9,9,12,rfl,rfl,by rw [capA]⟩
@@ -356,7 +356,7 @@ theorem double_step7 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4296+0+72<2^64)
   have ni := inv.point_update (.mul 9 0 7 true)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -453,7 +453,7 @@ theorem double_step2 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} {
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
   have ni := inv.point_update (.add 11 0 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -552,7 +552,7 @@ theorem double_step15 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+72+72<2^64)
   have ni := inv.point_update (.cms 4 3 11 8 10)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inr ⟨3,11,8,10,rfl,rfl,by rw [capA]⟩
@@ -630,7 +630,7 @@ theorem double_step14 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+0+72<2^64)
   have ni := inv.point_update (.cms 3 4 9 1 12)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inr ⟨4,9,1,12,rfl,rfl,by rw [capA]⟩
@@ -683,7 +683,7 @@ theorem double_step12 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by omega_arith : o+144+72<2^64)
   have ni := inv.point_update (.sub 5 11 7)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -735,7 +735,7 @@ theorem double_step10 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
   have ni := inv.point_update (.sub 11 10 6)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -830,7 +830,7 @@ theorem double_step13 [NeZero fieldPrime] {base : Addr} {a o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4440+0+72<2^64)
   have ni := inv.point_update (.mul 11 12 8 true)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])

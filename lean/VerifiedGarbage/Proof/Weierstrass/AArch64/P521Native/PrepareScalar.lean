@@ -37,7 +37,7 @@ theorem window_radix_lt (J W : Nat) (h : 5*J<W) : (32 : Nat)^J<2^W := by
 
 theorem prepare_scalar_source : outerBlock005=
     VG.Impl.Ecdh.AArch64.P521Window.maskK++
-      (VG.Impl.Weierstrass.AArch64.WinCfg.addConst 9 2296 3944 recodeOffset++[.movz .x .x19 80 0,.movz .x .x5 1 0]) := by lit_decide
+      (VG.Impl.Weierstrass.AArch64.WinCfg.addConst 9 2296 3944 recodeOffset++([.movz .x .x19 80 0,.movz .x .x5 1 0] : List Instr)) := by lit_decide
 
 theorem prepare_scalar_counters (s : State) :
     WP isa (.block [.movz .x .x19 80 0,.movz .x .x5 1 0]) s fun t =>

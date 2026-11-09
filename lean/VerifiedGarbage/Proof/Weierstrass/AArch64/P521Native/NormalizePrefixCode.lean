@@ -54,63 +54,63 @@ namespace VG.Proof.Weierstrass.AArch64.P521Native
 open VG VG.AArch64 VG.Impl.Weierstrass.AArch64.P521Native
 
 theorem normalize_prefix_source_2 : outerBlock028=
-    [.ldr .x .x20 .x0 3944]++(normalizeCopy 9 (216*1+144) 1360++
+    ([.ldr .x .x20 .x0 3944] : List Instr)++(normalizeCopy 9 (216*1+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 2) (normalizePrefixSlot 1) 1360) := by lit_decide
 
 theorem normalize_prefix_source_3 : outerBlock029=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*2+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*2+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 3) (normalizePrefixSlot 2) 1360) := by lit_decide
 
 theorem normalize_prefix_source_4 : outerBlock030=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*3+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*3+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 4) (normalizePrefixSlot 3) 1360) := by lit_decide
 
 theorem normalize_prefix_source_5 : outerBlock031=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*4+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*4+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 5) (normalizePrefixSlot 4) 1360) := by lit_decide
 
 theorem normalize_prefix_source_6 : outerBlock032=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*5+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*5+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 6) (normalizePrefixSlot 5) 1360) := by lit_decide
 
 theorem normalize_prefix_source_7 : outerBlock033=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*6+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*6+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 7) (normalizePrefixSlot 6) 1360) := by lit_decide
 
 theorem normalize_prefix_source_8 : outerBlock034=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*7+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*7+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 8) (normalizePrefixSlot 7) 1360) := by lit_decide
 
 theorem normalize_prefix_source_9 : outerBlock035=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*8+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*8+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 9) (normalizePrefixSlot 8) 1360) := by lit_decide
 
 theorem normalize_prefix_source_10 : outerBlock036=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*9+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*9+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 10) (normalizePrefixSlot 9) 1360) := by lit_decide
 
 theorem normalize_prefix_source_11 : outerBlock037=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*10+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*10+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 11) (normalizePrefixSlot 10) 1360) := by lit_decide
 
 theorem normalize_prefix_source_12 : outerBlock038=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*11+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*11+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 12) (normalizePrefixSlot 11) 1360) := by lit_decide
 
 theorem normalize_prefix_source_13 : outerBlock039=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*12+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*12+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 13) (normalizePrefixSlot 12) 1360) := by lit_decide
 
 theorem normalize_prefix_source_14 : outerBlock040=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*13+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*13+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 14) (normalizePrefixSlot 13) 1360) := by lit_decide
 
 theorem normalize_prefix_source_15 : outerBlock041=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*14+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*14+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 15) (normalizePrefixSlot 14) 1360) := by lit_decide
 
 theorem normalize_prefix_source_16 : outerBlock042=
-    [.umov .x .x30 .v29 0]++(normalizeCopy 9 (216*15+144) 1360++
+    ([.umov .x .x30 .v29 0] : List Instr)++(normalizeCopy 9 (216*15+144) 1360++
       normalizeCallArgs (normalizePrefixSlot 16) (normalizePrefixSlot 15) 1360) := by lit_decide
 
 theorem normalize_prefix_tail_source : outerBlock043=[.umov .x .x30 .v29 0] := by decide

@@ -147,7 +147,7 @@ theorem mixed_step9 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4224+0+72<2^64)
   have ni := inv.point_update (.mul 7 8 7 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -202,7 +202,7 @@ theorem mixed_step17 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
   have ni := inv.point_update (.sub 9 9 8)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -257,7 +257,7 @@ theorem mixed_step13 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+0+72<2^64)
   have ni := inv.point_update (.sub 5 5 7)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -314,7 +314,7 @@ theorem mixed_step3 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4152+0+72<2^64)
   have ni := inv.point_update (.mul 6 5 6 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -371,7 +371,7 @@ theorem mixed_step2 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4224+0+72<2^64)
   have ni := inv.point_update (.mul 7 5 3 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -428,7 +428,7 @@ theorem mixed_step12 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4440+0+72<2^64)
   have ni := inv.point_update (.mul 10 2 10 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -531,7 +531,7 @@ theorem mixed_step1 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4152+0+72<2^64)
   have ni := inv.point_update (.mul 6 2 4 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -588,7 +588,7 @@ theorem mixed_step15 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4296+0+72<2^64)
   have ni := inv.point_update (.mul 8 1 8 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -645,7 +645,7 @@ theorem mixed_step8 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4368+0+72<2^64)
   have ni := inv.point_update (.mul 9 8 0 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -700,7 +700,7 @@ theorem mixed_step5 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+72+72<2^64)
   have ni := inv.point_update (.sub 6 6 1)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -757,7 +757,7 @@ theorem mixed_step16 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
       simpa only [PointOp.out,locO,Nat.add_zero] using outside_rebase om (by decide : 4368+0+72<2^64)
   have ni := inv.point_update (.mul 9 6 9 false)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -812,7 +812,7 @@ theorem mixed_step14 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+288+72<2^64)
   have ni := inv.point_update (.sub 9 9 5)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -913,7 +913,7 @@ theorem mixed_step4 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State} 
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+360+72<2^64)
   have ni := inv.point_update (.sub 10 7 0)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -1014,7 +1014,7 @@ theorem mixed_step10 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+0+72<2^64)
   have ni := inv.point_update (.sub 5 5 9)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])
@@ -1069,7 +1069,7 @@ theorem mixed_step11 [NeZero fieldPrime] {base : Addr} {a b o : Nat} {s : State}
     · simpa only [PointOp.out,locO] using outside_rebase outside (by decide : 4080+216+72<2^64)
   have ni := inv.point_update (.sub 8 7 9)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
-        rcases hx with rfl|rfl <;> assumption)
+        rcases hx with rfl|rfl <;> with_reducible assumption)
     (by intro x hx; simp only [PointOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl|rfl
         · exact Or.inl (by rw [capA])

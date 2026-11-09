@@ -70,7 +70,7 @@ theorem point_spill_load_last {s : State} {pa po : Addr} {ra ro : Reg} {size cap
     (ha : Ptr s ra pa size) (ht : PtrW s ro po cap)
     (hA : a+72≤size) (hO : o+64≤cap) (ha8 : a%8=0) (ho8 : o%8=0) (hnd : r0≠r1)
     (hread : ∀m,Outside (off po o) 48 16 s.mem m → word m (off pa a) 64=word s.mem (off pa a) 64) :
-    WP isa (.block (storesR ro [r0,r1] (o+48)++[.ldr .x .x3 ra (a+64)])) s fun t =>
+    WP isa (.block (storesR ro [r0,r1] (o+48)++([.ldr .x .x3 ra (a+64)] : List Instr))) s fun t =>
       wordsVal t.mem (off po o) 48 2=regsVal s [r0,r1] ∧ t.gpr .x3=word s.mem (off pa a) 64 ∧
       KeepRegs [.x3] s t ∧ Outside (off po o) 48 16 s.mem t.mem := by
   rw [WP.block_append_iff]

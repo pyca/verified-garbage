@@ -218,7 +218,7 @@ def normalizeInitProgram : Prog isa :=
 theorem normalize_init_source : outerBlock136.drop 19=
     VG.Impl.Weierstrass.AArch64.setConst 9 1072 0++
     VG.Impl.Weierstrass.AArch64.setConst 9 1144 1++
-    VG.Impl.Weierstrass.AArch64.setConst 9 1216 0++[.movz .x .x19 105 0] := by lit_decide
+    VG.Impl.Weierstrass.AArch64.setConst 9 1216 0++([.movz .x .x19 105 0] : List Instr) := by lit_decide
 
 private theorem wp_post_iff {code : Prog isa} {s : State} {Q R : State → Prop}
     (h : ∀t,Q t ↔ R t) : WP isa code s Q ↔ WP isa code s R :=
