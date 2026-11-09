@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 /-!
 # X448 on PPC64LE: the whole function
 
-`vg_x448` writes `X448(k, u)` to `out`, and restores `r14`–`r31`, which it
-saves at `NV` for `mulX` (`x448_correct`).
+`vg_x448` writes `X448(k, u)` to `out`, and restores `r15`–`r31`, which it
+saves at `NV` for `mul` (`x448_correct`).
 -/
 
 @[expose] public section
@@ -113,7 +113,7 @@ theorem bytesAt_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : 
   exact hf _ fun r hr hc => hd r hr _ (Offset.contains_base _ (by omega) (by omega)) hc
 
 /-- The code after the setup, from the ladder's initial state for the
-u-coordinate `pb` in the working space at `r6` of `s`: it saves `r14`–`r31`
+u-coordinate `pb` in the working space at `r6` of `s`: it saves `r15`–`r31`
 at `NV`, and restores them before the final reduction. -/
 theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     (hsc_in : (⟨s.gpr .r4, 56⟩ : Region) ∈ s.rd ++ s.wr) (hout : (⟨s.gpr .r3, 56⟩ : Region) ∈ s.wr)
@@ -125,20 +125,20 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     (hr1 : Rest [.r5, .r7, .r8] s s1) :
     WP isa afterSetup s1 fun s' =>
       bytesAt s'.mem (s.gpr .r3) 56 = VG.Spec.X448.x448 (bytesAt s.mem (s.gpr .r4) 56) pb ∧
-      ∀ i < 18, s'.gpr (nvR i) = s1.gpr (nvR i) := by
+      ∀ i < 17, s'.gpr (nvR i) = s1.gpr (nvR i) := by
   have hB : BITS = 1064 := rfl
   have hNV : NV = 1512 := rfl
   have hA := ACC_eq
   unfold afterSetup
   -- `r14`–`r31` saved at `NV`.
-  rw [← List.append_nil (stdsAt NV (slotsOf nvR 18))]
-  refine WP.seq (stdsAt_ok (l := slotsOf nvR 18) (by decide) (slotsOf_fit (by decide) (by decide)) hc1
+  rw [← List.append_nil (stdsAt NV (slotsOf nvR 17))]
+  refine WP.seq (stdsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) hc1
     fun s1' g1' rd1' wr1' sp1' mem1' => WP.block_nil ?_)
   have hc1' : Ctx (s.gpr .r6) s1' := ⟨by rw [g1']; exact hc1.r6, by rw [wr1']; exact hc1.wr⟩
-  have hfNV : Frame [⟨s.gpr .r6 + BitVec.ofNat 64 NV, 144⟩] s1.mem s1'.mem := by
+  have hfNV : Frame [⟨s.gpr .r6 + BitVec.ofNat 64 NV, 136⟩] s1.mem s1'.mem := by
     rw [mem1']; exact saveMem_frame_base (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
       (by decide) _ _ _
-  have hsv1 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 18) s1'.mem := by
+  have hsv1 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 17) s1'.mem := by
     rw [mem1']; exact saveMem_saved (by decide) _ _ _
   have hS1' := hS1.above (by decide) (by rw [hB]; decide) (by omega) hfNV
   have hf1' : Frame [⟨s.gpr .r6, 8192⟩] s.mem s1'.mem := hf1.trans (hfNV.sub fun r hr =>
@@ -152,25 +152,25 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
   refine WP.seq (WP.mono (lastSwap_ok hc3 (ladderAfter_swap_le _ _ (by decide)) h0 hS3)
     fun s4 ⟨hst4, hc4, hS4⟩ => ?_)
   refine WP.seq (WP.mono (invert_ok hc4 (hS4.mono (by decide)) rfl) fun s5 ⟨hst5, hc5, hS5⟩ => ?_)
-  refine WP.seq (WP.mono (mulXS (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
+  refine WP.seq (WP.mono (mulS (o := X2) (x := X2) (y := R) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) hc5 hS5) fun s6 ⟨hr6, hf6, hS6⟩ => ?_)
   -- The registers and regions along the way.
-  have hst6 : StpW workR (s.gpr .r6) s2 s6 :=
+  have hst6 : StpW work (s.gpr .r6) s2 s6 :=
     hst3.trans ((hst4.mono (by decide)).trans (hst5.trans ⟨hr6.mono (by decide), hf6⟩))
   have hc6 : Ctx (s.gpr .r6) s6 := hc5.of_rest hr6 (by decide)
   -- `r14`–`r31` restored.
-  have hsv6 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 18) s6.mem := by
-    have h2 := hsv1.frame_in (lo := 0) (n := 144) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+  have hsv6 : Saved (s.gpr .r6 + BitVec.ofNat 64 NV) s1.gpr (slotsOf nvR 17) s6.mem := by
+    have h2 := hsv1.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
       hf2 (fun r hr => by
-        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint (s.gpr .r6) (d := NV) (n := 144)
+        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint (s.gpr .r6) (d := NV) (n := 136)
           (e := BITS) (k := 448) (.inr (by omega)) (by omega) (by omega))
-    exact h2.frame_in (lo := 0) (n := 144) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+    exact h2.frame_in (lo := 0) (n := 136) (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
       hst6.frame (fun r hr => by
-        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint_base (s.gpr .r6) (d := NV) (n := 144)
+        rw [List.mem_singleton.mp hr]; simpa using Offset.disjoint_base (s.gpr .r6) (d := NV) (n := 136)
           (k := ACC + 112) (by omega) (by omega))
-  refine ldsAt_ok (l := slotsOf nvR 18) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
-    (by decide) hc6 fun s7 hc7 r7 m7 v7 => ?_
-  have nv7 : ∀ i < 18, s7.gpr (nvR i) = s1.gpr (nvR i) := fun i hi => by
+  refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
+    (by decide) hc6 fun s7 hc7 r7 m7 _ v7 => ?_
+  have nv7 : ∀ i < 17, s7.gpr (nvR i) = s1.gpr (nvR i) := fun i hi => by
     rw [v7 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)]
     exact hsv6 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)
   have h3' : s7.gpr .r3 = s.gpr .r3 := by
@@ -194,7 +194,7 @@ theorem afterSetup_correct {s s1 : State} {pb : List Byte}
     X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]
 
 theorem x448_correct {s : State} (hp : XPre s) :
-    WP isa x448 s fun s' => x448PPC64LE.post s s' ∧ ∀ i < 18, s'.gpr (nvR i) = s.gpr (nvR i) := by
+    WP isa x448 s fun s' => x448PPC64LE.post s s' ∧ ∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i) := by
   unfold x448
   exact WP.seq (WP.mono (setup_ok hp) fun s1 ⟨hc1, hf1, hS1, hr1⟩ =>
     WP.mono (afterSetup_correct (by rw [hp.rd]; simp) (by rw [hp.wr]; simp) hp.sc_ws hp.out_ws hc1 hf1 hS1 hr1)
@@ -213,7 +213,7 @@ theorem BPre.of {s : State} (h : x448BasePPC64LE.pre s) : BPre s := by
   exact ⟨h1, h2, h3, h4, h5⟩
 
 theorem x448Base_correct {s : State} (hp : BPre s) :
-    WP isa x448Base s fun s' => x448BasePPC64LE.post s s' ∧ ∀ i < 18, s'.gpr (nvR i) = s.gpr (nvR i) := by
+    WP isa x448Base s fun s' => x448BasePPC64LE.post s s' ∧ ∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i) := by
   unfold x448Base
   refine WP.seq ?_
   rw [List.singleton_append]

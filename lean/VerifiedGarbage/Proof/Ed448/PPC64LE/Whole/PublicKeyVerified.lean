@@ -1,6 +1,10 @@
 module
 
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.PublicKey
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
+import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseVerified
+import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
@@ -16,6 +20,10 @@ public import VerifiedGarbage.TCB.PPC64LE.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.PublicKey
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Calls
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Prune
+meta import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseVerified
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.SignCT
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Common
 meta import VerifiedGarbage.Proof.Ed448.PPC64LE.Whole.Hash
@@ -125,10 +133,90 @@ private theorem pkPre_of {s : State} (h : pkC.pre s) : PkPre s := by
 
 private theorem pk_hashRegs : ∀ r ∈ hashRegs .r23 .r24 [⟨.r22, 0, .imm 57⟩], r ∈ pkRegs := by decide
 
-/-- Constant time: the setup by the taint analysis, then the hash (`hash_then`,
-which relates the runs through the sponge functions' constant time and the
-registers they keep), then the rest by the taint analysis from `r21`–`r24`. -/
-theorem pk_ct : ConstantTime isa pkC.pre pkC.pub publicKey := by
+/-- `vg_ed448_scalar_base` is constant time from its pointers (the taint
+analysis). Its callers relate their runs through it (`RelCT.call`): it
+restores `r15`–`r31` from its working space, which the analysis of a caller
+would take to be secret. -/
+private theorem scalarBase_ct : ConstantTime isa Proof.Ed448.PPC64LE.basePPC.pre Proof.Ed448.PPC64LE.basePPC.pub
+    Impl.Ed448.PPC64LE.scalarBase :=
+  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5])
+    (fun s₁ s₂ _ _ hp => by
+      obtain ⟨p3, p4, p5, psp⟩ := hp
+      exact ⟨psp, fun r h => by
+        simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at h
+        rcases h with rfl | rfl | rfl
+        exacts [p3, p4, p5]⟩) (by taint_decide)
+
+/-- What the code after the hash needs of each run: the permissions, the stack
+pointer and `r21`–`r24`. -/
+private structure PkL (s a : State) : Prop where
+  rd : a.rd = s.rd
+  wr : a.wr = s.wr
+  sp : a.sp = s.sp
+  regs : ∀ r ∈ pkRegs, a.gpr r = pkV s r
+
+/-- The pruning, and the arguments of `scalar_base`. -/
+private theorem pk_args {s a : State} (hp : PkPre s) (h : PkL s a) :
+    WP isa (.block (prune .r24 0 ++ [mov .r3 .r21, .addi .r4 .r24 0, mov .r5 .r23])) a fun v =>
+      PkL s v ∧ v.gpr .r3 = s.gpr .r3 ∧ v.gpr .r4 = s.gpr .r6 ∧ v.gpr .r5 = s.gpr .r5 := by
+  obtain ⟨hrd, hwr, hsp, hg⟩ := h
+  have hFw : (⟨s.gpr .r6, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  refine prune_ok (f := .r24) (o := 0) (q := s.gpr .r6) (by decide) (by decide) (by decide)
+    (by rw [hg _ (by decide)]; exact BitVec.add_zero _)
+    (fun j hj => by rw [hwr]; exact in_base hFw (by omega) (by omega)) fun u _ usp urd uwr ug => ?_
+  unfold mov
+  refine wp_addi (by decide) (by decide) fun v₁ e₁ => wp_addi (by decide) (by decide) fun v₂ e₂ =>
+    wp_addi (by decide) (by decide) fun t₃ e₃ => WP.block_nil ?_
+  have keep : ∀ r ∈ pkRegs, t₃.gpr r = a.gpr r := fun r hr => by
+    obtain ⟨-, p3, p4, p5, -, -, p8⟩ := pres_ne (pkRegs_pres r hr)
+    rw [e₃.other _ p5, e₂.other _ p4, e₁.other _ p3, ug _ p8]
+  refine ⟨⟨by rw [e₃.rd, e₂.rd, e₁.rd, urd, hrd], by rw [e₃.wr, e₂.wr, e₁.wr, uwr, hwr],
+    by rw [e₃.sp, e₂.sp, e₁.sp, usp, hsp], fun r hr => by rw [keep r hr, hg r hr]⟩, ?_, ?_, ?_⟩
+  · rw [e₃.other _ (by decide), e₂.other _ (by decide), e₁.gpr, BitVec.add_zero, ug _ (by decide),
+      hg _ (by decide)]; rfl
+  · rw [e₃.other _ (by decide), e₂.gpr, BitVec.add_zero, e₁.other _ (by decide), ug _ (by decide),
+      hg _ (by decide)]; rfl
+  · rw [e₃.gpr, BitVec.add_zero, e₂.other _ (by decide), e₁.other _ (by decide), ug _ (by decide),
+      hg _ (by decide)]; rfl
+
+/-- `scalar_base`'s precondition at the call, for the arguments `pk_args` sets. -/
+private theorem pk_basePre {s v : State} (hp : PkPre s) (hv : PkL s v) (h3 : v.gpr .r3 = s.gpr .r3)
+    (h4 : v.gpr .r4 = s.gpr .r6) (h5 : v.gpr .r5 = s.gpr .r5) :
+    Proof.Ed448.PPC64LE.basePPC.pre (v.callEntry.withRegions [⟨s.gpr .r6, 57⟩]
+      [⟨s.gpr .r3, 57⟩, ⟨s.gpr .r5, 8192⟩]) ∧
+    Covers ([⟨s.gpr .r6, 57⟩] ++ [⟨s.gpr .r3, 57⟩, ⟨s.gpr .r5, 8192⟩]) (v.rd ++ v.wr) ∧
+    Covers [⟨s.gpr .r3, 57⟩, ⟨s.gpr .r5, 8192⟩] v.wr := by
+  have hF57 : Region.Sub ⟨s.gpr .r6, 57⟩ ⟨s.gpr .r6, 160⟩ := Region.sub_prefix (by decide)
+  have hFw : (⟨s.gpr .r6, 160⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  have hCw : (⟨s.gpr .r5, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  have hOw : (⟨s.gpr .r3, 57⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  refine ⟨⟨by rw [State.withRegions_rd, ce_gpr _ _ _ (by decide), h4],
+      by rw [State.withRegions_wr, ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), h3, h5],
+      by rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), h3, h4]; exact hp.oF.sub_right hF57,
+      by rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), h3, h5]; exact hp.oC,
+      by rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), h4, h5]; exact hp.cF.symm.sub_left hF57⟩,
+    fun a n ⟨r, hr, hc⟩ => ?_, fun a n ⟨r, hr, hc⟩ => ?_⟩
+  · rw [hv.rd, hv.wr]
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact Covers.of_sub (rs := [⟨s.gpr .r6, 57⟩]) (fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_append_right _ hFw, 0, by simp, by simp⟩) a n
+        ⟨_, List.mem_singleton_self _, hc⟩
+    · exact ⟨_, List.mem_append_right _ hOw, hc⟩
+    · exact ⟨_, List.mem_append_right _ hCw, hc⟩
+  · rw [hv.wr]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact ⟨_, hOw, hc⟩
+    · exact ⟨_, hCw, hc⟩
+
+/-- Constant time: the setup by the taint analysis, then the hash
+(`hash_then_rel`, which relates the runs through the sponge functions' constant
+time and the registers they keep), the pruning and the arguments by the taint
+analysis from `r21`–`r24`, the call of `scalar_base` by its own constant time
+(`scalarBase_ct`, `RelCT.call`), and the restores from `F` in `r24`, which the
+call keeps (`base_call`). -/
+theorem pk_ct (hl : Proof.Ed448.BaseLadder2Ok) : ConstantTime isa pkC.pre pkC.pub publicKey := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧
       (pkC.pre x.1 ∧ pkC.pre x.2 ∧ pkC.pub x.1 x.2))
@@ -155,10 +243,53 @@ theorem pk_ct : ConstantTime isa pkC.pre pkC.pub publicKey := by
         rcases hr with rfl | rfl | rfl | rfl
         exacts [p3, p4, p5, p6]) (by taint_decide))
       fun a b hab => ⟨by rw [hab.1]; exact pk_setup q₁, by rw [hab.2]; exact pk_setup q₂⟩) ?_
-  exact hash_then (by taint_decide) (fun a b h => ⟨h.1.2, h.2.2, by rw [h.1.1.sp, h.2.1.sp, psp],
+  refine hash_then_rel (by taint_decide) (fun a b h => ⟨h.1.2, h.2.2, by rw [h.1.1.sp, h.2.1.sp, psp],
       fun r hr => by rw [h.1.1.regs r (pk_hashRegs r hr), h.2.1.regs r (pk_hashRegs r hr), hv r (pk_hashRegs r hr)]⟩)
-    pkRegs (fun a b h r hr => ⟨pkRegs_pres r hr, by rw [h.1.1.regs r hr, h.2.1.regs r hr, hv r hr]⟩)
-    (by taint_decide)
+    fun t₁ t₂ ht => ?_
+  obtain ⟨⟨i₁, -⟩, ⟨i₂, -⟩⟩ := ht
+  have L₁ : ∀ a, Rg t₁ a → PkL s₁ a := fun a hg =>
+    ⟨hg.rd.trans i₁.rd, hg.wr.trans i₁.wr, hg.sp.trans i₁.sp,
+      fun r hr => (hg.cs r (pkRegs_pres r hr)).trans (i₁.regs r hr)⟩
+  have L₂ : ∀ a, Rg t₂ a → PkL s₂ a := fun a hg =>
+    ⟨hg.rd.trans i₂.rd, hg.wr.trans i₂.wr, hg.sp.trans i₂.sp,
+      fun r hr => (hg.cs r (pkRegs_pres r hr)).trans (i₂.regs r hr)⟩
+  -- The pruning and the arguments.
+  refine RelCT.seq (R := fun (u v : State) =>
+      (PkL s₁ u ∧ u.gpr .r3 = s₁.gpr .r3 ∧ u.gpr .r4 = s₁.gpr .r6 ∧ u.gpr .r5 = s₁.gpr .r5) ∧
+      (PkL s₂ v ∧ v.gpr .r3 = s₂.gpr .r3 ∧ v.gpr .r4 = s₂.gpr .r6 ∧ v.gpr .r5 = s₂.gpr .r5))
+    (relct_wp (ct_prog (P := fun a b => Rg t₁ a ∧ Rg t₂ b) pkRegs
+      (fun a b h => by rw [(L₁ a h.1).sp, (L₂ b h.2).sp, psp])
+      (fun a b h r hr => by rw [(L₁ a h.1).regs r hr, (L₂ b h.2).regs r hr, hv r hr])
+      (by taint_decide)) fun a b h => ⟨pk_args q₁ (L₁ a h.1), pk_args q₂ (L₂ b h.2)⟩) ?_
+  -- `scalar_base`, then the restores.
+  refine RelCT.seq (R := fun (u v : State) => (u.sp = s₁.sp ∧ u.gpr .r24 = s₁.gpr .r6) ∧
+      (v.sp = s₂.sp ∧ v.gpr .r24 = s₂.gpr .r6))
+    (relct_wp (VG.PPC64LE.RelCT.call (k := Proof.Ed448.PPC64LE.basePPC) (Proof.Ed448.PPC64LE.scalarBase_ok hl)
+      scalarBase_ct [⟨s₁.gpr .r6, 57⟩] [⟨s₁.gpr .r3, 57⟩, ⟨s₁.gpr .r5, 8192⟩] fun u v ⟨⟨hu, u3, u4, u5⟩,
+        ⟨hv', v3, v4, v5⟩⟩ => ?_) fun u v ⟨⟨hu, u3, u4, u5⟩, ⟨hv', v3, v4, v5⟩⟩ => ⟨?_, ?_⟩)
+    (ct_prog [.r24] (fun a b h => by rw [h.1.1, h.2.1, psp])
+      (fun a b h r hr => by rw [List.mem_singleton.mp hr, h.1.2, h.2.2, p6]) (by taint_decide))
+  · obtain ⟨b₁, c₁, w₁⟩ := pk_basePre q₁ hu u3 u4 u5
+    obtain ⟨b₂, c₂, w₂⟩ := pk_basePre q₂ hv' v3 v4 v5
+    simp only [← p3, ← p5, ← p6] at b₂ c₂ w₂
+    refine ⟨b₁, b₂, ⟨?_, ?_, ?_, ?_⟩, c₁, w₁, c₂, w₂⟩
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), u3, v3, p3]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), u4, v4, p6]
+    · rw [ce_gpr _ _ _ (by decide), ce_gpr _ _ _ (by decide), u5, v5, p5]
+    · rw [State.withRegions_sp, State.withRegions_sp, State.callEntry_sp, State.callEntry_sp, hu.sp,
+        hv'.sp, psp]
+  all_goals
+    first
+    | (obtain ⟨b₁, c₁, w₁⟩ := pk_basePre q₁ hu u3 u4 u5
+       refine base_call hl u3 u4 u5 (q₁.oF.sub_right (Region.sub_prefix (by decide))) q₁.oC
+         (q₁.cF.symm.sub_left (Region.sub_prefix (by decide))) c₁ w₁ fun t _ _ hsp _ hg _ => ⟨?_, ?_⟩
+       · rw [hsp, hu.sp]
+       · rw [hg _ (by decide), hu.regs _ (by decide)]; rfl)
+    | (obtain ⟨b₂, c₂, w₂⟩ := pk_basePre q₂ hv' v3 v4 v5
+       refine base_call hl v3 v4 v5 (q₂.oF.sub_right (Region.sub_prefix (by decide))) q₂.oC
+         (q₂.cF.symm.sub_left (Region.sub_prefix (by decide))) c₂ w₂ fun t _ _ hsp _ hg _ => ⟨?_, ?_⟩
+       · rw [hsp, hv'.sp]
+       · rw [hg _ (by decide), hv'.regs _ (by decide)]; rfl)
 
 /-- A state satisfying the precondition. -/
 def pkSat : State where
@@ -173,7 +304,7 @@ def pkSat : State where
 theorem publicKey_verified (hl : Proof.Ed448.BaseLadder2Ok) :
     Verified PPC64LE.target publicKey (Sig.scratchContract PPC64LE.abi Spec.Ed448.publicKeySig "frame" .u8 160
       (Curry.const (fun _ => True) _) (Proof.Ed448.WholeLocal.publicKeyPost PPC64LE.abi.ptrBits) true 48) :=
-  Verified.of_correct (pk_ok hl) pk_ct (by
+  Verified.of_correct (pk_ok hl) (pk_ct hl) (by
     sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, Spec.Ed448.publicKeySig,
       Spec.Ed448.scratchWords, Proof.Ed448.WholeLocal.publicKeyPost, pkC, PPC64LE.abi, PPC64LE.argRegs]
       [pkSat] using pkSat)

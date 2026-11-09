@@ -69,7 +69,7 @@ public.
 namespace VG.Impl.Ed448.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.X448.PPC64LE (mul add sub cswap freeze one BITS R X2 Z2 Y)
+open VG.Impl.X448.PPC64LE (mul add sub cswap freeze one BITS R X2 Z2 Y slotsOf stdsAt ldsAt nvR)
 
 /-! ## The working space -/
 
@@ -89,6 +89,8 @@ def SIGN : Nat := 3528
 /-- The return address and the caller's `r14`, while the function runs. -/
 def VLRS : Nat := 3536
 def VR14S : Nat := 3544
+/-- The caller's `r15`–`r31`, which the multiplication uses. -/
+def VNV : Nat := 3552
 /-- The output of `freeze`, at `r3`. -/
 def OUT : Nat := 4096
 
@@ -337,13 +339,14 @@ def addNegR : Prog isa :=
 /-- The return address and `r14` kept, the inputs copied, `r3 = OUT`,
 `BAD = 0`, and the constants. -/
 def vSetup : List Instr :=
-  [.mflr .r7, .store .d .r7 .r6 VLRS, .store .d .r14 .r6 VR14S] ++
+  [.mflr .r7, .store .d .r7 .r6 VLRS, .store .d .r14 .r6 VR14S] ++ stdsAt VNV (slotsOf nvR 17) ++
   copyBytes .r3 PK 57 ++ copyBytes .r4 SG 114 ++ copyBytes .r5 CH 57 ++
   [.addi .r3 .r6 OUT, .li .r7 0, .store .d .r7 .r6 BAD] ++
   constField DK Spec.Ed448.d.val ++ constField ONE 1
 
-/-- The return address and `r14` loaded back. -/
-def vRestore : List Instr := [.load .d .r7 .r6 VLRS, .mtlr .r7, .load .d .r14 .r6 VR14S]
+/-- The return address, `r14` and `r15`–`r31` loaded back. -/
+def vRestore : List Instr :=
+  [.load .d .r7 .r6 VLRS, .mtlr .r7, .load .d .r14 .r6 VR14S] ++ ldsAt VNV (slotsOf nvR 17)
 
 /-- `X = 0` and `Y - Z = 0` checked, and the result: 1 less the top bit of
 `BAD | -BAD`, which is set exactly when `BAD` is not 0. -/

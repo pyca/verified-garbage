@@ -16,8 +16,8 @@ first), the chain as far as `z^(2²²³ - 1)` in `R` and `z^(2²²² - 1)` in `T
 (`chain223_ok`), then its two final factors. The chain's slots `T0`–`T6` are
 separate from the slots `qs` the caller keeps (`TempsOk`), whose elements it
 keeps. The proofs take the multiplication and the registers that may
-change as parameters (`invertQW_ok`, `invertW_ok`): `invertQ_ok` is
-Ed448's, with `mul`, and `invert_ok` X448's, with `mulX`. Also the helpers
+change as parameters (`invertQW_ok`, `invertW_ok`): `invertQ_ok` and
+`invert_ok`, Ed448's and X448's, are those of `mul` and `work`. Also the helpers
 of the ladders' and Ed448's loops (`cmp_ok`, …).
 -/
 
@@ -401,12 +401,12 @@ theorem invertQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs) (hZ :
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
   invertQW_ok (by decide) mulCur_mul hq hR hZ hT hc hS h0
 
-/-- The inversion in X448, with `mulX`. -/
+/-- The inversion in X448. -/
 theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
-    WP isa (invertW mulP) s fun s' => StpW workR b s s' ∧ Ctx b s' ∧
+    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
-  invertW_ok (by decide) mulCur_mulP hc hS h0
+  invertW_ok (by decide) mulCur_mul hc hS h0
 
 end
 
