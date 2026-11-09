@@ -829,7 +829,7 @@ theorem rredG_ok {t₃ : State} {base : Addr} {size : Nat} {M : Mod} {acc a b m 
     (hT1v : regsVal t₃ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t₃.gpr .r12).toNat = T1)
     (hrowb : ∀ q < 2 ^ 64, T1 + q * m < 2 ^ 64 * (2 * m)) :
     WP isa (.block (rrowG M acc)) t₃ fun t₆ => ∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal t₆ 0 (M.n + 1) = T1 + q * m ∧
-      t₆.mem = t₃.mem ∧ Kp ([.r0, .r9, .r10, .r11, .r12] ++ tregs 0 (M.n + 1)) t₃ t₆ := by
+      t₆.mem = t₃.mem ∧ Kp (([.r0, .r9, .r10, .r11, .r12] : List Reg) ++ tregs 0 (M.n + 1)) t₃ t₆ := by
   have hs15 := ht₃.small
   obtain ⟨n0, n9, mi_le, mi4, a_le, b_le, mo_le⟩ := hL
   obtain ⟨N, hN⟩ : ∃ N, M.n = N + 1 := ⟨M.n - 1, by omega⟩
@@ -939,7 +939,7 @@ theorem rred_ok {t₃ : State} {base : Addr} {size : Nat} {M : Mod} {acc a b m T
     (hT1v : regsVal t₃ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t₃.gpr .r12).toNat = T1)
     (hrowb : ∀ q < 2 ^ 64, T1 + q * m < 2 ^ 64 * (2 * m)) :
     WP isa (.block (rrowM M m acc)) t₃ fun t₆ => ∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal t₆ 0 (M.n + 1) = T1 + q * m ∧
-      t₆.mem = t₃.mem ∧ Kp ([.r0, .r9, .r10, .r11, .r12] ++ tregs 0 (M.n + 1)) t₃ t₆ := by
+      t₆.mem = t₃.mem ∧ Kp (([.r0, .r9, .r10, .r11, .r12] : List Reg) ++ tregs 0 (M.n + 1)) t₃ t₆ := by
   unfold rrowM
   split
   · rename_i hF
