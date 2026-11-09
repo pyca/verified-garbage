@@ -33,7 +33,10 @@ vg_sha512_update_scratch_avx2:
 	jb 25f
 27:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+64], r9
+	mov r10d, 120
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+64], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -46,7 +49,10 @@ vg_sha512_update_scratch_avx2:
 	je 28f
 210:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+64], r9b
+	mov r10d, 127
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+64], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -81,7 +87,10 @@ vg_sha512_update_scratch_avx2:
 	jb 217f
 219:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+64], r9
+	mov r10d, 120
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+64], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -94,7 +103,10 @@ vg_sha512_update_scratch_avx2:
 	je 220f
 222:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+64], r9b
+	mov r10d, 127
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+64], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1

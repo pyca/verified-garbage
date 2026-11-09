@@ -774,6 +774,41 @@ theorem wp_bswap {d : Reg}
     WP isa (.block (.bswap d :: is)) s Q :=
   WP.cons rfl (k _ (Upd.setReg _ _ _))
 
+/-- `clampWith lim idx dst`, with `idx = c ≤ lim`: `dst = c`. -/
+theorem wp_clampWith {lim c : Nat} {idx dst : Reg} (hne : idx ≠ dst) (hc : c ≤ lim) (hl : lim < 2 ^ 32)
+    (hi : s.gpr idx = BitVec.ofNat 64 c)
+    (k : ∀ s', Upd s s' dst (BitVec.ofNat 64 c) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (clampWith lim idx dst ++ is)) s Q := by
+  have hv : (BitVec.ofNat 32 lim).setWidth 64 = BitVec.ofNat 64 lim := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show lim < 2 ^ 32 by omega)]
+  have hcn : (BitVec.ofNat 64 c).toNat = c := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hbn : (BitVec.ofNat 64 lim).toNat = lim := by
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
+  have hi' : (s.setReg32 dst (BitVec.ofNat 32 lim)).gpr idx = BitVec.ofNat 64 c := by
+    simp only [State.setReg32, State.setReg, hne, ↓reduceIte, hi]
+  simp only [clampWith, List.cons_append, List.nil_append]
+  refine WP.cons rfl (WP.cons rfl (WP.block_cons_iff.mpr ⟨_, rfl, k _ ?_ ?_⟩))
+  rotate_left
+  · dsimp only; split <;> rfl
+  dsimp only
+  split
+  · refine ⟨by simp [State.setReg, arithFlags, State.setFlags, hi'], fun r h => ?_, rfl, rfl, rfl⟩
+    simp [State.setReg32, State.setReg, arithFlags, State.setFlags, h]
+  · rename_i hn
+    simp only [State.setReg32, State.setReg, ↓reduceIte, hne, hi, hv, hcn, hbn,
+      decide_eq_true_eq] at hn
+    refine ⟨by simp only [State.setReg32, State.setReg, arithFlags, State.setFlags, ↓reduceIte, hv]; congr 1; omega,
+      fun r h => ?_, rfl, rfl, rfl⟩
+    simp [State.setReg32, State.setReg, arithFlags, State.setFlags, h]
+
+/-- `clamp P w` before a store at byte `c` of the buffer, `c + w ≤ B`: `r10 = c`. -/
+theorem wp_clamp (P : Params) {w c : Nat} (hc : c + w ≤ P.B) (hB : P.B < 2 ^ 32)
+    (h13 : s.gpr .r13 = BitVec.ofNat 64 c)
+    (k : ∀ s', Upd s s' .r10 (BitVec.ofNat 64 c) → s'.xmm = s.xmm → WP isa (.block is) s' Q) :
+    WP isa (.block (clamp P w ++ is)) s Q :=
+  wp_clampWith (by decide) (by omega) (by omega) h13 k
 end
 
 /-- `test r, r`, as a block of its own. -/
