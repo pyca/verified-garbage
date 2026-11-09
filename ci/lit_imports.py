@@ -9,7 +9,7 @@ Otherwise the kernel builds the code again, from the functions that build
 it, in every check (.agents/skills/proof-performance/SKILL.md, "Code
 without its literal").
 
-For each target, this runs `lean/CheckLitImports.lean` over the target's
+For each target, this runs `ci/lit_imports.lean` over the target's
 registration files (`Artifacts/`), which lists each
 proposition the kernel decides that reaches code with a literal the module
 could import, and weighs each by the build's profile (`lean_profile.py`, so
@@ -39,7 +39,7 @@ times here only rank.
 
 `--min-kernel` (default 2 s) and `--min-literal` (default 0.3 s) leave out
 cheap declarations and literals of cheap code. `--raw` also writes every
-line `CheckLitImports.lean` printed, unweighed.
+line `lit_imports.lean` printed, unweighed.
 """
 
 import argparse
@@ -55,6 +55,7 @@ import lean_cache
 import lean_profile
 
 LEAN = pathlib.Path(__file__).resolve().parent.parent / "lean"
+HELPER = pathlib.Path(__file__).resolve().with_name("lit_imports.lean")
 ROOT_DIRS = ("Artifacts",)
 LITERAL = re.compile(r"\[line \d+\] materialize_\w+ ([\w.']+)")
 
@@ -79,10 +80,10 @@ def scan(target):
     with tempfile.NamedTemporaryFile("w", suffix=".txt") as f:
         f.write("\n".join(roots(target)) + "\n")
         f.flush()
-        r = subprocess.run(["lake", "env", "lean", "--run", "CheckLitImports.lean", f.name],
+        r = subprocess.run(["lake", "env", "lean", "--run", str(HELPER), f.name],
                            cwd=LEAN, capture_output=True, text=True)
     if r.returncode != 0:
-        sys.exit(f"CheckLitImports.lean failed for {target}:\n{r.stderr}{r.stdout}")
+        sys.exit(f"lit_imports.lean failed for {target}:\n{r.stderr}{r.stdout}")
     return [line.split("\t") for line in r.stdout.splitlines() if line.count("\t") == 6]
 
 
@@ -129,7 +130,7 @@ def main(argv=None):
     lit_times = literal_times(rows)
 
     chosen = args.target or targets()
-    # `CheckLitImports.lean` is not a module: it reads the private parts of all
+    # `lit_imports.lean` is not a module: it reads the private parts of all
     # it imports, which a build restored with `--empty-private` leaves empty.
     lean_cache.fill_private(LEAN, [m for t in chosen for m in roots(t)])
     with concurrent.futures.ThreadPoolExecutor(args.j) as pool:
