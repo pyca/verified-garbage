@@ -1,5 +1,6 @@
 module
 public import VerifiedGarbage.Proof.X448.PPC64LE.Field
+public import VerifiedGarbage.Proof.X448.PPC64LE.Product
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 
 import VerifiedGarbage.Proof.X448.PPC64LE.Mul
@@ -89,6 +90,24 @@ theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
   refine WP.mono (mul_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hx4 hy4 ho4 hc)
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
+  by_cases hqo : q = o
+  · subst hqo
+    rw [upd_self, ← hS x hx, ← hS y hy]
+    exact toFe_mul hv
+  · rw [upd_of_ne _ _ hqo]
+    exact slots_after hq ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
+
+/-- `mulS` for `mulX`, which changes the registers `clobR`. -/
+theorem mulXS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
+    (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0)
+    (ho4 : o % 4 = 0) {s : State} (hc : Ctx b s) (hS : SlotsOk s.mem b qs v) :
+    WP isa (mulP o x y) s fun s' => Rest clobR s s' ∧ Frame [FA b] s.mem s'.mem ∧
+      SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
+  refine WP.mono (mulX_ok ho (sep1_get hq hx).2 (sep1_get hq hy).2 hx4 hy4 ho4 hc)
+    fun s' ⟨_, hr, hf1, hv⟩ => ?_
+  have hf : Frame [⟨b + BitVec.ofNat 64 o, 56⟩, ⟨b + BitVec.ofNat 64 ACC, 112⟩] s.mem s'.mem :=
+    hf1.mono fun r hr => by simp [List.mem_singleton.mp hr]
+  refine ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
