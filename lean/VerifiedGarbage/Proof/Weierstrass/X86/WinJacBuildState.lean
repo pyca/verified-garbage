@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.NafAdjust
 import VerifiedGarbage.Proof.Weierstrass.X86.NafTableIO
 import VerifiedGarbage.Proof.Framework.X86.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 
 /-! ## `WinJacLayout` -/
 

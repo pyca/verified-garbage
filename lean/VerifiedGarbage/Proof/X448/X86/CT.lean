@@ -24,7 +24,7 @@ import VerifiedGarbage.Proof.X448.X86.Copy
 import VerifiedGarbage.Proof.X448.X86.FinalSwap
 import VerifiedGarbage.Proof.X448.X86.FnVerified
 import VerifiedGarbage.Proof.X448.X86.Small
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
@@ -36,7 +36,7 @@ meta import VerifiedGarbage.Proof.X448.X86.Copy
 meta import VerifiedGarbage.Proof.X448.X86.FinalSwap
 meta import VerifiedGarbage.Proof.X448.X86.FnVerified
 meta import VerifiedGarbage.Proof.X448.X86.Small
-meta import VerifiedGarbage.Spec.X25519
+meta import VerifiedGarbage.Impl.X25519.Model
 
 /-!
 # X448 on x86 (32-bit): constant time

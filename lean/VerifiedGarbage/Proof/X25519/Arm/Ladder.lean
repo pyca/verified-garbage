@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Arm.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.X25519.Arm.Mul
@@ -21,7 +23,8 @@ n`) to the state after `n - 1`, with the swap in `r10` and the counter in
 namespace VG.Proof.X25519.Arm
 
 open VG VG.Arm VG.Impl.X25519.Arm
-open VG.Spec.X25519 (P Fe Ladder ladderStep cswap a24)
+open VG.Spec.X25519 (P Fe)
+open VG.X25519Model (Ladder ladderStep cswap a24)
 open VG.Proof.X25519 (toFe ladderAfter ladderAfter_step ladderStep_eq bit bit_le ladderAfter_swap_le)
 
 /-- `s'` is `s` but for the registers `r1`–`r11`, the flags and the field
@@ -164,11 +167,11 @@ def ladV (x1 : Fe) (st : Ladder) (q : Nat) : Fe :=
   if q = X1 then x1 else if q = X2 then st.x2 else if q = Z2 then st.z2 else if q = X3 then st.x3
   else if q = Z3 then st.z3 else a24
 
-theorem cswap_fst (sw : Nat) (x y : Fe) : (Spec.X25519.cswap sw x y).1 = sel sw x y := by
-  unfold Spec.X25519.cswap sel; split <;> rfl
+theorem cswap_fst (sw : Nat) (x y : Fe) : (VG.X25519Model.cswap sw x y).1 = sel sw x y := by
+  unfold VG.X25519Model.cswap sel; split <;> rfl
 
-theorem cswap_snd (sw : Nat) (x y : Fe) : (Spec.X25519.cswap sw x y).2 = sel sw y x := by
-  unfold Spec.X25519.cswap sel; split <;> rfl
+theorem cswap_snd (sw : Nat) (x y : Fe) : (VG.X25519Model.cswap sw x y).2 = sel sw y x := by
+  unfold VG.X25519Model.cswap sel; split <;> rfl
 
 /-- The elements after an iteration. -/
 theorem ladOps_vals (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) :

@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.X86
 public import VerifiedGarbage.Proof.X25519.X86.Verified
@@ -34,7 +38,7 @@ namespace VG.Proof.X25519.X86.Exchange
 
 open VG VG.X86 VG.Proof.Xdh.X86
 
-theorem callee : Callee 32 4096 8 Spec.X25519.x25519 Impl.X25519.X86.x25519 Proof.X25519.x25519X86 where
+theorem callee : Callee 32 4096 8 VG.X25519Model.x25519 Impl.X25519.X86.x25519 Proof.X25519.x25519X86 where
   hv := Proof.X25519.X86.x25519_ok
   hct := Proof.X25519.X86.x25519_ct
   pre s h := by
@@ -49,7 +53,7 @@ theorem callee : Callee 32 4096 8 Spec.X25519.x25519 Impl.X25519.X86.x25519 Proo
 theorem exchange_verified :
     Verified X86.target (Impl.Xdh.X86.exchange "vg_x25519" Impl.X25519.X86.x25519 32)
       (Spec.X25519.exchangeContract X86.abi 28) :=
-  Verified.of_correct (k := exContract 32 4096 8 Spec.X25519.x25519) (exchange_correct callee)
+  Verified.of_correct (k := exContract 32 4096 8 VG.X25519Model.x25519) (exchange_correct callee)
     (exchange_ct callee ⟨_, by taint_decide⟩) (by
       have a0 : arg Proof.X25519.X86.satState 0 = 0x1000 := by decide
       have a1 : arg Proof.X25519.X86.satState 1 = 0x2000 := by decide
@@ -57,7 +61,8 @@ theorem exchange_verified :
       have a3 : arg Proof.X25519.X86.satState 3 = 0x4000 := by decide
       have e : argAddr Proof.X25519.X86.satState 0 = 0x8004 := by decide
       have esp : Proof.X25519.X86.satState.gpr .esp = 0x8000 := rfl
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig, Proof.Xdh.X86.exContract,
+      simp only [VG.Proof.X25519.Wychelean.exchangeContract_ladder] at *
+      contract_implies [Spec.X25519.exchangeSig, Proof.X25519.x25519Sig, Proof.Xdh.X86.exContract,
         Proof.Xdh.X86.Pre, Proof.Xdh.X86.ExPost, Proof.Xdh.X86.Pub, Proof.Xdh.X86.outR, Proof.Xdh.X86.scR, Proof.Xdh.X86.ptR, Proof.Xdh.X86.wsR,
         Proof.Xdh.X86.argR, Proof.Xdh.X86.retR, Proof.Xdh.X86.stkR, X86.abi, X86.argSlots, X86.argVal,
         X86.argBytes, stackBelow] [a0, a1, a2, a3, e, esp] using Proof.X25519.X86.satState)

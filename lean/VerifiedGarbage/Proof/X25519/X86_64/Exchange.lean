@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.X86_64
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Verified
@@ -43,7 +47,7 @@ namespace VG.Proof.X25519.X86_64.Exchange
 open VG VG.X86_64 VG.Proof.Xdh.X86_64
 
 theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Proof.X25519.x25519Contract X86_64.abi 8))
-    (hn : NoSp c) (hd : c.depth ≤ 1) : Callee 32 4096 Spec.X25519.x25519 c (Proof.X25519.x25519Contract X86_64.abi 8) where
+    (hn : NoSp c) (hd : c.depth ≤ 1) : Callee 32 4096 VG.X25519Model.x25519 c (Proof.X25519.x25519Contract X86_64.abi 8) where
   hv := hv.1
   hct := hv.2.1
   pre s h := by
@@ -72,9 +76,10 @@ theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Proof.X25519.x2551
 theorem exchange_verified {c : Prog isa} (name : String)
     (hv : Verified X86_64.target c (Proof.X25519.x25519Contract X86_64.abi 8)) (hn : NoSp c) (hd : c.depth ≤ 1) :
     Verified X86_64.target (Impl.Xdh.X86_64.exchange name c 32) (Spec.X25519.exchangeContract X86_64.abi 24) :=
-  Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct (callee hv hn hd) (by decide))
+  Verified.of_correct (k := exContract 32 4096 VG.X25519Model.x25519) (exchange_correct (callee hv hn hd) (by decide))
     (exchange_ct (callee hv hn hd) ⟨_, by taint_decide⟩) (by
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
+      simp only [VG.Proof.X25519.Wychelean.exchangeContract_ladder] at *
+      contract_implies [Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
         Proof.Xdh.X86_64.exContract, Proof.Xdh.X86_64.Pre, Proof.Xdh.X86_64.ExPost, Proof.Xdh.X86_64.Pub,
         Proof.Xdh.X86_64.outR, Proof.Xdh.X86_64.scR, Proof.Xdh.X86_64.ptR, Proof.Xdh.X86_64.wsR,
         Proof.Xdh.X86_64.retR, Proof.Xdh.X86_64.stkR, X86_64.abi, X86_64.argRegs, stackBelow]

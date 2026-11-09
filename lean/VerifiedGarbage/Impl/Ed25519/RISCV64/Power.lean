@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Field
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 
 /-! A fixed addition chain shared by inversion and square-root recovery, on
 RISC-V, as on PPC64LE (`Impl/Ed25519/PPC64LE/Power.lean`). -/

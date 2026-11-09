@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Ops
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarMemory
 public import VerifiedGarbage.Proof.X25519.AArch64.Top
@@ -11,6 +13,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64
 
 /-- The shared signature also supplies the non-wrapping scratch range. -/

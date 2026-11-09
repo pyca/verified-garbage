@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
 
 /-! # The `_alt` ladder's iteration is RFC 7748's
@@ -13,6 +15,7 @@ the ladder's step whichever point is doubled. -/
 
 namespace VG.Proof.X25519.AArch64.AltLadder
 open VG VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 open VG.Impl.Ed25519.AArch64 (Slot)
 open VG.Proof.Ed25519.AArch64 (Env)
 open VG.Proof.X25519.AArch64.Word (Good)
@@ -74,7 +77,7 @@ theorem altEnv_ok (e : Env) (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hg : Go
   rw [v0, v18, v1, v2, v3, v4, ladderStep_eq, h0, h1, h2, h3, h4, hc, toFe_121666]
   rcases (by omega : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
     rcases (by omega : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
-    simp only [hs, hk, Spec.X25519.cswap] <;>
+    simp only [hs, hk, VG.X25519Model.cswap] <;>
     refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
 
 /-! The first iteration's updates (bit 254). -/
@@ -108,7 +111,7 @@ theorem firstEnv_ok (e : Env) (k : Nat) (x1 : Fe) (hg : Good e x1 (init x1))
   obtain ⟨v0, v18, v1, v2, v3, v4⟩ := firstEnv_vals e
   unfold Good
   rw [v0, v18, v1, v2, v3, v4, ladderStep_eq, h0, h2, h3, h4, hc, toFe_121666, toFe_4, hb]
-  simp only [init, Spec.X25519.cswap]
+  simp only [init, VG.X25519Model.cswap]
   refine ⟨trivial, ?_, ?_, ?_, ?_, trivial⟩ <;> grind
 
 /-! A doubling's updates (the iterations for bits 2, 1, 0). -/
@@ -140,9 +143,9 @@ theorem dblEnv_vals (e : Env) :
 leaves the swap clear. -/
 theorem ladderStep_zero (k : Nat) (x1 : Fe) (st : Ladder) (t : Nat) (hb : bit k t = 0) :
     (ladderStep k x1 st t).x2 =
-        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1 (Spec.X25519.cswap st.swap st.z2 st.z3).1).1 ∧
+        (dblPt (VG.X25519Model.cswap st.swap st.x2 st.x3).1 (VG.X25519Model.cswap st.swap st.z2 st.z3).1).1 ∧
       (ladderStep k x1 st t).z2 =
-        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1 (Spec.X25519.cswap st.swap st.z2 st.z3).1).2 ∧
+        (dblPt (VG.X25519Model.cswap st.swap st.x2 st.x3).1 (VG.X25519Model.cswap st.swap st.z2 st.z3).1).2 ∧
       (ladderStep k x1 st t).swap = 0 := by
   rw [ladderStep_eq, hb, Nat.xor_zero]
   exact ⟨rfl, rfl, rfl⟩

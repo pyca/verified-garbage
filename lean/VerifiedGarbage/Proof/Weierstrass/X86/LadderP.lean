@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Weierstrass.X86.Bits
 import VerifiedGarbage.Proof.Weierstrass.X86.Copy
 import VerifiedGarbage.Proof.Weierstrass.X86.Loop
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!

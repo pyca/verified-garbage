@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.ScalarBase
 public import VerifiedGarbage.Impl.X25519.RISCV64.Base
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Comb
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Encode
 import VerifiedGarbage.Proof.Ed25519.RISCV64.Freeze
@@ -46,7 +46,7 @@ def clampL (kb : List Byte) : List Byte :=
   k.set 31 ((k.getD 31 0 &&& 127) ||| 64)
 
 theorem decode_clamp {kb : List Byte} (hk : kb.length = 32) :
-    Spec.X25519.decodeScalar25519 kb = Spec.Ed25519.decodeLE (clampL kb) := by
+    VG.X25519Model.decodeScalar25519 kb = Spec.Ed25519.decodeLE (clampL kb) := by
   have hl : (clampL kb).length = 32 := by simp [clampL, hk]
   rw [Proof.Ed25519.decodeLE_eq, ← Proof.X25519.take_32 hl, ← Proof.X25519.decodeLittleEndian_eq]
   rfl
@@ -132,7 +132,7 @@ theorem uOps_eval (e : Env) :
     evalOps uOps e 0 = e 2 + e 1 ∧ evalOps uOps e 2 = e 2 - e 1 := by
   simp [uOps, evalOps, evalOp, Function.update]
 
-theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519.basePoint) := by
+theorem engine_ok : EngineOk engine (fun kb => VG.X25519Model.x25519 kb VG.X25519Model.basePoint) := by
   intro b s p T hc hws h14 hin hpd hT hsym apart
   have hk : (Spec.Ed25519.bytesAt s.mem p 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   have sub : (scalR b).Sub ⟨b, 8192⟩ := Offset.sub_base _ (by decide)
@@ -182,7 +182,7 @@ theorem engine_ok : EngineOk engine (fun kb => Spec.X25519.x25519 kb Spec.X25519
     exact (f1.mono (by simp)).trans ((fu.mono (by simp)).trans ((fv.mono (by simp)).trans
       ((fx.mono (by simp)).trans ((ky.frame.mono (by simp)).trans ((kz.frame.mono (by simp)).trans
         ((ft.sub fr).mono (by simp)))))))
-  · show _ = Spec.X25519.x25519 _ _
+  · show _ = VG.X25519Model.x25519 _ _
     rw [VG.Proof.X25519.Edwards.x25519_basePoint hk (env z.mem b 0) ?_]
     · rw [vt, ← env_val]; rfl
     · rw [e0, ey, (uOps_eval _).1, (uOps_eval _).2]
@@ -194,9 +194,9 @@ theorem x25519Base_ok {s : State} (hp : BasePre s) :
     WP isa x25519Base s fun t =>
       (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.gpr .ra = s.gpr .ra ∧
       Spec.Ed25519.bytesAt t.mem (s.gpr .a0) 32 =
-        Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (s.gpr .a1) 32) Spec.X25519.basePoint := by
+        VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem (s.gpr .a1) 32) VG.X25519Model.basePoint := by
   unfold x25519Base
-  exact baseWrap_ok (R := fun kb => Spec.X25519.x25519 kb Spec.X25519.basePoint)
+  exact baseWrap_ok (R := fun kb => VG.X25519Model.x25519 kb VG.X25519Model.basePoint)
     (fun hc hws h14 hin hpd hT hsym apart => engine_ok hc hws h14 hin hpd hT hsym apart) hp
 
 end VG.Proof.X25519.RISCV64.Base

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
@@ -18,6 +18,7 @@ the order the spec writes them.
 namespace VG.Proof.X25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 /-- A natural number as an element of `GF(p)`: its residue. -/
 def toFe (x : Nat) : Fe := Fin.ofNat P x

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.Spec.X448.Contract
 
 /-!

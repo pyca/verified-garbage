@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 
 /-!
 # X25519 on PPC64LE: the product reduced

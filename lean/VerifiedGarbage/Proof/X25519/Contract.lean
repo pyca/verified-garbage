@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Impl.X25519.Model
+public import VerifiedGarbage.Spec.X25519.Interface
 
 /-!
 # X25519: the contract of `vg_x25519`, an internal function
@@ -17,6 +18,7 @@ proofs of its callers compose. Only the callers' contracts, in
 namespace VG.Proof.X25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 /-- `vg_x25519(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512])`.
 `scratch` is working space. -/

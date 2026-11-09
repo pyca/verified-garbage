@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Framework.PlainSimp
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -20,6 +22,7 @@ of the scalar stored at `BITS + t`; the loop (`ladder`) runs it for `t = 254,
 namespace VG.Proof.X25519.AArch64
 
 open VG VG.AArch64 VG.Impl.X25519.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 /-! ## One iteration -/
 

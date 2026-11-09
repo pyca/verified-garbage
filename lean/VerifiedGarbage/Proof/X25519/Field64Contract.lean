@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.TCB.Artifact
 import VerifiedGarbage.Proof.Framework.PowLit
 
@@ -25,6 +25,7 @@ space and its result. Every other byte of `ws` keeps its value (`InvKeeps`).
 namespace VG.Proof.X25519.Field64
 
 open VG.Spec VG.Spec.X25519
+open VG.X25519Model
 
 /-- The bytes of the working space. -/
 def wsBytes : Nat := 4096

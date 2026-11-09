@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 
 import VerifiedGarbage.Proof.Ed25519.Bytes
@@ -19,7 +21,8 @@ import Mathlib.Tactic.FieldSimp
 namespace VG.Proof.X25519.Edwards
 open VG
 open VG.Proof.Ed25519 (Rep dZ toZ_add toZ_sub toZ_mul toZ_pow)
-open VG.Spec.X25519 (decodeScalar25519 P)
+open VG.Spec.X25519 (P)
+open VG.X25519Model (decodeScalar25519)
 /-- A bit of the decoded scalar of 32 bytes is that of the bytes read as a
 number, but for the clamped ones. -/
 theorem clamped_bit {kb : List Byte} (hk : kb.length = 32) {q : Nat} (hq : q < 256) :

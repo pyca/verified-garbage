@@ -1,6 +1,8 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.RISCV64.Ladder
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Range
@@ -151,7 +153,7 @@ theorem bits_ok {sc : Addr} {s : State} (hc : Ctx b s) (h4 : s.gpr .a1 = sc)
     (hd : Region.Disjoint ⟨sc, 32⟩ ⟨b, 2048⟩) :
     WP isa bits s fun s' => Ctx b s' ∧ Rest [.a1, .a4, .a5, .a6, .t0] s s' ∧
       Frame [⟨b + BitVec.ofNat 64 BITS, 256⟩] s.mem s'.mem ∧
-      Bits b (VG.Spec.X25519.decodeScalar25519 (bytesAt s.mem sc 32)) s'.mem := by
+      Bits b (VG.X25519Model.decodeScalar25519 (bytesAt s.mem sc 32)) s'.mem := by
   have hB : BITS = 608 := rfl
   unfold bits
   refine WP.seq (wp_addi (by decide) fun s1 u1 => wp_li (by decide) fun s2 u2 => WP.block_nil ?_)

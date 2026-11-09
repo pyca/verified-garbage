@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.X86.Field32.Chain
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Impl.X25519.X86.Field32
@@ -23,6 +25,7 @@ leaves the two powers at bytes 544 and 512.
 namespace VG.Proof.X25519.X86.Field32
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.X25519.X86.Field32 VG.Proof.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519 (pw)
 
 /-- The function's entry: the working space `ws = x` (its argument), writable

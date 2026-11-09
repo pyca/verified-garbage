@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part1
 import VerifiedGarbage.Proof.X25519.X86_64.Env
 import VerifiedGarbage.Proof.Framework.Block
@@ -19,6 +21,7 @@ in `OPV`); stage 3 and its product then leave `(x₂', z₂', x₃', z₃')`.
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519.X86_64 (Scr Outside Outside.mono)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)
 
@@ -38,7 +41,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
       fe5 (lanes s' 0 0) = (fe5 (lanes s 0 2) + fe5 (lanes s 0 3)) * (fe5 (lanes s 0 2) + fe5 (lanes s 0 3)) ∧
       fe5 (lanes s' 0 1) = (fe5 (lanes s 0 2) - fe5 (lanes s 0 3)) * (fe5 (lanes s 0 2) - fe5 (lanes s 0 3)) ∧
       fe5 (lanes s' 0 2) = fe5 (lanes s 0 0) * fe5 (lanes s 0 1) ∧
-      fe5 (lanes s' 0 3) = (fe5 (lanes s 0 0) - fe5 (lanes s 0 1)) * Spec.X25519.a24 := by
+      fe5 (lanes s' 0 3) = (fe5 (lanes s 0 0) - fe5 (lanes s 0 1)) * VG.X25519Model.a24 := by
   have hr := hs.rdi
   simp only [stage2, List.append_assoc]
   rw [WP.block_append_iff]
@@ -96,7 +99,7 @@ theorem part2_ok {s : State} {base : Addr} {x1 : Nat → Nat} (hs : Scr s base) 
   have g1 : fe5 (fun i => opW (lanes s 0) 1 i) = fe5 (lanes s 0 2) - fe5 (lanes s 0 3) :=
     fe5_sub (fun _ _ => rfl) (fun i hi => le_kbv i (hy 3 (by decide) i hi))
   have g2 : fe5 (fun i => opW (lanes s 0) 2 i) = fe5 (lanes s 0 1) := fe5_congr fun _ _ => rfl
-  have g3 : fe5 (fun i => opW (lanes s 0) 3 i) = Spec.X25519.a24 := fe5_a24
+  have g3 : fe5 (fun i => opW (lanes s 0) 3 i) = VG.X25519Model.a24 := fe5_a24
   refine ⟨K, fun l hl i hi => ⟨(u₅ l hl i hi).2, by rw [m₅, (u₄ l hl i hi).1.1]; exact b5 l hl i hi⟩,
     by rw [fV 2 (by decide), f2], by rw [fV 3 (by decide), f3],
     by rw [fM 0 (by decide), f0, g0], by rw [fM 1 (by decide), f1, g1],

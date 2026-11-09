@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.Framework.PowLit
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 
 import VerifiedGarbage.Proof.X25519.Field
 

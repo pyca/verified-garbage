@@ -2,16 +2,17 @@ module
 
 import VerifiedGarbageTest.ChaCha20
 meta import VerifiedGarbageTest.ChaCha20
-import VerifiedGarbage.Spec.X25519
-meta import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
+meta import VerifiedGarbage.Impl.X25519.Model
 
 /-!
-# Known-answer tests for the X25519 specification
+# Known-answer tests for the X25519 ladder model
 
 The test vectors of RFC 7748, read from the vendored RFC
 `vectors/rfc7748/rfc7748.txt` (see `vectors/sources/`) when this file is
-built and checked against `VG.Spec.X25519`, so that a transcription error in
-the spec fails the build:
+built and checked against `VG.X25519Model`. The theorem
+`VG.Proof.X25519.Wychelean.x25519_eq_wychelean` proves that this model
+agrees with the external specification for every 32-byte input:
 
 * §5.2, the two X25519 vectors: the scalar and u-coordinate decoded
   (`decodeScalar25519`, `decodeUCoordinate`, against their values in base
@@ -28,6 +29,7 @@ digits, or a number in base 10 split over lines.
 namespace VG.Test.X25519
 
 open Lean Elab Command Spec.X25519
+open VG.X25519Model
 
 /-- The labelled values of the section of the RFC from the line starting
 with `heading` to the next one starting with `next`: each label (a line

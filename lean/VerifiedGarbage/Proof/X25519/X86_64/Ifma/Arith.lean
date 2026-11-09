@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Mul
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.Lit
@@ -18,6 +20,7 @@ in `R = 2⁵¹` (`2⁵² = 2R`, `2²⁵⁵ = R⁵`), proved as such.
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 
 /-- The number five limbs stand for. -/
 def lv (x : Nat → Nat) : Nat := x 0 + 2 ^ 51 * x 1 + 2 ^ 102 * x 2 + 2 ^ 153 * x 3 + 2 ^ 204 * x 4

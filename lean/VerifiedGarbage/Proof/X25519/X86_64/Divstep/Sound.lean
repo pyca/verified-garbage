@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.X86_64.Divstep.ARow
 import VerifiedGarbage.Proof.Divstep.Iter
 import VerifiedGarbage.Proof.Divstep.Tc
@@ -33,6 +35,7 @@ This module imports Mathlib's algebra: only the registration files import it.
 namespace VG.Proof.X25519.X86_64
 
 open VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 /-! ## The rows -/
 

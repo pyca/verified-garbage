@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.Arm
 public import VerifiedGarbage.Proof.X25519.Arm.Verified
@@ -34,7 +38,7 @@ namespace VG.Proof.X25519.Arm.Exchange
 open VG VG.Arm VG.Proof.Xdh.Arm
 
 theorem callee {c : Prog isa} (hv : Verified Arm.target c (Proof.X25519.x25519Contract Arm.abi))
-    (hn : c.noFrames = true) : Callee 32 4096 Spec.X25519.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
+    (hn : c.noFrames = true) : Callee 32 4096 VG.X25519Model.x25519 c (Proof.X25519.x25519Contract Arm.abi) where
   hv := hv.1
   hct := hv.2.1
   pre s h := by
@@ -68,9 +72,10 @@ theorem exchange_verified {c : Prog isa} (name : String)
     (hv : Verified Arm.target c (Proof.X25519.x25519Contract Arm.abi)) (hn : c.noFrames = true)
     (ht : ∃ hc, (taint.check (Taint.ofRegs [.r1]) (.block (Impl.Xdh.Arm.check 32)) hc).isSome = true) :
     Verified Arm.target (Impl.Xdh.Arm.exchange name c 32) (Spec.X25519.exchangeContract Arm.abi 8) :=
-  Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct (callee hv hn) (by decide))
+  Verified.of_correct (k := exContract 32 4096 VG.X25519Model.x25519) (exchange_correct (callee hv hn) (by decide))
     (exchange_ct (callee hv hn) ht) (by
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
+      simp only [VG.Proof.X25519.Wychelean.exchangeContract_ladder] at *
+      contract_implies [Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
         exContract, ExPre, CallPre, ExPost, Pub, Proof.Xdh.Arm.outR, Proof.Xdh.Arm.scR, Proof.Xdh.Arm.ptR, Proof.Xdh.Arm.wsR,
         Proof.Xdh.Arm.frR, ret32, Arm.abi, Arm.argRegs,
         Arm.reduceClassify, Arm.Loc.val,

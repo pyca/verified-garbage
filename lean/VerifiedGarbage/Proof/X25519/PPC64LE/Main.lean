@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Setup
@@ -33,7 +35,7 @@ def x25519PPC64LE : Contract PPC64LE.isa where
     s.rd = [sc, pt] ∧ s.wr = [out, ws] ∧ out.Disjoint sc ∧ out.Disjoint pt ∧ out.Disjoint ws ∧
       sc.Disjoint ws ∧ pt.Disjoint ws
   post s s' := bytesAt s'.mem (s.gpr .r3) 32 =
-    VG.Spec.X25519.x25519 (bytesAt s.mem (s.gpr .r4) 32) (bytesAt s.mem (s.gpr .r5) 32)
+    VG.X25519Model.x25519 (bytesAt s.mem (s.gpr .r4) 32) (bytesAt s.mem (s.gpr .r5) 32)
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧
     s₁.gpr .r6 = s₂.gpr .r6 ∧ s₁.sp = s₂.sp
 
@@ -116,7 +118,7 @@ theorem x25519_correct {s : State} (hp : XPre s) :
   rw [hk] at hS3 h0 hS4 hS5 hS6
   have e6 : FS s6.mem (s.gpr .r6) X2 = _ := hS6 X2 (by decide)
   rw [← VG.Proof.X25519.toFe_val, ← VG.Proof.X25519.encodeUCoordinate_eq]
-  change VG.Spec.X25519.encodeUCoordinate (FS s6.mem (s.gpr .r6) X2) = _
+  change VG.X25519Model.encodeUCoordinate (FS s6.mem (s.gpr .r6) X2) = _
   rw [e6]
   simp only [upd, swapV, ladV, sel, iteT, VG.Proof.X25519.invert_eq, VG.Proof.X25519.pow_pw, cswap_fst,
     uOf, X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]

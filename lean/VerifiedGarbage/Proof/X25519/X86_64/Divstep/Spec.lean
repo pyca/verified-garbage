@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.Divstep.PackedDef
@@ -27,6 +29,7 @@ registration files import (`Divstep/Sound.lean`).
 namespace VG.Proof.X25519.X86_64
 
 open VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 /-- `|m|`, for a word as a signed number. -/
 def absN (m : BitVec 64) : Nat := m.toInt.natAbs

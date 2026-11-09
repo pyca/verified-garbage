@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.Arm.Ladder
 public import VerifiedGarbage.Proof.X25519.Bytes
 
@@ -22,7 +24,8 @@ scalar (`bits_ok`).
 namespace VG.Proof.X25519.Arm
 
 open VG VG.Arm VG.Impl.X25519.Arm
-open VG.Spec.X25519 (P Fe bytesAt a24)
+open VG.Spec.X25519 (P Fe bytesAt)
+open VG.X25519Model (a24)
 open VG.Proof.X25519 (leNum leNum_append bytesAt_add bytesAt_succ length_bytesAt toFe)
 
 /-! ## The u-coordinate as limbs -/
@@ -56,7 +59,7 @@ theorem uLimb_lt (m : Mem) (p : Addr) : ∀ k < 16, uLimb m p k < 65536 := by
 
 /-- The limbs of the decoded u-coordinate. -/
 theorem decode_val (m : Mem) (p : Addr) :
-    val16 (uLimb m p) 16 = VG.Spec.X25519.decodeUCoordinate (bytesAt m p 32) := by
+    val16 (uLimb m p) 16 = VG.X25519Model.decodeUCoordinate (bytesAt m p 32) := by
   rw [VG.Proof.X25519.decodeUCoordinate_eq (length_bytesAt m p 32), show 32 = 2 * 16 from rfl,
     leNum_bytesAt2]
   have e : val16 (uLimb m p) 15 = val16 (fun k => byteN m p (2 * k) + 256 * byteN m p (2 * k + 1)) 15 :=
@@ -377,7 +380,7 @@ structure XPre (s : State) : Prop where
 
 /-- The u-coordinate, decoded. -/
 def uOf (s : State) : Fe :=
-  toFe (VG.Spec.X25519.decodeUCoordinate (bytesAt s.mem (State.addr (s.gpr .r2)) 32))
+  toFe (VG.X25519Model.decodeUCoordinate (bytesAt s.mem (State.addr (s.gpr .r2)) 32))
 
 theorem val16_one : val16 (fun k => if k = 0 then 1 else 0) 16 = 1 := by decide
 theorem val16_zero16 : val16 (fun _ => 0) 16 = 0 := by decide

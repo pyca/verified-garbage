@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Edwards.URep
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.X25519.Bytes
@@ -27,6 +29,7 @@ The field facts are evaluated by the kernel: `a24 = 121665` is
 namespace VG.Proof.X25519.Edwards
 
 open VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.Ed25519 (toZ_add toZ_sub toZ_mul toZ_one toZ_zero toZ_pow dZ baseAff params)
 open VG.Proof.Ed25519.Edwards
 open VG.Proof.X25519 (ladderAfter ladderAfter_step ladderAfter_255 ladderAfter_swap_le ladderStep_eq bit

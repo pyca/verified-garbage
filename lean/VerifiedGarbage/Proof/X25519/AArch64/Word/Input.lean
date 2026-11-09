@@ -1,8 +1,10 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Formula
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Head
 public import VerifiedGarbage.Proof.X25519.AArch64.Setup
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 
 import VerifiedGarbage.Proof.X25519.AArch64.Top
 import VerifiedGarbage.Proof.Ed25519.AArch64.DecodeBits
@@ -16,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64
 open VG.Proof.Ed25519.Word64
 

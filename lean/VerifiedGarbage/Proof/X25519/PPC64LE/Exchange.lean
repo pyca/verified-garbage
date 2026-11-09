@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.PPC64LE
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Verified
@@ -31,7 +35,7 @@ namespace VG.Proof.X25519.PPC64LE.Exchange
 
 open VG VG.PPC64LE VG.Proof.Xdh.PPC64LE
 
-theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.PPC64LE.x25519
+theorem callee : Callee 32 4096 VG.X25519Model.x25519 Impl.X25519.PPC64LE.x25519
     (Proof.X25519.x25519Contract PPC64LE.abi) where
   hv := Proof.X25519.PPC64LE.x25519_verified.1
   hct := Proof.X25519.PPC64LE.x25519_verified.2.1
@@ -59,9 +63,10 @@ theorem callee : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.PPC64LE.x25519
 theorem exchange_verified :
     Verified PPC64LE.target (Impl.Xdh.PPC64LE.exchange "vg_x25519" Impl.X25519.PPC64LE.x25519 32)
       (Spec.X25519.exchangeContract PPC64LE.abi 48) :=
-  Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct callee (by decide))
+  Verified.of_correct (k := exContract 32 4096 VG.X25519Model.x25519) (exchange_correct callee (by decide))
     (exchange_ct callee ⟨_, by taint_decide⟩) (by
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
+      simp only [VG.Proof.X25519.Wychelean.exchangeContract_ladder] at *
+      contract_implies [Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
         exContract, ExPre, CallPre, ExPost, Pub, PPC64LE.abi, PPC64LE.argRegs]
         [Proof.X25519.PPC64LE.x25519Sat] using Proof.X25519.PPC64LE.x25519Sat)
 

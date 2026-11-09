@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86_64.Ops
 
 import VerifiedGarbage.Proof.X25519.X86_64.AddSub
@@ -106,7 +108,7 @@ theorem smallSteps_ok {s : State} {base : Addr} (hs : Scr s base) {a : Nat} (ha 
 theorem mulA24Add_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho : Slot o)
     (hb : Slot b) (ha : Slot a) :
     WP isa (.block (mulSmallAdd o b a a24)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a := by
+      Op base o s s' ∧ F s'.mem base o = F s.mem base b + VG.X25519Model.a24 * F s.mem base a := by
   have g : ∀ {x y : State} {rs : List Reg} (k : Keeps rs x y) (r : Reg), r ∉ rs → y.gpr r = x.gpr r :=
     fun k r h => k.1 r h
   rw [mulSmallAdd_eq, WP.block_append_iff]

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.Recover
 
 /-!
@@ -16,6 +18,7 @@ is the spec's decoding, which code proofs on every target can share.
 namespace VG.Proof.Ed25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 def recoveredPoint (x y : Fe) : Spec.Ed25519.Point := ⟨x, y, 1, x * y⟩
 

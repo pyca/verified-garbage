@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Base
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.BaseContract
 public import VerifiedGarbage.Proof.Framework.ConstMem
@@ -45,7 +49,7 @@ def baseR : Contract isa where
     let ws : Region := ⟨s.gpr .r5, 8192⟩
     s.rd = [sc] ∧ s.wr = [out, ws] ∧ out.Disjoint ws ∧ sc.Disjoint ws
   post s s' := Spec.Ed25519.bytesAt s'.mem (s.gpr .r3) 32 =
-    Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (s.gpr .r4) 32) Spec.X25519.basePoint
+    VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem (s.gpr .r4) 32) VG.X25519Model.basePoint
   pub s₁ s₂ := s₁.gpr .r3 = s₂.gpr .r3 ∧ s₁.gpr .r4 = s₂.gpr .r4 ∧ s₁.gpr .r5 = s₂.gpr .r5 ∧ s₁.sp = s₂.sp
 
 /-- `baseR` with the comb's table (`abi.withConsts`). -/
@@ -84,7 +88,8 @@ def baseSat : State where
   wr := [⟨0x1000, 32⟩, ⟨0x4000, 8192⟩]
 
 theorem baseR_implies : baseR.Implies (Spec.X25519.x25519BaseContract PPC64LE.abi) := by
-  contract_implies [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig, baseR,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  contract_implies [Spec.X25519.x25519BaseSig, baseR,
     PPC64LE.abi, PPC64LE.argRegs] [baseSat] using baseSat
 
 /-- The comb's table at `0x100000`. -/
@@ -106,7 +111,8 @@ theorem baseC_sat : (Spec.X25519.x25519BaseContract (PPC64LE.abi.withConsts comb
   change (Spec.X25519.x25519BaseContract (PPC64LE.abi.withConsts [(combSym, combWords)])).pre baseSatC
   generalize combWords = W' at hl held ⊢
   generalize e : baseSatC = s
-  sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig, PPC64LE.abi, PPC64LE.argRegs,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  sig_pre [Spec.X25519.x25519BaseSig, PPC64LE.abi, PPC64LE.argRegs,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]

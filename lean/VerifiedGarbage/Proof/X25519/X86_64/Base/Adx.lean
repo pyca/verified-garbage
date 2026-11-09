@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Spec.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Main
 
 import VerifiedGarbage.Proof.X25519.X86_64.Base.Verified

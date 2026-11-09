@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Weierstrass.X86.Ladder
 public import VerifiedGarbage.Proof.Weierstrass.Law
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 
 /-!
 # Short Weierstrass curves on X86: the ladder computes `[k]P`

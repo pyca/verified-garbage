@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Framework.X86.Call
 public import VerifiedGarbage.Proof.X25519.Invert
 public import VerifiedGarbage.Proof.X25519.X86.Ops
@@ -29,6 +31,7 @@ is the function's own (`pow250Fn_ok`, through `WP.callWith`).
 namespace VG.Proof.X25519.X86.Field32
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.X25519.X86.Field32 VG.Proof.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519 (pw)
 
 theorem pow250Fn_noSp : NoSp pow250Fn := NoSp.of_all (by lit_decide)

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
 import VerifiedGarbage.Proof.X25519.AArch64.Word.Ladder
 import VerifiedGarbage.Proof.X25519.AArch64.Ladder
@@ -10,6 +12,7 @@ import VerifiedGarbage.Proof.X25519.AArch64.Ladder
 
 namespace VG.Proof.X25519.AArch64.AltLadder
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519 VG.Proof.Ed25519.AArch64
+open VG.X25519Model
 open VG.Proof.X25519.AArch64.Word (LoopKeep Good Scratch bitOffset setCounter_ok)
 
 /-- The loop's invariant. -/

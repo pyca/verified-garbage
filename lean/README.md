@@ -178,6 +178,30 @@ implementation it may choose is proven against the same contract.
 
 Everything in `Impl/` and `Proof/` is checked by Lean and need not be read.
 
+### X25519 specification
+
+The X25519 contracts use [Wychelean](https://github.com/rozbb/wychelean),
+pinned in `lakefile.toml` and `lake-manifest.json`. Wychelean specifies
+scalar multiplication on Curve25519 or its quadratic twist, with RFC 7748
+clamping, input masking and reduction, and output encoding.
+`Spec/X25519.lean` only adapts bytes between machine memory and Wychelean's
+`Vector UInt8 32`; `Spec/X25519/Contract.lean` retains the signatures,
+scratch space and all-zero return status of both public APIs.
+
+The Montgomery ladder is an untrusted implementation model in
+`Impl/X25519/Model.lean`. `Proof/X25519/Montgomery.lean` proves its doubling
+and differential-addition formulas against Wychelean's group operation,
+including infinity. `Proof/X25519/Wychelean.lean` proves the complete
+byte-to-byte equivalence for every 32-byte scalar and peer input, including
+zero and noncanonical encodings, then derives the public contracts from
+the internal ladder contracts. All architecture variants use that bridge.
+The field definitions Ed25519 also needs live in `Spec/Curve25519.lean`.
+
+`VerifiedGarbageTest/X25519Wychelean.lean` checks the adapters and audits the
+bridge's axioms. `VerifiedGarbageTest/X25519.lean` retains the published RFC
+known-answer tests for the ladder model. The generated dependency audit
+includes Wychelean's specification and its proofs.
+
 To keep review of the trusted parts focused, new specs, additions to the TCB,
 and new implementations are never combined in one PR: an implementation is
 only proven against a spec and TCB that were reviewed and merged beforehand.

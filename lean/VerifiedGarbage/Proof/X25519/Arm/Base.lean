@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Impl.X25519.Arm.Base
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseVerified
 meta import VerifiedGarbage.Impl.X25519.Arm.Base
@@ -77,7 +81,7 @@ def clampL (kb : List Byte) : List Byte :=
   k.set 31 ((k.getD 31 0 &&& 127) ||| 64)
 
 theorem decode_clamp {kb : List Byte} (hk : kb.length = 32) :
-    Spec.X25519.decodeScalar25519 kb = Spec.Ed25519.decodeLE (clampL kb) := by
+    VG.X25519Model.decodeScalar25519 kb = Spec.Ed25519.decodeLE (clampL kb) := by
   have hl : (clampL kb).length = 32 := by simp [clampL, hk]
   rw [Proof.Ed25519.decodeLE_eq, ← Proof.X25519.take_32 hl, ← Proof.X25519.decodeLittleEndian_eq]
   rfl
@@ -221,7 +225,7 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
     (hsep : (⟨State.addr ptr, 32⟩ : Region).Disjoint ⟨State.addr base, 8192⟩)
     (hT : TblAt s T) (hsym : s.syms combSym = T) (apart : (TBL T).Disjoint ⟨State.addr base, 8192⟩) :
     WP isa engine s fun t => PointKeep base s t ∧ Lim t.mem (State.addr base) FR ∧
-      Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) Spec.X25519.basePoint =
+      VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) VG.X25519Model.basePoint =
         Spec.Ed25519.encodeLE 32 (V t.mem (State.addr base) FR) := by
   have hk : (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   rw [engine]
@@ -229,7 +233,7 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
   have hcv := kav.ctx hc
   refine WP.seq (WP.mono (combInit_ok hcv lv tv syv apart) fun w ⟨kw, E, I⟩ => ?_)
   rw [cv, ← decode_clamp hk] at I
-  have hS : Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) < 2 ^ 256 := by
+  have hS : VG.X25519Model.decodeScalar25519 (Spec.Ed25519.bytesAt s.mem (State.addr ptr) 32) < 2 ^ 256 := by
     have h := VG.Proof.X25519.Edwards.decodeScalar25519_shift hk
     rw [Nat.shiftRight_eq_div_pow] at h
     have := (Nat.div_eq_zero_iff_lt (by positivity)).mp h
@@ -254,7 +258,7 @@ theorem engine_ok {s : State} {base ptr T : BitVec 32} (hc : VG.Proof.Ed25519.Ar
 def baseLocal : Contract Arm.isa :=
   { scalarBaseLocal with
     post := fun s t => Spec.Ed25519.bytesAt t.mem (State.addr (s.gpr .r0)) 32 =
-      Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) Spec.X25519.basePoint }
+      VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem (State.addr (s.gpr .r1)) 32) VG.X25519Model.basePoint }
 
 theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
     WP isa x25519Base s fun t => abiPreserved s t ∧ baseLocal.post s t := by
@@ -292,7 +296,7 @@ theorem x25519Base_correct {s : State} (h : ScalarBasePre s) :
       rw [List.mem_singleton.mp hr]
       exact h.scalar_ws.sub_right (Region.sub_prefix (by decide))
     change Spec.Ed25519.bytesAt t.mem _ 32 =
-      Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem _ 32) Spec.X25519.basePoint
+      VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem _ 32) VG.X25519Model.basePoint
     rw [bt, ← hb, vv]
 
 
@@ -372,7 +376,8 @@ theorem base_abi_pre {s : State} (h : (Spec.X25519.x25519BaseContract Arm.abi).p
       (⟨State.addr (s.gpr .r1), 32⟩ : Region).Disjoint ⟨State.addr (s.gpr .r2), 8192⟩ ∧
       (s.gpr .r0).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧
       (s.gpr .r2).toNat + 8192 ≤ 2 ^ 32 := by
-  sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  sig_pre [Spec.X25519.x25519BaseSig,
      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] at h
   exact h.2
 
@@ -406,7 +411,8 @@ theorem x25519Base_ok (s : State) (hs : baseLocal.pre s) :
 theorem base_sat : baseSpec.pre baseSatState := by
   have held := baseSatMem_held
   generalize eqs : baseSatState = s
-  sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  sig_pre [Spec.X25519.x25519BaseSig,
      Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr,
     combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -425,11 +431,13 @@ theorem base_implies : baseLocal.Implies baseSpec where
   pre _ h := base_pre h
   post := by
     intro s s' _ h
-    sig_post [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig, 
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_post [Spec.X25519.x25519BaseSig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig, 
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pub [Spec.X25519.x25519BaseSig,
       Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, combConsts_eq,
       Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h

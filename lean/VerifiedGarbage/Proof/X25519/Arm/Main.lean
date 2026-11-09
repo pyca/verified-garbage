@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.Arm.Bits
 public import VerifiedGarbage.TCB.Arm.Target
 public import VerifiedGarbage.Proof.X25519.Arm.Setup
@@ -37,7 +39,7 @@ def x25519Arm : Contract Arm.isa where
       (s.gpr .r1).toNat + 32 ≤ 2 ^ 32 ∧ (s.gpr .r2).toNat + 32 ≤ 2 ^ 32 ∧
       (s.gpr .r3).toNat + 4096 ≤ 2 ^ 32
   post s s' := bytesAt s'.mem (State.addr (s.gpr .r0)) 32 =
-    VG.Spec.X25519.x25519 (bytesAt s.mem (State.addr (s.gpr .r1)) 32) (bytesAt s.mem (State.addr (s.gpr .r2)) 32)
+    VG.X25519Model.x25519 (bytesAt s.mem (State.addr (s.gpr .r1)) 32) (bytesAt s.mem (State.addr (s.gpr .r2)) 32)
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .r0 = s₂.gpr .r0 ∧ s₁.gpr .r1 = s₂.gpr .r1 ∧
     s₁.gpr .r2 = s₂.gpr .r2 ∧ s₁.gpr .r3 = s₂.gpr .r3
 
@@ -177,7 +179,7 @@ theorem x25519_correct {M : Nat → Nat → Nat → Prog isa} (hM : MulOk ACC M)
     rw [hk] at hS3 h10 hS4 hS5 hS6
     have e6 : FS s6.mem (State.addr (s.gpr .r3)) X2 = _ := (hS6 X2 (by decide)).2
     rw [← VG.Proof.X25519.toFe_val, ← VG.Proof.X25519.encodeUCoordinate_eq]
-    change VG.Spec.X25519.encodeUCoordinate (FS s6.mem (State.addr (s.gpr .r3)) X2) = _
+    change VG.X25519Model.encodeUCoordinate (FS s6.mem (State.addr (s.gpr .r3)) X2) = _
     rw [e6]
     simp only [upd, swapV, ladV, sel, iteT, VG.Proof.X25519.invert_eq, VG.Proof.X25519.pow_pw, cswap_fst,
       uOf, X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]

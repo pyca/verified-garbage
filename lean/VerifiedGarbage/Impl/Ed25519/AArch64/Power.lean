@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.AArch64.Word
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 
 /-!
 # The shared addition chain for inversion and square-root recovery

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Invert
 
 /-! The decoding addition chain equals the RFC 8032 exponent. -/
@@ -9,6 +11,7 @@ public import VerifiedGarbage.Proof.X25519.Invert
 namespace VG.Proof.Ed25519
 
 open VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 def rootPower (z : Fe) : Fe :=
   let t0 := z * z                 -- 2

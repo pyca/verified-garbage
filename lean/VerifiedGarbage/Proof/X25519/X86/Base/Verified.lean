@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Spec.X25519.Contract
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.X86.Base.Main
 import VerifiedGarbage.Proof.Ed25519.X86.CombCT
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseVerified
@@ -178,7 +182,8 @@ theorem x25519Base_sat :
   have a2 : arg satState 2 = 0x4000 := (sat_arg 2 (by decide)).trans (by decide)
   have held : TblWords ((satState.syms combSym).setWidth 64) satState.mem := satMemWith_held satArgs
   generalize e : satState = s
-  sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  sig_pre [Spec.X25519.x25519BaseSig,
     X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
     Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
   subst s
@@ -198,7 +203,8 @@ theorem x25519Base_sat :
 theorem x25519Base_implies :
     x25519BaseLocal.Implies (Spec.X25519.x25519BaseContract (X86.abi.withConsts combConsts) 8) where
   pre s h := by
-    sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pre [Spec.X25519.x25519BaseSig,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq,
       Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow] at h
     obtain ⟨h4, hsp, hd, held, hfit, hdw, -, hstk, -, ht, hw, -, o2, o3, i2, s3, r0, -, r2, -,
@@ -215,11 +221,13 @@ theorem x25519Base_implies :
       · rw [be]; exact hstk
   post := by
     intro s t _ h
-    sig_post [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_post [Spec.X25519.x25519BaseSig,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts]
     exact h
   pub s t _ _ h := by
-    sig_pub [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pub [Spec.X25519.x25519BaseSig,
       X86.abi, X86.argSlots, X86.argVal, X86.argBytes, combConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
     exact ⟨hsp, h0, h1, h2, hsy⟩

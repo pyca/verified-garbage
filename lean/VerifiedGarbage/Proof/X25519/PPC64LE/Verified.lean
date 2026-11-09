@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Main
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 import VerifiedGarbage.Proof.X25519.PPC64LE.CT
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec

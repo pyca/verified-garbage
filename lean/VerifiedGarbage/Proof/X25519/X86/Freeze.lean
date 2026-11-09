@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 import VerifiedGarbage.Proof.X25519.X86.Fold
 
@@ -16,6 +18,7 @@ is not negative, that is if bit 255 of `W = V' + 19` is set.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 variable {W lo : Nat} {c : Bool}
 

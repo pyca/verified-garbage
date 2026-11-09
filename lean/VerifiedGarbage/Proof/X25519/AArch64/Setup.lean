@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.Framework.Omega
@@ -19,6 +21,7 @@ and sets `x2 = 1`, `z2 = 0`, `z3 = 1` (`initSlots`).
 namespace VG.Proof.X25519.AArch64
 
 open VG VG.AArch64 VG.Impl.X25519.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 /-! ## Saving registers -/
 

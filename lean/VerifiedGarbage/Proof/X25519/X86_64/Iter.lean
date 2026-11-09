@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
 public import VerifiedGarbage.Proof.X25519.Ladder
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -274,12 +276,12 @@ structure LInv (base : Addr) (k : Nat) (u : Spec.X25519.Fe) (s₀ s : State) (n 
   z3b : fe s.mem base 192 ≤ 2 * Spec.X25519.P
 
 theorem cswap_fst (sw : Nat) (a b : Spec.X25519.Fe) :
-    (Spec.X25519.cswap sw a b).1 = if decide (sw = 1) = true then b else a := by
-  simp only [Spec.X25519.cswap, decide_eq_true_eq]; split <;> rfl
+    (VG.X25519Model.cswap sw a b).1 = if decide (sw = 1) = true then b else a := by
+  simp only [VG.X25519Model.cswap, decide_eq_true_eq]; split <;> rfl
 
 theorem cswap_snd (sw : Nat) (a b : Spec.X25519.Fe) :
-    (Spec.X25519.cswap sw a b).2 = if decide (sw = 1) = true then a else b := by
-  simp only [Spec.X25519.cswap, decide_eq_true_eq]; split <;> rfl
+    (VG.X25519Model.cswap sw a b).2 = if decide (sw = 1) = true then a else b := by
+  simp only [VG.X25519Model.cswap, decide_eq_true_eq]; split <;> rfl
 
 theorem cmp3_eq (n : Nat) (hn : n < 255) :
     (BitVec.ofNat 64 n - (3 : BitVec 32).signExtend 64 == 0) = decide (n = 3) := by
@@ -299,24 +301,24 @@ theorem cmp3_eq (n : Nat) (hn : n < 255) :
 /-- The slots of the ladder's variables after an iteration (with the word
 `swap`, slot 20, written in between) are those of `ladderStep`: whichever point
 `mux` chooses to double, the addition of the two is the same. -/
-theorem stepEnv_eval (e : Env) (st : Spec.X25519.Ladder) (k : Nat) (u : Spec.X25519.Fe) (t : Nat)
+theorem stepEnv_eval (e : Env) (st : VG.X25519Model.Ladder) (k : Nat) (u : Spec.X25519.Fe) (t : Nat)
     (hsw : st.swap ≤ 1) (v : Spec.X25519.Fe)
     (h2 : e 2 = u) (h3 : e 3 = st.x2) (h4 : e 4 = st.z2) (h5 : e 5 = st.x3) (h6 : e 6 = st.z3) :
     env2 (decide (bit k t = st.swap)) (Function.update (env1 e) 20 v) 2 = u ∧
     env2 (decide (bit k t = st.swap)) (Function.update (env1 e) 20 v) 3 =
-      (Spec.X25519.ladderStep k u st t).x2 ∧
+      (VG.X25519Model.ladderStep k u st t).x2 ∧
     env2 (decide (bit k t = st.swap)) (Function.update (env1 e) 20 v) 4 =
-      (Spec.X25519.ladderStep k u st t).z2 ∧
+      (VG.X25519Model.ladderStep k u st t).z2 ∧
     env2 (decide (bit k t = st.swap)) (Function.update (env1 e) 20 v) 5 =
-      (Spec.X25519.ladderStep k u st t).x3 ∧
+      (VG.X25519Model.ladderStep k u st t).x3 ∧
     env2 (decide (bit k t = st.swap)) (Function.update (env1 e) 20 v) 6 =
-      (Spec.X25519.ladderStep k u st t).z3 := by
+      (VG.X25519Model.ladderStep k u st t).z3 := by
   have hb := bit_le k t
   rw [ladderStep_eq]
   rcases (by omega : st.swap = 0 ∨ st.swap = 1) with hs | hs <;>
     rcases (by omega : bit k t = 0 ∨ bit k t = 1) with hk | hk <;>
     simp only [hs, hk, env1, env2, opMul, opAdd, opSub, opA24Add, opMux, Function.update_apply,
-      Spec.X25519.cswap, h2, h3, h4, h5, h6, ↓reduceIte, decide_true, decide_false,
+      VG.X25519Model.cswap, h2, h3, h4, h5, h6, ↓reduceIte, decide_true, decide_false,
       Fin.reduceEq, Nat.reduceXor, reduceCtorEq] <;>
     refine ⟨trivial, ?_, ?_, ?_, ?_⟩ <;> grind
 
@@ -410,11 +412,11 @@ structure LPost (base : Addr) (k : Nat) (u : Spec.X25519.Fe) (s₀ s : State) : 
   `(x_2, z_2)` the ladder's result: the final state's, or (`sw = 0`) the
   result itself. -/
   res : ∃ sw < 2, word s.mem base SWAP = BitVec.ofNat 64 sw ∧
-    (Spec.X25519.cswap sw (E s.mem base 3) (E s.mem base 5)).1 =
-      (Spec.X25519.cswap (ladderAfter k u 0).swap (ladderAfter k u 0).x2
+    (VG.X25519Model.cswap sw (E s.mem base 3) (E s.mem base 5)).1 =
+      (VG.X25519Model.cswap (ladderAfter k u 0).swap (ladderAfter k u 0).x2
         (ladderAfter k u 0).x3).1 ∧
-    (Spec.X25519.cswap sw (E s.mem base 4) (E s.mem base 6)).1 =
-      (Spec.X25519.cswap (ladderAfter k u 0).swap (ladderAfter k u 0).z2
+    (VG.X25519Model.cswap sw (E s.mem base 4) (E s.mem base 6)).1 =
+      (VG.X25519Model.cswap (ladderAfter k u 0).swap (ladderAfter k u 0).z2
         (ladderAfter k u 0).z3).1
 
 /-- `LPost` from the ladder's final state in the slots 3–6 and `swap`. -/
@@ -454,19 +456,19 @@ def dblPt (x z : Spec.X25519.Fe) : Spec.X25519.Fe × Spec.X25519.Fe :=
   let B := x - z
   let BB := B * B
   let E := AA - BB
-  (AA * BB, E * (AA + Spec.X25519.a24 * E))
+  (AA * BB, E * (AA + VG.X25519Model.a24 * E))
 
 /-- An iteration for a clear bit doubles the point the swap chooses, and
 leaves the swap clear. -/
-theorem ladderStep_zero (k : Nat) (x1 : Spec.X25519.Fe) (st : Spec.X25519.Ladder) (t : Nat)
+theorem ladderStep_zero (k : Nat) (x1 : Spec.X25519.Fe) (st : VG.X25519Model.Ladder) (t : Nat)
     (hb : bit k t = 0) :
-    (Spec.X25519.ladderStep k x1 st t).x2 =
-        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1
-          (Spec.X25519.cswap st.swap st.z2 st.z3).1).1 ∧
-      (Spec.X25519.ladderStep k x1 st t).z2 =
-        (dblPt (Spec.X25519.cswap st.swap st.x2 st.x3).1
-          (Spec.X25519.cswap st.swap st.z2 st.z3).1).2 ∧
-      (Spec.X25519.ladderStep k x1 st t).swap = 0 := by
+    (VG.X25519Model.ladderStep k x1 st t).x2 =
+        (dblPt (VG.X25519Model.cswap st.swap st.x2 st.x3).1
+          (VG.X25519Model.cswap st.swap st.z2 st.z3).1).1 ∧
+      (VG.X25519Model.ladderStep k x1 st t).z2 =
+        (dblPt (VG.X25519Model.cswap st.swap st.x2 st.x3).1
+          (VG.X25519Model.cswap st.swap st.z2 st.z3).1).2 ∧
+      (VG.X25519Model.ladderStep k x1 st t).swap = 0 := by
   rw [ladderStep_eq, hb, Nat.xor_zero]
   exact ⟨rfl, rfl, rfl⟩
 
@@ -569,7 +571,7 @@ theorem E_out {base : Addr} {o n : Nat} {m m' : Mem} (h : Outside base o n m m')
   simp only [E, F]; rw [h.fe hi (by omega)]
 
 theorem cswap_fst' {sw : Nat} (hsw : sw < 2) (a b : Spec.X25519.Fe) :
-    (Spec.X25519.cswap sw a b).1 = if decide (sw = 0) then a else b := by
+    (VG.X25519Model.cswap sw a b).1 = if decide (sw = 0) then a else b := by
   rcases (by omega : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
 
 include hf in
@@ -611,11 +613,11 @@ theorem tail_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
     rw [m7]; exact writeW_outside _ _ _ (by omega)
   have K := K1.trans (K2.trans (K3.trans (K4.trans (K5.trans K6))))
   -- The point chosen, then doubled three times.
-  have c3 : E s3.mem base 3 = (Spec.X25519.cswap (ladderAfter k u 3).swap
+  have c3 : E s3.mem base 3 = (VG.X25519Model.cswap (ladderAfter k u 3).swap
       (ladderAfter k u 3).x2 (ladderAfter k u 3).x3).1 := by
     rw [e3, opMux, Function.update_of_ne (by decide), e2, opMux, Function.update_self,
       cswap_fst' (by omega), m1, hi.x2, hi.x3]
-  have c4 : E s3.mem base 4 = (Spec.X25519.cswap (ladderAfter k u 3).swap
+  have c4 : E s3.mem base 4 = (VG.X25519Model.cswap (ladderAfter k u 3).swap
       (ladderAfter k u 3).z2 (ladderAfter k u 3).z3).1 := by
     rw [e3, opMux, Function.update_self, e2, opMux, Function.update_of_ne (by decide),
       Function.update_of_ne (by decide), cswap_fst' (by omega), m1, hi.z2, hi.z3]
@@ -625,7 +627,7 @@ theorem tail_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
   rw [← ladderAfter_step k u (n := 2) (by decide)] at a2 b2' w2
   rw [← ladderAfter_step k u (n := 1) (by decide)] at a1 b1' w1
   rw [← ladderAfter_step k u (n := 0) (by decide)] at a0 b0 w0
-  simp only [w2, w1, Spec.X25519.cswap, Nat.zero_ne_one, ite_false] at a1 b1' a0 b0
+  simp only [w2, w1, VG.X25519Model.cswap, Nat.zero_ne_one, ite_false] at a1 b1' a0 b0
   obtain ⟨v4x, v4z⟩ := dblEnv_vals (E s3.mem base)
   obtain ⟨v5x, v5z⟩ := dblEnv_vals (E s4.mem base)
   obtain ⟨v6x, v6z⟩ := dblEnv_vals (E s5.mem base)
@@ -642,8 +644,8 @@ theorem tail_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Spec.X25519.Fe}
   · rw [wr7, K.wr, hi.wr]
   · exact (hi.mem.mono (by decide) (by decide)).trans ((K.mem.mono (by decide) (by decide)).trans
       (o7.mono (by decide) (by decide)))
-  · simp only [Spec.X25519.cswap, Nat.zero_ne_one, ite_false, w0]; exact x7
-  · simp only [Spec.X25519.cswap, Nat.zero_ne_one, ite_false, w0]; exact z7
+  · simp only [VG.X25519Model.cswap, Nat.zero_ne_one, ite_false, w0]; exact x7
+  · simp only [VG.X25519Model.cswap, Nat.zero_ne_one, ite_false, w0]; exact z7
 
 include hf in
 /-- `ladder`, as a ladder: from `LPre` to `LPost`. -/

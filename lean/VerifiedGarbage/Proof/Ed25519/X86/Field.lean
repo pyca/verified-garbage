@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.X86.Workspace
 public import VerifiedGarbage.Impl.Ed25519.X86.Field
 public import VerifiedGarbage.Proof.X25519.X86.Ops
@@ -17,6 +19,7 @@ namespace VG.Proof.Ed25519.X86
 
 variable {c : Bool}
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.Ed25519.X86 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519
 
 theorem slot_valid (o : Slot) : isSlot 64 (offset o) = true := (by decide : ∀ i : Slot, isSlot 64 (offset i) = true) o

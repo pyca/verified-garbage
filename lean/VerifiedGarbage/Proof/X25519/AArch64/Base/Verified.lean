@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Spec.X25519.Contract
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.AArch64.Base.Main
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseVerified
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseCTEngine
@@ -174,7 +178,8 @@ theorem x25519Base_spec_pre {s : State}
     (ht : CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩])
     (hal : (s.syms combSym).toNat % 64 = 0) :
     (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)).pre s := by
-  sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+  simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+  sig_pre [Spec.X25519.x25519BaseSig,
     AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
     stackBelow]
   obtain ⟨held, fit, hdw⟩ := ht
@@ -196,7 +201,8 @@ theorem x25519Base_sat :
 theorem x25519Base_implies : baseLocal.Implies
     (Spec.X25519.x25519BaseContract (AArch64.abi.withConsts combConsts)) where
   pre s h := by
-    sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pre [Spec.X25519.x25519BaseSig,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at h
     obtain ⟨hd, hheld, hfit, hdw, -, ht, hw, -, -, h3, -, -, h5⟩ := h
@@ -204,11 +210,13 @@ theorem x25519Base_implies : baseLocal.Implies
     rw [← List.take_append_drop (s.rd.length - 1) s.rd, ht, hd]; rfl
   post := by
     intro s s' _ h
-    sig_post [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_post [Spec.X25519.x25519BaseSig,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts]
     exact h
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pub [Spec.X25519.x25519BaseSig,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
     obtain ⟨hsp, hsy, h0, h1, h2⟩ := h
     exact ⟨hsp, h0, h1, h2, hsy⟩
@@ -222,7 +230,8 @@ theorem x25519Base_written [VG.Proof.Ed25519.AArch64.Divstep.Sound] (s : State) 
       [("scratch", 1024)] s s' := by
   have hl := x25519Base_implies.pre s hs
   have hd : Region.Disjoint ⟨s.gpr .x0, 32⟩ ⟨s.gpr .x2, 8192⟩ := by
-    sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig,
+    simp only [VG.Proof.X25519.Wychelean.baseContract_ladder] at *
+    sig_pre [Spec.X25519.x25519BaseSig,
       AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts, Abi.constRegions, Abi.constsHeld,
       stackBelow] at hs
     exact hs.2.2.2.2.2.2.2.2.1

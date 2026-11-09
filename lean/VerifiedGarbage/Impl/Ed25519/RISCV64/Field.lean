@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.MulFn
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 
 /-!
 # Ed25519 on RISC-V: field programs

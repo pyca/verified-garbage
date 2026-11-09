@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 import VerifiedGarbage.Proof.X25519.X86_64.Sqr
 public import Mathlib.Logic.Function.Basic
@@ -76,7 +78,7 @@ structure FieldOk (fld : Field) : Prop where
       Op base o s s' ∧ F s'.mem base o = F s.mem base a * F s.mem base a
   a24add : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o b a : Nat}, Slot o → Slot b → Slot a →
     WP isa (.block (fld.a24add o b a)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a
+      Op base o s s' ∧ F s'.mem base o = F s.mem base b + VG.X25519Model.a24 * F s.mem base a
   mul2 : ∀ {s : State} {base : Addr}, Scr s base → ∀ {o a b : Nat}, Slot o → Slot a → Slot b →
     WP isa (.block (fld.mul2 o a b)) s fun s' => Op base o s s' ∧
       F s'.mem base o = F s.mem base a * F s.mem base b + F s.mem base a * F s.mem base b
@@ -128,7 +130,7 @@ def opMul (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a * e b)
 def opAdd (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a + e b)
 def opSub (o a b : Fin 128) (e : Env) : Env := Function.update e o (e a - e b)
 def opA24Add (o b a : Fin 128) (e : Env) : Env :=
-  Function.update e o (e b + Spec.X25519.a24 * e a)
+  Function.update e o (e b + VG.X25519Model.a24 * e a)
 def opMux (o x y : Fin 128) (zf : Bool) (e : Env) : Env :=
   Function.update e o (if zf then e y else e x)
 def opSwap (x y : Fin 128) (sw : Bool) (e : Env) : Env :=

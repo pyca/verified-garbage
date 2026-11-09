@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Math
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
 import VerifiedGarbage.Proof.Divstep.Tc
@@ -27,6 +29,7 @@ After `i` batches from `x < p`, the working space holds `d`, `f`, `g` of
 namespace VG.Proof.Ed25519.AArch64.Inv
 
 open VG.Spec.X25519 VG.Proof.Divstep VG.Proof.Ed25519.Word64
+open VG.X25519Model
 
 /-- The divsteps' `(d, f, g)` after `i` batches from `x`. -/
 def dsI (x i : Nat) : Int × Int × Int := divsteps (59 * i) (1, P, x)

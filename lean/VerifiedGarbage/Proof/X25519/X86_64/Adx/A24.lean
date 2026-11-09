@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86_64.Adx.MulProd
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
 
@@ -32,7 +34,7 @@ theorem a24addX_eq (o b a : Nat) : a24addX o b a = ([.mov32 .rdx (.imm a24)] : L
 theorem a24addX_ok {s : State} {base : Addr} (hs : Scr s base) {o b a : Nat} (ho : Slot o)
     (hb : Slot b) (ha : Slot a) :
     WP isa (.block (a24addX o b a)) s fun s' =>
-      Op base o s s' ∧ F s'.mem base o = F s.mem base b + Spec.X25519.a24 * F s.mem base a := by
+      Op base o s s' ∧ F s'.mem base o = F s.mem base b + VG.X25519Model.a24 * F s.mem base a := by
   rw [a24addX_eq, WP.block_append_iff]
   refine WP.mono (movRdxImm_ok s a24) fun s1 ⟨d1, _, _, k1⟩ => ?_
   have hs1 := hs.of_keeps k1 (by decide)

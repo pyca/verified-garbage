@@ -1,8 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.X25519.AArch64.Base.Engine
 public import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseMain
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 import VerifiedGarbage.Proof.Ed25519.AArch64.Codec
 import VerifiedGarbage.Proof.Ed25519.AArch64.MulAddCodec
@@ -47,7 +48,7 @@ def baseLocal : Contract isa where
     (⟨s.gpr .x1, 32⟩ : Region).Disjoint ⟨s.gpr .x2, 8192⟩ ∧
     (s.gpr .x2).toNat + 8192 ≤ 2 ^ 64 ∧ CombHeld s [⟨s.gpr .x0, 32⟩, ⟨s.gpr .x2, 8192⟩]
   post s t := Spec.X25519.bytesAt t.mem (s.gpr .x0) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) Spec.X25519.basePoint
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32) VG.X25519Model.basePoint
   pub s t := s.sp = t.sp ∧ s.gpr .x0 = t.gpr .x0 ∧
     s.gpr .x1 = t.gpr .x1 ∧ s.gpr .x2 = t.gpr .x2 ∧ s.syms combSym = t.syms combSym
 
@@ -121,7 +122,7 @@ theorem x25519Base_correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} 
         gb _ (by decide), ga]
   · exact ke.sp.trans (kd.sp.trans (kc.sp.trans (spb.trans spa)))
   · change Spec.X25519.bytesAt (st4 _ _ _ _ _ _ _) _ 32 = _
-    change _ = Spec.X25519.x25519 (bytesAt s.mem (s.gpr .x1) 32) Spec.X25519.basePoint
+    change _ = VG.X25519Model.x25519 (bytesAt s.mem (s.gpr .x1) 32) VG.X25519Model.basePoint
     rw [bytesAt_st4, ← input, xc, Proof.X25519.encodeUCoordinate_eq]
     apply congrArg (Proof.X25519.leBytes 32)
     rw [ke.gpr .x4 (by decide), ke.gpr .x5 (by decide), ke.gpr .x6 (by decide), ke.gpr .x7 (by decide),

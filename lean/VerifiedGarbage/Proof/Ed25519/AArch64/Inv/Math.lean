@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 import Mathlib.Tactic.Ring.RingNF
 import Mathlib.Tactic.Positivity.Finset
 import Mathlib.Algebra.Order.Field.Basic
@@ -26,6 +26,7 @@ The rows of a batch as integers (`fterm`, `uterm`), the shift of a row of
 namespace VG.Proof.Ed25519.AArch64.Inv
 
 open VG.Spec.X25519 VG.Proof.Ed25519.Word64
+open VG.X25519Model
 
 /-- `|m|`, for a word as a signed number. -/
 def absN (m : Word) : Nat := m.toInt.natAbs

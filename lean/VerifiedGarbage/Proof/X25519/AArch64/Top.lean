@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.X25519.AArch64.Lit
@@ -43,7 +45,7 @@ def x25519AArch64 : Contract AArch64.isa where
     s.rd = [scalar, point] ∧ s.wr = [out, scratch] ∧ out.Disjoint scratch ∧
       scalar.Disjoint scratch ∧ point.Disjoint scratch
   post s s' := Spec.X25519.bytesAt s'.mem (s.gpr .x0) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32)
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .x1) 32)
       (Spec.X25519.bytesAt s.mem (s.gpr .x2) 32)
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
@@ -53,6 +55,7 @@ end VG.Proof.X25519
 namespace VG.Proof.X25519.AArch64
 
 open VG VG.AArch64 VG.Impl.X25519.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 
 /-! ## Regions of the working space, and outside it -/
 

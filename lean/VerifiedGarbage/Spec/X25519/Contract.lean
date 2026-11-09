@@ -1,13 +1,13 @@
 module
 
 public import VerifiedGarbage.Spec.X25519
-public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.Spec.X25519.Interface
 
 /-!
 # X25519: the contracts, on every target
 
 **Trusted** (as every file in `Spec/`). The contracts of
-`vg_x25519_exchange` and `vg_x25519_base`, in terms of `Spec/X25519.lean`,
+`vg_x25519_exchange` and `vg_x25519_base`, in terms of Wychelean, via the byte adapters in `Spec/X25519.lean`,
 for any target: `A` is the target's calling
 convention. The signature fixes where the arguments are, the memory the
 function may access, disjointness, and that the pointers are public (see
@@ -24,7 +24,7 @@ but nothing else about them affects timing. It takes 4 KiB of working space
 not fit in the registers of any target.
 
 `vg_x25519_base` computes a public key, `X25519(k, 9)` with the base point
-(`basePoint`), so that an implementation can compute it otherwise than with
+(Wychelean's base point), so that an implementation can compute it otherwise than with
 the ladder (e.g. as the u-coordinate `(1 + y) / (1 - y)` of a fixed-base
 multiplication on edwards25519, RFC 7748 §4.1). It takes 8 KiB of working
 space, as Ed25519's fixed-base multiplication does.
@@ -38,21 +38,11 @@ for one that uses none.
 
 namespace VG.Spec.X25519
 
-/-- The `n` bytes at `p`. -/
-def bytesAt (m : Mem) (p : Addr) (n : Nat) : List Byte :=
-  (List.range n).map fun i => m (p + BitVec.ofNat 64 i)
-
-/-- `vg_x25519_base(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024])`.
-`scratch` is working space. -/
-def x25519BaseSig : Sig where
-  params := [("out", .array true .u8 32), ("scalar", .array false .u8 32),
-    ("scratch", .array true .u64 1024)]
-
 /-- Writes `X25519(k, 9)` (the public key of `k`, RFC 7748 §6.1) to `out`, for
 the 32-byte scalar `k` at `scalar`. -/
 def x25519BaseContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   x25519BaseSig.contract A (post := fun out scalar _scratch m m' _ =>
-    bytesAt m' out 32 = x25519 (bytesAt m scalar 32) basePoint)
+    bytesAt m' out 32 = outputBytes (_root_.X25519.basepointMul (inputAt m scalar)))
     (stack := stack)
 
 /-- `vg_x25519_base` on every target. -/
@@ -69,19 +59,12 @@ def x25519BaseApi : Api where
   safety := ["The contents of `scratch` on return are unspecified and may contain secrets; \
     the caller must destroy them after use."]
 
-/-- `vg_x25519_exchange(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32`.
-`scratch` is working space. -/
-def exchangeSig : Sig where
-  params := [("out", .array true .u8 32), ("scalar", .array false .u8 32),
-    ("point", .array false .u8 32), ("scratch", .array true .u64 512)]
-  ret := some .u32
-
 /-- Writes `X25519(k, u)` to `out`, for the 32-byte scalar `k` at `scalar`
 and the 32-byte u-coordinate `u` at `point`, and returns 0 if it is all zero,
 1 otherwise (RFC 7748 §6.1). -/
 def exchangeContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   exchangeSig.contract A (post := fun out scalar point _scratch m m' r =>
-    let z := x25519 (bytesAt m scalar 32) (bytesAt m point 32)
+    let z := outputBytes (_root_.X25519.x25519 (inputAt m scalar) (inputAt m point))
     bytesAt m' out 32 = z ∧ r = if z = List.replicate 32 0 then 0 else 1)
     (stack := stack)
 

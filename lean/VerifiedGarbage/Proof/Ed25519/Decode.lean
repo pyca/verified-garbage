@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Spec.Ed25519
 
@@ -10,6 +12,7 @@ public import VerifiedGarbage.Spec.Ed25519
 namespace VG.Proof.Ed25519
 
 open VG VG.Spec.X25519
+open VG.X25519Model
 
 theorem toFe_of_lt (n : Nat) (h : n < P) : Proof.X25519.toFe n = (⟨n, h⟩ : Fe) := by
   apply Fin.ext

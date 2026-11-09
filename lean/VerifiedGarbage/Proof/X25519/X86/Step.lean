@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 public import VerifiedGarbage.Proof.X25519.Ladder
 public import VerifiedGarbage.Proof.Framework.X86.Spill
@@ -19,6 +21,7 @@ bits `254, …, n + 1` in the slots `X2, Z2, X3, Z3` and the word `SWAP` (`LInv
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 /-- The callee-saved registers and their slots in the working space, in the
 order `save` stores them. -/
@@ -97,11 +100,11 @@ theorem run_step (V : Nat → Fe) :
 
 theorem stepOps_valid : ∀ op ∈ stepOps, opValid 288 op = true := by decide
 
-theorem cswap_fst (sw : Nat) (a b : Fe) : (Spec.X25519.cswap sw a b).1 = if sw = 1 then b else a := by
-  unfold Spec.X25519.cswap; split <;> rfl
+theorem cswap_fst (sw : Nat) (a b : Fe) : (VG.X25519Model.cswap sw a b).1 = if sw = 1 then b else a := by
+  unfold VG.X25519Model.cswap; split <;> rfl
 
-theorem cswap_snd (sw : Nat) (a b : Fe) : (Spec.X25519.cswap sw a b).2 = if sw = 1 then a else b := by
-  unfold Spec.X25519.cswap; split <;> rfl
+theorem cswap_snd (sw : Nat) (a b : Fe) : (VG.X25519Model.cswap sw a b).2 = if sw = 1 then a else b := by
+  unfold VG.X25519Model.cswap; split <;> rfl
 
 theorem F_ite {m m' : Mem} {x : BitVec 32} {q a b : Nat} (sw : Nat)
     (h : fe m' x q = if sw = 1 then fe m x a else fe m x b) :
@@ -236,20 +239,20 @@ theorem step_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} {n : Nat} (
   -- The values after the swaps.
   have hstep := ladderAfter_step k x1 hn
   have v₁ : ∀ q, isSlot 288 q = true → F s₁.mem x q = F s.mem x q := F₁
-  have eX2 : F s₃.mem x X2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  have eX2 : F s₃.mem x X2 = (VG.X25519Model.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).x2 (ladderAfter k x1 (n + 1)).x3).1 := by
     rw [F_frame2 hfit f₃ (by decide) (by decide) (by decide) (by decide) (by decide), F_ite _ x₂,
       v₁ _ (by decide), v₁ _ (by decide), h.vx2, h.vx3, cswap_fst]
-  have eX3 : F s₃.mem x X3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  have eX3 : F s₃.mem x X3 = (VG.X25519Model.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).x2 (ladderAfter k x1 (n + 1)).x3).2 := by
     rw [F_frame2 hfit f₃ (by decide) (by decide) (by decide) (by decide) (by decide), F_ite _ y₂,
       v₁ _ (by decide), v₁ _ (by decide), h.vx2, h.vx3, cswap_snd]
-  have eZ2 : F s₃.mem x Z2 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  have eZ2 : F s₃.mem x Z2 = (VG.X25519Model.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).z2 (ladderAfter k x1 (n + 1)).z3).1 := by
     rw [F_ite _ x₃, F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       v₁ _ (by decide), v₁ _ (by decide), h.vz2, h.vz3, cswap_fst]
-  have eZ3 : F s₃.mem x Z3 = (Spec.X25519.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
+  have eZ3 : F s₃.mem x Z3 = (VG.X25519Model.cswap ((ladderAfter k x1 (n + 1)).swap ^^^ bit k n)
       (ladderAfter k x1 (n + 1)).z2 (ladderAfter k x1 (n + 1)).z3).2 := by
     rw [F_ite _ y₃, F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),
       F_frame2 hfit f₂ (by decide) (by decide) (by decide) (by decide) (by decide),

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Arith
 import VerifiedGarbage.Proof.X25519.Field
 import VerifiedGarbage.Proof.Framework.Lit
@@ -18,6 +20,7 @@ below (of the top limb, times 19, for the lowest): the same number modulo `p`
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 
 /-- The limbs `carry` leaves, with the mask `m` and the constant `k19`. -/
 def carryNat (m k19 : Nat) (x : Nat → Nat) : Nat → Nat

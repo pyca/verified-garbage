@@ -1,6 +1,6 @@
 module
 public import VerifiedGarbage.Proof.X25519.X86.Column
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 
 import VerifiedGarbage.Proof.X25519.X86.Fold
 import VerifiedGarbage.Proof.X25519.Field
@@ -21,6 +21,7 @@ unchanged but for the output and, for `mul`, `T`.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 variable {W : Nat} {c : Bool}
 

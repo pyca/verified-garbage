@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Curve448.AArch64.Legacy
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Block
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 
 @[expose] public section
 

@@ -1,7 +1,9 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86_64.Mem
 public import VerifiedGarbage.Proof.X25519.Ladder
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.BitByte
@@ -314,7 +316,7 @@ theorem bits_ok {s : State} {base k : Addr} (hs : Scr s base) (hk : s.gpr .rsi =
       (∀ r, r ∉ [Reg.rax, .rdx, .rbx] → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       Outside base BITS 256 s.mem s'.mem ∧
       ∀ t < 255, s'.mem (off base (BITS + t)) =
-        BitVec.ofNat 8 (bit (Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s.mem k 32)) t) := by
+        BitVec.ofNat 8 (bit (VG.X25519Model.decodeScalar25519 (Spec.X25519.bytesAt s.mem k 32)) t) := by
   rw [bits_eq]
   refine WP.seq (WP.mono (show WP isa (.block [.mov32 .rbx (.imm 0)]) s (fun s' =>
       BInv base k s s' 0) by

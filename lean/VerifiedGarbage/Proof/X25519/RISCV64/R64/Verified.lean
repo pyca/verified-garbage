@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.RISCV64.R64.Ladder
 public import VerifiedGarbage.Proof.X25519.RISCV64.Invert
@@ -12,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.X25519.RISCV64.R64
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.CT
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.RISCV64.Target
@@ -109,7 +110,7 @@ theorem chainSqn {s0 : State} {a c : BitVec 64} {o x n : Nat} {qs qs' : List Nat
   · exact .inr ⟨by simp [hm0], m - 1, by omega, by omega, by omega, h2'⟩
 
 /-- The chain's slots: `z` at `Z2`, `x2` at `X2` and `t0`–`t3` at `A`–`D`. -/
-def cv (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=
+def chainValues (z x2 t0 t1 t2 t3 : Fe) (q : Nat) : Fe :=
   if q = Z2 then z else if q = X2 then x2 else if q = A then t0 else if q = B then t1 else if q = C then t2
   else t3
 
@@ -121,139 +122,139 @@ theorem invertChain_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b 
   have hR : R = 480 := rfl
   let z := v Z2
   let x2 := v X2
-  have h : Cur b s a (s.gpr .t1) [Z2, X2] (cv z x2 0 0 0 0) s :=
+  have h : Cur b s a (s.gpr .t1) [Z2, X2] (chainValues z x2 0 0 0 0) s :=
     ⟨hc, Stp.refl _ _, h0, rfl, hS.congr fun q hq => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl <;> rfl⟩
   unfold invertChain
   let t0 := z * z
-  refine WP.seq (WP.mono (chainMul (o := A) (x := Z2) (y := Z2) (qs' := [A, Z2, X2]) (w := cv z x2 t0 0 0 0)
+  refine WP.seq (WP.mono (chainMul (o := A) (x := Z2) (y := Z2) (qs' := [A, Z2, X2]) (w := chainValues z x2 t0 0 0 0)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h) fun s1 h1 => ?_)
   let t1a := t0 * t0
   refine WP.seq (WP.mono (chainMul (o := B) (x := A) (y := A) (qs' := [B, A, Z2, X2])
-    (w := cv z x2 t0 t1a 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0 t1a 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h1)
     fun s2 h2 => ?_)
   let t1b := t1a * t1a
   refine WP.seq (WP.mono (chainMul (o := B) (x := B) (y := B) (qs' := [B, A, Z2, X2])
-    (w := cv z x2 t0 t1b 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0 t1b 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h2)
     fun s3 h3 => ?_)
   let t1c := z * t1b
   refine WP.seq (WP.mono (chainMul (o := B) (x := Z2) (y := B) (qs' := [B, A, Z2, X2])
-    (w := cv z x2 t0 t1c 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0 t1c 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h3)
     fun s4 h4 => ?_)
   let t0' := t0 * t1c
   refine WP.seq (WP.mono (chainMul (o := A) (x := A) (y := B) (qs' := [B, A, Z2, X2])
-    (w := cv z x2 t0' t1c 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1c 0 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h4)
     fun s5 h5 => ?_)
   let t2a := t0' * t0'
   refine WP.seq (WP.mono (chainMul (o := C) (x := A) (y := A) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1c t2a 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1c t2a 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h5)
     fun s6 h6 => ?_)
   let t1d := t1c * t2a
   refine WP.seq (WP.mono (chainMul (o := B) (x := B) (y := C) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1d t2a 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1d t2a 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h6)
     fun s7 h7 => ?_)
   let t2b := VG.Proof.X25519.sqn t1d 5
   refine WP.seq (WP.mono (chainSqn (o := C) (x := B) (n := 5) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1d t2b 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1d t2b 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h7) fun s8 ⟨_, h8⟩ => ?_)
   let t1e := t2b * t1d
   refine WP.seq (WP.mono (chainMul (o := B) (x := C) (y := B) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2b 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1e t2b 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h8)
     fun s9 h9 => ?_)
   let t2c := VG.Proof.X25519.sqn t1e 10
   refine WP.seq (WP.mono (chainSqn (o := C) (x := B) (n := 10) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2c 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1e t2c 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h9) fun s10 ⟨_, h10⟩ => ?_)
   let t2d := t2c * t1e
   refine WP.seq (WP.mono (chainMul (o := C) (x := C) (y := B) (qs' := [C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2d 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1e t2d 0) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h10)
     fun s11 h11 => ?_)
   let t3a := VG.Proof.X25519.sqn t2d 20
   refine WP.seq (WP.mono (chainSqn (o := D) (x := C) (n := 20) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2d t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1e t2d t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h11) fun s12 ⟨_, h12⟩ => ?_)
   let t2e := t3a * t2d
   refine WP.seq (WP.mono (chainMul (o := C) (x := D) (y := C) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2e t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1e t2e t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h12)
     fun s13 h13 => ?_)
   let t2f := VG.Proof.X25519.sqn t2e 10
   refine WP.seq (WP.mono (chainSqn (o := C) (x := C) (n := 10) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1e t2f t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1e t2f t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h13) fun s14 ⟨_, h14⟩ => ?_)
   let t1f := t2f * t1e
   refine WP.seq (WP.mono (chainMul (o := B) (x := C) (y := B) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2f t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1f t2f t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h14)
     fun s15 h15 => ?_)
   let t2g := VG.Proof.X25519.sqn t1f 50
   refine WP.seq (WP.mono (chainSqn (o := C) (x := B) (n := 50) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2g t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1f t2g t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h15) fun s16 ⟨_, h16⟩ => ?_)
   let t2h := t2g * t1f
   refine WP.seq (WP.mono (chainMul (o := C) (x := C) (y := B) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2h t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1f t2h t3a) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h16)
     fun s17 h17 => ?_)
   let t3b := VG.Proof.X25519.sqn t2h 100
   refine WP.seq (WP.mono (chainSqn (o := D) (x := C) (n := 100) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2h t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1f t2h t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h17) fun s18 ⟨_, h18⟩ => ?_)
   let t2i := t3b * t2h
   refine WP.seq (WP.mono (chainMul (o := C) (x := D) (y := C) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2i t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1f t2i t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h18)
     fun s19 h19 => ?_)
   let t2j := VG.Proof.X25519.sqn t2i 50
   refine WP.seq (WP.mono (chainSqn (o := C) (x := C) (n := 50) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1f t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1f t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h19) fun s20 ⟨_, h20⟩ => ?_)
   let t1g := t2j * t1f
   refine WP.seq (WP.mono (chainMul (o := B) (x := C) (y := B) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1g t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by
+    (w := chainValues z x2 t0' t1g t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h20)
     fun s21 h21 => ?_)
   let t1h := VG.Proof.X25519.sqn t1g 5
   refine WP.seq (WP.mono (chainSqn (o := B) (x := B) (n := 5) (qs' := [D, C, B, A, Z2, X2])
-    (w := cv z x2 t0' t1h t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (w := chainValues z x2 t0' t1h t2j t3b) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by
       intro q hq; simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl | rfl | rfl <;> rfl) h21) fun s22 ⟨_, h22⟩ => ?_)
@@ -326,7 +327,7 @@ theorem x25519_correct {s : State} (hp : XPre s) :
   rw [hk] at hS3 h0 hS4 hS5 hS6
   have e6 : FS s6.mem (wsBase s) X2 = _ := hS6 X2 (by decide)
   rw [← VG.Proof.X25519.toFe_val, ← VG.Proof.X25519.encodeUCoordinate_eq]
-  change VG.Spec.X25519.encodeUCoordinate (FS s6.mem (wsBase s) X2) = _
+  change VG.X25519Model.encodeUCoordinate (FS s6.mem (wsBase s) X2) = _
   rw [e6]
   simp only [upd, swapV, ladV, sel, iteT, VG.Proof.X25519.invert_eq, VG.Proof.X25519.pow_pw, cswap_fst,
     uOf, X1, X2, Z2, X3, Z3, R, Nat.reduceEqDiff, ite_false]

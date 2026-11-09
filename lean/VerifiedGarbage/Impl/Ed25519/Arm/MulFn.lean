@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.Arm.Word
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 
 /-!
 # `vg_gf25519_r16_mul` on ARMv7

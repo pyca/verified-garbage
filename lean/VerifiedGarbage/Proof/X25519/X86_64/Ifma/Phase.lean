@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Stage
 public import VerifiedGarbage.Proof.X25519.X86_64.Small
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Block
@@ -22,6 +24,7 @@ it keeps.
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.Poly1305.X86_64.Avx2 (xr xi qw sel4)
 
 theorem xi_xr : ∀ r < 16, xi (xr r) = r := by decide

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86.Step
 import VerifiedGarbage.Proof.X25519.X86.Field32.Call
 public import VerifiedGarbage.Impl.X25519.X86.Fn
@@ -22,6 +24,7 @@ what holds is `After`.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519 (pw pw_mul sqn_pw pow_pw)
 open VG.Proof.X25519.X86.Field32 (Cs CSpec cenv opMul opSqn sqnC mulC pow250Call_ok')
 

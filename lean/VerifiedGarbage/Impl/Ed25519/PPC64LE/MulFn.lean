@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Word
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 
 /-!
 # `vg_gf25519_r32_mul` on PPC64LE

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.TCB.Artifact
 public import VerifiedGarbage.TCB.RISCV64.Isa
 public import VerifiedGarbage.Proof.X25519.RISCV64.Setup
@@ -31,7 +33,7 @@ def x25519RISCV64 : Contract RISCV64.isa where
     s.rd = [sc, pt] ∧ s.wr = [out, ws] ∧ out.Disjoint sc ∧ out.Disjoint pt ∧ out.Disjoint ws ∧
       sc.Disjoint ws ∧ pt.Disjoint ws
   post s s' := bytesAt s'.mem (s.gpr .a0) 32 =
-    VG.Spec.X25519.x25519 (bytesAt s.mem (s.gpr .a1) 32) (bytesAt s.mem (s.gpr .a2) 32)
+    VG.X25519Model.x25519 (bytesAt s.mem (s.gpr .a1) 32) (bytesAt s.mem (s.gpr .a2) 32)
   pub s₁ s₂ := s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2 ∧
     s₁.gpr .a3 = s₂.gpr .a3 ∧ s₁.sp = s₂.sp
 

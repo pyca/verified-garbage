@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.AArch64.Word.Slots
 public import VerifiedGarbage.Proof.X25519.Ladder
 
@@ -9,6 +11,7 @@ public import VerifiedGarbage.Proof.X25519.Ladder
 
 namespace VG.Proof.X25519.AArch64.Word
 open VG VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 open VG.Impl.Ed25519.AArch64 VG.Proof.Ed25519.AArch64
 
 def Good (e : Env) (x1 : Fe) (st : Ladder) : Prop :=

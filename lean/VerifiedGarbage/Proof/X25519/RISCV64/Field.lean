@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Mem
 public import VerifiedGarbage.Proof.Framework.Semantics
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.TCB.RISCV64.Isa
 
 /-!

@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.RISCV64.R64.Reduce
 public import VerifiedGarbage.Proof.X25519.RISCV64.Ladder
 import VerifiedGarbage.Proof.X25519.RISCV64.Cswap
@@ -182,7 +184,7 @@ theorem mulA24S {o y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = t
     (ho : o + 32 ≤ ACC) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
     WP isa (.block (mulA24 o y)) s fun s' => Rest clob64 s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (Spec.X25519.a24 * v y)) := by
+      SlotsOk s'.mem b (o :: qs) (upd v o (VG.X25519Model.a24 * v y)) := by
   have hq1 := sep8_sep1 hq
   have hy' := sep1_get hq1 hy
   have hA := ACC_eq
@@ -190,7 +192,7 @@ theorem mulA24S {o y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep8 o qs = t
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
-    rw [upd_self, ← hS y hy, show Spec.X25519.a24 = toFe 121665 from rfl]
+    rw [upd_self, ← hS y hy, show VG.X25519Model.a24 = toFe 121665 from rfl]
     exact toFe_mul hv
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq1 ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
@@ -287,7 +289,8 @@ section
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.X25519.RISCV64.R64
 open VG.Proof.X448.RISCV64.R64 (clob64)
 open VG.Impl.X25519.RISCV64 (X1 X2 Z2 X3 Z3 A B C D AA BB E DA CB A24 ACC BITS)
-open VG.Spec.X25519 (P Fe Ladder ladderStep cswap a24)
+open VG.Spec.X25519 (P Fe)
+open VG.X25519Model (Ladder ladderStep cswap a24)
 open VG.Proof.X25519 (toFe ladderAfter ladderAfter_step ladderStep_eq bit bit_le ladderAfter_swap_le)
 
 /-- The registers the code changes: all but the pointers to `out` (`a0`) and
@@ -366,7 +369,7 @@ def opsOk : List FOp → List Nat → Bool
 
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep8 op.out qs = true) (ho : op.out + 32 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
-    (hA : v A24 = Spec.X25519.a24) {s : State} (h : Cur b s0 a c qs v s) :
+    (hA : v A24 = VG.X25519Model.a24) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (fcode op) s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
   cases op with
   | mul o x y =>
@@ -381,7 +384,7 @@ theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat
 
 theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
-      v A24 = Spec.X25519.a24 →
+      v A24 = VG.X25519Model.a24 →
       Cur b s0 a c qs v s → (∀ s', Cur b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' Q) →
       WP isa (opsCode ops k) s Q
   | [], _, _, s, _, _, h, hk => hk s h

@@ -1,10 +1,11 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Impl.X25519.X86.Base
 import VerifiedGarbage.Proof.X25519.Edwards.Ladder
 import VerifiedGarbage.Proof.Ed25519.Bytes
 public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseEntry
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.Proof.Ed25519.Group.Extended
 import VerifiedGarbage.Proof.Ed25519.X86.CombLoop
 import VerifiedGarbage.Proof.Ed25519.X86.FreezeField
@@ -45,8 +46,8 @@ postcondition. -/
 def x25519BaseLocal : Contract isa :=
   { scalarBaseLocal with
     post := fun s t => Spec.X25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
-      Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
-        Spec.X25519.basePoint }
+      VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
+        VG.X25519Model.basePoint }
 
 /-! ## Clamping -/
 
@@ -54,7 +55,7 @@ def x25519BaseLocal : Contract isa :=
 (`Spec.Ed25519.decodeLE`), but for the clamped ones: bits 0–2 and 255 are 0,
 bit 254 is 1. -/
 theorem clamp_bit {kb : List Byte} (hl : kb.length = 32) {k : Nat} (hk : k < 256) :
-    Spec.X25519.decodeScalar25519 kb / 2 ^ k % 2 =
+    VG.X25519Model.decodeScalar25519 kb / 2 ^ k % 2 =
       if k = 254 then 1 else if k = 255 then 0 else if k = 2 then 0 else if k = 1 then 0 else
       if k = 0 then 0 else Spec.Ed25519.decodeLE kb / 2 ^ k % 2 := by
   by_cases h255 : k = 255
@@ -178,7 +179,7 @@ theorem bytesAt_eq (m : Mem) (p : Addr) : Spec.X25519.bytesAt m p 32 = Spec.Ed25
 structure Ready (s₀ s : State) : Prop where
   saved : Saved s₀ (arg s₀ 2) s
   bits : ∀ q < 256, s.mem (addr (arg s₀ 2) (7168 + q)) = BitVec.ofNat 8
-    ((Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32) /
+    ((VG.X25519Model.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32) /
       2 ^ q) % 2)
   d : env s.mem (arg s₀ 2) 16 = Spec.Ed25519.d
   ptr : wd s.mem (arg s₀ 2) combTbl = s₀.syms combSym
@@ -189,7 +190,7 @@ theorem scalar_length (s : State) :
     (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32).length = 32 := by
   simp [Spec.Ed25519.bytesAt]
 
-theorem scalar_lt (s : State) : Spec.X25519.decodeScalar25519
+theorem scalar_lt (s : State) : VG.X25519Model.decodeScalar25519
     (Spec.Ed25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) < 2 ^ 256 := by
   have e := Proof.X25519.Edwards.decodeScalar25519_shift (scalar_length s)
   rw [Nat.shiftRight_eq_div_pow, Nat.div_eq_zero_iff_lt (by decide)] at e
@@ -226,7 +227,7 @@ theorem start_ok {s : State} (h : BodyPre s) :
 
 theorem comb_ok {s₀ s : State} (h : BaseRegions s₀) (hr : Ready s₀ s) :
     WP isa combMultiply s fun t => Rep (point (env t.mem (arg s₀ 2)) 0 1 2 3)
-      ((Spec.X25519.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32)) •
+      ((VG.X25519Model.decodeScalar25519 (Spec.Ed25519.bytesAt s₀.mem ((arg s₀ 1).setWidth 64) 32)) •
         baseAff) ∧ Saved s₀ (arg s₀ 2) t := by
   obtain ⟨hp, _, _⟩ := scalarBase_pre h
   exact WP.mono (combMultiply_ok (hr.saved.ctx hp.fit hp.wr hp.stk) (scalar_lt s₀) hr.bits hr.d hr.ptr hr.tbl hr.tstk)
@@ -242,7 +243,7 @@ theorem x25519BaseBody_correct {s : State} (h : BodyPre s) :
   have he := hd.ikeep hp.fit ke
   refine WP.mono (finishWords_ok hp ho he (src := 64) (by decide)) fun t ⟨abi_t, et⟩ => ⟨abi_t, ?_⟩
   change Spec.X25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) Spec.X25519.basePoint
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) VG.X25519Model.basePoint
   rw [bytesAt_eq, bytesAt_eq, et, ve,
     Proof.X25519.Edwards.x25519_basePoint (scalar_length s) _ (u_rep pd)]
   rfl
@@ -253,10 +254,10 @@ theorem x25519Base_correct {s : State} (h : x25519BaseLocal.pre s) :
   refine WP.seq (WP.mono (combAddr_ok h) fun s₁ P => ?_)
   refine WP.mono (x25519BaseBody_correct P.pre) fun t ⟨ha, hq⟩ => ⟨P.abi ha, ?_⟩
   change Spec.X25519.bytesAt t.mem ((arg s₁ 0).setWidth 64) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s₁.mem ((arg s₁ 1).setWidth 64) 32)
-      Spec.X25519.basePoint at hq
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s₁.mem ((arg s₁ 1).setWidth 64) 32)
+      VG.X25519Model.basePoint at hq
   change Spec.X25519.bytesAt t.mem ((arg s 0).setWidth 64) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) Spec.X25519.basePoint
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32) VG.X25519Model.basePoint
   rw [P.args 0 (by decide), P.args 1 (by decide), bytesAt_eq s₁.mem, P.input] at hq
   exact hq
 

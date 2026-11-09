@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 
 /-!
 # X25519: x86-64 implementation

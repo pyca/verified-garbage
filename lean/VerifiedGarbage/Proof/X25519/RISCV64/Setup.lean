@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.RISCV64.Ladder
 public import VerifiedGarbage.Proof.X25519.Bytes
 
@@ -26,7 +28,8 @@ modulo `2²⁵⁵`), and the setup of the working space: `x1 = x3 = u`, `x2 = z3
 namespace VG.Proof.X25519.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Steps VG.Impl.X25519.RISCV64 VG.Impl.Words.RISCV64
-open VG.Spec.X25519 (P Fe bytesAt a24)
+open VG.Spec.X25519 (P Fe bytesAt)
+open VG.X25519Model (a24)
 open VG.Proof.X25519 (leNum leNum_append bytesAt_add length_bytesAt toFe)
 
 /-! ## The u-coordinate as limbs -/
@@ -51,7 +54,7 @@ theorem uLimb_lt (m : Mem) (p : Addr) : ∀ k < 8, uLimb m p k < 2 ^ 32 :=
 
 /-- The limbs of the decoded u-coordinate. -/
 theorem decode_val (m : Mem) (p : Addr) :
-    val32 (uLimb m p) 8 = VG.Spec.X25519.decodeUCoordinate (bytesAt m p 32) := by
+    val32 (uLimb m p) 8 = VG.X25519Model.decodeUCoordinate (bytesAt m p 32) := by
   rw [VG.Proof.X25519.decodeUCoordinate_eq (length_bytesAt m p 32), show 32 = 4 * 8 from rfl,
     leNum_bytesAt4]
   obtain ⟨e, hlt, -, -⟩ := mask31_facts (l := uWord m p) fun k _ => wd_lt m p (4 * k)
@@ -297,7 +300,7 @@ structure XPre (s : State) : Prop where
 
 /-- The u-coordinate, decoded. -/
 def uOf (s : State) : Fe :=
-  toFe (VG.Spec.X25519.decodeUCoordinate (bytesAt s.mem (s.gpr .a2) 32))
+  toFe (VG.X25519Model.decodeUCoordinate (bytesAt s.mem (s.gpr .a2) 32))
 
 theorem val32_one : val32 (fun k => if k = 0 then 1 else 0) 8 = 1 := by decide
 theorem val32_zero8 : val32 (fun _ => 0) 8 = 0 := by decide

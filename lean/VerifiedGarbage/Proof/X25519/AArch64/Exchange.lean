@@ -1,5 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
+import VerifiedGarbage.Proof.X25519.Wychelean
+meta import VerifiedGarbage.Proof.X25519.Wychelean
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.AArch64
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Verified
@@ -33,7 +37,7 @@ namespace VG.Proof.X25519.AArch64.Exchange
 
 open VG VG.AArch64 VG.Proof.Xdh.AArch64
 
-theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X25519.x25519 Impl.X25519.AArch64.AltLadder.x25519
+theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 VG.X25519Model.x25519 Impl.X25519.AArch64.AltLadder.x25519
     (Proof.X25519.x25519Contract AArch64.abi) where
   hv := Proof.X25519.AArch64.AltLadder.x25519_verified.1
   hct := Proof.X25519.AArch64.AltLadder.x25519_verified.2.1
@@ -61,9 +65,10 @@ theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X2
 theorem exchange_verified [VG.Proof.Ed25519.AArch64.Divstep.Sound] :
     Verified AArch64.target (Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32)
       (Spec.X25519.exchangeContract AArch64.abi 16) :=
-  Verified.of_correct (k := exContract 32 4096 Spec.X25519.x25519) (exchange_correct callee (by decide))
+  Verified.of_correct (k := exContract 32 4096 VG.X25519Model.x25519) (exchange_correct callee (by decide))
     (exchange_ct callee ⟨_, by taint_decide⟩) (by
-      contract_implies [Spec.X25519.exchangeContract, Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
+      simp only [VG.Proof.X25519.Wychelean.exchangeContract_ladder] at *
+      contract_implies [Spec.X25519.exchangeSig, Proof.X25519.x25519Sig,
         exContract, ExPre, CallPre, ExPost, Pub, AArch64.abi, AArch64.argRegs]
         [VG.Proof.X25519.AArch64.sat] using VG.Proof.X25519.AArch64.sat)
 

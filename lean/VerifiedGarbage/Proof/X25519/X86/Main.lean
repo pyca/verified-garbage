@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.X86.Finish
 public import VerifiedGarbage.Proof.X25519.X86.Invert
 public import VerifiedGarbage.Proof.X25519.X86.Contract
@@ -23,6 +25,7 @@ callee-saved registers.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 theorem x25519_code : Impl.X25519.X86.x25519 =
     .seq setup (.seq (.seq (.block [.mov .esi (.imm 255)]) (.loop (.block step) .ne))

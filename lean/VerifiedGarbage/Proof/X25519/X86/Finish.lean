@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86.Contract
 public import VerifiedGarbage.Proof.X25519.X86.Step
 
@@ -19,13 +21,14 @@ The swap after the loop, and `finish`: `x2 · z2^(p-2)` (with `z2^(p-2)` in
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 /-- The swap after the loop. -/
 theorem lastSwap_ok {x : BitVec 32} {k : Nat} {x1 : Fe} {s₀ s : State} (h : LInv x k x1 s₀ 0 s) :
     WP isa (.block lastSwap) s fun s' => Base x k s₀ s' ∧
-      F s'.mem x X2 = (Spec.X25519.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).x2
+      F s'.mem x X2 = (VG.X25519Model.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).x2
         (ladderAfter k x1 0).x3).1 ∧
-      F s'.mem x Z2 = (Spec.X25519.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).z2
+      F s'.mem x Z2 = (VG.X25519Model.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).z2
         (ladderAfter k x1 0).z3).1 := by
   have hfit := h.ctx.fit
   have hsw := ladderAfter_swap_le k x1 (n := 0) (by decide)

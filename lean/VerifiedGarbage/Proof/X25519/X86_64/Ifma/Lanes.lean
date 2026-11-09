@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Phase
 
 /-!
@@ -15,6 +17,7 @@ operations on them.
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 
 /-- The element of `GF(p)` five limbs stand for. -/
 def fe5 (x : Nat → Nat) : Fe := toFe (lv x)

@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 public import VerifiedGarbage.Proof.X448.AArch64.Env
 import VerifiedGarbage.Proof.X448.AArch64.Bits
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.X448.AArch64.Iter
 import VerifiedGarbage.Proof.X448.Invert
 

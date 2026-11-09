@@ -1,9 +1,10 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.Contract
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.X25519.X86_64.Invert
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.Proof.Framework.X86_64.Abi
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
@@ -41,7 +42,7 @@ def x25519X86_64 : Contract X86_64.isa where
       scalar.Disjoint scratch ∧ point.Disjoint scratch ∧ ret.Disjoint out ∧ ret.Disjoint scratch ∧
       (s.gpr .rcx).toNat + 4096 ≤ 2 ^ 64
   post s s' := Spec.X25519.bytesAt s'.mem (s.gpr .rdi) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .rsi) 32)
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem (s.gpr .rsi) 32)
       (Spec.X25519.bytesAt s.mem (s.gpr .rdx) 32)
   pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
@@ -150,8 +151,8 @@ theorem correct_of [DivstepInv] {lad : Prog isa} (hli : lad.inline = lad)
   have e₃ : ∀ i : Fin 128, i.val < 24 → E s₃.mem base i = E s₁.mem base i :=
     fun i h₂ => by rw [k₃.2.1]; exact E_outside o₂ i (Or.inl (by simp only [BITS]; omega))
   refine WP.seq (WP.mono (hlad (s := s₃)
-    (k := Spec.X25519.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))
-    (u := toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rdx) 32)))
+    (k := VG.X25519Model.decodeScalar25519 (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rsi) 32))
+    (u := toFe (VG.X25519Model.decodeUCoordinate (Spec.X25519.bytesAt s₀.mem (s₀.gpr .rdx) 32)))
     ⟨hs₃, fun t ht => by rw [k₃.2.1, b₂ t ht, hkb],
       by rw [e₃ 2 (by decide), x1₁], by rw [e₃ 3 (by decide), x2₁], by rw [e₃ 4 (by decide), z2₁],
       by rw [e₃ 5 (by decide), x3₁], by rw [e₃ 6 (by decide), z3₁],

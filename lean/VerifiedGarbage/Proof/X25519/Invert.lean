@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Framework.PowLit
 
 /-!
@@ -18,6 +18,7 @@ against `invert`, one multiplication or run of squarings (`sqn`) at a time.
 namespace VG.Proof.X25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 /-- `x` squared `n` times: `x^(2^n)`. -/
 def sqn (x : Fe) : Nat → Fe

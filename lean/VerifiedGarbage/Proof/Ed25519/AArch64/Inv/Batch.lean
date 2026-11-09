@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Mat
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Row
 public import VerifiedGarbage.Proof.Divstep.BatchBasic
@@ -27,6 +29,7 @@ matrix's combinations (`row_ok`, `rowF_rel`, `rowU_rel`), shifted and reduced
 namespace VG.Proof.Ed25519.AArch64.Inv
 
 open VG VG.AArch64 VG.Proof.Ed25519.Word64 VG.Proof.Ed25519.AArch64 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)
 open VG.Proof.Divstep (MSt msteps)
 open VG.Proof.X25519.AArch64 (exec_movz)

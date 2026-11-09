@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86_64.Setup
 public import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.X25519.X86_64.Iter
@@ -40,13 +42,13 @@ theorem lastSwap_eq : lastSwap = ([.mov .rdx (.mem (sc SWAP)), .mov32 .rcx (.imm
   simp only [lastSwap, List.append_assoc]
 
 /-- The swap after the loop, by the ladder's `swap`. -/
-theorem lastSwap_ok {s : State} {base : Addr} (hs : Scr s base) {st : Spec.X25519.Ladder}
+theorem lastSwap_ok {s : State} {base : Addr} (hs : Scr s base) {st : VG.X25519Model.Ladder}
     (hsw : st.swap < 2) (hw : word s.mem base SWAP = BitVec.ofNat 64 st.swap)
     (h3 : E s.mem base 3 = st.x2) (h4 : E s.mem base 4 = st.z2) (h5 : E s.mem base 5 = st.x3)
     (h6 : E s.mem base 6 = st.z3) :
     WP isa (.block lastSwap) s fun s' =>
-      Keep base s s' ∧ E s'.mem base 3 = (Spec.X25519.cswap st.swap st.x2 st.x3).1 ∧
-        E s'.mem base 4 = (Spec.X25519.cswap st.swap st.z2 st.z3).1 := by
+      Keep base s s' ∧ E s'.mem base 3 = (VG.X25519Model.cswap st.swap st.x2 st.x3).1 ∧
+        E s'.mem base 4 = (VG.X25519Model.cswap st.swap st.z2 st.z3).1 := by
   rw [lastSwap_eq, WP.block_append_iff]
   refine WP.mono (swapMask_ok hs hsw hw) fun s₁ ⟨m₁, k₁⟩ => ?_
   have hs₁ := hs.of_keeps k₁ (by decide)

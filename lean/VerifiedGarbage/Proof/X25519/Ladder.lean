@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.Proof.X25519.Invert
 
@@ -19,6 +21,7 @@ one), and each iteration takes it from `n + 1` to `n` (`ladderAfter_step`).
 namespace VG.Proof.X25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 /-- The ladder's initial state, for `x_1 = u`. -/
 def init (u : Fe) : Ladder := { x2 := 1, z2 := 0, x3 := u, z3 := 1, swap := 0 }

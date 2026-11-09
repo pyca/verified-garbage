@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Step
 
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Setup
@@ -21,6 +23,7 @@ the ladder's final `(x₂, z₂, x₃, z₃)` in the slots `x2, z2, x3, z3`, and
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519.X86_64 (Scr Outside Outside.mono ofs off word val4 F E fe clob contains_sc ea_sc
   writeW_outside LPost)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)

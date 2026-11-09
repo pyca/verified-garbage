@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Ends
 import VerifiedGarbage.Proof.Divstep.Iter
@@ -30,6 +32,7 @@ After 590 divsteps from
 namespace VG.Proof.Ed25519.AArch64.Divstep
 
 open VG VG.AArch64 VG.Proof.Ed25519.AArch64 VG.Proof.Ed25519.AArch64.Inv VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.Divstep (divsteps divsteps_590)
 open VG.Proof.Ed25519.Word64
 open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)

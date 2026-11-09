@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.X25519.X86_64.Step
 public import Lean.Elab.Tactic.Basic
 public import Init.Data.BitVec.Basic
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.TCB.X86_64.Gpr
 
 /-!

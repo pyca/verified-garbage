@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86.Step
 import VerifiedGarbage.Proof.X25519.X86.Freeze
 public import VerifiedGarbage.Proof.X25519.X86.Contract
@@ -19,6 +21,7 @@ ladder starts with `LInv 255`.
 namespace VG.Proof.X25519.X86
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 
 theorem save_eq : save = .mov .eax (.mem (at_ .esp 16)) :: (Spill.saveCode .eax savedSlots ++
     ([.mov .edi (.reg .eax)] : List Instr)) := rfl

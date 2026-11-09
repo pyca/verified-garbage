@@ -4,7 +4,8 @@ lean/VerifiedGarbage/, which keeps the trusted base small and separate from
 proofs. Exits non-zero on violations.
 
   * TCB/   imports only Lean core and TCB/  (no Mathlib: smaller trusted base).
-  * Spec/  imports only TCB/, Spec/ and Mathlib.
+  * Spec/  imports only TCB/, Spec/, Mathlib and the pinned Wychelean
+    X25519 specification (Wychelean.DH.X25519.Basic).
   * Impl/  imports only TCB/, Spec/, Impl/, Mathlib and Lean core's
     elaborator (`Lean.Elab`, for term elaborators that build tables:
     `Impl/NatPairs.lean`), never proofs.
@@ -47,7 +48,8 @@ IMPORT_ANY = re.compile(r"[^\S\n]*(?:public[^\S\n]+)?(?:meta[^\S\n]+)?import[^\S
 
 ALLOWED_IMPORTS = {
     "TCB": ("Lean", "VerifiedGarbage.TCB."),
-    "Spec": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "Mathlib"),
+    "Spec": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "Mathlib",
+             "Wychelean.DH.X25519.Basic"),
     "Impl": ("VerifiedGarbage.TCB.", "VerifiedGarbage.Spec.", "VerifiedGarbage.Impl.", "Mathlib",
              "Lean.Elab"),
 }

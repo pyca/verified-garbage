@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.X86.Ops
 public import VerifiedGarbage.Proof.X25519.Chain250
 public import VerifiedGarbage.Impl.X25519.X86.Field32
@@ -20,6 +22,7 @@ holds `a^(2^250 - 1)` and `E0` holds `a^11` (`chainEnv_eval`).
 namespace VG.Proof.X25519.X86.Field32
 
 open VG VG.X86 VG.Impl.X25519.X86 VG.Impl.X25519.X86.Field32 VG.Proof.X25519.X86 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519 (sqn pw)
 
 /-- The chain's slots: `E0`, `E1`, `E2`, `E3` and `AC`. -/

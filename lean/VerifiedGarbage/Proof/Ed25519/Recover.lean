@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Spec.Ed25519
 import VerifiedGarbage.Proof.X25519.Invert
 
@@ -10,6 +12,7 @@ import VerifiedGarbage.Proof.X25519.Invert
 namespace VG.Proof.Ed25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 def rootU (y : Fe) : Fe := y * y - 1
 

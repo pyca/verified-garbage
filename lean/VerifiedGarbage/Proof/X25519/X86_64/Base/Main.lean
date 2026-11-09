@@ -1,7 +1,8 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.X86_64.Base.Engine
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarMemory
 import VerifiedGarbage.Proof.X25519.X86_64.Finish
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -31,7 +32,7 @@ def baseLocal : Contract isa where
     (s.gpr .rdx).toNat + 8192 ≤ 2 ^ 64 ∧
     CombHeld s [⟨s.gpr .rdi, 32⟩, ⟨s.gpr .rdx, 8192⟩, ⟨s.gpr .rsp, 8⟩]
   post s t := Spec.X25519.bytesAt t.mem (s.gpr .rdi) 32 =
-    Spec.X25519.x25519 (bytesAt s.mem (s.gpr .rsi) 32) Spec.X25519.basePoint
+    VG.X25519Model.x25519 (bytesAt s.mem (s.gpr .rsi) 32) VG.X25519Model.basePoint
   pub s t := s.gpr .rsp = t.gpr .rsp ∧ s.gpr .rdi = t.gpr .rdi ∧
     s.gpr .rsi = t.gpr .rsi ∧ s.gpr .rdx = t.gpr .rdx ∧ s.syms combSym = t.syms combSym
 

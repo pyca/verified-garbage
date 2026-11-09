@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Batch
 public import VerifiedGarbage.Proof.Ed25519.Canonical64
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Inv.Step
@@ -22,6 +24,7 @@ invariant before the first batch (`init_ok`), and `finish` leaves `±u` modulo
 namespace VG.Proof.Ed25519.AArch64.Inv
 
 open VG VG.AArch64 VG.Proof.Ed25519.Word64 VG.Proof.Ed25519.AArch64 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.Mont.AArch64 (KeepRegs Keeps.regs)
 open VG.Proof.X25519.AArch64 (exec_movz)
 open VG.Impl.Ed25519.AArch64 (ld st loads stores const64 offset)

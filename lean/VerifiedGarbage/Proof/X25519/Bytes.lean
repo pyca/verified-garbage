@@ -1,6 +1,7 @@
 module
 
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Impl.X25519.Model
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.Proof.X25519.Ladder
 
 /-!
@@ -18,6 +19,7 @@ the clamping), and the encoded result the bytes of its value.
 namespace VG.Proof.X25519
 
 open VG.Spec.X25519
+open VG.X25519Model
 
 /-- The little-endian number of a byte string. -/
 def leNum : List Byte → Nat

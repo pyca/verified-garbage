@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.X448.AArch64.Weak.Setup
 import VerifiedGarbage.Proof.X448.AArch64.Finish
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X448.AArch64.Iter
-import VerifiedGarbage.Spec.X25519
+import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.X448.AArch64.Setup
 import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.X448.AArch64.Weak.Iter

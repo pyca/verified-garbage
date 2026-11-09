@@ -1,8 +1,9 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.X25519.X86.Basic
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 public import VerifiedGarbage.TCB.X86.Target
 
 /-!
@@ -36,7 +37,7 @@ def x25519X86 : Contract X86.isa where
       (s.gpr .esp).toNat + 20 ≤ 2 ^ 32 ∧ stk.Disjoint out ∧ stk.Disjoint scratch ∧ stk.Disjoint args ∧
       8 ≤ (s.gpr .esp).toNat
   post s s' := Spec.X25519.bytesAt s'.mem ((arg s 0).setWidth 64) 32 =
-    Spec.X25519.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
+    VG.X25519Model.x25519 (Spec.X25519.bytesAt s.mem ((arg s 1).setWidth 64) 32)
       (Spec.X25519.bytesAt s.mem ((arg s 2).setWidth 64) 32)
   pub s₁ s₂ := s₁.gpr .esp = s₂.gpr .esp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧
     arg s₁ 2 = arg s₂ 2 ∧ arg s₁ 3 = arg s₂ 3

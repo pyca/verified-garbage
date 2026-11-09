@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.Mem
 **Trusted** (as every file in `Spec/`). The Diffie-Hellman function X448,
 transcribed from RFC 7748, *Elliptic Curves for Security* (January 2016),
 §4.2, §5 and §6.2. Byte strings are little-endian. The structure follows
-`Spec/X25519.lean`, with the field, decoding and ladder parameters of X448.
+`Impl/X25519/Model.lean`, with the field, decoding and ladder parameters of X448.
 
 All field operations are in `Fin P`, modulo `P = 2⁴⁴⁸ - 2²²⁴ - 1`.
 Inputs to `x448` are 56-byte strings, as enforced by its memory contract in

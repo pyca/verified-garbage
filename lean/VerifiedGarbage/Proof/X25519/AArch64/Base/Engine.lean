@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
 public import VerifiedGarbage.Impl.X25519.AArch64.Base
 import VerifiedGarbage.Proof.Ed25519.AArch64.ScalarBaseEngine
@@ -35,7 +37,8 @@ namespace VG.Proof.X25519.AArch64.Base
 open VG VG.AArch64 VG.Impl.Ed25519.AArch64 VG.Impl.X25519.AArch64.Base
 open VG.Proof.Ed25519.AArch64
 open VG.Proof.Ed25519 (Rep dZ baseAff toZ_add toZ_sub toZ_mul toZ_pow)
-open VG.Spec.X25519 (Fe P decodeScalar25519)
+open VG.Spec.X25519 (Fe P)
+open VG.X25519Model (decodeScalar25519)
 open VG.Proof.X25519.Edwards (clamped_bit u_rep)
 open VG.Proof.Ed25519.Word64 (val4)
 
@@ -120,8 +123,8 @@ theorem engine_ok [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s : State} {base k T
     (hd : ∀ q < 32, 8192 ≤ ofs base (off k q)) (htb : TblAt s base T) (hT : s.syms combSym = T) :
     WP isa engine s fun t => PowersKeep base 56 968 s t ∧ ∃ w : Fe,
       val4 (t.gpr .x4) (t.gpr .x5) (t.gpr .x6) (t.gpr .x7) = w.val ∧
-      Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
-        Spec.X25519.encodeUCoordinate w := by
+      VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem k 32) VG.X25519Model.basePoint =
+        VG.X25519Model.encodeUCoordinate w := by
   have hk : (Spec.Ed25519.bytesAt s.mem k 32).length = 32 := by simp [Spec.Ed25519.bytesAt]
   set kb := Spec.Ed25519.bytesAt s.mem k 32
   rw [engine]

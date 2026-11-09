@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Part2
 public import VerifiedGarbage.Proof.X25519.X86_64.Iter
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Lanes
@@ -23,6 +25,7 @@ changed.
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 open VG.Proof.X25519.X86_64 (Scr Outside Outside.mono ofs off word stepPre stepPre_ok mask
   contains_sc ofs_off' cswap_fst cswap_snd writeW_outside)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)
@@ -190,7 +193,7 @@ theorem vstep_ok {s₀ s : State} {base : Addr} {k : Nat} {u : Fe} {x1 : Nat →
   all_goals rw [L, ladderStep_eq]
   all_goals simp only []
   · rw [a₅, c₄, a₃, b₃, hsw0, hsw1, Fin.mul_one]
-  · rw [b₅, v3₄, v2₄, d₄, a₃, b₃, hsw0, hsw1, Fin.mul_comm _ Spec.X25519.a24]
+  · rw [b₅, v3₄, v2₄, d₄, a₃, b₃, hsw0, hsw1, Fin.mul_comm _ VG.X25519Model.a24]
   · rw [c₅, a₄, c₃, d₃, hsw0, hsw1, hsw2, hsw3, Fin.mul_one]
   · rw [d₅, b₄, c₃, d₃, hsw0, hsw1, hsw2, hsw3, hi.hx1, Fin.mul_comm _ u]
 

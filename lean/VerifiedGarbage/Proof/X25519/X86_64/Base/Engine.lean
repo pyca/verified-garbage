@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Impl.X25519.X86_64.Base
 public import VerifiedGarbage.Proof.Ed25519.X86_64.ScalarBasePrecomputedCT
 import VerifiedGarbage.Proof.X25519.Edwards.Base
@@ -47,7 +49,8 @@ namespace VG.Proof.X25519.X86_64.Base
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.X25519.X86_64.Base
 open VG.Proof.Ed25519.X86_64
 open VG.Proof.X25519.X86_64 (off ofs val4 ea_sc writeW8_apply writeW8_outside off_eq_iff)
-open VG.Spec.X25519 (Fe P decodeScalar25519)
+open VG.Spec.X25519 (Fe P)
+open VG.X25519Model (decodeScalar25519)
 open VG.Proof.X25519.Edwards (clamped_bit u_rep)
 
 variable {fld : Arith} [EdArith fld]
@@ -116,8 +119,8 @@ def UEngineOk (eng : Prog isa) : Prop :=
     CombTbl s T → TblFar base T →
     WP isa eng s fun t => PowersKeep base 56 7368 s t ∧ ∃ w : Fe,
       val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11) = w.val ∧
-      Spec.X25519.x25519 (Spec.Ed25519.bytesAt s.mem k 32) Spec.X25519.basePoint =
-        Spec.X25519.encodeUCoordinate w
+      VG.X25519Model.x25519 (Spec.Ed25519.bytesAt s.mem k 32) VG.X25519Model.basePoint =
+        VG.X25519Model.encodeUCoordinate w
 
 omit [EdArith fld] in
 /-- An engine with its calls inlined, for a comb that inlines to `comb'`. -/

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Impl.X25519.X86_64.Ifma
 public import VerifiedGarbage.Proof.X25519.X86_64.Ifma.Bound
 
@@ -19,6 +21,7 @@ bounds (`decide`).
 namespace VG.Proof.X25519.X86_64.Ifma
 
 open VG VG.X86_64 VG.Impl.X25519.X86_64 VG.Impl.X25519.X86_64.Ifma VG.Proof.X25519 VG.Spec.X25519
+open VG.X25519Model
 
 /-- A block run from its start. -/
 def symOf (is : List Instr) (h : (Sym.init.run is).isSome := by decide +kernel) : Sym :=

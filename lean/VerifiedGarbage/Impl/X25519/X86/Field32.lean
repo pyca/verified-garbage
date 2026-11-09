@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.X25519.X86
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Impl.X25519.Model
 
 /-!
 # Powers in curve25519's field on x86 (32-bit), as a function

@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Impl.X25519.Model
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
@@ -146,7 +148,7 @@ theorem mul24S {o x : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
     (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
     WP isa (.block (mulA24 o x)) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
-      SlotsOk s'.mem b (o :: qs) (upd v o (Spec.X25519.a24 * v x)) := by
+      SlotsOk s'.mem b (o :: qs) (upd v o (VG.X25519Model.a24 * v x)) := by
   have hx' := sep1_get hq hx
   have hA := ACC_eq
   refine WP.mono (mulA24_ok (by omega_using [hA, ho]) (by omega_using [hA, hx'])
@@ -154,7 +156,7 @@ theorem mul24S {o x : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = tr
     fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho (frame_o hf), fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
-    rw [upd_self, ← hS x hx, show Spec.X25519.a24 = toFe 121665 from rfl]
+    rw [upd_self, ← hS x hx, show VG.X25519Model.a24 = toFe 121665 from rfl]
     exact toFe_mul hv
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq ho (frame_o hf) hS ((List.mem_cons.mp hq').resolve_left hqo) hqo

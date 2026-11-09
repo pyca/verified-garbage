@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Step
 public import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Formula
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Flags
@@ -17,6 +19,7 @@ chooses. -/
 
 namespace VG.Proof.X25519.AArch64.AltLadder
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519 VG.Proof.Ed25519.AArch64
+open VG.X25519Model
 open VG.Proof.X25519.AArch64.Alt (AltOp)
 open VG.Proof.X25519.AArch64.Word (LoopKeep Good Scratch storeSwap_ok)
 open VG.Impl.Ed25519.AArch64 (offset)
@@ -258,7 +261,7 @@ theorem tailFlags_ok {base : Addr} {s : State} {sw : Nat} (hs : Scratch s base) 
   · rw [kt.mem, kc.mem, kb.mem, ka.mem]
 
 theorem cswap_fst {sw : Nat} (hsw : sw ≤ 1) (a b : Fe) :
-    (Spec.X25519.cswap sw a b).1 = if (sw == 0) = true then a else b := by
+    (VG.X25519Model.cswap sw a b).1 = if (sw == 0) = true then a else b := by
   rcases (by omega : sw = 0 ∨ sw = 1) with rfl | rfl <;> rfl
 
 /-- The iterations for bits 2, 1 and 0, from the state after bit 3: slots 1
@@ -269,9 +272,9 @@ theorem tail_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
     (hB : Bel s.mem base S14) (h0 : bit k 0 = 0) (h1 : bit k 1 = 0) (h2 : bit k 2 = 0) :
     WP isa (.block VG.Impl.X25519.AArch64.AltLadder.tail) s fun t =>
       LoopKeep base s t ∧
-      env t.mem base 1 = (Spec.X25519.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).x2
+      env t.mem base 1 = (VG.X25519Model.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).x2
         (ladderAfter k x1 0).x3).1 ∧
-      env t.mem base 2 = (Spec.X25519.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).z2
+      env t.mem base 2 = (VG.X25519Model.cswap (ladderAfter k x1 0).swap (ladderAfter k x1 0).z2
         (ladderAfter k x1 0).z3).1 := by
   have hsw := ladderAfter_swap_le k x1 (n := 3) (by decide)
   simp only [VG.Impl.X25519.AArch64.AltLadder.tail, List.append_assoc]
@@ -297,11 +300,11 @@ theorem tail_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
     · exact hB 2 rfl
     · exact hB 4 rfl
   obtain ⟨g0, g1, g2, g3, g4, _⟩ := hg
-  have v1 : env b2.mem base 1 = (Spec.X25519.cswap (ladderAfter k x1 3).swap
+  have v1 : env b2.mem base 1 = (VG.X25519Model.cswap (ladderAfter k x1 3).swap
       (ladderAfter k x1 3).x2 (ladderAfter k x1 3).x3).1 := by
     rw [e2, Function.update_of_ne (by decide), e1, Function.update_self, fa, ma, g1, g3,
       cswap_fst hsw]
-  have v2 : env b2.mem base 2 = (Spec.X25519.cswap (ladderAfter k x1 3).swap
+  have v2 : env b2.mem base 2 = (VG.X25519Model.cswap (ladderAfter k x1 3).swap
       (ladderAfter k x1 3).z2 (ladderAfter k x1 3).z3).1 := by
     rw [e2, Function.update_self, z1f, fa, e1, Function.update_of_ne (by decide),
       Function.update_of_ne (by decide), ma, g2, g4, cswap_fst hsw]
@@ -321,11 +324,11 @@ theorem tail_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe}
   obtain ⟨a2, b2', w2⟩ := s2
   obtain ⟨a1, b1', w1⟩ := s1
   obtain ⟨a0, b0, w0⟩ := s0
-  simp only [w2, w1, Spec.X25519.cswap, Nat.zero_ne_one, ite_false] at a1 b1' a0 b0
+  simp only [w2, w1, VG.X25519Model.cswap, Nat.zero_ne_one, ite_false] at a1 b1' a0 b0
   refine ⟨((lk2.trans lkc1).trans lkc2).trans lkt, ?_, ?_⟩
-  · simp only [w0, Spec.X25519.cswap, Nat.zero_ne_one, ite_false]
+  · simp only [w0, VG.X25519Model.cswap, Nat.zero_ne_one, ite_false]
     rw [x2t, x2c2, z2c2, x2c1, z2c1, v1, v2, a0, a1, b1', a2, b2']
-  · simp only [w0, Spec.X25519.cswap, Nat.zero_ne_one, ite_false]
+  · simp only [w0, VG.X25519Model.cswap, Nat.zero_ne_one, ite_false]
     rw [z2t, x2c2, z2c2, x2c1, z2c1, v1, v2, b0, a1, b1', a2, b2']
 
 end VG.Proof.X25519.AArch64.AltLadder

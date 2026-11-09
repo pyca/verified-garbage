@@ -199,6 +199,7 @@ import Std.Do.Triple.SpecLemmas
 import Std.Tactic.BVDecide.Normalize.BitVec
 import Std.Tactic.BVDecide.Normalize.Bool
 import Std.Tactic.BVDecide.Normalize.Prop
+import Wychelean.DH.X25519.Basic
 
 /-!
 # Checking `TCB/AuditBase.lean`

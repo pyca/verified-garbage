@@ -1,10 +1,11 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
 import VerifiedGarbage.Proof.X25519.X86_64.Freeze
 import VerifiedGarbage.Proof.X25519.Bytes
 public import VerifiedGarbage.Proof.Framework.X86_64.Spill
 public import VerifiedGarbage.Proof.X25519.X86_64.Env
-public import VerifiedGarbage.Spec.X25519.Contract
+public import VerifiedGarbage.Spec.X25519.Interface
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.PlainSimp
@@ -29,7 +30,7 @@ theorem loadU_ok (s : State) {p : Addr} (hp : s.gpr .rdx = p)
     (hr : ∀ d, d + 8 ≤ 32 → InRegions (s.rd ++ s.wr) (off p d) 8) :
     WP isa (.block loadU) s fun s' =>
       val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) =
-        Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32) ∧
+        VG.X25519Model.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32) ∧
       Keeps [.r8, .r9, .r10, .r11, .rax] s s' := by
   apply WP.of_runBlock
   simp only [loadU, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu, State.load64,
@@ -143,9 +144,9 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
       Scr s' base ∧ s'.gpr .r12 = s.gpr .rdi ∧
       (∀ r, r ∉ [Reg.rax, .rcx, .rdx, .rdi, .r8, .r9, .r10, .r11, .r12] → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ Outside base 0 4096 s.mem s'.mem ∧ Saved base s.gpr s'.mem ∧
-      E s'.mem base 2 = toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
+      E s'.mem base 2 = toFe (VG.X25519Model.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
       E s'.mem base 3 = 1 ∧ E s'.mem base 4 = 0 ∧
-      E s'.mem base 5 = toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
+      E s'.mem base 5 = toFe (VG.X25519Model.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) ∧
       E s'.mem base 6 = 1 ∧ word s'.mem base SWAP = 0 ∧
       fe s'.mem base Z2 ≤ 2 * Spec.X25519.P ∧ fe s'.mem base Z3 ≤ 2 * Spec.X25519.P := by
   rw [setup_eq, WP.block_append_iff]
@@ -193,7 +194,7 @@ theorem setup_ok {s : State} {base p : Addr} (hc : s.gpr .rcx = base)
   rw [← m₉] at e₉; rw [← m₈] at e₈; rw [← m₇] at e₇; rw [← m₅] at e₅; rw [← m₄] at e₄
   have hu : ∀ t : State, (∀ r, r ∉ [Reg.rax, .rdx] → t.gpr r = s₃.gpr r) →
       toFe (val4 (t.gpr .r8) (t.gpr .r9) (t.gpr .r10) (t.gpr .r11)) =
-        toFe (Spec.X25519.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) := fun t ht => by
+        toFe (VG.X25519Model.decodeUCoordinate (Spec.X25519.bytesAt s.mem p 32)) := fun t ht => by
     rw [ht _ (by decide), ht _ (by decide), ht _ (by decide), ht _ (by decide),
       k₃.1 _ (by decide), k₃.1 _ (by decide), k₃.1 _ (by decide), k₃.1 _ (by decide), g₂, u₁]
   have one : toFe (val4 1 0 0 0) = 1 := rfl

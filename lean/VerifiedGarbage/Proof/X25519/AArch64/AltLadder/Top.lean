@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Impl.X25519.Model
+
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ladder
 import VerifiedGarbage.Proof.X25519.AArch64.AltLadder.Ends
 public import VerifiedGarbage.Proof.Ed25519.AArch64.Divstep
@@ -24,6 +26,7 @@ register, so `v8`–`v15` are kept without being saved.
 namespace VG.Proof.X25519.AArch64.AltLadder
 
 open VG VG.AArch64 VG.Spec.X25519 VG.Proof.X25519
+open VG.X25519Model
 open VG.Impl.Ed25519.AArch64 (offset)
 open VG.Proof.Ed25519.AArch64 (env F Outside ofs clob word off ofs_off' Saved Small)
 open VG.Proof.X25519.AArch64.Word (LoopKeep Good bitOffset localContract Kp Sc saved_of_words
@@ -70,7 +73,7 @@ theorem correct [VG.Proof.Ed25519.AArch64.Divstep.Sound] {s₀ : State} (hp : lo
     · rw [← er]; exact tg rd hrd
     · have kk := (((kc.trans kd.kp).trans ke.kp).trans kf').trans kt
       exact kk.sub (by decide) |>.gpr r hn
-  · change bytesAt t.mem (s₀.gpr .x0) 32 = Spec.X25519.x25519
+  · change bytesAt t.mem (s₀.gpr .x0) 32 = VG.X25519Model.x25519
       (bytesAt s₀.mem (s₀.gpr .x1) 32) (bytesAt s₀.mem (s₀.gpr .x2) 32)
     rw [rt, dx, fi, ex, ez, x25519_eq]
 

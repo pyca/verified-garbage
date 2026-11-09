@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.X25519
+public import VerifiedGarbage.Spec.Curve25519
 public import VerifiedGarbage.Spec.Sha512
 
 /-!
@@ -11,7 +11,7 @@ RFC 8032 §§5.1 and 6. No context or prehash is used: `dom2` is empty and
 `PH(M) = M`. Ed25519ctx, Ed25519ph and Ed448 are separate algorithms and
 are not specified here.
 
-The field and its exponentiation are those already specified for X25519:
+The field and its exponentiation are shared in `Spec/Curve25519.lean`:
 `Fin (2^255 - 19)`, with arithmetic modulo that prime. Point operations use
 the extended coordinates and complete addition formula of §5.1.4. This is
 a mathematical specification; its branches on scalars are not an assembly

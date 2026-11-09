@@ -73,6 +73,11 @@ name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4"
 rev = "v4.35.0"
 
+[[require]]
+name = "Wychelean"
+git = "https://github.com/rozbb/wychelean"
+rev = "6024573ddc91d1d1c4a3ca0db240d207887cd58c"
+
 [[lean_lib]]
 name = "VerifiedGarbage"
 # Every module under `VerifiedGarbage/` (the library has no root module).
@@ -101,7 +106,8 @@ platformIndependent = true
 plugins = ["NativeAuditRecords:shared"]
 needs = ["NativeAuditRecords:shared"]
 
-# The known-answer tests (`VerifiedGarbageTest`) evaluate the specifications,
+# The known-answer tests (`VerifiedGarbageTest`) evaluate the specifications
+# and the X25519 ladder model (proven equivalent to Wychelean),
 # which is an order of magnitude faster in compiled code than in the
 # interpreter (ML-KEM-768: 20 s to 1 s): these modules are compiled to shared
 # libraries, which the modules importing them load. It is declared last, so
@@ -119,7 +125,7 @@ globs = ["VerifiedGarbage.Spec.Sha1", "VerifiedGarbage.Spec.Sha256",
   "VerifiedGarbage.Spec.Hmac", "VerifiedGarbage.Spec.Pbkdf2", "VerifiedGarbage.Spec.Scrypt",
   "VerifiedGarbage.Spec.ChaCha20", "VerifiedGarbage.Spec.Poly1305", "VerifiedGarbage.Spec.Aes",
   "VerifiedGarbage.Spec.Ccm",
-  "VerifiedGarbage.Spec.Gcm", "VerifiedGarbage.Spec.MlKem", "VerifiedGarbage.Spec.X25519",
+  "VerifiedGarbage.Spec.Gcm", "VerifiedGarbage.Spec.MlKem", "VerifiedGarbage.Spec.Curve25519", "VerifiedGarbage.Impl.X25519.Model",
   "VerifiedGarbage.Spec.MlDsa", "VerifiedGarbage.Spec.Ed25519", "VerifiedGarbage.Spec.Blake2",
   "VerifiedGarbage.Spec.Siv",
   "VerifiedGarbage.Spec.X448", "VerifiedGarbage.Spec.Rc2", "VerifiedGarbage.Spec.TripleDes",
