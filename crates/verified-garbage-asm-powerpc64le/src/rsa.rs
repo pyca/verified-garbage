@@ -3410,6 +3410,10 @@ bne %cr0, 2424b
 }
 
 #[rustfmt::skip]
+#[path = "internal/vg_rsa_mont_kernel.rs"]
+pub(crate) mod vg_rsa_mont_kernel;
+
+#[rustfmt::skip]
 #[path = "internal/vg_rsa_pkcs1_encrypt_precomputed.rs"]
 pub(crate) mod vg_rsa_pkcs1_encrypt_precomputed;
 

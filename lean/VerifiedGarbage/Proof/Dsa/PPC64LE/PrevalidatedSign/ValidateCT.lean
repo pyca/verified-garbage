@@ -56,7 +56,7 @@ theorem pins_K9P : Pins K9 (coreRegs ++ envRegs') := by
 
 theorem privateChecks_rel : RelCT isa (Two K9) PrevalidatedSign.privateChecks (Two End) :=
   rel_end (two_taint _ pins_K9P (by taint_decide)) (fun _ _ h => h.1.regs.r21)
-    (by rw [← Code.allInstrs_eq]; decide +kernel) (by decide +kernel)
+    (by rw [← Code.allInstrs_eq]; decide +kernel)
 
 theorem validatePrivate_rel : RelCT isa (Two VPK0) PrevalidatedSign.validate fun _ _ => True := by
   unfold PrevalidatedSign.validate

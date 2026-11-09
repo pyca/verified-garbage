@@ -43,17 +43,17 @@ theorem fn_rel : RelCT isa (Two C0) crt fun _ _ => True := by
   refine chain_cons crt_run (m := 37) (by decide) (two_taint _ pins29 (by taint_decide)) ?_
   refine chain_cons crt_run (m := 45) (by decide) (two_taint _ pins37 (by taint_decide)) ?_
   refine chain_cons crt_run (m := 46) (by decide) (two_taint _ pins45 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 97) (by decide) (two_taint _ pins46 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 106) (by decide) (two_taint _ pins97 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 136) (by decide) (two_taint _ pins106 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 178) (by decide) (two_taint _ pins136 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 208) (by decide) (two_taint _ pins178 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 249) (by decide) (two_taint _ pins208 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 252) (by decide) (two_taint _ pins249 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 299) (by decide) (two_taint _ pins252 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 305) (by decide) (two_taint _ pins299 (by taint_decide)) ?_
-  refine chain_cons crt_run (m := 324) (by decide) (two_taint _ pins305 (by taint_decide)) ?_
-  exact two_taint _ pins324 (by taint_decide)
+  refine chain_cons crt_run (m := 91) (by decide) (two_taint _ pins46 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 100) (by decide) (two_taint _ pins91 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 124) (by decide) (two_taint _ pins100 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 148) (by decide) (two_taint _ pins124 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 172) (by decide) (two_taint _ pins148 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 195) (by decide) (two_taint _ pins172 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 198) (by decide) (two_taint _ pins195 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 233) (by decide) (two_taint _ pins198 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 239) (by decide) (two_taint _ pins233 (by taint_decide)) ?_
+  refine chain_cons crt_run (m := 252) (by decide) (two_taint _ pins239 (by taint_decide)) ?_
+  exact two_taint _ pins252 (by taint_decide)
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub crt :=
   RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, ⟨hr, hsp, ha, hn⟩⟩ =>

@@ -98,7 +98,7 @@ theorem one_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s) 
       simp only [List.mem_singleton] at hr
       subst hr
       rw [(h v _ h₁).regs.r21, (h v _ h₂).regs.r21])
-    (by taint_decide)) (fun v s hs => (h v s hs).regs.r21) (by decide) (by decide)
+    (by taint_decide)) (fun v s hs => (h v s hs).regs.r21) (by decide)
 
 theorem checkParams_rel :
     RelCT isa (Two S0) (checkParams (.block [.li .r3 1]) (.block [.li .r3 0])) (Two End) :=

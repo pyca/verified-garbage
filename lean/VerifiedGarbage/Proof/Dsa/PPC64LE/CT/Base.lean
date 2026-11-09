@@ -214,7 +214,7 @@ def End (v : VD) (s : State) : Prop := s.gpr .r21 = v.L.S
 which `r21` holds `S`. -/
 theorem rel_end {Φ : VD → State → Prop} {c : Prog isa} (h : RelCT isa (Two Φ) c fun _ _ => True)
     (h21 : ∀ v s, Φ v s → s.gpr .r21 = v.L.S)
-    (hw : (instrs c).all (fun i => dstOf i != some .r21) = true) (hn : c.noCalls = true) :
+    (hw : (instrs c).all (fun i => dstOf i != some .r21) = true) :
     RelCT isa (Two Φ) c (Two End) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := h _ _ _ _ _ _ hp e₁ e₂
@@ -222,7 +222,7 @@ theorem rel_end {Φ : VD → State → Prop} {c : Prog isa} (h : RelCT isa (Two 
   have hc : ∀ i ∈ instrs c, dstOf i ≠ some .r21 := fun i hi => by
     have := List.all_eq_true.mp hw i hi
     simpa using this
-  exact ⟨ht, v, (Exec.gpr hc e₁ (.inl hn)).trans (h21 v _ h₁), (Exec.gpr hc e₂ (.inl hn)).trans (h21 v _ h₂),
+  exact ⟨ht, v, (Exec.gpr hc e₁ (.inr (by decide))).trans (h21 v _ h₁), (Exec.gpr hc e₂ (.inr (by decide))).trans (h21 v _ h₂),
     by rw [Exec.sp e₁, Exec.sp e₂, hsp]⟩
 
 theorem pins_End : Pins End [.r21] := by
