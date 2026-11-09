@@ -66,6 +66,8 @@ structure StreamFn where
     exact ⟨_, _, _, rfl⟩
   ofApi : contract = api.contract X86_64.target.abi stack := by exact rfl
   spSafe : code.all (fun i => !X86_64.target.isa.writesSp i) = true
+  /-- `Artifact.residue`. -/
+  residue : Option (PLift (X86_64.NoResidue code contract (api.sig.retBits 64))) := none
 
 /-- `f` as a registration of its `Api` (`Api.artifact`). -/
 def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
@@ -78,6 +80,7 @@ def StreamFn.reg (f : StreamFn) : Registration f.api X86_64.target where
   ofApi := f.ofApi
   ofSig := f.ofSig
   spSafe := f.spSafe
+  residue := f.residue
 
 /-- The bytes of the frame in which HMAC's `init` and `finalize` (of
 instance `I`) keep their working space, for their `_scratch` forms. -/

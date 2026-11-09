@@ -1,6 +1,7 @@
 # x86-64 functions that do not yet prove they return without secret residue
 # (Artifact.residue). The emitter fails if a function without a proof is not listed
 # here, or if a listed one is gone or has a proof: remove its line when you convert it.
+# The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
 x86_64 vg_aes_cbc_decrypt
 x86_64 vg_aes_cbc_decrypt_aesni
 x86_64 vg_aes_cbc_decrypt_aesni_avx
@@ -239,11 +240,6 @@ x86_64 vg_cast5_ecb_encrypt
 x86_64 vg_cast5_expand_key
 x86_64 vg_cast5_ofb
 x86_64 vg_cast5_ofb_final
-x86_64 vg_chacha20_apply
-x86_64 vg_chacha20_apply_avx2
-x86_64 vg_chacha20_apply_avx512
-x86_64 vg_chacha20_apply_avx512vl
-x86_64 vg_chacha20_apply_ssse3
 x86_64 vg_chacha20_init
 x86_64 vg_chacha20_poly1305_open
 x86_64 vg_chacha20_poly1305_open_avx2
@@ -664,9 +660,6 @@ x86_64 vg_pbkdf2_hmac_sha512_256_avx2
 x86_64 vg_pbkdf2_hmac_sha512_256_shani
 x86_64 vg_pbkdf2_hmac_sha512_avx2
 x86_64 vg_pbkdf2_hmac_sha512_shani
-x86_64 vg_poly1305_finalize
-x86_64 vg_poly1305_init
-x86_64 vg_poly1305_update
 x86_64 vg_poly1305_update_avx2
 x86_64 vg_poly1305_update_avx512
 x86_64 vg_poly1305_update_ifma
@@ -751,16 +744,7 @@ x86_64 vg_sha224_finalize
 x86_64 vg_sha224_finalize_avx2
 x86_64 vg_sha224_finalize_shani
 x86_64 vg_sha224_init
-x86_64 vg_sha256_digest
-x86_64 vg_sha256_digest_avx2
-x86_64 vg_sha256_digest_shani
-x86_64 vg_sha256_finalize
-x86_64 vg_sha256_finalize_avx2
-x86_64 vg_sha256_finalize_shani
 x86_64 vg_sha256_init
-x86_64 vg_sha256_update
-x86_64 vg_sha256_update_avx2
-x86_64 vg_sha256_update_shani
 x86_64 vg_sha384_digest
 x86_64 vg_sha384_digest_avx2
 x86_64 vg_sha384_digest_shani

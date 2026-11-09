@@ -101,7 +101,7 @@ vg_chacha20_poly1305_seal_body_avx2:
 	add rdi, 448
 	mov rsi, r15
 	add rsi, 672
-	call {vg_poly1305_init}
+	call {vg_poly1305_init_core}
 	mov r15, rdi
 	sub r15, 448
 	mov rdi, r15
