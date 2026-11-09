@@ -102,20 +102,20 @@ theorem hfacts_st {P : EP} {σ τ : State} {dn : String} {f : MdFns} {ai ac ad :
     by rw [Proof.RsaOaep.X86.St_roW hs hR4 c4]; exact hf.m4, by rw [sy]; exact hf.ai, by rw [sy]; exact hf.ac,
     by rw [sy]; exact hf.ad⟩
 
-/-- What the table of `Hash` gives holds of a later state of the body. -/
+/-- What the table of `MdHash` gives holds of a later state of the body. -/
 theorem tabfacts_st {P : EP} {σ τ : State} {G : Impl.Pbkdf2.Stream.X86.Hash} {fG : Impl.RsaOaep.X86.Fns}
     {ai au af : BitVec 32} (hi : In h.D P σ) (hs : (P.lay h.D).St σ τ) (sy : τ.syms = σ.syms)
     (hf : Proof.RsaOaep.X86.TabFacts G fG P.tab ai au af σ) : Proof.RsaOaep.X86.TabFacts G fG P.tab ai au af τ := by
   obtain ⟨R, hR, hc⟩ := hi.tbl
-  have e : ∀ o, o + 4 ≤ 20 → τ.mem.readW (VG.X86.addr P.tab o) 32 = σ.mem.readW (VG.X86.addr P.tab o) 32 :=
+  have e : ∀ o, o + 4 ≤ 44 → τ.mem.readW (VG.X86.addr P.tab o) 32 = σ.mem.readW (VG.X86.addr P.tab o) 32 :=
     fun o ho => Proof.RsaOaep.X86.St_roW hs hR (hc o ho)
   obtain ⟨m0, m4, m8⟩ := hf.mem
   exact ⟨by rw [sy]; exact hf.ok, ⟨by rw [e 0 (by decide), sy]; exact m0, by rw [e 4 (by decide), sy]; exact m4,
-    by rw [e 8 (by decide), sy]; exact m8⟩, by rw [e 16 (by decide)]; exact hf.d, by rw [sy]; exact hf.ai,
+    by rw [e 8 (by decide), sy]; exact m8⟩, by rw [e 24 (by decide)]; exact hf.d, by rw [sy]; exact hf.ai,
     by rw [sy]; exact hf.au, by rw [sy]; exact hf.af⟩
 
 /-- The body, with the hash function of the table of `MdHash` and MGF1's of
-the table of `Hash`, whose facts hold of every later state of the body. -/
+the table of `MdHash`, whose facts hold of every later state of the body. -/
 theorem body_vq (P : EP) (c : Ver.PublicImpl) {dn : String} {f : MdFns}
     (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
     (hTHs : ∀ σ τ, In h.D P σ → (P.lay h.D).St σ τ → τ.syms = σ.syms → P.TH τ)

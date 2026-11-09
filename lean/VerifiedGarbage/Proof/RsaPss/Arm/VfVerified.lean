@@ -25,7 +25,7 @@ for its hash function's shape (`tab_vq`, by `byLen_vq`, RSAES-OAEP's
 `byLen_vp` for a piece with nothing after it). The frames around it
 (`wrap_ok`, `wrap_ct`), the result as the shared contract states it, with
 `hash` any of the tables of `MdHash` of `mvs` and `mgf1` any of the tables
-of `Hash` of `vs`: `vg_rsa_pss_verify_precomputed`, calling a precomputed
+of `MdHash` of `vs`: `vg_rsa_pss_verify_precomputed`, calling a precomputed
 public operation `c`, is verified (`verify_verified`).
 -/
 
@@ -153,11 +153,11 @@ theorem htab_keep {dn : String} {f : MdFns} {p ai ac ad : BitVec 32} {σ s : Sta
 /-- A table of `Hash`'s facts in a state with the same statics and words. -/
 theorem tabFacts_keep {G : Impl.Pbkdf2.Stream.Arm.Hash} {f : Impl.RsaOaep.Arm.Fns} {p ai au af : BitVec 32} {σ s : State}
     (T : RsaOaep.Arm.TabFacts G f p ai au af σ) (sy : s.syms = σ.syms)
-    (hm : ∀ o, o + 4 ≤ 20 → s.mem.readW (tA p o) 32 = σ.mem.readW (tA p o) 32) :
+    (hm : ∀ o, o + 4 ≤ 44 → s.mem.readW (tA p o) 32 = σ.mem.readW (tA p o) 32) :
     RsaOaep.Arm.TabFacts G f p ai au af s := by
   have m := T.mem
   unfold RsaOaep.Arm.TabMem at m
-  refine ⟨by rw [sy]; exact T.ok, ?_, (hm 16 (by decide)).trans T.d, by rw [sy]; exact T.ai, by rw [sy]; exact T.au,
+  refine ⟨by rw [sy]; exact T.ok, ?_, (hm 24 (by decide)).trans T.d, by rw [sy]; exact T.ai, by rw [sy]; exact T.au,
     by rw [sy]; exact T.af⟩
   unfold RsaOaep.Arm.TabMem
   rw [sy, hm 0 (by decide), hm 4 (by decide), hm 8 (by decide)]
@@ -166,7 +166,7 @@ theorem tabFacts_keep {G : Impl.Pbkdf2.Stream.Arm.Hash} {f : Impl.RsaOaep.Arm.Fn
 variable (mvs : List MVar) (vs : List TVar)
 
 /-- The code, calling `c`, with the hash function any of the tables of
-`MdHash` of `mvs` and MGF1's any of the tables of `Hash` of `vs`. -/
+`MdHash` of `mvs` and MGF1's any of the tables of `MdHash` of `vs`. -/
 abbrev verifyCode (c : PdImpl) : Prog isa :=
   verifyPrecomputed (MdHashTable.Arm.fnsOf mvs) (HashTable.Arm.fnsOf vs) c.name c.code
 
@@ -183,7 +183,7 @@ theorem spec_tab {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) :
       (∃ T ∈ ts, Abi.tableHeld 32 s.mem (State.addr (stackArg s 11)) (FnTable.words isa s T)) ∧
       ((hs.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (stackArg s 10).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 11).toNat + 20 ≤ 2 ^ 32 ∧
+      (stackArg s 10).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 11).toNat + 44 ≤ 2 ^ 32 ∧
       Spec.RsaPss.digestLenOk 32 s.mem (State.addr (stackArg s 10)) (stackArg s 1) := by
   verify_pre at h
   sig_split h
@@ -282,9 +282,9 @@ theorem code_ok (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
   · rw [pushRegion_eq (F := frameBytes) (A := 48) (argv := P.argv w.h.D) (ro := (P.lay w.h.D).ro)
       (rw := (P.lay w.h.D).rw) hsp']
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  · sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
     intro H G hH hG
     rw [show BitVec.setWidth 64 (stackArg s 10) = State.addr (stackArg s 10) from rfl,
@@ -317,9 +317,9 @@ theorem code_ct (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
   obtain ⟨⟨T, hT, hh₁⟩, ⟨Tg, hTg, hhg₁⟩, -, -, -, -⟩ := spec_tab h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hTg
-  sig_pub [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_pub [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp
@@ -355,7 +355,7 @@ theorem code_ct (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (c :
     by rw [hep]; exact entered_state hc hcg h₂ hw hwg hh₂ hhg₂ (s' := s₁) hsy'⟩
 
 /-- `vg_rsa_pss_verify_precomputed`, calling `c`, with the hash function any
-of the tables of `MdHash` of `mvs` and MGF1's any of the tables of `Hash` of
+of the tables of `MdHash` of `mvs` and MGF1's any of the tables of `MdHash` of
 `vs`, meets the shared contract (satisfiable, `VfSat.lean`). -/
 theorem verify_verified (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs)
     (hsat : ∃ s, (vspec mvs vs).pre s) (c : PdImpl) : Verified target (verifyCode mvs vs c) (vspec mvs vs) :=

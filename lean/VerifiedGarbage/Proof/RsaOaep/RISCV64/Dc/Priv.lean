@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Covers
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Base
 public import VerifiedGarbage.Impl.RsaOaep.RISCV64.Decrypt
@@ -41,7 +41,7 @@ rest of `scratch` (`callWr`), where its precondition holds (`preP_at`);
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaOaep/PPC64LE/Dc/Pre.lean`, `Dc/Entry.lean`): `PreD s`, the
-contract's precondition (`Spec.RsaOaep.decryptTablesContract`, with the stack
+contract's precondition (`Spec.RsaOaep.decryptMdTablesContract`, with the stack
 of the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preD_of`), and what it says of the tables (`spec_tabD`); the working space `Sd s` and the values the decoding keeps in
 `s1`–`s4` (`vD s rc`, with the private operation's result `rc` in `s4`),
@@ -84,13 +84,13 @@ abbrev qiR (s : State) : Region := ⟨stackArg s 7, (stackArg s 8).toNat⟩
 abbrev lR (s : State) : Region := ⟨stackArg s 9, (stackArg s 10).toNat⟩
 abbrev ctR (s : State) : Region := ⟨stackArg s 11, (stackArg s 12).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 13, (stackArg s 14).toNat * 8⟩
-abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
-abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 16) 5
+abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 11
+abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 16) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 136⟩
 /-- The stack the function uses. -/
 abbrev kD (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
-/-- What the code needs of `decryptTablesContract.pre`, by name. -/
+/-- What the code needs of `decryptMdTablesContract.pre`, by name. -/
 structure PreD (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
   sp1 : stackBytes ≤ s.sp.toNat
@@ -163,8 +163,8 @@ structure PreD (s : State) : Prop where
   wl : (stackArg s 9).toNat + (stackArg s 10).toNat ≤ 2 ^ 64
   wct : (stackArg s 11).toNat + (stackArg s 12).toNat ≤ 2 ^ 64
   wsc : (stackArg s 13).toNat + (stackArg s 14).toNat * 8 ≤ 2 ^ 64
-  wtl : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
-  wt : (stackArg s 16).toNat + 40 ≤ 2 ^ 64
+  wtl : (stackArg s 15).toNat + 88 ≤ 2 ^ 64
+  wt : (stackArg s 16).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .a4).toNat
   k2 : (s.gpr .a4).toNat ≤ 1024
   ok : (s.gpr .a1).toNat = (s.gpr .a4).toNat
@@ -187,7 +187,7 @@ structure PreD (s : State) : Prop where
 /-- The contract, with both hash functions each one of the tables `ts`, and
 the stack of the frames and of `vg_rsa_private_checked`. -/
 abbrev decSpec (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+  Spec.RsaOaep.decryptMdTablesContract (abi.withTables Spec.RsaOaep.decryptMdTablesSig [("hash", ts), ("mgf1", ts)])
     stackBytes
 
 /-- Unfolds the precondition at `h`. -/
@@ -195,11 +195,11 @@ macro "dec_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 3471 + 1 := rfl
   unfold decSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_seventeen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_seventeen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', Sig.pairFacts, List.filterMap_cons, List.filterMap_nil,

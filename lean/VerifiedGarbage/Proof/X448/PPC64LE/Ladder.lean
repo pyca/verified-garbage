@@ -14,6 +14,11 @@ One iteration of the ladder (`step_ok`) takes the elements `x1, x2, z2, x3,
 z3` from the state after the bits `447` down to `n` (`ladderAfter k x1
 n`) to the state after `n - 1`, with the swap in `r0` and the counter in
 `r12`; the loop (`ladder_ok`) runs it for the bits 447 down to 0.
+
+The field operations (`FOp`, `opsCodeW`) take the multiplication as a
+parameter, and the state between them (`CurW`, `StpW`) the registers that
+may change (`MulCur`): `opsCode`, `Cur` and `Stp` are those of `mul` and
+`work` (`mulCur_mul`), which X448's ladder and Ed448's proofs use.
 -/
 
 @[expose] public section
@@ -24,65 +29,126 @@ open VG VG.PPC64LE VG.Impl.X448.PPC64LE VG.Proof.X25519.PPC64LE
 open VG.Spec.X448 (P Fe Ladder ladderStep cswap a24)
 open VG.Proof.X448 (toFe ladderAfter ladderAfter_step ladderStep_eq bit bit_le ladderAfter_swap_le)
 
-/-- The registers the code changes: all but the pointers to `out` (`r3`) and
-the working space (`r6`). -/
-abbrev work : List Reg := [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12]
+/-- The registers the field operations change: all but the pointers to `out`
+(`r3`) and the working space (`r6`), and `r14`, which Ed448's loops keep a
+value in; the caller restores `r15`–`r31`, which the multiplication uses. -/
+abbrev work : List Reg :=
+  [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23,
+    .r24, .r25, .r26, .r27, .r28, .r29, .r30, .r31]
 
-/-- `s'` is `s` but for the registers `work` and the field area. -/
-structure Stp (b : Addr) (s s' : State) : Prop where
-  rest : Rest work s s'
+/-- `s'` is `s` but for the registers `W` and the field area. -/
+structure StpW (W : List Reg) (b : Addr) (s s' : State) : Prop where
+  rest : Rest W s s'
   frame : Frame [FA b] s.mem s'.mem
 
-theorem Stp.refl (b : Addr) (s : State) : Stp b s s := ⟨Rest.refl _ _, Frame.refl _ _⟩
+/-- `s'` is `s` but for the registers `work` and the field area. -/
+abbrev Stp := StpW work
+
+theorem StpW.refl (W : List Reg) (b : Addr) (s : State) : StpW W b s s := ⟨Rest.refl _ _, Frame.refl _ _⟩
+
+theorem StpW.trans {W : List Reg} {b : Addr} {s₁ s₂ s₃ : State} (h₁ : StpW W b s₁ s₂) (h₂ : StpW W b s₂ s₃) :
+    StpW W b s₁ s₃ :=
+  ⟨h₁.rest.trans h₂.rest, h₁.frame.trans h₂.frame⟩
+
+theorem StpW.of_rest {W : List Reg} {b : Addr} {s s' : State} {ws : List Reg} (hr : Rest ws s s')
+    (hws : ∀ r ∈ ws, r ∈ W) (hm : s'.mem = s.mem) : StpW W b s s' :=
+  ⟨hr.mono hws, by rw [hm]; exact Frame.refl _ _⟩
+
+theorem StpW.mono {W W' : List Reg} {b : Addr} {s s' : State} (h : StpW W b s s') (hW : ∀ r ∈ W, r ∈ W') :
+    StpW W' b s s' :=
+  ⟨h.rest.mono hW, h.frame⟩
+
+theorem Stp.refl (b : Addr) (s : State) : Stp b s s := StpW.refl _ _ _
 
 theorem Stp.trans {b : Addr} {s₁ s₂ s₃ : State} (h₁ : Stp b s₁ s₂) (h₂ : Stp b s₂ s₃) : Stp b s₁ s₃ :=
-  ⟨h₁.rest.trans h₂.rest, h₁.frame.trans h₂.frame⟩
+  StpW.trans h₁ h₂
 
 theorem Stp.of_rest {b : Addr} {s s' : State} {ws : List Reg} (hr : Rest ws s s')
     (hws : ∀ r ∈ ws, r ∈ work) (hm : s'.mem = s.mem) : Stp b s s' :=
-  ⟨hr.mono hws, by rw [hm]; exact Frame.refl _ _⟩
+  StpW.of_rest hr hws hm
 
 /-- Between field operations, from `s0`: `r0` and `r12` hold `a` and `c`,
-and the slots `qs` the elements `v`. -/
-structure Cur (b : Addr) (s0 : State) (a c : BitVec 64) (qs : List Nat) (v : Nat → Fe) (s : State) :
-    Prop where
+and the slots `qs` the elements `v`; only the registers `W` changed. -/
+structure CurW (W : List Reg) (b : Addr) (s0 : State) (a c : BitVec 64) (qs : List Nat) (v : Nat → Fe)
+    (s : State) : Prop where
   ctx : Ctx b s
-  stp : Stp b s0 s
+  stp : StpW W b s0 s
   r0 : s.gpr .r0 = a
   r12 : s.gpr .r12 = c
   slots : SlotsOk s.mem b qs v
 
+/-- `CurW` with only the registers of `work` changed. -/
+abbrev Cur := CurW work
+
 section
-variable {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe}
+variable {W : List Reg} {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe}
+
+/-- A step that changes only the registers `ws` (not `r0`, `r6` or `r12`) of `W`. -/
+theorem CurW.nextR {ws : List Reg} (hws : ∀ r ∈ ws, r ∈ W) (h0 : Reg.r0 ∉ ws) (h6 : Reg.r6 ∉ ws)
+    (h12 : Reg.r12 ∉ ws) {s s' : State} (h : CurW W b s0 a c qs v s) (hr : Rest ws s s')
+    (hf : Frame [FA b] s.mem s'.mem) {qs' : List Nat} {v' : Nat → Fe}
+    (hS : SlotsOk s'.mem b qs' v') : CurW W b s0 a c qs' v' s' :=
+  ⟨h.ctx.of_rest hr h6, h.stp.trans ⟨hr.mono hws, hf⟩,
+    by rw [hr.gpr _ h0, h.r0], by rw [hr.gpr _ h12, h.r12], hS⟩
+
+theorem CurW.next (hW : ∀ r ∈ clob, r ∈ W) {s s' : State} (h : CurW W b s0 a c qs v s)
+    (hr : Rest clob s s') (hf : Frame [FA b] s.mem s'.mem) {qs' : List Nat} {v' : Nat → Fe}
+    (hS : SlotsOk s'.mem b qs' v') : CurW W b s0 a c qs' v' s' :=
+  h.nextR hW (by decide) (by decide) (by decide) hr hf hS
 
 theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
     (hf : Frame [FA b] s.mem s'.mem) {qs' : List Nat} {v' : Nat → Fe}
     (hS : SlotsOk s'.mem b qs' v') : Cur b s0 a c qs' v' s' :=
-  ⟨h.ctx.of_rest hr (by decide), h.stp.trans ⟨hr.mono (by decide), hf⟩,
-    by rw [hr.gpr _ (by decide), h.r0], by rw [hr.gpr _ (by decide), h.r12], hS⟩
+  CurW.next (by decide) h hr hf hS
 
 theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State}
     (h : Cur b s0 a c qs v s) :
     WP isa (mul o x y) s (Cur b s0 a c (o :: qs) (upd v o (v x * v y))) :=
-  WP.mono (mulS hq ho hx hy hx4 hy4 ho4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mulS hq ho hx hy hx4 hy4 ho4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ =>
+    h.nextR (by decide) (by decide) (by decide) (by decide) hr hf hS
+
+theorem opAddW (hW : ∀ r ∈ clob, r ∈ W) {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC)
+    (hx : x ∈ qs) (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State}
+    (h : CurW W b s0 a c qs v s) :
+    WP isa (.block (add o x y)) s (CurW W b s0 a c (o :: qs) (upd v o (v x + v y))) :=
+  WP.mono (addS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hW hr hf hS
+
+theorem opSubW (hW : ∀ r ∈ clob, r ∈ W) {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC)
+    (hx : x ∈ qs) (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State}
+    (h : CurW W b s0 a c qs v s) :
+    WP isa (.block (sub o x y)) s (CurW W b s0 a c (o :: qs) (upd v o (v x - v y))) :=
+  WP.mono (subS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hW hr hf hS
+
+theorem opMul24W (hW : ∀ r ∈ clob, r ∈ W) {o x : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC)
+    (hx : x ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State} (h : CurW W b s0 a c qs v s) :
+    WP isa (.block (mulA24 o x)) s (CurW W b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
+  WP.mono (mul24S hq ho hx ho4 hx4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hW hr hf hS
 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (add o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x + v y))) :=
-  WP.mono (addS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  opAddW (by decide) hq ho hx hy ho4 hx4 hy4 h
 
 theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
-  WP.mono (subS hq ho hx hy ho4 hx4 hy4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  opSubW (by decide) hq ho hx hy ho4 hx4 hy4 h
 
 theorem opMul24 {o x : Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (mulA24 o x)) s (Cur b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
-  WP.mono (mul24S hq ho hx ho4 hx4 h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  opMul24W (by decide) hq ho hx ho4 hx4 h
 
 end
+
+/-- A multiplication `m` takes `CurW W` to `CurW W` with the product in its slot. -/
+def MulCur (W : List Reg) (m : Nat → Nat → Nat → Prog isa) : Prop :=
+  ∀ {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} {o x y : Nat},
+    Sep1 o qs = true → o + 56 ≤ ACC → x ∈ qs → y ∈ qs → x % 4 = 0 → y % 4 = 0 → o % 4 = 0 →
+    ∀ {s : State}, CurW W b s0 a c qs v s → WP isa (m o x y) s (CurW W b s0 a c (o :: qs) (upd v o (v x * v y)))
+
+theorem mulCur_mul : MulCur work mul := fun hq ho hx hy hx4 hy4 ho4 _ h => opMul hq ho hx hy hx4 hy4 ho4 h
 
 /-! ## Sequences of field operations -/
 
@@ -98,6 +164,15 @@ def FOp.code : FOp → Prog isa
   | .mul24 o x => .block (mulA24 o x)
   | .add o x y => .block (Impl.X448.PPC64LE.add o x y)
   | .sub o x y => .block (Impl.X448.PPC64LE.sub o x y)
+
+/-- `FOp.code`, with the multiplication `m`. -/
+def FOp.codeW (m : Nat → Nat → Nat → Prog isa) : FOp → Prog isa
+  | .mul o x y => m o x y
+  | .mul24 o x => .block (mulA24 o x)
+  | .add o x y => .block (Impl.X448.PPC64LE.add o x y)
+  | .sub o x y => .block (Impl.X448.PPC64LE.sub o x y)
+
+theorem FOp.code_eq (op : FOp) : op.code = op.codeW Impl.X448.PPC64LE.mul := by cases op <;> rfl
 
 def FOp.out : FOp → Nat
   | .mul o _ _ | .mul24 o _ | .add o _ _ | .sub o _ _ => o
@@ -120,6 +195,15 @@ def opsCode : List FOp → Prog isa → Prog isa
   | [], k => k
   | op :: ops, k => .seq op.code (opsCode ops k)
 
+/-- `opsCode`, with the multiplication `m`. -/
+def opsCodeW (m : Nat → Nat → Nat → Prog isa) : List FOp → Prog isa → Prog isa
+  | [], k => k
+  | op :: ops, k => .seq (op.codeW m) (opsCodeW m ops k)
+
+theorem opsCode_eq : ∀ (ops : List FOp) (k : Prog isa), opsCode ops k = opsCodeW Impl.X448.PPC64LE.mul ops k
+  | [], _ => rfl
+  | op :: ops, k => by rw [opsCode, opsCodeW, FOp.code_eq, opsCode_eq ops k]
+
 /-- Each operation's slots are separate or equal, below `ACC`, and its inputs
 known. -/
 def opsOk : List FOp → List Nat → Bool
@@ -138,26 +222,41 @@ def outsQ : List FOp → List Nat → List Nat
   | [], qs => qs
   | op :: ops, qs => outsQ ops (op.out :: qs)
 
+theorem op_okW {W : List Reg} {m : Nat → Nat → Nat → Prog isa} (hW : ∀ r ∈ clob, r ∈ W) (hm : MulCur W m)
+    {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
+    (hq : Sep1 op.out qs = true) (ho : op.out + 56 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
+    (ho4 : op.out % 4 = 0) (hx4 : op.x % 4 = 0) (hy4 : op.y % 4 = 0) {s : State}
+    (h : CurW W b s0 a c qs v s) :
+    WP isa (op.codeW m) s (CurW W b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
+  cases op with
+  | mul o x y => exact hm hq ho hx hy hx4 hy4 ho4 h
+  | mul24 o x => exact opMul24W hW hq ho hx ho4 hx4 h
+  | add o x y => exact opAddW hW hq ho hx hy ho4 hx4 hy4 h
+  | sub o x y => exact opSubW hW hq ho hx hy ho4 hx4 hy4 h
+
+theorem ops_okW {W : List Reg} {m : Nat → Nat → Nat → Prog isa} (hW : ∀ r ∈ clob, r ∈ W) (hm : MulCur W m)
+    {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
+    ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
+      CurW W b s0 a c qs v s → (∀ s', CurW W b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' Q) →
+      WP isa (opsCodeW m ops k) s Q
+  | [], _, _, s, _, h, hk => hk s h
+  | op :: ops, qs, v, s, hok, h, hk => by
+    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem, beq_iff_eq] at hok
+    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h9⟩, h7⟩, h8⟩, h6⟩ := hok
+    exact WP.seq (WP.mono (op_okW hW hm op h1 h3 h4 h5 h9 h7 h8 h) fun s' h' => ops_okW hW hm ops _ _ s' h6 h' hk)
+
 theorem op_ok {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe} (op : FOp)
     (hq : Sep1 op.out qs = true) (ho : op.out + 56 ≤ ACC) (hx : op.x ∈ qs) (hy : op.y ∈ qs)
     (ho4 : op.out % 4 = 0) (hx4 : op.x % 4 = 0) (hy4 : op.y % 4 = 0) {s : State}
     (h : Cur b s0 a c qs v s) :
     WP isa op.code s (Cur b s0 a c (op.out :: qs) (upd v op.out (op.val v))) := by
-  cases op with
-  | mul o x y => exact opMul hq ho hx hy hx4 hy4 ho4 h
-  | mul24 o x => exact opMul24 hq ho hx ho4 hx4 h
-  | add o x y => exact opAdd hq ho hx hy ho4 hx4 hy4 h
-  | sub o x y => exact opSub hq ho hx hy ho4 hx4 hy4 h
+  rw [FOp.code_eq]; exact op_okW (by decide) mulCur_mul op hq ho hx hy ho4 hx4 hy4 h
 
 theorem ops_ok {b : Addr} {s0 : State} {a c : BitVec 64} {k : Prog isa} {Q : State → Prop} :
     ∀ (ops : List FOp) (qs : List Nat) (v : Nat → Fe) (s : State), opsOk ops qs = true →
       Cur b s0 a c qs v s → (∀ s', Cur b s0 a c (outsQ ops qs) (runOps ops v) s' → WP isa k s' Q) →
-      WP isa (opsCode ops k) s Q
-  | [], _, _, s, _, h, hk => hk s h
-  | op :: ops, qs, v, s, hok, h, hk => by
-    simp only [opsOk, Bool.and_eq_true, decide_eq_true_eq, List.contains_iff_mem, beq_iff_eq] at hok
-    obtain ⟨⟨⟨⟨⟨⟨⟨h1, h3⟩, h4⟩, h5⟩, h9⟩, h7⟩, h8⟩, h6⟩ := hok
-    exact WP.seq (WP.mono (op_ok op h1 h3 h4 h5 h9 h7 h8 h) fun s' h' => ops_ok ops _ _ s' h6 h' hk)
+      WP isa (opsCode ops k) s Q := fun ops qs v s hok h hk => by
+  rw [opsCode_eq]; exact ops_okW (by decide) mulCur_mul ops qs v s hok h hk
 
 /-! ## One iteration -/
 
@@ -206,7 +305,7 @@ theorem xor_le_one {x y : Nat} (hx : x ≤ 1) (hy : y ≤ 1) : x ^^^ y ≤ 1 := 
 /-- The loop invariant of the ladder from `sL`, before the iteration for the
 bit `n - 1`. -/
 structure LadInv (b : Addr) (k : Nat) (x1 : Fe) (sL : State) (n : Nat) (s : State) : Prop where
-  cur : Cur b sL (BitVec.ofNat 64 (ladderAfter k x1 n).swap) (BitVec.ofNat 64 n) LQ
+  cur : CurW work b sL (BitVec.ofNat 64 (ladderAfter k x1 n).swap) (BitVec.ofNat 64 n) LQ
     (ladV x1 (ladderAfter k x1 n)) s
 
 /-- The bits of the scalar in `BITS`. -/
@@ -215,7 +314,7 @@ def Bits (b : Addr) (k : Nat) (m : Mem) : Prop :=
 
 theorem head_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL.mem)
     {n : Nat} (hn : 1 ≤ n) (hn' : n ≤ 448) {s : State} (h : LadInv b k x1 sL n s) :
-    WP isa (.block stepHead) s (Cur b sL (BitVec.ofNat 64 (bit k (n - 1))) (BitVec.ofNat 64 (n - 1)) LQ
+    WP isa (.block stepHead) s (CurW work b sL (BitVec.ofNat 64 (bit k (n - 1))) (BitVec.ofNat 64 (n - 1)) LQ
       (swapV Z2 Z3 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1))
         (swapV X2 X3 ((ladderAfter k x1 n).swap ^^^ bit k (n - 1)) (ladV x1 (ladderAfter k x1 n))))) := by
   obtain ⟨hcur⟩ := h
@@ -277,7 +376,7 @@ theorem step_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
     WP isa step s fun s' => LadInv b k x1 sL (n - 1) s' ∧ (s'.gpr .r12 != 0) = decide (n - 1 ≠ 0) := by
   rw [step_eq]
   refine WP.seq (WP.mono (head_ok hbits hn hn' h) fun s1 h1 =>
-    ops_ok ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
+    ops_okW (by decide) mulCur_mul ladOps LQ _ s1 ladOps_ok h1 fun s2 h2 => ?_)
   refine WP.block_nil ⟨⟨h2.ctx, h2.stp, ?_, h2.r12, ?_⟩, ?_⟩
   · rw [h2.r0, ladderAfter_step k x1 (show n - 1 < 448 by omega_arith), Nat.sub_add_cancel hn,
       ladderStep_eq]
@@ -290,7 +389,7 @@ theorem step_ok {b : Addr} {k : Nat} {x1 : Fe} {sL : State} (hbits : Bits b k sL
 initial elements in `LQ`. -/
 theorem ladder_ok {b : Addr} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s) (hbits : Bits b k s.mem)
     (hS : SlotsOk s.mem b LQ (ladV x1 (VG.Proof.X448.init x1))) :
-    WP isa ladder s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa ladder s fun s' => StpW work b s s' ∧ Ctx b s' ∧
       s'.gpr .r0 = BitVec.ofNat 64 (ladderAfter k x1 0).swap ∧
       SlotsOk s'.mem b LQ (ladV x1 (ladderAfter k x1 0)) := by
   unfold ladder
@@ -299,9 +398,9 @@ theorem ladder_ok {b : Addr} {k : Nat} {x1 : Fe} {s : State} (hc : Ctx b s) (hbi
   have hm2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
   have hbits2 : Bits b k s2.mem := by rw [hm2]; exact hbits
   have h448 : LadInv b k x1 s2 448 s2 :=
-    ⟨⟨hc.of_rest hr2 (by decide), Stp.refl _ _, by rw [u2.gpr]; rfl,
+    ⟨⟨hc.of_rest hr2 (by decide), StpW.refl _ _ _, by rw [u2.gpr]; rfl,
       by rw [u2.other _ (by decide), u1.gpr], by rw [hm2]; exact hS⟩⟩
-  have hst : Stp b s s2 := Stp.of_rest hr2 (by decide) hm2
+  have hst : StpW work b s s2 := StpW.of_rest hr2 (by decide) hm2
   refine WP.mono (Q := LadInv b k x1 s2 0) (WP.loop (M := isa)
     (fun m s' => 1 ≤ m ∧ m ≤ 448 ∧ LadInv b k x1 s2 m s') ?_ 448 s2 ⟨by decide, Nat.le_refl _, h448⟩)
     fun s' ⟨h'⟩ => ⟨hst.trans h'.stp, h'.ctx, h'.r0, h'.slots⟩

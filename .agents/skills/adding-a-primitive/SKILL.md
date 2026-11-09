@@ -90,6 +90,20 @@ instructions in an ISA model) go in their own PR before either.
    are never stated: `Api.artifact` takes them from its instructions and
    those of the functions it calls (`Code.requiresDedup`, from the ISA
    model's `requires`).
+   On x86-64 a function also proves that it returns without secret residue
+   (`Registration.residue`, `TCB/X86_64/Residue.lean`): build its
+   registration in `Proof/` and scrub it with `X86_64.Scrub.scrubReg`,
+   whose code clears what the residue analysis (`X86_64.RTaint`) finds may
+   hold secrets and which sets `residue`; the registration file binds the
+   result. Only functions `ci/residue_allowlist.txt` already lists may go
+   without: the list only shrinks (`ci/check_residue_allowlist.py`), and the
+   emitter refuses a listed function that has a proof, so converting one
+   removes its line. Where the analysis fails, its trace says at which
+   instruction (an index it cannot bound, a value reloaded after a store it
+   cannot place): change the code so it can, as the Merkle–Damgård
+   streaming code clamps its indices, and ChaCha20's `apply` keeps the data
+   and its length in `r14` and `r15` and takes its state back from the
+   buffer `vg_chacha20_xor` returns.
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee

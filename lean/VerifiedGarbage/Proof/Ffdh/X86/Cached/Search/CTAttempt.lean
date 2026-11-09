@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.CTZero
 import VerifiedGarbage.Proof.Ffdh.X86.Cached.Search.Call
 import VerifiedGarbage.Proof.Framework.Sig
@@ -67,14 +68,14 @@ theorem callee_pub {o₁ o₂ t₁ t₂ : State} {ds₁ ds₂ : List Nat} {f₁ 
     (hu : used + (arg o₁ 7).toNat ≤ (arg o₁ 9).toNat) (a₁ : ArgsAt o₁ used 13 t₁.mem) (a₂ : ArgsAt o₂ used 13 t₂.mem)
     (hst : attemptStatus .cached (ofState o₁).a (ofState o₁).len ((randOf o₁).drop used) =
       attemptStatus .cached (ofState o₂).a (ofState o₂).len ((randOf o₂).drop used)) (rd wr : List Region) :
-    (Spec.Ffdh.cachedGenerateKeyContract abi Proof.Ffdh.X86.stack).pub (t₁.callEntry.withRegions rd wr)
+    (Proof.Ffdh.cachedGenerateKeyContract abi Proof.Ffdh.X86.stack).pub (t₁.callEntry.withRegions rd wr)
       (t₂.callEntry.withRegions rd wr) := by
   have A₁ := h₁.abi
   have A₂ := h₂.abi
   have hu₂ : used + (arg o₂ 7).toNat ≤ (arg o₂ 9).toNat := by
     rw [← args_eq e (i := 7) (by omega), ← args_eq e (i := 9) (by omega)]; exact hu
   have sp : o₁.gpr .esp = o₂.gpr .esp := congrArg KPub.sp e
-  sig_pub [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes]
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argSlots, argVal, argBytes]
   refine ⟨by simp only [h₁.esp, h₂.esp, sp], ?_⟩
   have c₁ := fun j (hj : j < 13) => ce_arg A₁ h₁.esp a₁ rd wr hj
   have c₂ := fun j (hj : j < 13) => ce_arg A₂ h₂.esp a₂ rd wr hj
@@ -134,7 +135,7 @@ abbrev callWrK (p : KPub) : List Region :=
 
 theorem call_ct (k : Ap) :
     RelCT isa (fun t₁ t₂ => CallAt k t₁ ∧ CallAt k t₂)
-      (.call Spec.Ffdh.cachedGenerateKeyApi.name Impl.Ffdh.X86.Cached.Generate.code) fun _ _ => True := by
+      (.call "vg_ffdh_generate_key_cached" Impl.Ffdh.X86.Cached.Generate.code) fun _ _ => True := by
   refine RelCT.call Proof.Ffdh.X86.Cached.verified.1 Proof.Ffdh.X86.Cached.verified.2.1
     (callRdK k.1.1 k.1.2.1) (callWrK k.1.1) fun t₁ t₂ ⟨⟨o₁, e₁, F₁, a₁, hu₁, st₁⟩, ⟨o₂, e₂, F₂, a₂, hu₂, st₂⟩⟩ => ?_
   obtain ⟨⟨p, used, keys, scalars⟩, st⟩ := k

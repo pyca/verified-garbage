@@ -23,6 +23,6 @@ def KeyBackend.keyName {policy : VG.Proof.Ffdh.GenerationPolicy} (b : KeyBackend
   (match policy with
   | .full => "vg_ffdh_generate_key"
   | .vetted => Spec.Ffdh.vettedGenerateKeyApi.name
-  | .cached => Spec.Ffdh.cachedGenerateKeyApi.name) ++ b.suffix
+  | .cached => "vg_ffdh_generate_key_cached") ++ b.suffix
 
 end VG.Proof.Ffdh.Arm

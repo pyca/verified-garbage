@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesCbc.Wipe
 meta import VerifiedGarbage.Proof.AesCbc.X86.Verified
 meta import VerifiedGarbage.Impl.AesCbc.X86.Wiped
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CBC on x86, zeroing its scratch
@@ -32,7 +34,9 @@ of it, then of `vg_zeroize` on the first `v.encWritten` bytes
 (`encrypt_scrubbed`: `Verified.callWipeTail'`, with the side conditions of
 `Proof/AesCbc/Wipe.lean`), with 72 bytes of stack (the CBC code's 24, the
 frame and the return address). `encrypt_verified` and `decrypt_verified`
-state them as the contracts of `Spec/Cbc/`.
+state them as the contracts of `Spec/Cbc/`. Which is emitted for `v`
+(`encryptRegs`, `decryptRegs`): the first where it writes nothing, the
+second otherwise.
 -/
 
 @[expose] public section
@@ -218,5 +222,39 @@ theorem encrypt_spSafe (v : BlocksImpl) :
 theorem decrypt_spSafe (v : BlocksImpl) :
     (Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix v.decWritten).all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe (decryptZ_spSafe v)
+
+/-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted: the
+CBC code itself where `v` writes nothing in `scratch`, the call wiping its
+first `v.encWritten` bytes otherwise. -/
+def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi X86.target) :=
+  if h : v.encWritten = 0 then [{
+    suffix := v.suffix
+    code := Impl.AesCbc.X86.encryptZ v.enc
+    stack := 24
+    verified := encrypt_free v h
+    spSafe := encryptZ_spSafe v }]
+  else [{
+    suffix := v.suffix
+    code := Impl.AesCbc.X86.Wiped.encrypt v.enc v.suffix v.encWritten
+    stack := 72
+    verified := encrypt_verified v
+    spSafe := encrypt_spSafe v }]
+
+/-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted: the
+CBC code itself where `v` writes nothing in `scratch`, the call wiping its
+first `v.decWritten` bytes otherwise. -/
+def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi X86.target) :=
+  if h : v.decWritten = 0 then [{
+    suffix := v.suffix
+    code := Impl.AesCbc.X86.decryptZ v.dec
+    stack := 24
+    verified := decrypt_free v h
+    spSafe := decryptZ_spSafe v }]
+  else [{
+    suffix := v.suffix
+    code := Impl.AesCbc.X86.Wiped.decrypt v.dec v.suffix v.decWritten
+    stack := 72
+    verified := decrypt_verified v
+    spSafe := decrypt_spSafe v }]
 
 end VG.Proof.AesCbc.X86.Wiped

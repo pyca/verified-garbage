@@ -11,6 +11,6 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p224_sub_mod_n() {
     core::arch::naked_asm!(
-        r#".base64 "PgCEVD4ApVQ+AMZUFCKDfBQqo3wUMsN8AABl6QAAhukQWOx8CABl6QgAhukQWQx9EABl6RAAhukQWSx9GABl6RgAhukQWUx9EFlrfd0TgD1FKYxhxgeMeVxcjGU9KoxhOFiMfRRg53wAAOT4//+APaIWjGHGB4x5uOCMZT7wjGE4WIx9FGEIfQgABPn//4A9//+MYThYjH0UYSl9EAAk+QAAgD0AAIxhxgeMef//jGX//4xhOFiMfRRhSn0YAET5IACATg==""#,
+        r#".base64 "PgCEVD4ApVQ+AMZUFCKDfBQqo3wUMsN8AABl6QAAhukQWOx8CABl6QgAhukQWQx9EABl6RAAhukQWSx9GABl6RgAhukQWUx9EFlrfd0TgD1FKYxhxgeMeVxcjGU9KoxhOFiMfRRg53wAAOT4//+APaIWjGHGB4x5uOCMZT7wjGE4WIx9FGEIfQgABPkUWSl9EAAk+f//gD3//4xhIgCMeThYjH0UYUp9GABE+SAAgE4=""#,
     )
 }

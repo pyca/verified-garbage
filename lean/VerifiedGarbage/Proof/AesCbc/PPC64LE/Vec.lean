@@ -54,6 +54,12 @@ open VG.Proof.Aes.PPC64LE.Crypto (Local Inputs aesState BatchRead readValue Stor
   breg_ne aesState_byte)
 open VG.Impl.Aes.PPC64LE.Crypto (breg batchRegs mask byteMask)
 
+/-- `mr d, n`, which leaves the vector registers as they were. -/
+theorem wpV_mr {s : State} {is : List Instr} {Q : State → Prop} {d n : Reg}
+    (k : ∀ s', Upd s s' d (s.gpr n) → s'.vpr = s.vpr → WP isa (.block is) s' Q) :
+    WP isa (.block (.logic .or d n n :: is)) s Q :=
+  WP.cons exec_logic (k _ (by simpa using Upd.write s d (s.gpr n ||| s.gpr n)) rfl)
+
 theorem breg_v9 {i : Nat} (hi : i < 8) : breg i ≠ .v9 := by
   have h : ∀ i : Fin 8, breg i ≠ .v9 := by decide
   exact h ⟨i, hi⟩
@@ -120,6 +126,7 @@ structure SInv (t : State) (D : Addr) (c : Nat) (u : State) : Prop where
   frame : Frame [⟨D, 128⟩] t.mem u.mem
   val : ∀ i, c ≤ i → i < 8 → u.vpr (breg i) = t.vpr (breg i)
   mask : u.vpr mask = t.vpr mask
+  vs : ∀ r, r ∉ VReg.v9 :: batchRegs 8 → u.vpr r = t.vpr r
 
 theorem stores_ok (t : State) {D : Addr} (r6 : t.gpr .r6 = D) (h0 : t.gpr .r0 = 0)
     (hm : t.vpr mask = byteMask) (hw : ∀ j < 8, InRegions t.wr (D + BitVec.ofNat 64 (16 * j)) 16) :
@@ -128,7 +135,7 @@ theorem stores_ok (t : State) {D : Addr} (r6 : t.gpr .r6 = D) (h0 : t.gpr .r0 = 
   rw [batchRegs, List.flatMap_map]
   refine wp_range_flatMap (M := isa) (SInv t D) (fun c u hc hu => ?_) 8 (Nat.le_refl _) t
     ⟨Keep.refl _ _, by rw [r6, Nat.mul_zero]; exact (BitVec.add_zero D).symm,
-      Proof.Aes.Memory.Processed.refl _ _ _ _, Frame.refl _ _, fun _ _ _ => rfl, rfl⟩
+      Proof.Aes.Memory.Processed.refl _ _ _ _, Frame.refl _ _, fun _ _ _ => rfl, rfl, fun _ _ => rfl⟩
   have hz : u.gpr .r0 = 0 := (hu.keep.gpr (by decide)).trans h0
   have haddr : u.gpr .r6 + u.gpr .r0 = D + BitVec.ofNat 64 (16 * c) := by
     rw [hu.ptr, hz]; exact BitVec.add_zero _
@@ -139,7 +146,7 @@ theorem stores_ok (t : State) {D : Addr} (r6 : t.gpr .r6 = D) (h0 : t.gpr .r0 = 
     change VG.VectorCrypto.vbyte (rev128 (u.vpr (breg c))) j = _
     rw [← VG.Proof.Aes.Vector.getD_st _ hj, hu.val c (Nat.le_refl _) hc]
     rfl)
-  refine ⟨(hu.keep.trans hs.keep).mono (by simp), ?_, ?_, ?_, fun i hi hi8 => ?_, ?_⟩
+  refine ⟨(hu.keep.trans hs.keep).mono (by simp), ?_, ?_, ?_, fun i hi hi8 => ?_, ?_, fun r hr => ?_⟩
   · rw [hs.ptr, hu.ptr]
     change D + BitVec.ofNat 64 (16 * c) + BitVec.ofNat 64 16 = _
     rw [Offset.add_add]
@@ -148,6 +155,10 @@ theorem stores_ok (t : State) {D : Addr} (r6 : t.gpr .r6 = D) (h0 : t.gpr .r0 = 
   · rw [hs.mem, haddr]; exact hu.frame.trans hp.2
   · rw [hs.v _ (by simp [breg_ne hi8 hc (by omega), breg_v9 hi8]), hu.val i (by omega) hi8]
   · rw [hs.v _ (by simp [(breg_mask hc).symm]), hu.mask]
+  · simp only [List.mem_cons, not_or] at hr
+    rw [hs.v _ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      exact ⟨fun h => hr.2 (h ▸ breg_mem hc), hr.1⟩), hu.vs r (by simpa using hr)]
 
 /-- The bytes of a XOR of vectors. -/
 theorem st_xor (a b : BitVec 128) :
@@ -193,6 +204,7 @@ structure Read8 (s₀ : State) (k : Nat) (t u : State) : Prop where
   wr : u.wr = t.wr
   mem : u.mem = t.mem
   val : ∀ j < 8, u.vpr (breg j) = rev128 (t.mem.read (blk s₀ (k + j)) 16)
+  vs : ∀ r, r ∉ VReg.v1 :: mask :: batchRegs 8 → u.vpr r = t.vpr r
 
 theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s₀) {t : State}
     (r14 : t.gpr .r14 = W s₀) (r15 : t.gpr .r15 = s₀.gpr .r4) (r17 : t.gpr .r17 = blk s₀ k)
@@ -201,7 +213,7 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
     WP isa (.block (vsetup ++ ((batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
       (.subi .r6 .r6 128 :: rest)))) t Φ := by
   simp only [vsetup, Impl.AesCbc.PPC64LE.mov, List.cons_append, List.nil_append]
-  refine wp_mr fun t₁ u₁ => wp_mr fun t₂ u₂ => wp_mr fun t₃ u₃ => ?_
+  refine wpV_mr fun t₁ u₁ v₁ => wpV_mr fun t₂ u₂ v₂ => wpV_mr fun t₃ u₃ v₃ => ?_
   have g₃ (r : Reg) (h3 : r ≠ .r3) (h4 : r ≠ .r4) (h6 : r ≠ .r6) : t₃.gpr r = t.gpr r := by
     rw [u₃.other r h6, u₂.other r h4, u₁.other r h3]
   have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
@@ -223,7 +235,7 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
   have hm₄ : t₄.mem = t.mem := by rw [hl₄.mem, m₃]
   refine ⟨fun r hr => ?_, by rw [hb.ptr, r6₄], ?_, ⟨?_, ?_, ?_, by rcases hR₀ with e | e | e <;> omega,
     by rcases hR₀ with e | e | e <;> omega, fun j hj => ?_⟩, ?_, ?_, by rw [hb.effects.mem, hm₄],
-    fun j hj => ?_⟩
+    fun j hj => ?_, fun r hr => ?_⟩
   · obtain ⟨h0, h3, h4, h6, -, -, -, -, h11, h12⟩ := pres_ne hr
     rw [hb.effects.keep.gpr (by simpa using h6), hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
   · rw [hb.effects.keep.gpr (by decide), hl₄.keep.gpr (by decide), u₃.other _ (by decide),
@@ -241,5 +253,14 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
   · rw [hb.effects.keep.2.1, hl₄.keep.2.1, rd₃]
   · rw [hb.effects.keep.2.2, hl₄.keep.2.2, wr₃]
   · rw [hb.val j hj, readValue, ite_eq_right (by decide), r6₄, blk_add, hm₄]
+  · simp only [List.mem_cons, not_or] at hr
+    have hb' : u.vpr r = t₄.vpr r := by
+      by_cases hc : r = Impl.Aes.PPC64LE.Crypto.counterBase
+      · subst hc; simpa using hb.counter
+      · exact hb.effects.v _ (by simp [hc, hr.2.2])
+    rw [hb', hl₄.v _ (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
+      refine ⟨fun h => ?_, hr.1, hr.2.1⟩
+      subst h; exact hr.2.2 (breg_mem (i := 0) (by decide))), v₃, v₂, v₁]
 
 end VG.Proof.AesCbc.PPC64LE

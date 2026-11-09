@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.PPC64LE.DivN
 
 /-!
 # `vg_rsa_crt_values` on PPC64LE: the arithmetic, `d` divided by `p - 1` and `q - 1`
@@ -16,22 +17,24 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy clrLow)
-open VG.Impl.Rsa.PPC64LE.Div (div)
+open VG.Impl.Rsa.PPC64LE.Div (div divP)
 open VG.Impl.Rsa.PPC64LE.CrtValues (aQ aP aDQ aDD aDT aDR2 aDR3 aD nArr)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
-/-- `d` divided by `[a]` with its low bit cleared, into `[r]`. -/
-def divD (a r : Nat) : List (Prog isa) :=
-  [copy aDQ aD, copy aDD a, .block (clrLow aDD), div aDQ r aDD aDT]
+/-- `d` divided by `[a]` with its low bit cleared, into `[r]`, `[a]`'s length
+in bytes in `len`. -/
+def divD (len : Reg) (a r : Nat) : List (Prog isa) :=
+  [copy aDQ aD, copy aDD a, .block (clrLow aDD ++ [.addi .r12 len 0]), divP aDQ r aDD aDT]
 
 theorem divD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
     (ha : a = aP ∨ a = aQ) (hr : r = aDR2 ∨ r = aDR3)
-    (top : w32 s.mem B (arr w aDD + 4 * w) = 0) :
-    WP isa (seqs (divD a r)) s fun t => Ws t B Z w nArr ∧
+    (top : w32 s.mem B (arr w aDD + 4 * w) = 0) {len : Reg} (hlen : len = .r20 ∨ len = .r22) {L : Nat}
+    (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 32) (hlt : num s.mem B w a < 2 ^ (8 * L)) :
+    WP isa (seqs (divD len a r)) s fun t => Ws t B Z w nArr ∧
       KeyWorkspace.Keep B w [aDQ, aDD, r, aDT] [] s.mem t.mem ∧
       (0 < 2 * (num s.mem B w a / 2) →
         num t.mem B w r = num s.mem B w aD % (2 * (num s.mem B w a / 2))) ∧
-      w32 t.mem B (arr w aDD + 4 * w) = 0 ∧ Keep stepRegs s t := by
+      w32 t.mem B (arr w aDD + 4 * w) = 0 ∧ Keep (.r12 :: stepRegs) s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
@@ -46,13 +49,26 @@ theorem divD_ok {s : State} {B : Addr} {Z w a r : Nat} (h : Ws s B Z w nArr)
   refine WP.mono (copy_ok h (by decide) (by decide) (by decide) (by decide)) fun t1 ⟨h1, k1, v1, x1, _⟩ => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h1 (by decide) a1 (by decide) (Ne.symm a3)) fun t2 ⟨h2, k2, v2, x2, top2⟩ => ?_
-  rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil (clrLow aDD)]
-  refine clrLow_ok h2 (by decide) (by decide) fun t3 h3 k3 v3 x3 top3 => WP.block_nil ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine clrLow_ok h2 (by decide) (by decide) fun t30 h30 k30 v30 x30 top30 => ?_
+  have hl0 : len ≠ .r0 := by rcases hlen with rfl | rfl <;> decide
+  have l30 : t30.gpr len = BitVec.ofNat 64 L := by
+    rcases hlen with rfl | rfl <;>
+      rw [x30.gpr _ (by decide), x2.gpr _ (by decide), x1.gpr _ (by decide), hl]
+  refine WP.mono (WP.keep [.r12] (Q := fun x => x.gpr .r12 = BitVec.ofNat 64 L ∧ x.mem = t30.mem)
+    (by prun [l30, exec_addi hl0 (show 0 < 2 ^ 15 by decide), BitVec.add_zero]) (by cases len <;> decide))
+    fun t3 ⟨⟨t12, tm⟩, k12⟩ => ?_
+  have h3 : Ws t3 B Z w nArr := h30.of_keep k12
+  have k3 := k30
+  rw [← tm] at k3
+  have v3 : num t3.mem B w aDD = 2 * (num t2.mem B w aDD / 2) := by rw [tm]; exact v30
+  have x3 := x30.trans k12
   have topd : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
-    rw [top3, top2, KeyWorkspace.Keep.word k1 (i := w) (by omega_arith) (by decide) (by simp)
+    rw [tm, top30, top2, KeyWorkspace.Keep.word k1 (i := w) (by omega_arith) (by decide) (by simp)
       (fit _ (by decide)), top]
-  refine WP.mono (div_ok h3 (by decide) r1 (by decide) (by decide) (by decide) (Ne.symm r2) (by decide)
-    (by decide) r3 r4 (by decide) topd) fun t ⟨h4, k4, x4, v4⟩ => ?_
+  have a1'' : num t1.mem B w a = num s.mem B w a := k1.num (by simp; exact Ne.symm a2) (by simp) (fit _ a1)
+  refine WP.mono (divP_ok h3 (by decide) r1 (by decide) (by decide) (by decide) (Ne.symm r2) (by decide)
+    (by decide) r3 r4 (by decide) topd t12 hL1 hL (by rw [v3, v2, a1'']; omega_arith)) fun t ⟨h4, k4, x4, v4⟩ => ?_
   have a1' : num t1.mem B w a = num s.mem B w a := k1.num (by simp; exact Ne.symm a2) (by simp) (fit _ a1)
   have dd3 : num t3.mem B w aDD = 2 * (num s.mem B w a / 2) := by rw [v3, v2, a1']
   have dq3 : num t3.mem B w aDQ = num s.mem B w aD := by

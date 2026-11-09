@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-ECB on AArch64
@@ -14,6 +15,8 @@ writes nothing in `scratch` (`BlocksImpl.free`), `vg_aes_ecb_encrypt` and
 `vg_aes_ecb_decrypt` are its code (`encrypt_free`, `decrypt_free`);
 otherwise a call of it by `callWipe`, which then zeroes the whole of
 `scratch` with `vg_zeroize` (`encrypt_verified`, `decrypt_verified`).
+Which is emitted for each (`encryptRegs`, `decryptRegs`): the first where it
+writes nothing, the second otherwise.
 -/
 
 @[expose] public section
@@ -83,5 +86,33 @@ theorem encrypt_free (v : BlocksImpl) (h : v.free = true) :
 theorem decrypt_free (v : BlocksImpl) (h : v.free = true) :
     Verified target v.dec.code (Spec.AesEcb.decryptContract abi) :=
   Verified.ecb_of_unwritten (decBlocks v) (v.decFree h) args_length
+
+/-- The implementation of `vg_aes_ecb_encrypt` over `v` that is emitted: its
+code where it writes nothing in `scratch`, the call wiping `scratch`
+otherwise. -/
+def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
+  if h : v.free = true then [{
+    suffix := v.suffix
+    code := v.enc.code
+    verified := encrypt_free v h }]
+  else [{
+    suffix := v.suffix
+    code := encrypt v
+    stack := 32
+    verified := encrypt_verified v }]
+
+/-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted: its
+code where it writes nothing in `scratch`, the call wiping `scratch`
+otherwise. -/
+def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
+  if h : v.free = true then [{
+    suffix := v.suffix
+    code := v.dec.code
+    verified := decrypt_free v h }]
+  else [{
+    suffix := v.suffix
+    code := decrypt v
+    stack := 32
+    verified := decrypt_verified v }]
 
 end VG.Proof.AesEcb.AArch64

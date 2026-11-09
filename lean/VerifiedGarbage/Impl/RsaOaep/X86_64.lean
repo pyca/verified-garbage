@@ -10,7 +10,7 @@ Encryption with a precomputed public key
 `H` (the label's), an `Impl.Pbkdf2.Md.X86_64.Stream` (the streaming
 functions of MD5, SHA-1, SHA-224, SHA-256 or the SHA-512 family), calling
 those functions, MGF1 with the hash function of the table of the interface
-`Hash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
+`MdHash` that the last argument points to (`Impl/Mgf1/X86_64/Table.lean`,
 among the functions `f : Fns`), and the RSA operation: the public-key
 operation within BoringSSL's limits when encrypting, the private-key
 operation checked against `e` (`vg_rsa_private_checked`) when decrypting.
@@ -182,9 +182,9 @@ def lens : List Nat := [16, 20, 28, 32, 48, 64]
 to, to `sTab` (through `r11`, which keeps `rax`). -/
 def tabSlot (j : Nat) : List Instr := [.mov .r11 (.mem (arg j)), .store (sp sTab) .r11]
 
-/-- The digest length of the table whose address is in `sTab` (its word 4),
+/-- The digest length of the table whose address is in `sTab` (its word 6),
 to `r11`. -/
-def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 32))]
+def lenLoad : List Instr := [.mov .r11 (.mem (sp sTab)), .mov .r11 (.mem (at_ .r11 48))]
 
 /-- `b d` for the digest length `d` in `r11`, among `ds`: the last if it is
 none of the others. -/

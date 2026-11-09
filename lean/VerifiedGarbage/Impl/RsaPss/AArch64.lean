@@ -15,11 +15,11 @@ The pieces of `sign` and `verifyPrecomputed`, which
 `Impl.Pbkdf2.Md.AArch64.Hash`, of which the code uses only its parameters
 and digest length) and MGF1's hash function, as on x86-64
 (`Impl/RsaPss/X86_64.lean`), whose design this follows. Both are given as
-tables (`Spec/MdHashTable.lean`, `Spec/HashTable.lean`): `H`'s streaming
+tables of `MdHash` (`Spec/MdHashTable.lean`): `H`'s streaming
 `init`, compression function and digest of a hash value are called through
 the words of its table of `MdHash` that `encode` and `checkEncoding` copy to
 slots of their frame (`tabSlots`, `scall`), and MGF1 is
-`Impl/RsaOaep/AArch64/Mgf1/Table.lean`'s, with the table of `Hash`, in a
+`Impl/RsaOaep/AArch64/Mgf1/Table.lean`'s, with MGF1's table, in a
 frame of its own (`mgfXor`). The RSA operation is `vg_rsa_private_checked`
 when signing, a precomputed public operation when verifying.
 
@@ -113,7 +113,7 @@ def sPreLen : Nat := 320
 
 /-- The slots of the words of the tables, in `encode` and `checkEncoding`
 (which use neither `p`, `p_len`, `pre` nor `pre_len`): the address of the
-table of `Hash`, and the table of `MdHash`'s `init` (its word 0),
+table of `MdHash`, and the table of `MdHash`'s `init` (its word 0),
 compression function (word 3) and digest (word 4). -/
 def sMgfT : Nat := 288
 def sIniH : Nat := 296
@@ -267,7 +267,7 @@ def mgfArgs : List Instr :=
 
 variable (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns)
 
-/-- `DB ⊕= MGF1(H, dbLen)`, with the hash function of the table of `Hash`
+/-- `DB ⊕= MGF1(H, dbLen)`, with the hash function of the table of `MdHash`
 whose address is in `sMgfT`. -/
 def mgfXor : Prog isa :=
   .frame (.alloc mgfFrame) (.seq (.block (mgfArgs H))

@@ -1,7 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
-public import VerifiedGarbage.Proof.Aes.PPC64LE.Ctr32
 public import VerifiedGarbage.Proof.Aes.PPC64LE.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
@@ -15,12 +13,6 @@ namespace VG.Artifacts.Aes.PPC64LE
 def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact PPC64LE.target {
     code := Impl.Aes.PPC64LE.expandKey
-    verified := Proof.Aes.PPC64LE.expandKey_direct_verified },
-  Spec.Aes.encryptBlocksApi.artifact PPC64LE.target {
-    code := Impl.Aes.PPC64LE.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.PPC64LE.encryptBlocks_verified },
-  Spec.Aes.decryptBlocksApi.artifact PPC64LE.target {
-    code := Impl.Aes.PPC64LE.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.PPC64LE.decryptBlocks_verified }]
+    verified := Proof.Aes.PPC64LE.expandKey_direct_verified }]
 
 end VG.Artifacts.Aes.PPC64LE

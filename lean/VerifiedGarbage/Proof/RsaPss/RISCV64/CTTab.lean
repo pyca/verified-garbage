@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.RelCT
 # RSASSA-PSS on RISC-V: the calls through the table of `MdHash`, twice
 
 Untrusted: everything here is checked by Lean. As the calls through a table
-of `Hash` (`Proof/RsaOaep/RISCV64/CTMgfT.lean`), for the table of `MdHash`
+of `MdHash` (`Proof/RsaOaep/RISCV64/CTMgfT.lean`), for the table of `MdHash`
 that is our stack argument `j` (`TabM`): two runs compared through anchors
 `an x` (`BT`), whose entry states' tables are at the anchor's address and
 hold the anchor's addresses of `H`'s functions, its compression function and

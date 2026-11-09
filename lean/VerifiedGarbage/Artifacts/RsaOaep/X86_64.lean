@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.Emit
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.Sp
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.DecCtx
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.Callees
@@ -101,11 +101,12 @@ namespace VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 
 open VG.Proof.RsaOaep.X86_64 (decStack dec_ok dec_spSafe OK)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privOf)
-open VG.Proof.HashTable.X86_64 (tables fnsOf)
+open VG.Proof.MdHashTable.X86_64 (tables)
+open VG.Proof.HashTable.X86_64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.decryptTablesApi.artifact X86_64.target {
+    Spec.RsaOaep.decryptMdTablesApi.artifact X86_64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
@@ -120,11 +121,12 @@ end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
 
 open VG.Proof.RsaOaep.X86_64 (encStack enc_ok OK)
-open VG.Proof.HashTable.X86_64 (tables fnsOf)
+open VG.Proof.MdHashTable.X86_64 (tables)
+open VG.Proof.HashTable.X86_64 (fnsOf)
 
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaOaep.encryptTablesApi.artifact X86_64.target {
+    Spec.RsaOaep.encryptMdTablesApi.artifact X86_64.target {
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code

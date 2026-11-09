@@ -76,19 +76,25 @@ namespace VG.Artifacts.EcP521.X86_64.Compressed
 open VG.Proof.P521.X86_64 (hasLaw)
 open VG.Proof.EcKey.Compressed.X86_64.P521
 
-def artifacts : List Artifact :=
-  [false, true].flatMap fun adx =>
-    [
-    Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target {
-      suffix := if adx then "_adx" else ""
-      code := code adx
-      verified := verified hasLaw.inv adx
-      stack := 8 },
-    Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target {
-      suffix := if adx then "_adx" else ""
-      code := Proof.EcKey.Compressed.X86_64.P521Decompress.code adx
-      verified := Proof.EcKey.Compressed.X86_64.P521Decompress.verified hasLaw.law hasLaw.inv adx
-      stack := 8 }]
+def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target {
+    code := Proof.EcKey.Compressed.X86_64.P521Decompress.code false
+    verified := Proof.EcKey.Compressed.X86_64.P521Decompress.verified hasLaw.law hasLaw.inv false
+    stack := 8 },
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := code true
+    verified := verified hasLaw.inv true
+    stack := 8 },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := Proof.EcKey.Compressed.X86_64.P521Decompress.code true
+    verified := Proof.EcKey.Compressed.X86_64.P521Decompress.verified hasLaw.law hasLaw.inv true
+    stack := 8 }]
 
 end VG.Artifacts.EcP521.X86_64.Compressed
 
@@ -98,13 +104,16 @@ namespace VG.Artifacts.EcP521.X86_64.Validate
 open VG.Proof.P521.X86_64 (hasLaw)
 open VG.Proof.EcKey.Validate.X86_64.P521
 
-def artifacts : List Artifact :=
-  [false, true].map fun adx =>
-    Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target {
-      suffix := if adx then "_adx" else ""
-      code := code adx
-      verified := verified hasLaw.inv adx
-      stack := 8 }
+def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 },
+  Spec.EcKey.P521.inst.validatePublicKeyApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := code true
+    verified := verified hasLaw.inv true
+    stack := 8 }]
 
 end VG.Artifacts.EcP521.X86_64.Validate
 
@@ -112,27 +121,17 @@ namespace VG.Artifacts.EcP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-/-- The function of `Spec.EcKey.P521.publicKeyApi`, multiplying modulo `p` with
-BMI2 and ADX and selecting the comb's entries with AVX2 (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
-instruction writing `rsp` (`hsp`). -/
-def publicKey (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.EcKey.P521.inst.publicKeyContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 8))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 8
-    verified := hv
-    spSafe := hsp }
-
 def artifacts : List Artifact :=
-  Compressed.artifacts ++
-  [
-  publicKey false Impl.EcKey.X86_64.publicKeyP521
-    (Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv),
-  publicKey true Impl.EcKey.X86_64.publicKeyP521Adx
-    (Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)] ++
+  Compressed.artifacts ++ [
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
+    code := Impl.EcKey.X86_64.publicKeyP521
+    stack := 8
+    verified := Proof.EcKey.X86_64.P521.pk_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv },
+  Spec.EcKey.P521.publicKeyApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := Impl.EcKey.X86_64.publicKeyP521Adx
+    stack := 8
+    verified := Proof.EcKey.X86_64.P521.pk_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv }] ++
   Validate.artifacts
 
 end VG.Artifacts.EcP521.X86_64

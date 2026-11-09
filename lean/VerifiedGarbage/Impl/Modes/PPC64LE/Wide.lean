@@ -21,6 +21,19 @@ which is public.
 `c.withOne one` (`c` with `one` as its code, which enciphers only the
 buffer's first block), for a core whose code costs as much on one block as
 on its `G`.
+
+`seqLevelsWith one wide lgs narrow`: `seq2With` with a wide loop for each
+`lg` of `lgs` in turn, of the mode `wide (2 ^ lg)` (`levels`), before the
+narrow steps: each takes the groups of `2 ^ lg` of the blocks the ones
+before it left, all on the same core (`2 ^ lg ≤ G`), so that fewer blocks
+than the core's `G` still take one call of its code a group rather than
+one a block. `seq2With` is the case of one level.
+
+`pick lg short long`: `short` if fewer than `2 ^ lg` steps are to be taken
+(the count in `r6`, shifted right by `lg`, is zero), `long` otherwise: for a
+function whose batched code costs a fixed amount per call (a key schedule to
+prepare), with a cheaper function for messages shorter than a batch. The
+branch is on the count, which is public; `r8` is scratch, as in the modes.
 -/
 
 @[expose] public section
@@ -58,6 +71,20 @@ def withOne (one : Prog isa) : Core := { c with crypt := one, G := 1 }
 def seq2With (one : Prog isa) (wide narrow : Mode) (lg : Nat) : Prog isa :=
   c.seqWith (.seq (c.loopWide wide lg) ((c.withOne one).steps narrow)) narrow.ivOut
 
+/-- The wide loops of the modes `wide (2 ^ lg)` for each `lg` of `lgs` in
+turn, then `rest`. -/
+def levels (wide : Nat → Mode) : List Nat → Prog isa → Prog isa
+  | [], rest => rest
+  | lg :: lgs, rest => .seq (c.loopWide (wide (2 ^ lg)) lg) (levels wide lgs rest)
+
+/-- `seq2With`, with a wide loop for each of `lgs`. -/
+def seqLevelsWith (one : Prog isa) (wide : Nat → Mode) (lgs : List Nat) (narrow : Mode) : Prog isa :=
+  c.seqWith (c.levels wide lgs ((c.withOne one).steps narrow)) narrow.ivOut
+
 end Core
+
+/-- `short` for fewer than `2 ^ lg` steps, `long` otherwise. -/
+def pick (lg : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block [.lsr .d .r8 .r6 lg]) (.ite (.zero .d .r8) short long)
 
 end VG.Impl.Modes.PPC64LE

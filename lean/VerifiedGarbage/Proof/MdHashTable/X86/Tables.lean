@@ -4,8 +4,12 @@ public import VerifiedGarbage.Proof.RsaPss.X86.CtTab
 public import VerifiedGarbage.Proof.HashTable.Basic
 public import VerifiedGarbage.Spec.MdHashTable
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Md5
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha1
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha224
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha256
+public import VerifiedGarbage.Proof.RsaPss.X86.Hashes.Sha512
 import VerifiedGarbage.Proof.Framework.X86.Exec
-import VerifiedGarbage.Proof.HashTable.X86
 import VerifiedGarbage.Proof.Framework.X86.Syms
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -47,6 +51,21 @@ structure MVar where
   suffix : String
   features : List String
   idx : Spec.Mgf1.hashes[Spec.HashTable.index h.G]? = some h.G
+
+def md5W : MVar := ⟨Proof.RsaPss.X86.md5, "", [], rfl⟩
+def sha1W (b : Proof.Sha1.X86.Variants.Backend) : MVar := ⟨Proof.RsaPss.X86.sha1 b, b.stream.suffix, b.features, rfl⟩
+def sha224W (b : Proof.Sha256.X86.Variants.Backend) : MVar := ⟨Proof.RsaPss.X86.sha224 b, b.stream.suffix, b.features, rfl⟩
+def sha256W (b : Proof.Sha256.X86.Variants.Backend) : MVar := ⟨Proof.RsaPss.X86.sha256 b, b.stream.suffix, b.features, rfl⟩
+def sha384W : MVar := ⟨Proof.RsaPss.X86.sha384, "", [], rfl⟩
+def sha512W : MVar := ⟨Proof.RsaPss.X86.sha512, "", [], rfl⟩
+def sha512_224W : MVar := ⟨Proof.RsaPss.X86.sha512_224, "", [], rfl⟩
+def sha512_256W : MVar := ⟨Proof.RsaPss.X86.sha512_256, "", [], rfl⟩
+
+/-- Every variant: MD5's, SHA-1's with the backends `vs1`, SHA-224's and
+SHA-256's with `vs256`, and the SHA-512 family's. -/
+def mvars (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
+    List MVar :=
+  md5W :: (vs1.map sha1W ++ vs256.map sha224W ++ vs256.map sha256W ++ [sha384W, sha512W, sha512_224W, sha512_256W])
 
 /-- The index of `w`'s hash function in `Mgf1.hashes`. -/
 def idx (w : MVar) : Nat := Spec.HashTable.index w.h.G
@@ -170,8 +189,17 @@ variable {F C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : State}
 /-- A word of a buffer only read, after the entry, as before it. -/
 theorem entered_roW (hsp : 16 + F ≤ (s.gpr .esp).toNat) (h : (layOf F argv ro rw s C).Ok (entered F s))
     {R : Region} (hR : R ∈ ro) {a : Addr} (hc : R.Contains a 4) :
-    (entered F s).mem.readW a 32 = s.mem.readW a 32 :=
-  Proof.HashTable.X86.entered_roW hsp h hR hc
+    (entered F s).mem.readW a 32 = s.mem.readW a 32 := by
+  have hf : Frame [Proof.RsaPkcs1Sig.X86.saveRegion s] s.mem (entered F s).mem := by
+    rw [Proof.RsaPkcs1Sig.X86.entered_mem]
+    have := pushed_frame (s := s) Proof.RsaPkcs1Sig.X86.pushRegs_noSp
+      (by simp only [Impl.RsaPkcs1Sig.X86.savedRegs, List.length_cons, List.length_nil]; omega)
+    simpa [Impl.RsaPkcs1Sig.X86.savedRegs, below] using this
+  refine hf.readW hc (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  rw [save_eq (argv := argv) (ro := ro) (rw := rw) (C := C) hsp]
+  exact ((h.stk R (List.mem_append_left _ hR)).sub_left
+    (Proof.RsaPkcs1Sig.X86.Lay.sub_stk (by simp only [layOf]; omega))).symm
 
 /-- The words of the table of `w` at `p`, one of the buffers only read,
 after the entry. -/

@@ -102,7 +102,6 @@ theorem pins_K9 : Pins (fun v s => K9 v s ∧ SG v) (coreRegs ++ envRegs') := by
 
 theorem sbody_rel : RelCT isa (Two fun v s => K9 v s ∧ SG v) Sign.body (Two End) := by
   refine rel_end ?_ (fun _ _ h => h.1.1.regs.r21) (by rw [← Code.allInstrs_eq]; decide +kernel)
-    (by decide +kernel)
   unfold Sign.body Sign.output
   iterate 13 refine RelCT.assoc ?_
   refine RelCT.seq (two_post (two_taint _ pins_K9 (by taint_decide))
@@ -148,7 +147,7 @@ theorem zfront_ok {v : VD} {s : State} (h : Base v s) (sg : SG v) :
 
 theorem zero_rel {Φ : VD → State → Prop} (h : ∀ v s, Φ v s → Base v s ∧ SG v) :
     RelCT isa (Two Φ) Sign.zeroOut (Two End) := by
-  refine rel_end ?_ (fun v s hs => (h v s hs).1.regs.r21) (by decide) (by decide)
+  refine rel_end ?_ (fun v s hs => (h v s hs).1.regs.r21) (by decide)
   unfold Sign.zeroOut
   exact RelCT.seq (two_post (two_taint _ (pins_r21 fun v s hs => (h v s hs).1) (by taint_decide))
     fun v s hs => zfront_ok (h v s hs).1 (h v s hs).2) (two_taint _ pins_zL (by taint_decide))

@@ -11,8 +11,8 @@ public import VerifiedGarbage.TCB.Print
 target, the code and its proof, the stack it uses, the constant tables it
 reads (which `consts_of` finds in the contract the proof is of), the tables
 of functions it takes, how much
-of its writable arrays it writes (`written`, with its proof), and the suffix
-of its name. Everything else
+of its writable arrays it writes (`written`, with its proof), the proof that
+it returns without secret residue (`residue`), and the suffix of its name. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
 is of; or from the code: the CPU features it needs (`Code.requiresDedup`).
@@ -274,6 +274,13 @@ structure Artifact where
   says when the dispatcher may choose the implementation, and means nothing
   for a base, which the dispatcher falls back on. -/
   vendor : Option String := none
+  /-- A proof that the function returns without secret residue
+  (`Target.noResidue`), or `none`. Every artifact of a target that defines
+  it has one, but those `ci/residue_allowlist.txt` lists, as the emitter
+  checks (`Rust.checkResidue`); none is possible on a target that does not. -/
+  residue : Option (PLift (target.noResidue.elim False fun R =>
+      R code contract (sig.retBits ((target.abi.withConsts consts).withTables sig tables).ptrBits)))
+      := none
 
 /-- Proves `Registration.spSafe`, by default. `Proof/Framework/Registration.lean`
 implements it, with the proofs the kernel checks fastest on each ISA; how it
@@ -408,6 +415,10 @@ structure Registration (api : Api) (target : Target) where
   extra : List String := []
   /-- `Artifact.vendor`. -/
   vendor : Option String := none
+  /-- `Artifact.residue`. -/
+  residue : Option (PLift (target.noResidue.elim False fun R =>
+      R code contract (api.sig.retBits ((target.abi.withConsts consts).withTables api.sig tables).ptrBits)))
+      := none
 
 /-- The artifact of the implementation `r` of `api` on `target`: its module,
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
@@ -444,5 +455,6 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
   writtenOk := r.writtenOk
   extra := r.extra
   vendor := r.vendor
+  residue := r.residue
 
 end VG

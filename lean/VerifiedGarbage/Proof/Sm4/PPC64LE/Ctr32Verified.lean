@@ -64,14 +64,24 @@ theorem ctr32_constantTime {post : State → State → Prop} :
     (by taint_decide_sum [prepSum, cryptSum])
 
 theorem ctr32_correct (s : State) (hs : (modeContract 16 ctr32Post).pre s) :
-    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctr32Post).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ctr32Wide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide) (by decide)
-    (seqPre_of (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctr32Early) rfl hs)
-    (keyArgs_of (dirCore .encrypt) rfl (M := Mode.ctr32Early) rfl hs))
-    fun _ ⟨h1, h2, h3, _⟩ => by
-      simp only [cipher_enc] at h2 h3
-      refine ⟨h1, ?_, h3⟩
-      rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
-      exact h2
+    ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctr32Post).post s s' := by
+  refine pick_correct fun v => ?_
+  obtain ⟨-, eP, eD, eN, eM, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.ctr32Seq_wp (Serial.coreSpec .encrypt) rfl
+      ((seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.ctr32Early) rfl hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.ctr32Early) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_ser] at h2 h3
+    refine ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ?_, h3⟩
+    rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
+    exact h2
+  · refine WP.mono (Proof.Modes.PPC64LE.ctr32Wide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide)
+      (by decide) ((seqPre_of (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctr32Early) rfl
+        hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (dirCore .encrypt) rfl (M := Mode.ctr32Early) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_enc] at h2 h3
+    refine ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ?_, h3⟩
+    rw [Proof.Modes.gcmBlocks_eq, Proof.Modes.gcmBlocks_eq]
+    exact h2
 
 end VG.Proof.Sm4.PPC64LE.Modes

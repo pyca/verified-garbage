@@ -1,7 +1,9 @@
 module
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+public import VerifiedGarbage.Proof.X25519.PPC64LE.MulR
 
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
+
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
 import VerifiedGarbage.Proof.X25519.PPC64LE.AddSub
 import VerifiedGarbage.Proof.Framework.Offset
@@ -89,24 +91,27 @@ theorem frame_FA {o : Nat} (ho : o + 32 ≤ ACC) {m m' : Mem}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl <;> exact Offset.sub_base _ (by omega_using [ho])
 
+theorem frame_o {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 32⟩] m m') :
+    Frame [⟨b + BitVec.ofNat 64 o, 32⟩, ⟨b + BitVec.ofNat 64 ACC, 64⟩] m m' :=
+  hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
+
 theorem mulS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
     (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)
     (hS : SlotsOk s.mem b qs v) :
-    WP isa (mul o x y) s fun s' => Rest clob s s' ∧ Frame [FA b] s.mem s'.mem ∧
+    WP isa (mul o x y) s fun s' => Rest clobR s s' ∧ Frame [FA b] s.mem s'.mem ∧
       SlotsOk s'.mem b (o :: qs) (upd v o (v x * v y)) := by
-  refine WP.mono (mul_ok (by decide) ho (sep1_get hq hx).2 (sep1_get hq hy).2 (by decide)
-    (al4_get hal).1 ((al4_get hal).2 x hx) ((al4_get hal).2 y hy) hc)
-    fun s' ⟨hr, hf, hv⟩ => ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
+  have hA := ACC_eq
+  refine WP.mono (mulR_ok (by omega) (by have := (sep1_get hq hx).2; omega)
+    (by have := (sep1_get hq hy).2; omega) (al4_get hal).1 ((al4_get hal).2 x hx) ((al4_get hal).2 y hy) hc)
+    fun s' ⟨hr, hf', hv⟩ => ?_
+  have hf := frame_o hf'
+  refine ⟨hr, frame_FA ho hf, fun q hq' => ?_⟩
   by_cases hqo : q = o
   · subst hqo
     rw [upd_self, ← hS x hx, ← hS y hy]
     exact toFe_mul hv
   · rw [upd_of_ne _ _ hqo]
     exact slots_after hq ho hf hS ((List.mem_cons.mp hq').resolve_left hqo) hqo
-
-theorem frame_o {o : Nat} {m m' : Mem} (hf : Frame [⟨b + BitVec.ofNat 64 o, 32⟩] m m') :
-    Frame [⟨b + BitVec.ofNat 64 o, 32⟩, ⟨b + BitVec.ofNat 64 ACC, 64⟩] m m' :=
-  hf.mono fun r hr => by simp [List.mem_singleton.mp hr]
 
 theorem addS {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
     (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) {s : State} (hc : Ctx b s)

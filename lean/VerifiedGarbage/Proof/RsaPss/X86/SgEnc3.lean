@@ -298,7 +298,7 @@ theorem top_vp (G : Spec.Mgf1.Hash) (P : EP) (hP : ∃ σ, In h.D P σ) :
     · rw [ite_eq_right h4, show oEm + i = oEm + (P.K - 1) by omega]; exact hk.2.2
 
 /-- The encoding, when everything fits, with the hash function of the table
-of `MdHash` at the argument 22 and MGF1's of the table of `Hash` at 23. -/
+of `MdHash` at the argument 22 and MGF1's of the table of `MdHash` at 23. -/
 theorem enc_vp (P : EP) (hP : ∃ σ, In h.D P σ) {dn : String} {f : MdFns}
     (hTH : ∀ σ, P.TH σ → HFacts h dn f P.tabH P.hai P.hac P.had σ)
     (fneH : f.init ≠ [] ∧ f.comp ≠ [] ∧ f.dig ≠ []) (g : OHash) {fG : Fns}

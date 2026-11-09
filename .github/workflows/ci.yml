@@ -32,9 +32,13 @@ jobs:
   # than queue for another.
   lean:
     name: "Lean: plan and build"
-    # More independent files, with two compiler threads per file (lakefile.toml).
+    # How many files Lake checks at once, with two compiler threads per file
+    # (lakefile.toml): one per CPU here, not 6 as in the shards. This job
+    # builds what the plan gives no shards, which can be every PPC64LE
+    # curve proof at once (after a change to their field code): several
+    # take 3-4.5 GB each, and 6 of them at once exhausted the 16 GB runner.
     env:
-      LEAN_NUM_THREADS: "6"
+      LEAN_NUM_THREADS: "4"
     runs-on: ubuntu-26.04
     # To find the merge queue's run of this commit, and download its outputs.
     permissions:
@@ -341,11 +345,13 @@ jobs:
         with:
           persist-credentials: false
           # A pull request's merge commit, and its first parent, the base:
-          # check_lean_single_importer.py checks the modules it adds.
+          # check_lean_single_importer.py checks the modules it adds, and
+          # check_residue_allowlist.py that it adds no function to the list.
           fetch-depth: 2
       - run: python3 ci/check_lean_imports.py
       - run: python3 ci/check_lean_modules.py
       - run: python3 ci/check_lean_single_importer.py
+      - run: python3 ci/check_residue_allowlist.py
       - run: python3 ci/check_case_collisions.py
       - run: python3 ci/check_registrations.py
       - run: python3 ci/check_lean_speed.py

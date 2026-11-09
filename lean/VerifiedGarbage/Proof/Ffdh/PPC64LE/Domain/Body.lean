@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Ctx
 public import VerifiedGarbage.Proof.MillerRabin.PPC64LE.Eq
 public import VerifiedGarbage.Spec.Rsa.Contract
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.WinPow
+public import VerifiedGarbage.Proof.Ffdh.Lead
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreLoad
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCheck
 import VerifiedGarbage.Proof.Bignum.PPC64LE.PubLoad
@@ -17,6 +18,9 @@ import VerifiedGarbage.Proof.Bignum.PPC64LE.MontCore
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+import VerifiedGarbage.Proof.Bignum.PPC64LE.PubOut
+import VerifiedGarbage.Proof.Bignum.PPC64LE.Run
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # FFDH's domain operations on PPC64LE: loading p and the range of y
@@ -38,6 +42,7 @@ namespace VG.Proof.Ffdh.PPC64LE.Domain
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.MillerRabin.PPC64LE
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
 open VG.Proof.Bignum (slot slot_sep bytesAt_length)
+open VG.Proof.Ffdh (lead lead_lt lead_zero lead_nonzero)
 
 /-- Memory that changed only in the 28 arrays. -/
 abbrev Body (B : Addr) (w : Nat) (m m' : Mem) : Prop := Outside B (slot w 0) (28 * (8 * (w + 2))) m m'
@@ -329,20 +334,136 @@ theorem top_of_valid {p k w : Nat} (h : Spec.Rsa.modulusValid p k = true) (hw : 
     rw [hj, Nat.pow_succ, Nat.mul_mod_left]
   omega
 
+/-! ## The scan for q's first nonzero octet -/
+
+theorem off_off_add (Q : Addr) (a i : Nat) : off (off Q a) i = off Q (a + i) := by
+  simp only [off, BitVec.add_assoc, BitVec.ofNat_add]
+
+theorem boff_off_add (Q : Addr) (a i : Nat) : VG.Proof.Bignum.off (off Q a) i = off Q (a + i) := by
+  simp only [off, VG.Proof.Bignum.off, BitVec.add_assoc, BitVec.ofNat_add]
+
+
+/-- Before iteration `j` of `leadScan`, over `n` octets at `Q`. -/
+def LeadAt (s₀ : State) (Q : Addr) (n j : Nat) (t : State) : Prop :=
+  t.gpr .r30 = off Q j ∧ t.gpr .r31 = BitVec.ofNat 64 (n - j) ∧ t.mem = s₀.mem ∧
+    Keep [.r16, .r17, .r30, .r31] s₀ t
+
+theorem lead_zero_bit : ∀ b : Byte,
+    (BitVec.setWidth 64 b - 1#64) >>> 63 = BitVec.ofNat 64 (decide (b = 0)).toNat := by
+  decide
+
+theorem lead_len_bit {m : Nat} (hm : m < 2 ^ 63) :
+    (BitVec.ofNat 64 1 - BitVec.ofNat 64 m) >>> 63 = BitVec.ofNat 64 (decide (2 ≤ m)).toNat := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
+    Nat.shiftRight_eq_div_pow]
+  by_cases h : 2 ≤ m <;> simp only [h, decide_true, decide_false, Bool.toNat_true, Bool.toNat_false] <;> omega
+
+theorem lead_and (a b : Bool) :
+    (BitVec.ofNat 64 a.toNat &&& BitVec.ofNat 64 b.toNat) = BitVec.ofNat 64 (b && a).toNat := by
+  cases a <;> cases b <;> rfl
+
+/-- One iteration from `j ≤ lead bs`: `r17 := j < lead bs` (as 1 or 0), and
+the pointer and the count moved by it. -/
+theorem leadStep_ok {s₀ : State} {Q : Addr} {bs : List Byte} (hl : bs.length ≤ 1024) (hne : bs ≠ [])
+    (hrd : ∀ i < bs.length, InRegions (s₀.rd ++ s₀.wr) (off Q i) 1)
+    (hval : ∀ i (h : i < bs.length), s₀.mem (off Q i) = bs[i]) {j : Nat} (hj : j ≤ lead bs)
+    {t : State} (ht : LeadAt s₀ Q bs.length j t) :
+    WP isa (.block leadBody) t fun t' => LeadAt s₀ Q bs.length (min (j + 1) (lead bs)) t' ∧
+      t'.gpr .r17 = BitVec.ofNat 64 (decide (j < lead bs)).toNat := by
+  have hL := lead_lt hne
+  have hjl : j < bs.length := by omega
+  obtain ⟨h30, h31, hm, kt⟩ := ht
+  have hld : InRegions (t.rd ++ t.wr) (off Q j) 1 := by
+    rw [kt.rd, kt.wr]; exact hrd j hjl
+  have hb : t.mem (off Q j) = bs[j] := by rw [hm]; exact hval j hjl
+  have hgo : (bs[j] = 0 ∧ 2 ≤ bs.length - j) ↔ j < lead bs := by
+    constructor
+    · rintro ⟨hz, h2⟩
+      by_contra hc
+      have hje : j = lead bs := by omega
+      subst hje
+      exact lead_nonzero hne (by omega) hz
+    · intro hlt
+      obtain ⟨_, hz⟩ := lead_zero j hlt
+      exact ⟨hz, by omega⟩
+  refine WP.mono (WP.keep [.r16, .r17, .r30, .r31] (Q := fun t' =>
+      t'.gpr .r17 = BitVec.ofNat 64 (decide (bs[j] = 0 ∧ 2 ≤ bs.length - j)).toNat ∧
+      t'.gpr .r30 = off Q j + BitVec.ofNat 64 (decide (bs[j] = 0 ∧ 2 ≤ bs.length - j)).toNat ∧
+      t'.gpr .r31 = BitVec.ofNat 64 (bs.length - j) -
+        BitVec.ofNat 64 (decide (bs[j] = 0 ∧ 2 ≤ bs.length - j)).toNat ∧ t'.mem = t.mem)
+    (by
+      unfold leadBody
+      prun [h30, h31, exec_lbz' (show Reg.r30 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide), hld,
+        BitVec.add_zero, Pub.read1_setWidth, hb, lead_zero_bit, lead_len_bit (show bs.length - j < 2 ^ 63 by omega),
+        lead_and, Bool.decide_and])
+    (by decide)) fun t' ⟨⟨h17, h30', h31', hm'⟩, k⟩ => ?_
+  have hc : decide (bs[j] = 0 ∧ 2 ≤ bs.length - j) = decide (j < lead bs) := decide_eq_decide.mpr hgo
+  rw [hc] at h17 h30' h31'
+  refine ⟨⟨?_, ?_, hm'.trans hm, (kt.trans k).mono (by decide)⟩, h17⟩
+  · rw [h30']
+    by_cases hlt : j < lead bs
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega)]; simp [off, BitVec.ofNat_add, BitVec.add_assoc]
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega)]
+      have : j = lead bs := by omega
+      subst this; simp
+  · rw [h31']
+    apply BitVec.eq_of_toNat_eq
+    by_cases hlt : j < lead bs
+    · rw [decide_eq_true hlt, Nat.min_eq_left (by omega)]
+      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_true]; omega
+    · rw [decide_eq_false hlt, Nat.min_eq_right (by omega)]
+      simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, Bool.toNat_false]; omega
+
+/-- `leadScan` over the `n ≥ 1` octets `bs` at `Q`: `r30` at the first nonzero
+one (or the last), `r31` the number of octets from it. -/
+theorem leadScan_ok {s : State} {Q : Addr} {bs : List Byte} (hl : bs.length ≤ 1024) (hne : bs ≠ [])
+    (hrd : ∀ i < bs.length, InRegions (s.rd ++ s.wr) (off Q i) 1)
+    (hval : ∀ i (h : i < bs.length), s.mem (off Q i) = bs[i])
+    (h30 : s.gpr .r30 = off Q 0) (h31 : s.gpr .r31 = BitVec.ofNat 64 bs.length) :
+    WP isa leadScan s fun t => (t.gpr .r30 = off Q (lead bs) ∧
+      t.gpr .r31 = BitVec.ofNat 64 (bs.length - lead bs) ∧ t.mem = s.mem) ∧ Keep [.r16, .r17, .r30, .r31] s t := by
+  refine WP.mono (count_loop (cr := .r17) (n := lead bs + 1) (by omega)
+    (fun k t => LeadAt s Q bs.length (min k (lead bs)) t)
+    (fun k hk t ht => by
+      have e : min k (lead bs) = k := Nat.min_eq_left (by omega)
+      rw [e] at ht
+      refine WP.mono (leadStep_ok hl hne hrd hval (by omega) ht) fun t' ⟨ht', h17⟩ => ⟨ht', ?_⟩
+      rw [h17]
+      by_cases hlt : k < lead bs
+      · rw [decide_eq_true hlt]; simp; omega
+      · rw [decide_eq_false hlt]; simp; omega)
+    ⟨by rw [h30]; simp, by rw [h31]; simp, rfl, Keep.refl _ _⟩) fun t ⟨h1, h2, hm, k⟩ => ?_
+  rw [Nat.min_eq_right (by omega)] at h1 h2
+  exact ⟨⟨h1, h2, hm⟩, k⟩
+
 /-- The registers `subgroup` writes. -/
 def subRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20,
   .r22, .r24, .r30, .r31]
 
-/-- `subgroup`: `r3 := 1` if `y^q mod p = 1` (y in array 4, p in array 0,
-q's `k` octets at `D + 2 k`), else 0. -/
-theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
-    (h21 : s.gpr .r21 = D) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k ≤ 1024)
-    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0)
-    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1)
-    (hsep : ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x) :
-    WP isa subgroup s fun t =>
-      (t.gpr .r3 = BitVec.ofNat 64 (if arr s.mem B w 4 ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) %
-          arr s.mem B w 0 = 1 then 1 else 0) ∧ Body B w s.mem t.mem) ∧ Keep subRegs s t := by
+/-- What holds after `subFront`, from `s`. -/
+structure SubMid (s : State) (B D : Addr) (Z w k : Nat) (t : State) : Prop where
+  hs : Scr t B Z
+  h10 : t.gpr .r10 = off B (slot w 0)
+  h29 : t.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2))
+  h11 : t.gpr .r11 = BitVec.ofNat 64 (2 * w)
+  r23 : t.gpr .r23 = B
+  r30 : t.gpr .r30 = off (off D (2 * k)) 0
+  r31 : t.gpr .r31 = BitVec.ofNat 64 k
+  r12lt : (t.gpr .r12).toNat < 2 ^ 32
+  r12inv : (w32 t.mem B (slot w 0) * (t.gpr .r12).toNat + 1) % 2 ^ 32 = 0
+  p : val32 t.mem B (slot w 0) (2 * w) = arr s.mem B w 0
+  y : val32 t.mem B (slot w 4) (2 * w) = arr s.mem B w 4
+  r2 : val32 t.mem B (slot w 1) (2 * w) = 2 ^ (128 * w) % arr s.mem B w 0
+  body : Body B w s.mem t.mem
+  keep : Keep subRegs s t
+
+/-- `subFront`: `-p⁻¹ mod 2³²` into `r12`, `R² mod p` into array 1, and q's
+octets into `r30` and `r31`. -/
+theorem subFront_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h28 : s.gpr .r28 = BitVec.ofNat 64 k)
+    (hodd : arr s.mem B w 0 % 2 = 1) (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0) :
+    WP isa subFront s (SubMid s B D Z w k) := by
   have hs := h.hs
   have hnw := hs.nowrap
   have hZ := h.hZ
@@ -351,10 +472,9 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
   have e0 := slot_eq w 0; have e1 := slot_eq w 1; have e2 := slot_eq w 2; have e3 := slot_eq w 3
   have e4 := slot_eq w 4; have e5 := slot_eq w 5; have e6 := slot_eq w 6; have e7 := slot_eq w 7
   have e8 := slot_eq w 8; have e24 := slot_eq w 24; have e28 := slot_eq w 28
-  generalize hP : arr s.mem B w 0 = p at hp2 hodd hpt
+  generalize hP : arr s.mem B w 0 = p at hodd hpt
   generalize hY : arr s.mem B w 4 = y
-  generalize hQ : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = q
-  unfold subgroup
+  unfold subFront
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (h.base (rd := .r5) (by decide) (by decide) 1) fun s₁ ⟨⟨a5, m1⟩, k1⟩ => ?_
@@ -391,7 +511,6 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
       have := o5.val32 (d := slot w 0) (k := 1) (by omega_arith) (by omega_arith)
       rw [← m4]; simpa [val32] using this
     rw [w1, k5'.gpr .r12 (by decide)]; exact r12inv
-  refine WP.seq ?_
   have hq : WP isa (.block [.lsl .r30 .r28 1, .add .r30 .r30 .r21, .addi .r31 .r28 0]) s₅ fun t =>
       (t.gpr .r30 = off (off D (2 * k)) 0 ∧ t.gpr .r31 = BitVec.ofNat 64 k ∧ t.mem = s₅.mem) ∧
         Keep [.r30, .r31] s₅ t := by
@@ -404,30 +523,83 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
         ((k3.gpr .r21 (by decide)).trans ((k2.gpr .r21 (by decide)).trans ((k1.gpr .r21 (by decide)).trans h21)))
     prun [g28, g21, shl1_ofNat, BitVec.add_zero]
     exact BitVec.add_comm _ _
-  refine WP.mono hq fun s₆ ⟨⟨a30, a31, m6⟩, k6⟩ => ?_
-  have k16 := (((k1.trans k2).trans k3).trans k5).trans k6
-  have g10 : s₆.gpr .r10 = off B (slot w 0) := (k6.gpr .r10 (by decide)).trans e5'.h10
-  have g29 : s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) := (k6.gpr .r29 (by decide)).trans e5'.h29
-  have g11 : s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k6.gpr .r11 (by decide)).trans e5'.h11
-  rw [← m6] at hr2 p4 y4
-  have hmq : ∀ i < k, s₆.mem (off (off D (2 * k)) i) = s.mem (off (off D (2 * k)) i) := fun i hi => by
-    have hb : Body B w s.mem s₆.mem := by
-      rw [m6, ← hm3, ← m4]; exact Body.of o5 (by omega_arith) (by omega_arith)
-    exact hb _ (by
+  refine WP.mono hq fun t ⟨⟨a30, a31, mt⟩, kt⟩ => ?_
+  have k15 := (((k1.trans k2).trans k3).trans k5).trans kt
+  exact ⟨hs.congr k15.wr, (kt.gpr .r10 (by decide)).trans e5'.h10, (kt.gpr .r29 (by decide)).trans e5'.h29,
+    (kt.gpr .r11 (by decide)).trans e5'.h11, (k15.gpr .r23 (by decide)).trans h23, a30, a31,
+    by rw [kt.gpr .r12 (by decide)]; exact r12lt', by rw [kt.gpr .r12 (by decide), mt]; exact r12inv',
+    by rw [mt, hP]; exact p4, by rw [mt, hY]; exact y4, by rw [mt, hP]; exact hr2,
+    by rw [mt, ← hm3, ← m4]; exact Body.of o5 (by omega_arith) (by omega_arith), k15.mono (by decide)⟩
+
+/-- `subgroup`: `r3 := 1` if `y^q mod p = 1` (y in array 4, p in array 0,
+q's `k` octets at `D + 2 k`), else 0. -/
+theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h23 : s.gpr .r23 = B)
+    (h21 : s.gpr .r21 = D) (h28 : s.gpr .r28 = BitVec.ofNat 64 k) (hk : 1 ≤ k) (hk' : k ≤ 1024)
+    (hp2 : 2 ≤ arr s.mem B w 0) (hodd : arr s.mem B w 0 % 2 = 1) (hpt : 2 ^ (64 * (w - 1)) < arr s.mem B w 0)
+    (hrd : ∀ i < k, InRegions (s.rd ++ s.wr) (off (off D (2 * k)) i) 1)
+    (hsep : ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x) :
+    WP isa subgroup s fun t =>
+      (t.gpr .r3 = BitVec.ofNat 64 (if arr s.mem B w 4 ^ Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) %
+          arr s.mem B w 0 = 1 then 1 else 0) ∧ Body B w s.mem t.mem) ∧ Keep subRegs s t := by
+  have hs := h.hs
+  have hnw := hs.nowrap
+  have hZ := h.hZ
+  have hw := h.hw
+  have hw' := h.hw'
+  have e0 := slot_eq w 0; have e1 := slot_eq w 1; have e2 := slot_eq w 2; have e3 := slot_eq w 3
+  have e4 := slot_eq w 4; have e5 := slot_eq w 5; have e6 := slot_eq w 6; have e7 := slot_eq w 7
+  have e8 := slot_eq w 8; have e24 := slot_eq w 24; have e28 := slot_eq w 28
+  unfold subgroup
+  refine WP.seq (WP.mono (subFront_ok h h23 h21 h28 hodd hpt) fun s₆₀ hm => ?_)
+  have hr2₀ := hm.r2
+  have p40 := hm.p
+  have y40 := hm.y
+  generalize hP : arr s.mem B w 0 = p at hp2 hodd hpt hr2₀ p40 ⊢
+  generalize hY : arr s.mem B w 4 = y at y40 ⊢
+  generalize hQ : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D (2 * k)) k) = q
+  have hmq0 : ∀ i < k, s₆₀.mem (off (off D (2 * k)) i) = s.mem (off (off D (2 * k)) i) := fun i hi =>
+    hm.body _ (by
       have := hsep i hi
       by_contra hc
       exact this _ (by simp only [ofs] at hc ⊢; omega) rfl)
+  generalize hbs : Spec.Rsa.bytesAt s.mem (off D (2 * k)) k = bs at hQ
+  have hbl : bs.length = k := by rw [← hbs, bytesAt_length]
+  have hne : bs ≠ [] := by rintro rfl; simp at hbl; omega
+  have hlead := lead_lt hne
+  refine WP.seq (WP.mono (leadScan_ok (Q := off D (2 * k)) (bs := bs) (by omega) hne
+    (fun i hi => by rw [hm.keep.rd, hm.keep.wr]; exact hrd i (by omega))
+    (fun i hi => by
+      rw [hmq0 i (by omega)]
+      subst hbs
+      simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range])
+    hm.r30 (by rw [hm.r31, hbl])) fun s₆ ⟨⟨a30, a31, m6s⟩, k6⟩ => ?_)
+  have k16 := hm.keep.trans k6
+  have g10 : s₆.gpr .r10 = off B (slot w 0) := (k6.gpr .r10 (by decide)).trans hm.h10
+  have g29 : s₆.gpr .r29 = BitVec.ofNat 64 (8 * (w + 2)) := (k6.gpr .r29 (by decide)).trans hm.h29
+  have g11 : s₆.gpr .r11 = BitVec.ofNat 64 (2 * w) := (k6.gpr .r11 (by decide)).trans hm.h11
+  have hr2 := hr2₀
+  have p4 := p40
+  have y4 := y40
+  rw [← m6s] at hr2 p4 y4
+  have hmq : ∀ i < k, s₆.mem (off (off D (2 * k)) i) = s.mem (off (off D (2 * k)) i) := fun i hi => by
+    rw [m6s]; exact hmq0 i hi
   have hbq : Spec.Rsa.bytesAt s₆.mem (off D (2 * k)) k = Spec.Rsa.bytesAt s.mem (off D (2 * k)) k := by
     simp only [Spec.Rsa.bytesAt]
     exact List.map_congr_left fun i hi => hmq i (List.mem_range.mp hi)
-  refine WP.seq (WP.mono (Win.powWin_ok (D := off D (2 * k)) (L := k) (hs.congr k16.wr) (by omega_arith)
+  refine WP.seq (WP.mono (Win.powWin_ok (D := off (off D (2 * k)) (lead bs)) (L := k - lead bs)
+    (hs.congr k16.wr) (by omega_arith)
     (by omega_arith) (by omega_arith) g10 g29 g11
-    (by rw [(k6.gpr .r12 (by decide))]; exact r12lt')
-    (by rw [(k6.gpr .r12 (by decide)), m6]; exact r12inv') (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
-    (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) a30 a31 hk (by omega_arith)
-    (fun i hi => by rw [k16.rd, k16.wr]; exact hrd i hi) hsep)
+    (by rw [(k6.gpr .r12 (by decide))]; exact hm.r12lt)
+    (by rw [(k6.gpr .r12 (by decide)), m6s]; exact hm.r12inv) (by rw [p4]; exact hp2) (by rw [p4]; exact hodd)
+    (by rw [hr2, p4]; exact Nat.mod_lt _ (by omega_arith)) (by rw [a30, boff_off_add]; rfl)
+    (by rw [a31, hbl]) (by omega) (by omega_arith)
+    (fun i hi => by rw [k16.rd, k16.wr, boff_off_add, off_off_add, ← off_off_add]; exact hrd _ (by omega))
+    (fun i hi => by rw [boff_off_add, off_off_add, ← off_off_add]; exact hsep _ (by omega)))
     fun s₇ ⟨⟨hpow, o7⟩, k7⟩ => ?_)
-  rw [hbq, p4, y4, hQ] at hpow
+  have hq' : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s₆.mem (off (off D (2 * k)) (lead bs)) (k - lead bs)) = q := by
+    rw [← VG.Proof.Dsa.bytesAt_slice _ _ (show lead bs + (k - lead bs) ≤ k by omega), hbq, hbs,
+      List.take_of_length_le (by simp only [List.length_drop]; omega), VG.Proof.Ffdh.os2ip_drop_lead, hQ]
+  rw [hq', p4, y4] at hpow
   have v4 := hpow (by rw [hr2, two_pow_128])
   have k17 := k16.trans k7
   have h31 : WP isa (.block [.addi .r31 .r23 0]) s₇ fun t => (t.gpr .r31 = B ∧ t.mem = s₇.mem) ∧ Keep [.r31] s₇ t := by
@@ -451,7 +623,7 @@ theorem subgroup_ok {s : State} {B D : Addr} {Z w k : Nat} (h : Env s B Z w) (h2
     refine Outside.trans (m₂ := s₈.mem) ?_ (Body.of o9 (by omega_arith) (by omega_arith))
     rw [m8]
     refine Outside.trans (m₂ := s₆.mem) ?_ (Body.of_outs o7 fun r hr => ?_)
-    · rw [m6, ← hm3, ← m4]; exact Body.of o5 (by omega_arith) (by omega_arith)
+    · rw [m6s]; exact hm.body
     · simp only [Win.win, List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; dsimp only; omega_arith
   · exact (((k18.trans k9).trans k10).trans kt).mono (by decide)

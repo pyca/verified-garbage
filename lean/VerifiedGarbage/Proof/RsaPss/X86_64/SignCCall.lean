@@ -133,19 +133,20 @@ theorem encA4_ok {s u : State} (hp : SPre tsH tsG s) {S : Addr} (L : Lay u (fb s
 /-- A table's word, read from memory that changed only in the writable
 regions and below the frame. -/
 theorem tab_read {s : State} (hp : SPre tsH tsG s) {m : Mem} (hM : Frame (wrR s) s.mem m) {i o : Nat}
-    (hi : i = 16 ∨ i = 17) (ho : o + 8 ≤ 40) :
+    (hi : i = 16 ∨ i = 17) (ho : o + 8 ≤ 56) :
     m.readW (off (stackArg s i) o) 64 = s.mem.readW (off (stackArg s i) o) 64 := by
-  have hw : (stackArg s i).toNat + 40 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega
-  refine hM.readW (r := ⟨stackArg s i, 40⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
-  have sH : Region.Sub ⟨stackArg s 16, 40⟩ ⟨stackArg s 16, 88⟩ := Region.sub_prefix (by decide)
+  have hw : (stackArg s i).toNat + 56 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega
+  refine hM.readW (r := ⟨stackArg s i, 56⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  have sH : Region.Sub ⟨stackArg s 16, 56⟩ ⟨stackArg s 16, 88⟩ := Region.sub_prefix (by decide)
+  have sG : Region.Sub ⟨stackArg s 17, 56⟩ ⟨stackArg s 17, 88⟩ := Region.sub_prefix (by decide)
   simp only [wrR, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hi with rfl | rfl <;> rcases hr with rfl | rfl | rfl
   · exact (hp.dKtH.sub_right sH).symm
   · exact (hp.dOtH.sub_right sH).symm
   · exact (hp.dstH.sub_right sH).symm
-  · exact hp.dKtG.symm
-  · exact hp.dOtG.symm
-  · exact hp.dstG.symm
+  · exact (hp.dKtG.sub_right sG).symm
+  · exact (hp.dOtG.sub_right sG).symm
+  · exact (hp.dstG.sub_right sG).symm
 
 /-- The tables' words in a state whose memory changed only in the writable
 regions and below the frame. -/
@@ -163,7 +164,7 @@ variable (T : Tabs) in
 /-- What `encode` reads: the digest, the salt, the tables and its stack
 arguments. -/
 def eRd (s : State) : List Region :=
-  [⟨stackArg s 10, T.H.D⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 40⟩, ⟨stackArg s 17, 40⟩,
+  [⟨stackArg s 10, T.H.D⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 56⟩, ⟨stackArg s 17, 56⟩,
     ⟨fb s, 32⟩]
 
 /-- What it writes: the encoding's place, and its working space. -/
@@ -245,7 +246,8 @@ theorem enc_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : SPre tsH
   have sStk : Region.Sub ⟨fb s - 8 - BitVec.ofNat 64 encStack, encStack⟩ (stkR s) := by
     simp only [stkR, fb, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
     exact Offset.sub_below _ (by decide) (by decide)
-  have sH : Region.Sub ⟨stackArg s 16, 40⟩ ⟨stackArg s 16, 88⟩ := Region.sub_prefix (by decide)
+  have sH : Region.Sub ⟨stackArg s 16, 56⟩ ⟨stackArg s 16, 88⟩ := Region.sub_prefix (by decide)
+  have sG : Region.Sub ⟨stackArg s 17, 56⟩ ⟨stackArg s 17, 88⟩ := Region.sub_prefix (by decide)
   have dRA : (⟨fb s - 8, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ :=
     (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega_using [])).symm
   have dKA : (⟨fb s - 8 - BitVec.ofNat 64 encStack, encStack⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
@@ -267,10 +269,10 @@ theorem enc_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : SPre tsH
     by rw [toNat_off (by omega_using [hsl, wS, c1, hlo, hel2])]; omega_using [hsl, wS, c1, hlo, hel2],
     hp.wDg, hp.wSa, by rw [toNat_off (by omega_using [hsl, wS, c3]), hsc]; omega_using [hsl, wS, c3],
     heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords; have := hp.k1; omega_using [hsl, this],
-    ((hp.dstH.sub_left sI).sub_right sH), (hp.dstG.sub_left sI), ((hp.dstH.sub_left sR).sub_right sH),
-    (hp.dstG.sub_left sR), (hp.dKtH.sub_left sRet).sub_right sH, hp.dKtG.sub_left sRet,
-    (hp.dKtH.sub_left sStk).sub_right sH, hp.dKtG.sub_left sStk, by have := hp.wTH; omega,
-    hp.wTG, hTab⟩
+    ((hp.dstH.sub_left sI).sub_right sH), ((hp.dstG.sub_left sI).sub_right sG), ((hp.dstH.sub_left sR).sub_right sH),
+    ((hp.dstG.sub_left sR).sub_right sG), (hp.dKtH.sub_left sRet).sub_right sH, (hp.dKtG.sub_left sRet).sub_right sG,
+    (hp.dKtH.sub_left sStk).sub_right sH, (hp.dKtG.sub_left sStk).sub_right sG, by have := hp.wTH; omega,
+    (by have := hp.wTG; omega), hTab⟩
 
 theorem enc_covers {T : Tabs} {s t : State} (hp : SPre tsH tsG s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
     {lo el : Nat} (hlo : lo ≤ 1) (hel2 : el ≤ 1024) (hD : T.H.D = (stackArg s 11).toNat) :
@@ -295,7 +297,7 @@ theorem enc_covers {T : Tabs} {s t : State} (hp : SPre tsH tsG s) (hrd : t.rd = 
   · exact ⟨⟨stackArg s 10, (stackArg s 11).toNat⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using [hD]⟩
   · exact ⟨_, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨⟨stackArg s 16, 88⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
-  · exact ⟨⟨stackArg s 17, 40⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
+  · exact ⟨⟨stackArg s 17, 88⟩, hin _ (by rw [hp.hrd]; simp), 0, z _, by dsimp only; omega_using []⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 /-- `Rep` after a call that writes, of the frame and our working space, only
@@ -436,7 +438,7 @@ structure ESel (f : MdFns) (g : Impl.Mgf1.X86_64.Table.Fns) (s : State) (i : Nat
   idx : s.mem.readW (off (stackArg s 16) 40) 64 = BitVec.ofNat 64 i
   tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 16) (stackArg s 17) s
   hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some Hs
-  hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some Gs
+  hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some Gs
   hD : T.H.D = (stackArg s 11).toNat
   ok : ∀ s', (encK T Hs Gs).pre s' → ∃ t s'', Exec isa (encode f (ofIdx i) g) s' t s'' ∧ abiPreserved s' s'' ∧
     (encK T Hs Gs).post s' s''

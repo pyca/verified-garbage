@@ -17,7 +17,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
 # RSASSA-PSS on AArch64: `mgfXor` is constant time
 
 Two runs of `mgfXor` with the same frame, working space, `DB` (its place `e`
-and length `db`, public) and table of `Hash`, whose functions are at the same
+and length `db`, public) and table of `MdHash`, whose functions are at the same
 addresses (`MS`), leak the same trace (`mgfXor_ct`): MGF1's arguments to
 its slots by the taint analysis (from `scratch`, `DB` and `dbLen`, which the
 anchor fixes), then OAEP's MGF1 with a table, constant time from what
@@ -34,7 +34,7 @@ open VG.Proof.RsaPkcs1Sig.AArch64 (Two)
 open VG.Proof.MlKem.AArch64 (Keep)
 
 /-- What two runs of `mgfXor` share: the frame, the working space, `DB`,
-the table of `Hash`, and the addresses of its functions. -/
+the table of `MdHash`, and the addresses of its functions. -/
 structure MA where
   F : Addr
   S : Addr

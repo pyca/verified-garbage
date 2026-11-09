@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.AesEcb.Contract
 public import VerifiedGarbage.Proof.Framework.PostMono
+public import VerifiedGarbage.Proof.Aes.Rounds
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Mem
 
@@ -127,11 +128,11 @@ def enc (key : List Byte) : State → State := cipher (Spec.Aes.rounds (key.leng
 def dec (key : List Byte) : State → State := invCipher (Spec.Aes.rounds (key.length / 4)) (expandKey key)
 
 theorem encryptBlocks_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    encryptBlocksContract A stack = blocksSig.contract A (pre A.ptrBits) (post A.ptrBits enc) false stack none :=
+    Proof.Aes.encryptBlocksContract A stack = blocksSig.contract A (pre A.ptrBits) (post A.ptrBits enc) false stack none :=
   rfl
 
 theorem decryptBlocks_eq {M : ISA} (A : Abi M) (stack : Nat) :
-    decryptBlocksContract A stack = blocksSig.contract A (pre A.ptrBits) (post A.ptrBits dec) false stack none :=
+    Proof.Aes.decryptBlocksContract A stack = blocksSig.contract A (pre A.ptrBits) (post A.ptrBits dec) false stack none :=
   rfl
 
 theorem encrypt_eq {M : ISA} (A : Abi M) (stack : Nat) :

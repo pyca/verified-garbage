@@ -21,7 +21,7 @@ import VerifiedGarbage.Impl.Ecdsa.P521.AArch64
 import VerifiedGarbage.Proof.Ed25519.AArch64.RowAcc
 public import VerifiedGarbage.Impl.Ecdh.P256.AArch64
 public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
-public import VerifiedGarbage.Impl.P256.VerifyRegisters
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 public import VerifiedGarbage.Impl.Weierstrass.AArch64.TCombJ
 public import VerifiedGarbage.Proof.EcKey.PublicKey
 public import VerifiedGarbage.Proof.Ecdh.AArch64.Peer

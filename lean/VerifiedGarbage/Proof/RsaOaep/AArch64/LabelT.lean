@@ -58,13 +58,13 @@ theorem tabSlot_ok {G : Stream} {f : Fns} {j : Nat} (hj : arg j < 32768 ∧ arg 
 /-- The digest length of the table at `p`, whose address is in its slot, to
 `x16`. -/
 theorem lenLoad_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (h32 : W 32 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 32) 8) {D : Nat}
-    (hD : u.mem.readW (off p 32) 64 = BitVec.ofNat 64 D) :
+    (R : Rep u.mem F S V W) (h32 : W 32 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 48) 8) {D : Nat}
+    (hD : u.mem.readW (off p 48) 64 = BitVec.ofNat 64 D) :
     WP isa (.block lenLoad) u fun u' => Step F S [] u u' ∧ u'.mem = u.mem ∧ u'.gpr .x16 = BitVec.ofNat 64 D ∧
       u'.gpr .x0 = u.gpr .x0 := by
   have h256 : InRegions (u.rd ++ u.wr) (F + BitVec.ofNat 64 256) 8 := L.ld (d := 256) (by decide)
   have r32 := R.rd8 (d := 256) (k := 32) rfl (by decide) h32
-  have hD' : u.mem.read (p + BitVec.ofNat 64 32) 8 = BitVec.ofNat 64 D := by simpa [Mem.readW] using hD
+  have hD' : u.mem.read (p + BitVec.ofNat 64 48) 8 = BitVec.ofNat 64 D := by simpa [Mem.readW] using hD
   oaep_run [lenLoad, sTab, h256, L.sp, r32, hrd, hD']
   oaep_fin
 

@@ -13,6 +13,7 @@ import VerifiedGarbage.Proof.Aes.Vector
 import VerifiedGarbage.Proof.Framework.Interleave
 public import VerifiedGarbage.Proof.Seed.PPC64LE.ModeCore
 public import VerifiedGarbage.Proof.Modes.PPC64LE.Core
+public import VerifiedGarbage.Proof.Modes.PPC64LE.Wide
 import VerifiedGarbage.Proof.Seed.Memory
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -32,6 +33,7 @@ namespace VG.Proof.Seed.PPC64LE.Serial
 
 open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.PPC64LE.Bytes
 open VG.Impl.Seed.PPC64LE.Serial
+open VG.Spec.Seed (Direction)
 
 /-! ## Bytes -/
 
@@ -568,13 +570,18 @@ def written : List Reg := [.r0, .r4, .r6, .r7, .r8, .r9, .r10, .r11]
 /-- The schedule is readable. -/
 def KeyIn (s : State) : Prop := ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 (4 * i)) 4
 
-theorem round_run {s : State} (hc : Consts s) {j : Nat} (hj : j < 16) (hk : KeyIn s) :
-    ∃ t, runBlock isa (round j) s = some t ∧ regQ t (j + 1) = Spec.Seed.round (keyAt s j) (regQ s j) ∧
+theorem keyIdx_lt (dir : Direction) {j : Nat} (hj : j < 16) : keyIdx dir j < 16 := by
+  cases dir <;> simp only [keyIdx] <;> omega
+
+theorem round_run (dir : Direction) {s : State} (hc : Consts s) {j : Nat} (hj : j < 16) (hk : KeyIn s) :
+    ∃ t, runBlock isa (round dir j) s = some t ∧
+      regQ t (j + 1) = Spec.Seed.round (keyAt s (keyIdx dir j)) (regQ s j) ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧ Keeps s t := by
-  have hk0 := hk (2 * j) (by omega)
-  have hk1 := hk (2 * j + 1) (by omega)
-  rw [show 4 * (2 * j) = 8 * j by omega] at hk0
-  rw [show 4 * (2 * j + 1) = 8 * j + 4 by omega] at hk1
+  have hkj := keyIdx_lt dir hj
+  have hk0 := hk (2 * keyIdx dir j) (by omega)
+  have hk1 := hk (2 * keyIdx dir j + 1) (by omega)
+  rw [show 4 * (2 * keyIdx dir j) = 8 * keyIdx dir j by omega] at hk0
+  rw [show 4 * (2 * keyIdx dir j + 1) = 8 * keyIdx dir j + 4 by omega] at hk1
   unfold round
   split
   · rename_i he
@@ -599,20 +606,21 @@ theorem round_run {s : State} (hc : Consts s) {j : Nat} (hj : j < 16) (hk : KeyI
 theorem KeyIn.of_eq {s t : State} (h : KeyIn s) (h3 : t.gpr .r3 = s.gpr .r3) (hrd : t.rd = s.rd)
     (hwr : t.wr = s.wr) : KeyIn t := fun i hi => by rw [h3, hrd, hwr]; exact h i hi
 
-theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 16) (hc : Consts s) (hk : KeyIn s) :
-    ∃ t, runBlock isa ((List.range n).flatMap round) s = some t ∧
-      regQ t n = Proof.Seed.roundsN (keyAt s) n (regQ s 0) ∧ Consts t ∧
+theorem rounds_run (dir : Direction) (s : State) (n : Nat) (hn : n ≤ 16) (hc : Consts s) (hk : KeyIn s) :
+    ∃ t, runBlock isa ((List.range n).flatMap (round dir)) s = some t ∧
+      regQ t n = Proof.Seed.roundsN (fun j => keyAt s (keyIdx dir j)) n (regQ s 0) ∧ Consts t ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧ Keeps s t := by
   induction n with
   | zero => exact ⟨s, rfl, rfl, hc, fun _ _ => rfl, ⟨fun _ _ _ => rfl, rfl, rfl, rfl, rfl, rfl⟩⟩
   | succ n ih =>
     obtain ⟨a, ae, aq, ac, ag, ak⟩ := ih (by omega)
     have a3 : a.gpr .r3 = s.gpr .r3 := ag _ (by decide)
-    obtain ⟨b, be, bq, bg, bk⟩ := round_run ac (j := n) (by omega) (hk.of_eq a3 ak.rd ak.wr)
+    obtain ⟨b, be, bq, bg, bk⟩ := round_run dir ac (j := n) (by omega) (hk.of_eq a3 ak.rd ak.wr)
     refine ⟨b, ?_, ?_, bk.consts ac (bg _ (by decide)), fun r hr => (bg r hr).trans (ag r hr), ak.trans bk⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
         VG.Interleave.runBlock_append, ae, Option.bind_some, be]
-    · rw [bq, Proof.Seed.roundsN_succ, aq, show keyAt a n = keyAt s n by rw [keyAt, keyAt, ak.mem, a3]]
+    · rw [bq, Proof.Seed.roundsN_succ, aq, show keyAt a (keyIdx dir n) = keyAt s (keyIdx dir n) by
+        rw [keyAt, keyAt, ak.mem, a3]]
 
 open VG.Impl.Modes.PPC64LE (sb)
 open VG.Impl.Seed.PPC64LE (bufSlot)
@@ -830,23 +838,26 @@ open VG.Proof.Seed.PPC64LE.Mode (KeyArgs Ready keyR)
 
 theorem kept_ne : ∀ r ∈ kept, r ∉ written ∧ r ≠ .r10 ∧ r ≠ .r11 ∧ r ≠ .r12 ∧ r ≠ .r0 ∧ r ≠ sb := by decide
 
-theorem cipher_bytes (k : Spec.Seed.Schedule) (m : Mem) (p : Addr) :
-    Spec.Seed.cipher k (bytesAt m p 16) = (Spec.Seed.encryptBlock k (Spec.Seed.blockAt m p)).toList := by
+theorem dirCipher_bytes (dir : Direction) (k : Spec.Seed.Schedule) (m : Mem) (p : Addr) :
+    Proof.Seed.dirCipher dir k (bytesAt m p 16) =
+      (Spec.Seed.crypt (fun j => Spec.Seed.roundKey k (keyIdx dir j)) (Spec.Seed.blockAt m p)).toList := by
   have e : (Vector.ofFn fun i : Fin 16 => (Spec.Seed.blockAt m p).toList.getD i.val 0) = Spec.Seed.blockAt m p := by
     apply Vector.ext; intro i hi; simp
-  simp only [Spec.Seed.cipher, Proof.Seed.bytesAt_eq, e]
+  cases dir <;> simp only [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, Proof.Seed.bytesAt_eq, e,
+    Spec.Seed.encryptBlock, Spec.Seed.decryptBlock, keyIdx]
 
-theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B core.total) (hk : Ready 1 s B ws k) :
-    WP isa core.crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready 1 t B ws k ∧
-      Frame [coreRegion core B] s.mem t.mem ∧
-      (∀ j < core.G, bytesAt t.mem (blkAddr core B j) (4 * core.bw) =
-        Spec.Seed.cipher k (bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
+/-- The core in the direction `dir` on the first block of the buffer of the
+blocks function's core on `g ≥ 1` blocks, whose key it keeps ready. -/
+theorem crypt_ok (dir : Direction) {g : Nat} (hg : 1 ≤ g) {s : State} {B : Addr} {ws : List Region}
+    {k : Spec.Seed.Schedule} (hB : s.gpr sb = B) (hs : ScrIn s B (bufSlot + 2 * g + 6)) (hk : Ready g s B ws k) :
+    WP isa (core dir).crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready g t B ws k ∧
+      Frame [⟨B, 8 * (bufSlot + 2)⟩] s.mem t.mem ∧
+      bytesAt t.mem (B + BitVec.ofNat 64 (8 * bufSlot)) 16 =
+        Proof.Seed.dirCipher dir k (bytesAt s.mem (B + BitVec.ofNat 64 (8 * bufSlot)) 16) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
-  have hfB : B.toNat + 8 * (bufSlot + 8) ≤ 2 ^ 64 := hs.fit
-  have hwr : (⟨B, 8 * (bufSlot + 8)⟩ : Region) ∈ s.wr := hs.wr
+  have hwr : (⟨B, 8 * (bufSlot + 2 * g + 6)⟩ : Region) ∈ s.wr := hs.wr
   obtain ⟨⟨hsched, hin, _⟩, _⟩ := id hk
-  change WP isa (.block (loadTables ++ loadBlock ++ rounds ++ storeBlock)) s _
+  change WP isa (.block (loadTables ++ loadBlock ++ rounds dir ++ storeBlock)) s _
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   obtain ⟨a, ae, ac, ag, am, ard, awr, _, _⟩ := loadTables_run s
   refine WP.of_runBlock ⟨a, ae, ?_⟩
@@ -867,7 +878,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedu
   have bk : KeyIn b := fun i hi => by
     rw [brd, ard, b3]
     exact ⟨_, List.mem_append_left _ hin, VG.Offset.contains_base _ (by omega) (by omega)⟩
-  obtain ⟨d, de, dq, _, dg, dk⟩ := rounds_run b 16 (by decide) bc bk
+  obtain ⟨d, de, dq, _, dg, dk⟩ := rounds_run dir b 16 (by decide) bc bk
   refine WP.of_runBlock ⟨d, de, ?_⟩
   have dbase : d.gpr sb = B := by
     rw [dg _ (by decide), bnot _ (by decide) (by decide), ab]
@@ -881,10 +892,11 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedu
     rw [show lo b .r4 = lo b (inReg 0) from rfl, show lo b .r6 = lo b (inReg 1) from rfl,
       show lo b .r7 = lo b (inReg 2) from rfl, show lo b .r8 = lo b (inReg 3) from rfl, w 0 (by decide),
       w 1 (by decide), w 2 (by decide), w 3 (by decide)]
-  have hkey : ∀ j < 16, keyAt b j = Spec.Seed.roundKey k j := fun j hj => by
-    rw [keyAt, ← hsched, Proof.Seed.roundKey_readW _ _ hj, bmem, b3,
+  have hkey : ∀ j < 16, keyAt b (keyIdx dir j) = Spec.Seed.roundKey k (keyIdx dir j) := fun j hj => by
+    rw [keyAt, ← hsched, Proof.Seed.roundKey_readW _ _ (keyIdx_lt dir hj), bmem, b3,
       show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl, VG.Offset.add_add]
-  let q := Proof.Seed.roundsN (Spec.Seed.roundKey k) 16 (Proof.Seed.decodeQ (Spec.Seed.blockAt s.mem A))
+  let q := Proof.Seed.roundsN (fun j => Spec.Seed.roundKey k (keyIdx dir j)) 16
+    (Proof.Seed.decodeQ (Spec.Seed.blockAt s.mem A))
   have dq' : regQ d 16 = q := by
     rw [dq, initial]; exact Proof.Seed.roundsN_congr 16 _ hkey
   have dr : ∀ i < 4, InRegions d.wr (d.gpr sb + BitVec.ofNat 64 (woff i)) 4 := fun i hi => by
@@ -897,7 +909,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedu
   have keptE : ∀ r ∈ kept, e.gpr r = s.gpr r := fun r hr => by
     have h := kept_ne r hr
     rw [eg r h.2.2.2.2.1, dg r h.1, bnot r h.2.2.2.2.1 h.1, ag r h.2.1 h.2.2.1 h.2.2.2.1]
-  have frame : Frame [coreRegion core B] s.mem e.mem := by
+  have frame : Frame [⟨B, 8 * (bufSlot + 2)⟩] s.mem e.mem := by
     rw [← dmem]
     refine ef.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst r
@@ -910,31 +922,46 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Seed.Schedu
       rw [VG.Offset.add_add, ← dbase, show 8 * bufSlot + 4 * i = woff i from rfl, ew i hi], hq]
     congr 1
   refine ⟨(eg _ (by decide)).trans dbase, keptE,
-    VG.Proof.Seed.PPC64LE.Mode.ready_core hk (keptE .r3 (by decide)) (by rw [erd, dk.rd, brd, ard]) frame,
-    frame, fun j hj => ?_, ?_, ?_⟩
-  · have hj0 : j = 0 := by have : j < 1 := hj; omega
-    subst hj0
-    have ha : blkAddr core B 0 = A := by
-      show B + BitVec.ofNat 64 (8 * bufSlot) + BitVec.ofNat 64 (4 * 4 * 0) = A
-      rw [VG.Offset.add_add, Nat.mul_zero, Nat.add_zero]
-    show bytesAt e.mem (blkAddr core B 0) 16 = Spec.Seed.cipher k (bytesAt s.mem (blkAddr core B 0) 16)
-    rw [ha, output, cipher_bytes, Spec.Seed.encryptBlock, Proof.Seed.crypt_eq]
+    VG.Proof.Seed.PPC64LE.Mode.ready_core hk (keptE .r3 (by decide)) (by rw [erd, dk.rd, brd, ard])
+      (frame.sub fun r hr => ⟨_, List.mem_cons_self, by
+        simp only [List.mem_singleton] at hr; subst r; exact Region.sub_prefix (by omega)⟩),
+    frame, ?_, ?_, ?_⟩
+  · rw [output, dirCipher_bytes, Proof.Seed.crypt_eq]
   · rw [erd, dk.rd, brd, ard]
   · rw [ewr, dk.wr, bwr, awr]
 
+theorem blkAddr_zero (c : Impl.Modes.PPC64LE.Core) (hb : c.buf = bufSlot) (B : Addr) :
+    blkAddr c B 0 = B + BitVec.ofNat 64 (8 * bufSlot) := by
+  show B + BitVec.ofNat 64 (8 * c.buf) + BitVec.ofNat 64 (4 * c.bw * 0) = _
+  rw [hb, VG.Offset.add_add, Nat.mul_zero, Nat.add_zero]
+
 /-- The single-block core meets what the modes need. -/
-def coreSpec : CoreSpec core where
+def coreSpec (dir : Direction) : CoreSpec (core dir) where
   Key := Spec.Seed.Schedule
-  cipher := Proof.Seed.dirCipher .encrypt
+  cipher := Proof.Seed.dirCipher dir
   KeyArgs := KeyArgs
   Ready := Ready 1
-  cipher_len _ _ := by simp [Proof.Seed.dirCipher, Spec.Seed.cipher, core]
-  layout := ⟨by decide, .inr rfl, by simp only [core]; omega, by simp only [core]; omega,
+  cipher_len _ _ := by cases dir <;> simp [Proof.Seed.dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher, core]
+  layout := ⟨Nat.one_pos, .inr rfl, by simp only [core]; omega, by simp only [core]; omega,
     by simp only [core, bufSlot]; omega⟩
   keyArgs_congr h e r _ _ f := VG.Proof.Seed.PPC64LE.Mode.keyArgs_congr h e.r3 r f
   ready_frame h e r _ _ f hs _ := VG.Proof.Seed.PPC64LE.Mode.ready_frame h e.r3 r f hs
   prepare_wp {s B rs k} hB _ hm hk :=
     WP.of_runBlock ⟨s, rfl, ⟨hk, hk.2.2 _ hm⟩, hB, fun _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
-  crypt_wp hB hs hR := crypt_wp hB hs hR
+  crypt_wp {s B ws k} hB hs hR := WP.mono (crypt_ok dir (g := 1) (Nat.le_refl 1) hB hs hR)
+    fun _ ⟨h1, h2, h3, h4, h5, h6, h7⟩ => ⟨h1, h2, h3, h4, fun j hj => by
+      obtain rfl : j = 0 := Nat.lt_one_iff.mp hj
+      rw [blkAddr_zero _ rfl]; exact h5, h6, h7⟩
+
+/-- The core enciphers the first block of the buffer of the blocks function's
+core on sixteen blocks, for the blocks CBC and CFB decryption leave after
+their groups (`Core.seq2With`). -/
+theorem oneOk (dir : Direction) :
+    Proof.Modes.PPC64LE.OneOk (VG.Proof.Seed.PPC64LE.Mode.wideCoreSpec dir) (core dir).crypt :=
+  fun hB hS hR => WP.mono (crypt_ok dir (g := 16) (by decide) hB hS hR)
+    fun _ ⟨h1, h2, h3, h4, h5, h6, h7⟩ => ⟨h1, h2, h3,
+      h4.sub fun r hr => ⟨_, List.mem_cons_self, by
+        simp only [List.mem_singleton] at hr; subst r; exact Region.sub_prefix (by show _ ≤ 8 * (bufSlot + 2 * 16); omega)⟩,
+      by rw [blkAddr_zero _ rfl]; exact h5, h6, h7⟩
 
 end VG.Proof.Seed.PPC64LE.Serial

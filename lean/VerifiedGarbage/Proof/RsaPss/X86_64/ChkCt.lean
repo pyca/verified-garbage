@@ -39,7 +39,7 @@ def KP0 : List Nat := [17, 21, 25, 26, 36, 37, 38]
 /-- And the slots of the table of `MdHash`. -/
 def KP1 : List Nat := [8, 9, 10, 17, 21, 25, 26, 36, 37, 38]
 
-/-- And those of the table of `Hash`. -/
+/-- And those of the table of `MdHash`. -/
 def KP : List Nat := [8, 9, 10, 11, 12, 13, 14, 17, 21, 25, 26, 36, 37, 38]
 
 /-- After the prologue: `r11` is the table `hash`. -/

@@ -29,31 +29,6 @@ def direct : List Artifact := [
 
 end VG.Artifacts.Dsa.X86_64
 
--- DSA parameter generation over refillable tapes with every SHA-1, SHA-256 and Miller–Rabin backend on x86-64
-namespace VG.Artifacts.Dsa.X86_64.MdHashMdHashMillerRabin
-open VG.Proof.Dsa.X86_64.Generation.RefillBackend VG.Proof.MillerRabin.X86_64
-
-/-- DSA's parameter search for a SHA-1 and a SHA-256 backend for the same
-CPUs (both baselines, both SHA extensions, or SHA-1's AVX and BMI code with
-SHA-256's AVX2 code, BMI2 coming only with AVX2), with each Miller–Rabin
-round: any other pair needs the features of one of these, which runs both
-hashes with them. -/
-def artifacts (v1 v256 : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List Artifact :=
-  if !(v1.suffix == v256.suffix || (v1.suffix == "_avx_bmi" && v256.suffix == "_avx2")) then [] else
-  if h1 : v1.mgf.G.rust = "sha1" then
-    if h256 : v256.mgf.G.rust = "sha256" then
-      let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
-      [Spec.Dsa.parameterSearchApi.artifact X86_64.target {
-        suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
-        stack := 632
-        code := searchCode v1 v256 v
-        verified := search_verified v1 v256 v h1 h256
-        spSafe := searchCode_spSafe v1 v256 v }]
-    else []
-  else []
-
-end VG.Artifacts.Dsa.X86_64.MdHashMdHashMillerRabin
-
 namespace VG.Artifacts.Dsa.X86_64
 
 open VG.Proof.Dsa.X86_64
@@ -99,6 +74,13 @@ def artifacts : List Artifact :=
       stack := v.stack
       verified := v.deriveVerified
       spSafe := v.deriveSp }]) ++
-  (VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v => VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v2 => VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v3 => MdHashMdHashMillerRabin.artifacts v v2 v3)
+  (Generation.RefillBackend.hashPairs.flatMap fun (p : Generation.RefillBackend.Hashes) =>
+    VG.Proof.Variants.MillerRabin.X86_64.variants.map fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
+    Spec.Dsa.parameterSearchApi.artifact X86_64.target {
+      suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
+      stack := 632
+      code := Generation.RefillBackend.searchCode p.sha1 p.sha256 v
+      verified := Generation.RefillBackend.search_verified p.sha1 p.sha256 v p.h1 p.h256
+      spSafe := Generation.RefillBackend.searchCode_spSafe p.sha1 p.sha256 v })
 
 end VG.Artifacts.Dsa.X86_64

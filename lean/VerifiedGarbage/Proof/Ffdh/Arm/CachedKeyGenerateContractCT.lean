@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 public import VerifiedGarbage.Impl.Ffdh.Arm.CachedKeyGenerate
@@ -437,19 +438,19 @@ theorem cachedKeyGenerate_contract_ct (prepare sample tail : Prog isa)
     (prep : EnvironmentPrepareLaw cachedGenerationEnvironment prepare)
     (sampler : EnvironmentSampleLaw cachedGenerationEnvironment ScalarLayout.vetted sample)
     (law : EnvironmentTailLaw cachedGenerationEnvironment ScalarLayout.vetted tail) :
-    ConstantTime isa (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre
-      (Spec.Ffdh.cachedGenerateKeyContract abi 176).pub
+    ConstantTime isa (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre
+      (Proof.Ffdh.cachedGenerateKeyContract abi 176).pub
       (VG.Impl.Ffdh.Arm.CachedKeyGenerate.code prepare sample tail) := by
   intro s t tr1 tr2 u v hs ht hp e1 e2
   obtain ⟨p, rb, base, privateValue, publicValue, domain, count, capacity, entropy, domainBytes, entropyBytes, allInputS,cachedS,validS,cachePointer,cacheWords⟩ := cachedKeyGenerate_data s hs
   have inputS := allInputS.input
-  have randLength (a : State) (h : (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre a) :
+  have randLength (a : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre a) :
       (stackArg a 4).toNat = (stackArg a 2).toNat := by
     have h := cachedKeyGenerate_plain_pre a h
     sig_pre [Spec.Ffdh.generateKeyContract, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
     obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, length, _⟩ := h
     exact length
-  sig_pub [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
+  sig_pub [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr] at hp
   obtain ⟨sp, bytes, p0, _, p2, _, p4, p5, p6, p7, _, p9, p10, p11, p12⟩ := hp
   rw [randLength s hs, randLength t ht, ← p4, ← p5, ← p6, ← p7] at bytes
   obtain ⟨domEqNat, statusEq⟩ := List.append_inj bytes

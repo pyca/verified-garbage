@@ -39,6 +39,6 @@ b 21f
 20:
 21:
 .base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_decrypt_blocks = sym crate::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym crate::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )
 }

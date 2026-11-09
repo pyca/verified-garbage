@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ArgumentWords
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
@@ -140,7 +141,7 @@ theorem call_pre_cached {p : KeyPublic .cached} {used keys scalars : Nat} {origi
   have length := facts.length
   have domainLength := facts.domainLength
   have scratch := facts.scratch
-  sig_pre [GenerationPolicy.attemptContract, cachedGenerateKeyContract, cachedGenerateKeySig,
+  sig_pre [GenerationPolicy.attemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig,
     generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
   simp only [h.x, h.xlen, h.y, h.ylen, a0, a1, a2, a3, a4, a5, a6, a7, a8,
     nativeLen, domainLen, capacity, ctxLen, argAddr, sp]

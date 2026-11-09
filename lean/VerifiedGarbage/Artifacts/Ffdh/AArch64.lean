@@ -29,9 +29,6 @@ def direct : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact target {
     code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
-  Spec.Ffdh.cachedGenerateKeyApi.artifact target {
-    code := Impl.Ffdh.AArch64.Cached.Generate.code Proof.Bignum.AArch64.Mont.productEight.mm
-    verified := Proof.Ffdh.AArch64.Cached.attempt_verified _ },
   Spec.Ffdh.cachedKeySearchApi.artifact target {
     stack := 64
     code := Proof.Ffdh.AArch64.Cached.cachedSearch

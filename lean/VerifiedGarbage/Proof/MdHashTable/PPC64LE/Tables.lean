@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTBlocks
 public import VerifiedGarbage.Proof.MdHashTable.PPC64LE
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Tab
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.CTTab
-public import VerifiedGarbage.Proof.HashTable.PPC64LE
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Hashes
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.MgfStepsT
+public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Pre
 public import VerifiedGarbage.Spec.MdHashTable
 public import VerifiedGarbage.Proof.HashTable.Basic
 import VerifiedGarbage.Proof.Framework.Offset
@@ -43,7 +45,7 @@ open VG.Impl.RsaOaep.PPC64LE (arg)
 open VG.Impl.MdHashTable.PPC64LE (digest)
 open VG.Proof.RsaOaep.PPC64LE (Link TabMem kR SC)
 open VG.Proof.RsaPss.PPC64LE (MdTabOK MdTabS Tabs)
-open VG.Proof.HashTable (pw_ne find_name)
+open VG.Proof.HashTable (pw_ne find_name symsOf putWs putWs_out putWs_held)
 
 open VG.Proof.MdStream.PPC64LE (compressK)
 open VG.Impl.MdStream.PPC64LE (Params)
@@ -197,9 +199,88 @@ theorem mdTabS_of {S : State → Addr} {s : State} {j : Nat} (hj : arg j < 2 ^ 1
     fun k hk' => (hkT.sub_right (hk k hk')).symm, fun k hk' => (hST.sub_right (hk k hk')).symm, hm, hc3, hd4,
     mdTabOK_of hc hd hw⟩
 
+/-- The functions an indirect call of a table's `init`, `update` and
+`finalize` may reach, those of `vs`: what RSAES-OAEP and MGF1 call. -/
+def fns3 (vs : List MVar) : Impl.RsaOaep.PPC64LE.Fns :=
+  ⟨(fnsOf vs).init, (fnsOf vs).upd, (fnsOf vs).fin⟩
+
 /-- The tables' functions for the variants `w` (of the table of `MdHash`) and
-`w'` (of the table of `Hash`). -/
-def tabsOf (vs : List MVar) (gs : List HashTable.PPC64LE.TVar) (w : MVar) (w' : HashTable.PPC64LE.TVar) : Tabs :=
-  ⟨w'.H, HashTable.PPC64LE.fnsOf gs, w.H, w.F.cn, w.F.cc, digName w, digest w.F.P, fnsOf vs⟩
+`w'` (of the table of `MdHash`). -/
+def tabsOf (vs : List MVar) (gs : List MVar) (w : MVar) (w' : MVar) : Tabs :=
+  ⟨w'.H, fns3 gs, w.H, w.F.cn, w.F.cc, digName w, digest w.F.P, fnsOf vs⟩
+
+
+/-! ## Tables of `MdHash` for RSAES-OAEP and MGF1 -/
+
+/-- What MGF1 and RSAES-OAEP need of the table of `w` at `p`, the stack
+argument `j` (in `A`, a buffer only read, apart from `kR` and `SC`), itself a
+buffer only read apart from them: its first seven words, of which the
+functions `init`, `update` and `finalize` and the digest length, its word 6. -/
+theorem tabS_of {S : State → Addr} {s : State} {j : Nat} (hj : arg j < 2 ^ 15 ∧ arg j % 4 = 0) {p : Addr}
+    (harg : s.mem.readW (stackArgAddr s j) 64 = p) {A : Region} (hA : A ∈ s.rd)
+    (hAc : A.Contains (stackArgAddr s j) 8) (hAs : Region.Sub ⟨stackArgAddr s j, 8⟩ A)
+    (hkA : (kR s).Disjoint A) (hSA : (SC S s).Disjoint A)
+    (hT : Sig.tableRegion 64 p 11 ∈ s.rd) (hkT : (kR s).Disjoint (Sig.tableRegion 64 p 11))
+    (hST : (SC S s).Disjoint (Sig.tableRegion 64 p 11))
+    {vs : List MVar} (hc : Coh vs) (hd : (names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
+    {w : MVar} (hw : w ∈ vs) (hh : Abi.tableHeld 64 s.mem p (FnTable.words isa s (tableOf w))) :
+    Proof.RsaOaep.PPC64LE.TabS w.H (fns3 vs) j S s p := by
+  obtain ⟨hm, -⟩ := held_tableOf hh
+  rw [words_tableOf] at hh
+  have hD : s.mem.readW (p + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 w.H.D :=
+    (hh 6 (by simp)).trans (by rw [w.l.len]; rfl)
+  have hk : ∀ k < 7, Region.Sub ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (Sig.tableRegion 64 p 11) := fun k hk =>
+    Offset.sub_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega)
+  have ok := mdTabOK_of hc hd hw
+  exact ⟨hj, harg, ⟨A, hA, hAc⟩, (hkA.sub_right hAs).symm, (hSA.sub_right hAs).symm,
+    fun k hk => ⟨_, hT, Offset.contains_base p (by show 8 * k + 8 ≤ 11 * (64 / 8); omega) (by omega)⟩,
+    fun k hk' => (hkT.sub_right (hk k hk')).symm, fun k hk' => (hST.sub_right (hk k hk')).symm, hm,
+    hD, ⟨ok.i, ok.u, ok.fz⟩⟩
+
+/-! ## States holding a table, for the contracts' satisfiability -/
+
+/-- The words of `w`'s table, its functions at the addresses `symsOf` gives
+`vs`' functions. -/
+def tw (vs : List MVar) (w : MVar) : List (BitVec 64) :=
+  (tableOf w).fns.map (symsOf (names vs)) ++ (tableOf w).data
+
+/-- The words of `w`'s table, one by one: a list whose cells unfold without
+evaluating the words (`tw_eq`). -/
+def twL (vs : List MVar) (w : MVar) : List (BitVec 64) :=
+  [(tw vs w).getD 0 0, (tw vs w).getD 1 0, (tw vs w).getD 2 0, (tw vs w).getD 3 0, (tw vs w).getD 4 0,
+    (tw vs w).getD 5 0, (tw vs w).getD 6 0, (tw vs w).getD 7 0, (tw vs w).getD 8 0, (tw vs w).getD 9 0,
+    (tw vs w).getD 10 0]
+
+theorem tw_eq (vs : List MVar) (w : MVar) : twL vs w = tw vs w := rfl
+
+theorem twL_room (vs : List MVar) (w : MVar) : (0x300000 : Addr).toNat + 8 * (twL vs w).length < 2 ^ 64 := by
+  simp only [twL, List.length_cons, List.length_nil]; decide
+
+/-- A state with `s`'s registers and regions, `w`'s table at `0x300000`,
+and `vs`' functions at distinct addresses. -/
+def withTable (s : State) (vs : List MVar) (w : MVar) : State :=
+  { s with mem := putWs s.mem 0x300000 (twL vs w), syms := symsOf (names vs) }
+
+/-- `w`'s table at `0x300000`, in any memory `putWs` writes it to, with
+`vs`' functions at the addresses `symsOf` gives them: a statement about the
+memory as the contracts unfold it, which `exact` matches without unfolding
+`putWs`. -/
+theorem held_twL (m : Mem) (vs : List MVar) (w : MVar) {st : State} (hs : st.syms = symsOf (names vs)) :
+    Abi.tableHeld 64 (putWs m 0x300000 (twL vs w)) 0x300000 (FnTable.words isa st (tableOf w)) := by
+  have h := putWs_held (m := m) (p := 0x300000) (ws := twL vs w) (twL_room vs w)
+  rw [tw_eq] at h
+  have e : FnTable.words isa st (tableOf w) = tw vs w := by
+    simp only [FnTable.words, tw]; rw [hs]
+  rwa [e]
+
+/-- The table of `w`, at `0x300000`. -/
+theorem withTable_held (s : State) (vs : List MVar) (w : MVar) :
+    Abi.tableHeld 64 (withTable s vs w).mem 0x300000 (FnTable.words isa (withTable s vs w) (tableOf w)) :=
+  held_twL _ _ _ rfl
+
+/-- Below `0x300000`, a word as in `s`. -/
+theorem withTable_below (s : State) (vs : List MVar) (w : MVar) {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) :
+    (withTable s vs w).mem.readW a 64 = s.mem.readW a 64 :=
+  putWs_out (.inl (by simpa using ha)) (twL_room vs w) (by omega)
 
 end VG.Proof.MdHashTable.PPC64LE

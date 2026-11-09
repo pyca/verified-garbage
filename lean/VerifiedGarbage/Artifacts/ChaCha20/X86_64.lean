@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Lit
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.ChaCha20.X86_64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86_64
+public import VerifiedGarbage.Proof.ChaCha20.X86_64.Scrub
 
 /-! # ChaCha20 (RFC 8439) on x86-64 -/
 
@@ -30,13 +31,7 @@ def direct : List Artifact := [
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.ChaCha20Xor.X86_64.variants.flatMap fun (v : Proof.ChaCha20.X86_64.XorImpl) =>
-    if v.polyOnly then [] else [
-    Spec.ChaCha20.applyApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.ChaCha20.X86_64.Stream.apply v.callee
-      stack := 24
-      verified := Proof.ChaCha20.X86_64.Stream.apply_verified v
-      spSafe := Proof.ChaCha20.X86_64.Stream.apply_spSafe v }])
+  (VG.Proof.Variants.ChaCha20Xor.X86_64.xorVariants.map fun (v : Proof.ChaCha20.X86_64.XorImpl) =>
+    Spec.ChaCha20.applyApi.artifact X86_64.target (Proof.ChaCha20.X86_64.Scrub.applyReg v))
 
 end VG.Artifacts.ChaCha20.X86_64

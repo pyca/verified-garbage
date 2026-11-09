@@ -7,10 +7,10 @@ public import VerifiedGarbage.Impl.ICall
 # MGF1 on x86-64 with the hash function of a table
 
 `mgfXor` of `Impl/Mgf1/X86_64.lean` for the hash function of a table of the
-interface `Hash` (`Spec/HashTable.lean`) rather than a fixed one: the
+interface `MdHash` (`Spec/MdHashTable.lean`) rather than a fixed one: the
 table's address is the word at `[rsp + sArg]` (the caller's argument),
 which MGF1 copies to the slot `sTab`, and the table's digest length (its
-word 4) to the slot `sD`. The hash function's `init`, `update` and
+word 6) to the slot `sD`. The hash function's `init`, `update` and
 `finalize` are the table's functions 0, 1 and 2, which it calls indirectly
 (`tcall`: their address, the table's word `j`, into `r11`, then `call r11`,
 of whichever of the functions `Fns` lists is at that address); the digest
@@ -68,7 +68,7 @@ def tabArg : List Instr := [.mov .rax (.mem (sp sArg)), .store (sp sTab) .rax]
 
 /-- The table's digest length to `sD`, and the counter and `done` set to 0. -/
 def tabHead : List Instr :=
-  [.mov .rax (.mem (sp sTab)), .mov .rax (.mem (at_ .rax 32)), .store (sp sD) .rax,
+  [.mov .rax (.mem (sp sTab)), .mov .rax (.mem (at_ .rax 48)), .store (sp sD) .rax,
     .mov32 .rax (.imm 0), .store (sp L.sCtr) .rax, .store (sp L.sDone) .rax]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of

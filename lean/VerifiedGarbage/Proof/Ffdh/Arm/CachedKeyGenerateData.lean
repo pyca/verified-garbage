@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateInput
 public import VerifiedGarbage.Proof.Ffdh.Arm.CachedGenerationEnvironment
 import VerifiedGarbage.Proof.Ffdh.Arm.CachedKeyGenerateEnvironment
@@ -23,7 +24,7 @@ namespace VG.Proof.Ffdh.Arm
 open VG VG.Arm VG.Arm.FrameStack VG.Proof.Bignum.Arm VG.Proof.Mont
 
 theorem cachedKeyGenerate_data (s : State)
-    (pre : (Spec.Ffdh.cachedGenerateKeyContract abi 176).pre s) :
+    (pre : (Proof.Ffdh.cachedGenerateKeyContract abi 176).pre s) :
     ∃ (p : Inputs) (rb : List Byte), stackArg s 5=p.base ∧ s.gpr .r0=p.privateValue ∧
       s.gpr .r2=p.publicValue ∧ stackArg s 0=p.domain ∧ (stackArg s 2).toNat=p.k ∧
       (stackArg s 6).toNat=p.len ∧ stackArg s 3=p.entropy ∧

@@ -47,6 +47,8 @@ pub unsafe fn vg_chacha20_set_nonce_auto(_dit: verified_garbage_cpu::Dit<'_>, st
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_chacha20_apply_avx512vl` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512VL_FEATURES`); `vg_chacha20_apply_avx512` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX512_FEATURES`); `vg_chacha20_apply_avx2` if the CPU supports its features (`VG_CHACHA20_APPLY_AVX2_FEATURES`); `vg_chacha20_apply_ssse3` if the CPU supports its features (`VG_CHACHA20_APPLY_SSSE3_FEATURES`); or else `vg_chacha20_apply`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 768 bytes.

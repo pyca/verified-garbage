@@ -51,7 +51,7 @@ def vals (v : Vals) : Nat → Nat :=
 abbrev bodySlots : List Nat := [sOdd, sB, sC, sF, sMask]
 
 /-- The registers the checks may change. -/
-abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10]
+abbrev bodyRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12]
 
 /-- The arrays through a step that writes none of them. -/
 theorem arrsKeep {m m' : Mem} {B : Addr} {w : Nat} {A : Nat → Nat} {live : List Nat} {js ds : List Nat}

@@ -9,6 +9,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.X86.CallWith
 import VerifiedGarbage.Proof.Framework.X86.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+public import VerifiedGarbage.Proof.Framework.Registration
 meta import VerifiedGarbage.Proof.AesEcb.Wipe
 meta import VerifiedGarbage.Impl.AesEcb.X86
 meta import VerifiedGarbage.Proof.Aes.X86.BlocksVariant
@@ -18,6 +19,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.X86.CallWith
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-ECB on x86
@@ -29,7 +31,9 @@ writes nothing in `scratch` (`v.encWritten = 0`), its code
 of `vg_zeroize` on the first `v.encWritten` bytes of `scratch`, the only
 ones it writes (`encrypt_verified`: `Verified.callWipeTail'`, with the side
 conditions of `Proof/AesEcb/Wipe.lean`, with 32 bytes of stack, the frame
-and the return address). Likewise for decryption.
+and the return address). Likewise for decryption. Which is emitted for
+`v` (`encryptRegs`, `decryptRegs`): the first where it writes nothing,
+the second otherwise.
 -/
 
 @[expose] public section
@@ -173,5 +177,37 @@ theorem encrypt_spSafe (v : BlocksImpl) :
 
 theorem decrypt_spSafe (v : BlocksImpl) :
     (Impl.AesEcb.X86.wiped v.dec v.decWritten).all (fun i => !isa.writesSp i) = true := wiped_spSafe v.decSpSafe
+
+/-- The implementation of `vg_aes_ecb_encrypt` over `v` that is emitted: its
+code where it writes nothing in `scratch`, the call wiping `scratch`
+otherwise. -/
+def encryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.encryptApi X86.target) :=
+  if h : v.encWritten = 0 then [{
+    suffix := v.suffix
+    code := v.enc.code
+    verified := encrypt_free v h
+    spSafe := v.encSpSafe }]
+  else [{
+    suffix := v.suffix
+    code := Impl.AesEcb.X86.wiped v.enc v.encWritten
+    stack := 32
+    verified := encrypt_verified v
+    spSafe := encrypt_spSafe v }]
+
+/-- The implementation of `vg_aes_ecb_decrypt` over `v` that is emitted: its
+code where it writes nothing in `scratch`, the call wiping `scratch`
+otherwise. -/
+def decryptRegs (v : BlocksImpl) : List (Registration Spec.AesEcb.decryptApi X86.target) :=
+  if h : v.decWritten = 0 then [{
+    suffix := v.suffix
+    code := v.dec.code
+    verified := decrypt_free v h
+    spSafe := v.decSpSafe }]
+  else [{
+    suffix := v.suffix
+    code := Impl.AesEcb.X86.wiped v.dec v.decWritten
+    stack := 32
+    verified := decrypt_verified v
+    spSafe := decrypt_spSafe v }]
 
 end VG.Proof.AesEcb.X86

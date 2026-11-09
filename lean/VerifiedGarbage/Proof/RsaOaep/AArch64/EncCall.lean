@@ -143,7 +143,7 @@ abbrev PRE (L : ELay) (m₀ : Mem) : Region := ⟨preW L m₀, (prlW L m₀).toN
 /-- The table that is our stack argument `j`, the word of the entry memory
 `m₀` at `Q + 288 + 8 j`, and its region. -/
 abbrev tabJ (L : ELay) (m₀ : Mem) (j : Nat) : BitVec 64 := m₀.readW (L.Q + BitVec.ofNat 64 (arg j)) 64
-abbrev TABJ (L : ELay) (m₀ : Mem) (j : Nat) : Region := Sig.tableRegion 64 (tabJ L m₀ j) 5
+abbrev TABJ (L : ELay) (m₀ : Mem) (j : Nat) : Region := Sig.tableRegion 64 (tabJ L m₀ j) 11
 
 /-- The label's hash function's table (our stack argument 8) and MGF1's (9). -/
 abbrev tabLW (L : ELay) (m₀ : Mem) : BitVec 64 := tabJ L m₀ 8
@@ -363,14 +363,14 @@ argument are apart from everything the function writes. -/
 theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀) {j : Nat}
     (hj : j = 8 ∨ j = 9) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
     (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabJ L m₀ j) m₀)
-    (hD : m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    (hD : m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D) :
     Table.Tab G f L.Q L.scr (tabJ L m₀ j) (arg j) t := by
   have hA := hp.al
   have hnQ := hL.nQa
   have hpQ := hL.pQ
   have hT : TABJ L m₀ j ∈ L.X := by rw [hp.hx]; rcases hj with rfl | rfl <;> simp
-  have cT : ∀ d, d + 8 ≤ 40 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
-    show (⟨tabJ L m₀ j, 40⟩ : Region).Contains _ _
+  have cT : ∀ d, d + 8 ≤ 88 → (TABJ L m₀ j).Contains (tabJ L m₀ j + BitVec.ofNat 64 d) 8 := fun d hd => by
+    show (⟨tabJ L m₀ j, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by have := hL.xw _ hT; simp only [Sig.tableRegion] at this; omega)
   have hj' : 288 ≤ arg j ∧ arg j + 8 ≤ 368 := by rcases hj with rfl | rfl <;> decide
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg j)) 8 :=
@@ -393,12 +393,12 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
     · exact hL.xO _ hT
     · exact hL.xS _ hT
     · exact (hL.xK _ hT).symm
-  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 32 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
-  have rt : ∀ d, d + 8 ≤ 40 →
+  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
+  have rt : ∀ d, d + 8 ≤ 88 →
       m.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 = m₀.readW (tabJ L m₀ j + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
-    (rt 32 (by decide)).trans hD, ?_⟩
+    (rt 48 (by decide)).trans hD, ?_⟩
   have ka : ∀ r ∈ Table.mgfRs L.Q L.scr, Region.Disjoint ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ r := by
     have hs : Region.Sub ⟨L.Q + BitVec.ofNat 64 (arg j), 8⟩ L.ARGS := Offset.sub _ hj'.1 (by omega)
     intro r hr
@@ -416,7 +416,7 @@ theorem tabJ_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : P
 theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
     {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
     (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabW L m₀) m₀)
-    (hD : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    (hD : m₀.readW (tabW L m₀ + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D) :
     Table.Tab G f L.Q L.scr (tabW L m₀) (arg 9) t :=
   tabJ_of hL hP16 hc hp (.inr rfl) ok hm hD
 
@@ -424,7 +424,7 @@ theorem tab_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : Pr
 theorem tabL_of (hL : L.Ok) (hP16 : 16 ≤ L.P) (hc : Ctx L g vv m₀ t) (hp : PreOk L m₀)
     {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
     (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms (tabLW L m₀) m₀)
-    (hD : m₀.readW (tabLW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    (hD : m₀.readW (tabLW L m₀ + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D) :
     Table.Tab G f L.Q L.scr (tabLW L m₀) (arg 8) t :=
   tabJ_of hL hP16 hc hp (.inl rfl) ok hm hD
 

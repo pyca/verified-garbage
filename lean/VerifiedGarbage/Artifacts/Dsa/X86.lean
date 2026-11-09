@@ -58,31 +58,18 @@ def direct : List Artifact := [
 
 end VG.Artifacts.Dsa.X86
 
--- DSA parameter generation over refillable tapes on i686, for every SHA-1, SHA-256 and Miller–Rabin backend
-namespace VG.Artifacts.Dsa.X86.Sha1Sha256MillerRabin
-open VG VG.X86 VG.Proof.Dsa.X86.Generation VG.Proof.MillerRabin.X86
-
-/-- DSA's parameter search for a SHA-1 and a SHA-256 backend for the same
-CPUs (both baselines or both SHA extensions), with each Miller–Rabin round:
-either other pair needs the features of one of these, which runs both
-hashes with them. -/
-def artifacts (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256.X86.Variants.Backend) (v : RoundImpl) :
-    List Artifact :=
-  if v1.suffix != v256.suffix then [] else
-  let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
-  [Spec.Dsa.parameterSearchApi.artifact target {
-    suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
-    code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
-    stack := 216
-    verified := verified v1 v256 v
-    spSafe := code_all v1 v256 v }]
-
-end VG.Artifacts.Dsa.X86.Sha1Sha256MillerRabin
-
 namespace VG.Artifacts.Dsa.X86
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.Sha1.X86.variants.flatMap fun v => VG.Proof.Variants.Sha256.X86.variants.flatMap fun v2 => VG.Proof.Variants.MillerRabin.X86.variants.flatMap fun v3 => Sha1Sha256MillerRabin.artifacts v v2 v3)
+  (Proof.Dsa.X86.Generation.hashPairs.flatMap fun ((v1, v256) : Proof.Sha1.X86.Variants.Backend × Proof.Sha256.X86.Variants.Backend) =>
+    VG.Proof.Variants.MillerRabin.X86.variants.map fun (v : Proof.MillerRabin.X86.RoundImpl) =>
+    Spec.Dsa.parameterSearchApi.artifact X86.target {
+      suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
+      code := Impl.Dsa.X86.Generation.code (Proof.Dsa.X86.Generation.geo1 v1 v)
+        (Proof.Dsa.X86.Generation.geo256 256 v256 v) (Proof.Dsa.X86.Generation.geo256 384 v256 v)
+      stack := 216
+      verified := Proof.Dsa.X86.Generation.verified v1 v256 v
+      spSafe := Proof.Dsa.X86.Generation.code_all v1 v256 v })
 
 end VG.Artifacts.Dsa.X86

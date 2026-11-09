@@ -6,8 +6,13 @@ import VerifiedGarbage.Proof.Dsa.X86.Generation.Correct
 import VerifiedGarbage.Proof.Dsa.X86.Generation.TopCT
 import VerifiedGarbage.Proof.Dsa.X86.Generation.Satisfiable
 import VerifiedGarbage.Proof.Dsa.X86.Generation.NoSp
+public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # DSA parameter generation on i686 is verified -/
+/-! # DSA parameter generation on i686 is verified
+
+And the pairs of a SHA-1 and a SHA-256 backend that it is emitted for
+(`hashPairs`). -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.X86.Generation
@@ -52,5 +57,13 @@ theorem code_all (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256.X86
   simp only [Code.allInstrs] at inner
   simp only [inner]
   rfl
+
+/-- The pairs of a SHA-1 and a SHA-256 backend that the parameter search is
+emitted for, best first: those for the same CPUs (both baselines or both SHA
+extensions). Either other pair needs the features of one of these, which
+runs both hashes with them. -/
+def hashPairs : List (Proof.Sha1.X86.Variants.Backend × Proof.Sha256.X86.Variants.Backend) :=
+  Proof.Variants.Sha1.X86.variants.flatMap fun v1 => Proof.Variants.Sha256.X86.variants.filterMap fun v256 =>
+    if v1.suffix == v256.suffix then some (v1, v256) else none
 
 end VG.Proof.Dsa.X86.Generation

@@ -28,8 +28,8 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombI
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Comb
@@ -50,7 +50,7 @@ and `[v]Q` by the three-bit windows for any `a`, as P-256's
 (`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`): `combPts_ok`,
 `pointsBrainpoolP512r1` as `PtsOk` states; `verify_ppc`, from `verifyWith_ok`;
 `verify_ct`: the time depends only on the pointers and the table's address
-(`taint_decide` with `taintSym` on the code's literal).
+(`taint_decide` with `vectorTaintSym` on the code's literal).
 -/
 
 @[expose] public section
@@ -272,13 +272,12 @@ theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State)
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
   have hd : Region.Disjoint ⟨s.syms brainpoolp512r1Comb.tsym, 8 * brainpoolp512r1CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
-    (hk.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) member)).2.1 _
-      (by rw [hpre.wr]; simp)
+    hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok brainpoolp512r1_ok hL hpre (combPts_ok hL ht rfl hd)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifyBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taintSym [brainpoolp512r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  VG.Taint.constantTime (A := vectorTaintSym [brainpoolp512r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -308,7 +307,8 @@ theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.
   have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
   have held := vSatMem_held
   rw [combConsts_eq]
-  generalize brainpoolp512r1CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : vSatC = s
   sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve,
     Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
@@ -347,7 +347,8 @@ theorem verifyHash_sat :
   have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
   have held := vSatMem_held
   rw [combConsts_eq]
-  generalize brainpoolp512r1CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : hSatC = s
   sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.BrainpoolP512r1.inst,
     Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,

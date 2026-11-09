@@ -37,7 +37,7 @@ call {vg_zeroize}
 .insn 2, 0x6105
 .insn 2, 0x8082
 .option pop",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -76,7 +76,7 @@ call {vg_zeroize}
 .insn 2, 0x6105
 .insn 2, 0x8082
 .option pop",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }

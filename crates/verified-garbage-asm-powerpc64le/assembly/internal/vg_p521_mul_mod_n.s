@@ -95,72 +95,63 @@ vg_p521_mul_mod_n:
 	li %r8, 9
 20:
 	ld %r9, 0(%r5)
-	li %r0, 0
 	ld %r11, 0(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r15, %r11, %r15
-	addze %r0, %r10
+	addc %r15, %r15, %r11
 	ld %r11, 8(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r16, %r11, %r16
-	addze %r0, %r10
+	adde %r16, %r16, %r11
 	ld %r11, 16(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r17, %r11, %r17
-	addze %r0, %r10
+	adde %r17, %r17, %r11
 	ld %r11, 24(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r18, %r11, %r18
-	addze %r0, %r10
+	adde %r18, %r18, %r11
 	ld %r11, 32(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r19, %r11, %r19
-	addze %r0, %r10
+	adde %r19, %r19, %r11
 	ld %r11, 40(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r20, %r11, %r20
-	addze %r0, %r10
+	adde %r20, %r20, %r11
 	ld %r11, 48(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r21, %r11, %r21
-	addze %r0, %r10
+	adde %r21, %r21, %r11
 	ld %r11, 56(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r22, %r11, %r22
-	addze %r0, %r10
+	adde %r22, %r22, %r11
 	ld %r11, 64(%r6)
-	mulhdu %r10, %r9, %r11
 	mulld %r11, %r9, %r11
-	addc %r11, %r11, %r0
-	addze %r10, %r10
-	addc %r23, %r11, %r23
-	addze %r0, %r10
-	addc %r24, %r24, %r0
+	adde %r23, %r23, %r11
+	addze %r24, %r24
 	li %r12, 0
+	addze %r12, %r12
+	ld %r11, 0(%r6)
+	mulhdu %r11, %r9, %r11
+	addc %r16, %r16, %r11
+	ld %r11, 8(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r17, %r17, %r11
+	ld %r11, 16(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r18, %r18, %r11
+	ld %r11, 24(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r19, %r19, %r11
+	ld %r11, 32(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r20, %r20, %r11
+	ld %r11, 40(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r21, %r21, %r11
+	ld %r11, 48(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r22, %r22, %r11
+	ld %r11, 56(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r23, %r23, %r11
+	ld %r11, 64(%r6)
+	mulhdu %r11, %r9, %r11
+	adde %r24, %r24, %r11
 	addze %r12, %r12
 	ld %r10, 3600(%r3)
 	mulld %r9, %r15, %r10

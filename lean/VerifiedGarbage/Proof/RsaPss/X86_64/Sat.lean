@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 # RSASSA-PSS on x86-64 with the tables of `vs`: the contracts are satisfiable
 
 By the states of the contracts with the hash functions fixed, with the table
-of `MdHash` of a variant `w` of `vs` at `0x300000`, the table of `Hash` of
+of `MdHash` of a variant `w` of `vs` at `0x300000`, the table of `MdHash` of
 `w` at `0x300100` (the stack arguments' values), and the tables' functions at
 distinct addresses (`symsOf`): `sign_sat`, `verify_sat`.
 -/
@@ -72,7 +72,7 @@ def allNames (vs : List MdHash) : List String := MdHashTable.X86_64.names vs ++ 
 def tabMem (m : Mem) (vs : List MdHash) (w : MdHash) : Mem := fun a =>
   bif Nat.blt a.toNat 0x300000 then m a
   else putWs (putWs m 0x300000 (tw (allNames vs) (MdHashTable.X86_64.tableOf w))) 0x300100
-    (tw (allNames vs) (HashTable.X86_64.tableOf w)) a
+    (tw (allNames vs) (MdHashTable.X86_64.tableOf w)) a
 
 /-- A state with `s`'s registers and regions, the tables of `w` at `0x300000`
 and `0x300100`, and `vs`' functions at distinct addresses. -/
@@ -91,7 +91,7 @@ theorem withTabs_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
 theorem tabMem_above {m : Mem} {vs : List MdHash} {w : MdHash} {p : Addr} {ws : List (BitVec 64)}
     (hp : 0x300000 ≤ p.toNat) (hl : p.toNat + 8 * ws.length < 2 ^ 64)
     (h : Abi.tableHeld 64 (putWs (putWs m 0x300000 (tw (allNames vs) (MdHashTable.X86_64.tableOf w))) 0x300100
-      (tw (allNames vs) (HashTable.X86_64.tableOf w))) p ws) :
+      (tw (allNames vs) (MdHashTable.X86_64.tableOf w))) p ws) :
     Abi.tableHeld 64 (tabMem m vs w) p ws := by
   intro i hi
   rw [← h i hi]
@@ -114,14 +114,15 @@ theorem withTabs_heldH (s : State) (vs : List MdHash) (w : MdHash) :
   have hi' : i < 11 := by
     simp [FnTable.words, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega
   rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega))
-    (by simp [tw, HashTable.X86_64.tableOf, Spec.HashTable.dataOf]) (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
+    (by simp [tw, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]) (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
   exact putWs_held (by rw [hl]; decide) i (by rw [hl]; exact hi')
 
 theorem withTabs_heldG (s : State) (vs : List MdHash) (w : MdHash) :
     Abi.tableHeld 64 (withTabs s vs w).mem 0x300100
-      (FnTable.words isa (withTabs s vs w) (HashTable.X86_64.tableOf w)) :=
-  tabMem_above (by decide) (by simp [FnTable.words, HashTable.X86_64.tableOf, Spec.HashTable.dataOf])
-    (putWs_held (by simp [tw, HashTable.X86_64.tableOf, Spec.HashTable.dataOf]))
+      (FnTable.words isa (withTabs s vs w) (MdHashTable.X86_64.tableOf w)) :=
+  tabMem_above (by decide) (by simp [FnTable.words, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf,
+      Spec.HashTable.dataOf])
+    (putWs_held (by simp [tw, MdHashTable.X86_64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]))
 
 /-! ## Signing -/
 
@@ -148,7 +149,7 @@ def signSatBase (dl : Nat) : State where
     else bif Nat.beq a.toNat 0x1008A then 0x30 else bif Nat.beq a.toNat 0x10091 then 0x01
     else bif Nat.beq a.toNat 0x10092 then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4100, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩,
-    ⟨0x4600, dl⟩, ⟨0x4700, 0⟩, ⟨0x300000, 88⟩, ⟨0x300100, 40⟩, ⟨0x10008, 144⟩]
+    ⟨0x4600, dl⟩, ⟨0x4700, 0⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩, ⟨0x10008, 144⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 2080 * 8⟩]
 
 
@@ -174,9 +175,8 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     (hsy : (tabFns tsH ++ tabFns tsG).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
     (hd : Spec.RsaPss.digestLenOk 64 s.mem 0x300000 (BitVec.ofNat 64 dl)) :
     (signC tsH tsG).pre s := by
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signStack,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, signStack,
     stackArgs_eighteen, List.append_eq, Sig.tableRegion]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
@@ -188,9 +188,8 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     ha 16 (by decide), ha 17 (by decide), hg, hrd, hwr, hA, signArgs]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signStack,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, signStack,
     stackArgs_eighteen, List.append_eq, Sig.tableRegion]
   sig_and_intros
   all_goals first
@@ -209,7 +208,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
 
 theorem sign_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 2 ^ 32) {dl : Nat} (hdl : dl ≤ 64)
     (hlen : w.mgf.G.len = dl) (hb : ∀ j < 18, stackArg (signSatBase dl) j = signArgs dl j) :
-    (signC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre (withTabs (signSatBase dl) vs w) :=
+    (signC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)).pre (withTabs (signSatBase dl) vs w) :=
   sign_pre_of hdl rfl (fun j hj => (withTabs_arg _ vs w (signSat_args dl j hj)).trans (hb j hj)) rfl rfl
     ⟨_, List.mem_map_of_mem hw, withTabs_heldH _ vs w⟩ ⟨_, List.mem_map_of_mem hw, withTabs_heldG _ vs w⟩
     (symsOf_distinct hl) fun H hH => by
@@ -226,7 +225,7 @@ theorem signSat_b48 : ∀ j < 18, stackArg (signSatBase 48) j = signArgs 48 j :=
 theorem signSat_b64 : ∀ j < 18, stackArg (signSatBase 64) j = signArgs 64 j := by decide
 
 theorem sign_sat (hok : OK vs) :
-    ∃ s, (signC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre s := by
+    ∃ s, (signC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)).pre s := by
   obtain ⟨w, hw, -⟩ := hok.2.2.2.1 0 (by decide)
   have hl := hok.2.2.2.2
   have hm := w.mgf.mem
@@ -260,7 +259,7 @@ def verifySatBase (dl : Nat) : State where
     else bif Nat.beq a.toNat 0x10031 then 0x08 else bif Nat.beq a.toNat 0x10039 then 0x50
     else bif Nat.beq a.toNat 0x10040 then 16 else bif Nat.beq a.toNat 0x1004A then 0x30
     else bif Nat.beq a.toNat 0x10051 then 0x01 else bif Nat.beq a.toNat 0x10052 then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, dl⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩, ⟨0x300100, 40⟩,
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, dl⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩,
     ⟨0x10008, 80⟩]
   wr := [⟨0x20000, 2080 * 8⟩]
 
@@ -284,9 +283,8 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     (hsy : (tabFns tsH ++ tabFns tsG).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g)
     (hd : Spec.RsaPss.digestLenOk 64 s.mem 0x300000 (BitVec.ofNat 64 dl)) :
     (VG.Proof.RsaPss.X86_64.verifyC tsH tsG).pre s := by
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
@@ -297,9 +295,8 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     verifyArgs]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
   sig_and_intros
   all_goals first
@@ -318,7 +315,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
 
 theorem verify_sat_of {w : MdHash} (hw : w ∈ vs) (hl : (allNames vs).length < 2 ^ 32) {dl : Nat} (hdl : dl ≤ 64)
     (hlen : w.mgf.G.len = dl) (hb : ∀ j < 10, stackArg (verifySatBase dl) j = verifyArgs j) :
-    (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre
+    (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)).pre
       (withTabs (verifySatBase dl) vs w) :=
   verify_pre_of hdl rfl (fun j hj => (withTabs_arg _ vs w (verifySat_args dl j hj)).trans (hb j hj)) rfl rfl
     ⟨_, List.mem_map_of_mem hw, withTabs_heldH _ vs w⟩ ⟨_, List.mem_map_of_mem hw, withTabs_heldG _ vs w⟩
@@ -336,7 +333,7 @@ theorem verifySat_b48 : ∀ j < 10, stackArg (verifySatBase 48) j = verifyArgs j
 theorem verifySat_b64 : ∀ j < 10, stackArg (verifySatBase 64) j = verifyArgs j := by decide
 
 theorem verify_sat (hok : OK vs) :
-    ∃ s, (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)).pre s := by
+    ∃ s, (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)).pre s := by
   obtain ⟨w, hw, -⟩ := hok.2.2.2.1 0 (by decide)
   have hl := hok.2.2.2.2
   have hm := w.mgf.mem
@@ -363,7 +360,7 @@ theorem sign_ok (hok : OK vs) {privN : String} {privC : Prog isa}
     (hdC : privC.x86_64Depth ≤ Rsa.X86_64.stackBytes) :
     Verified X86_64.target
       (Impl.RsaPss.X86_64.signC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) privN privC)
-      (signC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)) :=
+      (signC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)) :=
   signC_verified (fun _ h => sgood_of hok h) (fun i hi => (enc_safe hok i hi).1) (fun i hi => (enc_safe hok i hi).2)
     hct hdC (ckH Impl.Md5.X86_64.Stream.params 16) (sign_sat hok) hv hspC
 
@@ -372,7 +369,7 @@ public-key operation `v`. -/
 theorem verify_ok (hok : OK vs) (v : PublicImpl) :
     Verified X86_64.target
       (Impl.RsaPss.X86_64.verifyC (MdHashTable.X86_64.fnsOf vs) (HashTable.X86_64.fnsOf vs) v.name v.code)
-      (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (HashTable.X86_64.tables vs)) :=
+      (VG.Proof.RsaPss.X86_64.verifyC (MdHashTable.X86_64.tables vs) (MdHashTable.X86_64.tables vs)) :=
   Pc.codeC_verified (fun _ h => kgood_of hok h) (fun i hi => (chk_safe hok i hi).1) (fun i hi => (chk_safe hok i hi).2)
     (ckH Impl.Md5.X86_64.Stream.params 16) (verify_sat hok) v
 

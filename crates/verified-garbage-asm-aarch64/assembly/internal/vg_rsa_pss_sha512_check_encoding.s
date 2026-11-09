@@ -141,7 +141,7 @@ vg_rsa_pss_sha512_check_encoding:
 	ldr x10, [sp, #560]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0

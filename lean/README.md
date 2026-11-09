@@ -57,6 +57,8 @@ VerifiedGarbage/
 VerifiedGarbageTest/  Golden tests for the (unverified) printers and calling conventions
 Emit.lean       Renders every artifact into `../crates/` (see `TCB/Emit.lean`)
 EmitOne.lean    The same, for the registration files named, while iterating
+VerifiedGarbageAuditBase.lean  Checks `TCB/AuditBase.lean` against the private data of Lean and
+                the dependencies (the lakefile's `AuditBase` library, not a module)
 ```
 
 `ci/check_lean_imports.py` enforces the import discipline between these
@@ -437,14 +439,14 @@ most about 1,200 of this project's). These run it themselves:
 * `ci/check_lean_public_imports.py` and `ci/trim_lean_imports.py`, before
   `lake shake`, which reads the private part of each module it checks and of
   all they import;
-* `ci/lit_imports.py`, before `CheckLitImports.lean`.
+* `ci/lit_imports.py`, before `ci/lit_imports.lean`.
 
 Run it yourself before what else reads them, which otherwise fails with
 `failed to read file '….olean.private', invalid header`:
 
 * a file that is not a module and imports the project's modules, run with
   `lake env lean` or opened in the editor (`fill-private lean
-  GenerateP256Ecdh.lean`: a file's imports);
+  lean/Scratch.lean`: a file's imports);
 * a module with an `import all` of a module of this project (`fill-private`
   on that module).
 

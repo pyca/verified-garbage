@@ -442,11 +442,11 @@ theorem tabH_dis : ∀ k < 5, ∀ r ∈ [kR s, scR s],
   · exact (P.kth.sub_right hs).symm
   · exact (P.sth.sub_right hs).symm
 
-/-- …and of the table `mgf1`. -/
-theorem tabG_dis : ∀ k < 5, ∀ r ∈ [kR s, scR s],
+/-- …and the first seven words of the table `mgf1`. -/
+theorem tabG_dis : ∀ k < 7, ∀ r ∈ [kR s, scR s],
     Region.Disjoint ⟨stackArg s 7 + BitVec.ofNat 64 (8 * k), 8⟩ r := by
   intro k hk r hr
-  have hs := tabSub (p := stackArg s 7) (n := 5) (k := k) (by omega)
+  have hs := tabSub (p := stackArg s 7) (n := 11) (k := k) (by omega)
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact (P.ktg.sub_right hs).symm

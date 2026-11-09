@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 As on ARMv7 (`Proof/RsaPss/Arm/SgVerified.lean`), with the hash functions as
 tables: the checks, then zeros or the encoding and the private-key
 operation (`tail_vp`), for the hash function `h` of the table of `MdHash` at
-the argument 22 and MGF1's `g` of the table of `Hash` at 23; the index of
+the argument 22 and MGF1's `g` of the table of `MdHash` at 23; the index of
 `h` (the table's word 5, `idx_vp`) chooses that tail among those of `idxs`
 (`body_vp`, by `Proof.RsaOaep.X86.byLen_vp`), whose code for the index is
 that for `h`'s sizes (`Shape`). The body writes `esp` only through the frames
@@ -167,7 +167,7 @@ theorem body_noSp {f : MdFns} {fG : Fns} (hf : FnsSp f fG) (hall : ∀ i ∈ idx
 /-! ## The entry -/
 
 /-- What the registration checks of the variants `vs` of the tables of
-`MdHash` and `gs` of `Hash`: the functions of one name have one code, each
+`MdHash` and `gs` of `MdHash`: the functions of one name have one code, each
 hash function has the sizes of its index, each index has a variant, and few
 enough functions for the contract's satisfiability. -/
 def OK (vs : List MVar) (gs : List TVar) : Prop :=
@@ -309,9 +309,9 @@ theorem code_ok (hok : OK vs gs) (v : CrtImpl) {s : State} (hs : (sspec vs gs).p
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 17).toNat) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes]
+    sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes]
     intro H G hH hG
     rw [Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH, Option.some.injEq] at hH
     rw [Proof.HashTable.X86.hashAt_tableOf hfit hidx, Option.some.injEq] at hG
@@ -339,9 +339,9 @@ theorem code_ct (hok : OK vs gs) (v : CrtImpl) : ConstantTime isa (sspec vs gs).
   obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨T, hT, hh₁⟩, -, -, -, -⟩ := spec_tab h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTH
   obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hT
-  sig_pub [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal,
+  sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal,
     argBytes] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp

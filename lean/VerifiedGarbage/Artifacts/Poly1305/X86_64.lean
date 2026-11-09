@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
+public import VerifiedGarbage.Proof.Poly1305.X86_64.Scrub
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Blocks
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
@@ -34,25 +35,14 @@ public import VerifiedGarbage.Proof.Variants.Poly1305Blocks.X86_64
 namespace VG.Artifacts.Poly1305.X86_64
 
 def direct : List Artifact := [
-  Spec.Poly1305.initApi.artifact X86_64.target {
-    code := Impl.Poly1305.X86_64.init
-    verified := Proof.Poly1305.X86_64.init_verified },
-  Spec.Poly1305.finalizeApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratch 136 .rcx Impl.Poly1305.X86_64.finalize
-    stack := 136
-    verified := Proof.Poly1305.X86_64.finalize_framed }]
+  Spec.Poly1305.initApi.artifact X86_64.target Proof.Poly1305.X86_64.initReg,
+  Spec.Poly1305.finalizeApi.artifact X86_64.target Proof.Poly1305.X86_64.finalizeReg]
 
 open VG.Proof.Poly1305.X86_64 (BlocksImpl)
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.Poly1305Blocks.X86_64.variants.flatMap fun (v : BlocksImpl) => [
-    Spec.Poly1305.updateApi.artifact X86_64.target {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 136 .r8
-        (Impl.Poly1305.X86_64.update v.name v.code)
-      stack := 160
-      verified := Proof.Poly1305.X86_64.update_framed v
-      spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v) }])
+  VG.Proof.Variants.Poly1305Blocks.X86_64.variants.map fun (v : BlocksImpl) =>
+    Spec.Poly1305.updateApi.artifact X86_64.target (Proof.Poly1305.X86_64.updateReg v)
 
 end VG.Artifacts.Poly1305.X86_64

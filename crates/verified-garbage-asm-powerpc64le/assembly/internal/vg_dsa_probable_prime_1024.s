@@ -270,6 +270,8 @@ vg_dsa_probable_prime_1024:
 	add %r14, %r14, %r29
 	li %r0, 1
 	stw %r0, 0(%r14)
+	mflr %r14
+	addi %r3, %r12, 0
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -295,203 +297,8 @@ vg_dsa_probable_prime_1024:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
-	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
-	rldicr %r14, %r11, 2, 61
-	add %r14, %r14, %r8
-	std %r22, 8(%r14)
-	rldicl %r4, %r11, 63, 1
-	addi %r14, %r8, 0
-	addi %r17, %r4, 1
-	li %r3, 0
-212:
-	std %r3, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 212b
-213:
-	ld %r17, 0(%r6)
-	addi %r6, %r6, 8
-	ld %r19, 0(%r7)
-	ld %r20, 0(%r8)
-	mulld %r18, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r3, 0(%r10)
-	mulld %r0, %r20, %r22
-	mulld %r22, %r0, %r3
-	mulhdu %r19, %r0, %r3
-	addc %r22, %r22, %r20
-	addze %r22, %r19
-	addi %r14, %r8, 0
-	addi %r15, %r7, 0
-	addi %r3, %r10, 0
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicr %r16, %r16, 62, 1
-	rldicl %r16, %r16, 2, 62
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 214f
-216:
-	ld %r19, 8(%r14)
-	ld %r20, 8(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 8(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 216b
-	b 215f
-214:
-215:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 217f
-219:
-	ld %r19, 8(%r14)
-	ld %r20, 8(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 8(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 0(%r14)
-	ld %r19, 16(%r14)
-	ld %r20, 16(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 16(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 8(%r14)
-	ld %r19, 24(%r14)
-	ld %r20, 24(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 24(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 16(%r14)
-	ld %r19, 32(%r14)
-	ld %r20, 32(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 32(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 24(%r14)
-	addi %r14, %r14, 32
-	addi %r15, %r15, 32
-	addi %r3, %r3, 32
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 219b
-	b 218f
-217:
-218:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	li %r19, 0
-	addze %r19, %r19
-	addc %r18, %r18, %r22
-	addze %r19, %r19
-	std %r18, 0(%r14)
-	std %r19, 8(%r14)
-	ld %r22, 16(%r14)
-	addi %r4, %r4, -1
-	cmpldi %cr0, %r4, 0
-	bne %cr0, 213b
-	rldicr %r12, %r22, 32, 31
-	rldicl %r12, %r12, 32, 32
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r10, 0
-	rldicl %r17, %r11, 63, 1
-	subfc %r0, %r0, %r0
-220:
-	ld %r0, 0(%r14)
-	ld %r3, 0(%r16)
-	subfe %r0, %r3, %r0
-	std %r0, 0(%r15)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 220b
-	ld %r0, 0(%r14)
-	li %r3, 0
-	subfe %r0, %r3, %r0
-	subfe %r20, %r20, %r20
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
-221:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 221b
+	bl {vg_rsa_mont_kernel}
+	mtlr %r14
 	addi %r8, %r10, 0
 	addi %r9, %r10, 0
 	add %r9, %r9, %r29
@@ -516,7 +323,7 @@ vg_dsa_probable_prime_1024:
 	addi %r16, %r10, 0
 	addi %r17, %r11, 0
 	li %r20, 0
-222:
+212:
 	lwz %r0, 0(%r14)
 	lwz %r3, 0(%r16)
 	subf %r0, %r3, %r0
@@ -528,7 +335,7 @@ vg_dsa_probable_prime_1024:
 	addi %r16, %r16, 4
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 222b
+	bne %cr0, 212b
 	lwz %r0, 0(%r14)
 	subf %r0, %r20, %r0
 	rldicl %r0, %r0, 1, 63
@@ -553,19 +360,19 @@ vg_dsa_probable_prime_1024:
 	add %r14, %r14, %r29
 	add %r14, %r14, %r29
 	rldicl %r17, %r11, 63, 1
-223:
+213:
 	ld %r0, 0(%r15)
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 223b
+	bne %cr0, 213b
 	addi %r14, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	li %r6, 0
 	li %r4, 1
-224:
+214:
 	ld %r7, 0(%r14)
 	xor %r7, %r7, %r4
 	li %r4, 0
@@ -583,7 +390,7 @@ vg_dsa_probable_prime_1024:
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 224b
+	bne %cr0, 214b
 	li %r7, 0
 	subf %r7, %r6, %r7
 	and %r6, %r6, %r7
@@ -653,7 +460,7 @@ vg_dsa_probable_prime_1024:
 	addi %r15, %r15, 8
 	rldicl %r17, %r11, 63, 1
 	addi %r17, %r17, -1
-225:
+215:
 	ld %r3, 0(%r15)
 	rldicr %r4, %r3, 63, 0
 	rldicl %r6, %r5, 63, 1
@@ -667,7 +474,7 @@ vg_dsa_probable_prime_1024:
 	addi %r5, %r3, 0
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 225b
+	bne %cr0, 215b
 	rldicl %r6, %r5, 63, 1
 	xor %r6, %r6, %r5
 	and %r6, %r6, %r9
@@ -781,7 +588,7 @@ vg_dsa_probable_prime_1024:
 	addi %r15, %r15, 8
 	rldicl %r17, %r11, 63, 1
 	addi %r17, %r17, -1
-226:
+216:
 	ld %r3, 0(%r15)
 	rldicr %r4, %r3, 63, 0
 	rldicl %r6, %r5, 63, 1
@@ -795,7 +602,7 @@ vg_dsa_probable_prime_1024:
 	addi %r5, %r3, 0
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 226b
+	bne %cr0, 216b
 	rldicl %r6, %r5, 63, 1
 	xor %r6, %r6, %r5
 	and %r6, %r6, %r9
@@ -909,7 +716,7 @@ vg_dsa_probable_prime_1024:
 	addi %r15, %r15, 8
 	rldicl %r17, %r11, 63, 1
 	addi %r17, %r17, -1
-227:
+217:
 	ld %r3, 0(%r15)
 	rldicr %r4, %r3, 63, 0
 	rldicl %r6, %r5, 63, 1
@@ -923,7 +730,7 @@ vg_dsa_probable_prime_1024:
 	addi %r5, %r3, 0
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 227b
+	bne %cr0, 217b
 	rldicl %r6, %r5, 63, 1
 	xor %r6, %r6, %r5
 	and %r6, %r6, %r9
@@ -1037,7 +844,7 @@ vg_dsa_probable_prime_1024:
 	addi %r15, %r15, 8
 	rldicl %r17, %r11, 63, 1
 	addi %r17, %r17, -1
-228:
+218:
 	ld %r3, 0(%r15)
 	rldicr %r4, %r3, 63, 0
 	rldicl %r6, %r5, 63, 1
@@ -1051,7 +858,7 @@ vg_dsa_probable_prime_1024:
 	addi %r5, %r3, 0
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 228b
+	bne %cr0, 218b
 	rldicl %r6, %r5, 63, 1
 	xor %r6, %r6, %r5
 	and %r6, %r6, %r9
@@ -1062,7 +869,7 @@ vg_dsa_probable_prime_1024:
 	std %r3, 32(%r31)
 	li %r3, 4
 	std %r3, 160(%r31)
-229:
+219:
 	ld %r3, 144(%r31)
 	ld %r4, 152(%r31)
 	subf %r3, %r4, %r3
@@ -1074,7 +881,7 @@ vg_dsa_probable_prime_1024:
 	rldicl %r0, %r3, 1, 63
 	or %r5, %r5, %r0
 	cmpldi %cr0, %r5, 0
-	beq %cr0, 230f
+	beq %cr0, 220f
 	ld %r12, 136(%r31)
 	ld %r3, 152(%r31)
 	add %r12, %r12, %r3
@@ -1089,24 +896,24 @@ vg_dsa_probable_prime_1024:
 	addi %r14, %r10, 0
 	rldicl %r17, %r11, 63, 1
 	li %r0, 0
-232:
+222:
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 232b
+	bne %cr0, 222b
 	add %r15, %r10, %r6
 	addi %r15, %r15, -1
 	addi %r16, %r12, 0
 	addi %r17, %r6, 0
-233:
+223:
 	lbz %r0, 0(%r16)
 	stb %r0, 0(%r15)
 	addi %r16, %r16, 1
 	addi %r15, %r15, -1
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 233b
+	bne %cr0, 223b
 	addi %r10, %r31, 256
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
@@ -1129,13 +936,13 @@ vg_dsa_probable_prime_1024:
 	addi %r5, %r5, 8
 	rldicl %r6, %r11, 63, 1
 	addi %r6, %r6, -1
-234:
+224:
 	ld %r3, 0(%r5)
 	or %r24, %r24, %r3
 	addi %r5, %r5, 8
 	addi %r6, %r6, -1
 	cmpldi %cr0, %r6, 0
-	bne %cr0, 234b
+	bne %cr0, 224b
 	addi %r14, %r10, 0
 	add %r14, %r14, %r29
 	add %r14, %r14, %r29
@@ -1146,14 +953,14 @@ vg_dsa_probable_prime_1024:
 	add %r15, %r15, %r29
 	add %r15, %r15, %r29
 	rldicl %r17, %r11, 63, 1
-235:
+225:
 	ld %r0, 0(%r15)
 	std %r0, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 235b
+	bne %cr0, 225b
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -1182,7 +989,7 @@ vg_dsa_probable_prime_1024:
 	addi %r16, %r10, 0
 	addi %r17, %r11, 0
 	li %r20, 0
-236:
+226:
 	lwz %r0, 0(%r14)
 	lwz %r3, 0(%r16)
 	subf %r0, %r3, %r0
@@ -1194,21 +1001,21 @@ vg_dsa_probable_prime_1024:
 	addi %r16, %r16, 4
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
-	bne %cr0, 236b
+	bne %cr0, 226b
 	lwz %r0, 0(%r14)
 	subf %r0, %r20, %r0
 	rldicl %r0, %r0, 1, 63
 	li %r3, 0
 	subf %r20, %r0, %r3
 	cmpldi %cr0, %r24, 0
-	beq %cr0, 237f
+	beq %cr0, 227f
 	cmpldi %cr0, %r20, 0
-	beq %cr0, 239f
+	beq %cr0, 229f
 	ld %r3, 32(%r31)
 	addi %r3, %r3, 1
 	std %r3, 32(%r31)
-	b 240f
-239:
+	b 230f
+229:
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -1225,9 +1032,9 @@ vg_dsa_probable_prime_1024:
 	ld %r3, 0(%r5)
 	and %r3, %r3, %r4
 	std %r3, 0(%r5)
-240:
-	b 238f
-237:
+230:
+	b 228f
+227:
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -1244,10 +1051,12 @@ vg_dsa_probable_prime_1024:
 	ld %r3, 0(%r5)
 	and %r3, %r3, %r4
 	std %r3, 0(%r5)
-238:
+228:
 	ld %r12, 56(%r31)
 	rldicr %r12, %r12, 32, 31
 	rldicl %r12, %r12, 32, 32
+	mflr %r14
+	addi %r3, %r12, 0
 	addi %r5, %r10, 0
 	add %r5, %r5, %r29
 	add %r5, %r5, %r29
@@ -1269,203 +1078,8 @@ vg_dsa_probable_prime_1024:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
-	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
-	rldicr %r14, %r11, 2, 61
-	add %r14, %r14, %r8
-	std %r22, 8(%r14)
-	rldicl %r4, %r11, 63, 1
-	addi %r14, %r8, 0
-	addi %r17, %r4, 1
-	li %r3, 0
-241:
-	std %r3, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 241b
-242:
-	ld %r17, 0(%r6)
-	addi %r6, %r6, 8
-	ld %r19, 0(%r7)
-	ld %r20, 0(%r8)
-	mulld %r18, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r3, 0(%r10)
-	mulld %r0, %r20, %r22
-	mulld %r22, %r0, %r3
-	mulhdu %r19, %r0, %r3
-	addc %r22, %r22, %r20
-	addze %r22, %r19
-	addi %r14, %r8, 0
-	addi %r15, %r7, 0
-	addi %r3, %r10, 0
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicr %r16, %r16, 62, 1
-	rldicl %r16, %r16, 2, 62
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 243f
-245:
-	ld %r19, 8(%r14)
-	ld %r20, 8(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 8(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 0(%r14)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r3, %r3, 8
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 245b
-	b 244f
-243:
-244:
-	rldicl %r16, %r11, 63, 1
-	addi %r16, %r16, -1
-	rldicl %r16, %r16, 62, 2
-	cmpldi %cr0, %r16, 0
-	beq %cr0, 246f
-248:
-	ld %r19, 8(%r14)
-	ld %r20, 8(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 8(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 0(%r14)
-	ld %r19, 16(%r14)
-	ld %r20, 16(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 16(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 8(%r14)
-	ld %r19, 24(%r14)
-	ld %r20, 24(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 24(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 16(%r14)
-	ld %r19, 32(%r14)
-	ld %r20, 32(%r15)
-	mulld %r12, %r17, %r20
-	mulhdu %r20, %r17, %r20
-	addc %r19, %r19, %r12
-	addze %r20, %r20
-	addc %r19, %r19, %r18
-	addze %r18, %r20
-	ld %r20, 32(%r3)
-	mulld %r12, %r0, %r20
-	mulhdu %r20, %r0, %r20
-	addc %r12, %r12, %r19
-	addze %r20, %r20
-	addc %r12, %r12, %r22
-	addze %r22, %r20
-	std %r12, 24(%r14)
-	addi %r14, %r14, 32
-	addi %r15, %r15, 32
-	addi %r3, %r3, 32
-	addi %r16, %r16, -1
-	cmpldi %cr0, %r16, 0
-	bne %cr0, 248b
-	b 247f
-246:
-247:
-	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	li %r19, 0
-	addze %r19, %r19
-	addc %r18, %r18, %r22
-	addze %r19, %r19
-	std %r18, 0(%r14)
-	std %r19, 8(%r14)
-	ld %r22, 16(%r14)
-	addi %r4, %r4, -1
-	cmpldi %cr0, %r4, 0
-	bne %cr0, 242b
-	rldicr %r12, %r22, 32, 31
-	rldicl %r12, %r12, 32, 32
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r10, 0
-	rldicl %r17, %r11, 63, 1
-	subfc %r0, %r0, %r0
-249:
-	ld %r0, 0(%r14)
-	ld %r3, 0(%r16)
-	subfe %r0, %r3, %r0
-	std %r0, 0(%r15)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 249b
-	ld %r0, 0(%r14)
-	li %r3, 0
-	subfe %r0, %r3, %r0
-	subfe %r20, %r20, %r20
-	addi %r14, %r8, 0
-	addi %r15, %r9, 0
-	addi %r16, %r5, 0
-	rldicl %r17, %r11, 63, 1
-250:
-	ld %r0, 0(%r15)
-	ld %r3, 0(%r14)
-	xor %r3, %r3, %r0
-	and %r3, %r3, %r20
-	xor %r3, %r3, %r0
-	std %r3, 0(%r16)
-	addi %r14, %r14, 8
-	addi %r15, %r15, 8
-	addi %r16, %r16, 8
-	addi %r17, %r17, -1
-	cmpldi %cr0, %r17, 0
-	bne %cr0, 250b
+	bl {vg_rsa_mont_kernel}
+	mtlr %r14
 	addi %r3, %r31, 0
 	ld %r4, 0(%r31)
 	bl {vg_miller_rabin_round}
@@ -1479,7 +1093,7 @@ vg_dsa_probable_prime_1024:
 	rldicr %r12, %r12, 32, 31
 	rldicl %r12, %r12, 32, 32
 	cmpldi %cr0, %r3, 0
-	beq %cr0, 251f
+	beq %cr0, 231f
 	ld %r3, 176(%r31)
 	addi %r3, %r3, 1
 	std %r3, 176(%r31)
@@ -1505,20 +1119,20 @@ vg_dsa_probable_prime_1024:
 	li %r4, 4
 	subf %r5, %r5, %r4
 	std %r5, 160(%r31)
-	b 252f
-251:
+	b 232f
+231:
 	li %r3, 2
 	std %r3, 160(%r31)
-252:
-	b 231f
-230:
+232:
+	b 221f
+220:
 	li %r3, 0
 	std %r3, 160(%r31)
-231:
+221:
 	ld %r3, 160(%r31)
 	addi %r3, %r3, -4
 	cmpldi %cr0, %r3, 0
-	beq %cr0, 229b
+	beq %cr0, 219b
 25:
 	ld %r3, 160(%r31)
 	ld %r5, 152(%r31)
@@ -1546,9 +1160,9 @@ vg_dsa_probable_prime_1024:
 	ld %r7, 536(%r9)
 	ld %r2, 544(%r9)
 	cmpldi %cr0, %r3, 0
-	beq %cr0, 253f
+	beq %cr0, 233f
 	std %r5, 0(%r7)
-	b 254f
-253:
-254:
+	b 234f
+233:
+234:
 	blr

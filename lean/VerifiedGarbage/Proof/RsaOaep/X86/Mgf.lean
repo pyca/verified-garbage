@@ -131,7 +131,7 @@ table holds, then its digest length. -/
 structure TabFacts (G : Impl.Pbkdf2.Stream.X86.Hash) (f : Fns) (p ai au af : BitVec 32) (σ : State) : Prop where
   ok : TabOK G f σ.syms
   mem : TabMem G σ.syms p σ.mem
-  d : σ.mem.readW (VG.X86.addr p 16) 32 = BitVec.ofNat 32 G.D
+  d : σ.mem.readW (VG.X86.addr p 24) 32 = BitVec.ofNat 32 G.D
   ai : σ.syms G.initN = ai
   au : σ.syms G.updN = au
   af : σ.syms G.finN = af
@@ -196,7 +196,7 @@ structure MP (L : Lay) (scr : BitVec 32) (so sl dOff dl : Nat) (seed : State →
   dst : ∀ σ m, Inv σ m → m.readW (L.fr sDst) 32 = scr + BitVec.ofNat 32 dOff
   dstL : ∀ σ m, Inv σ m → m.readW (L.fr sDstLen) 32 = BitVec.ofNat 32 dl
   hj : j < L.argv.length
-  tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr (L.argv.getD j 0) o) 4
+  tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr (L.argv.getD j 0) o) 4
   cA : TaintOk [.esp, .ebp] (.block [Impl.RsaPss.X86.ld .eax (Impl.RsaPss.X86.arg j), Impl.RsaPss.X86.st .eax sTab])
   tab : ∀ σ m, Inv σ m → TabFacts g.H f (L.argv.getD j 0) ai au af σ
   fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []
@@ -314,7 +314,7 @@ theorem tcallK_vp {X : State → State → Prop} (hX : ∀ σ s t v, X σ s → 
       (tcall k ts rs) G := by
   have hg := P.hg
   obtain ⟨σ', ok⟩ := hg.ok
-  have hk : 4 * k + 4 ≤ 20 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega
   obtain ⟨tR, tRo, tC⟩ := P.tbl
   let F : State → State → Prop := fun σ s =>
     (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
@@ -835,7 +835,7 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv f j ai au af) :
   -- The table's address to its slot, then its digest length, the counter and `done` set to 0.
   let p := L.argv.getD j 0
   show VP _ (.seq (.block ([Impl.RsaPss.X86.ld .eax (Impl.RsaPss.X86.arg j), Impl.RsaPss.X86.st .eax sTab] ++
-    ([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 16)), Impl.RsaPss.X86.st .eax sHl] ++
+    ([.mov .eax (.mem (Impl.RsaPkcs1Sig.X86.at_ .eax 24)), Impl.RsaPss.X86.st .eax sHl] ++
       Impl.RsaPss.X86.mgfInit))) (.loop (mgfRound f) .b)) _
   refine VP.seq (G := fun σ s => (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl 0 dstv seed Inv σ s.mem) ∧
     s.syms = σ.syms) (VP.block_append (G := fun σ s => ((Ctx L scr σ s ∧ Inv σ s.mem ∧
@@ -864,13 +864,13 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv f j ai au af) :
     obtain ⟨tR, tRo, tC⟩ := P.tbl
     simp only [Impl.RsaPss.X86.st, Impl.RsaPss.X86.mgfInit, Impl.RsaPss.X86.mi, Impl.RsaPkcs1Sig.X86.at_,
       Impl.RsaPkcs1Sig.X86.stk, List.cons_append, List.nil_append]
-    refine wp_ldm (B := p) he ⟨tR, hc.st.inRo tRo, tC 16 (by decide)⟩ fun t1 u1 => ?_
+    refine wp_ldm (B := p) he ⟨tR, hc.st.inRo tRo, tC 24 (by decide)⟩ fun t1 u1 => ?_
     have c1 : Ctx L scr σ t1 := hc.upd u1 (by decide) (by decide)
     refine c1.wp_st hg (by decide) fun t2 c2 u2 => wp_movi fun t3 u3 => ?_
     refine (c2.upd u3 (by decide) (by decide)).wp_st hg (by decide) fun t4 c4 u4 =>
       c4.wp_st hg (by decide) fun t5 c5 u5 => WP.block_nil ?_
     have eD : t1.gpr .eax = BitVec.ofNat 32 g.H.D := by
-      rw [u1.gpr, St_roW hc.st tRo (tC 16 (by decide)), T.d]
+      rw [u1.gpr, St_roW hc.st tRo (tC 24 (by decide)), T.d]
     have m5 : t5.mem = ((s.mem.writeW (L.fr sHl) (BitVec.ofNat 32 g.H.D)).writeW (L.fr sCtr) (0 : BitVec 32)).writeW
         (L.fr sDone) (0 : BitVec 32) := by
       rw [u5.mem, u4.gpr, u4.mem, u3.gpr, u3.mem, u2.mem, u1.mem, eD]; rfl

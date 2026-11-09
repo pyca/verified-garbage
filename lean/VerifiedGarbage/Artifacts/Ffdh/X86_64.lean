@@ -16,7 +16,6 @@ public import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
-public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
 
 /-! # Finite-field Diffie–Hellman (SP 800-56A) on x86-64 -/
@@ -38,8 +37,7 @@ end VG.Artifacts.Ffdh.X86_64
 -- Emit FFDH domain operations for every shared arithmetic backend and exponentiation
 namespace VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 
-def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact :=
-  if v.roundOnly then [] else [
+def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) (e : Proof.Ffdh.X86_64.ExpImpl) : List Artifact := [
   Spec.Ffdh.checkPublicApi.artifact X86_64.target {
     suffix := qualifiedName "" [("mr", v.suffix), ("exp", e.suffix)]
     stack := 8
@@ -76,20 +74,13 @@ end VG.Artifacts.Ffdh.X86_64.MillerRabinFfdhExp
 namespace VG.Artifacts.Ffdh.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) =>
-    if v.roundOnly then [] else [
+  (VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
       suffix := v.suffix
       stack := 8
       code := Proof.Ffdh.X86_64.Cached.precomputeCode v
       verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
       spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v },
-    Spec.Ffdh.cachedGenerateKeyApi.artifact X86_64.target {
-      suffix := v.suffix
-      stack := 8
-      code := Proof.Ffdh.X86_64.Cached.attemptCode v
-      verified := Proof.Ffdh.X86_64.Cached.attemptCode_verified v
-      spSafe := Proof.Ffdh.X86_64.Cached.attemptCode_sp v },
     Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
       suffix := v.suffix
       stack := 72
@@ -98,7 +89,7 @@ def artifacts : List Artifact :=
       spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v }]) ++
   direct ++
   (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
-    VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
+    VG.Proof.Variants.MillerRabin.X86_64.arithVariants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact X86_64.target {
       suffix := v.suffix

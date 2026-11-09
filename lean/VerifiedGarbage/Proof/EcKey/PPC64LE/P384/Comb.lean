@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.EcKey.P384
 public import VerifiedGarbage.Impl.Ecdsa.P384.PPC64LEComb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Spec.EcKey.P384
 meta import VerifiedGarbage.Impl.Ecdsa.P384.PPC64LEComb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
@@ -117,8 +117,7 @@ theorem combPk_ok (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : pkPC.
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
   have hd : Region.Disjoint ⟨s.syms p384Comb.tsym, 8 * p384CombWords.length⟩ ⟨s.gpr .r5, 8192⟩ :=
-    (hk.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) member)).2.1 _
-      (by rw [hpre.wr]; simp)
+    hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := publicKeyWith_ok p384_ok (by decide) hL hpre fun s₁ S₁ sy =>
     Proof.P384.PPC64LE.comb_generator_ok hL S₁
       (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
@@ -126,7 +125,7 @@ theorem combPk_ok (hL : Weierstrass.Law Spec.P384.curve) (s : State) (hs : pkPC.
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.publicKeyP384Comb :=
-  VG.Taint.constantTime (A := taintSym [p384Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
+  VG.Taint.constantTime (A := vectorTaintSym [p384Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -145,7 +144,8 @@ theorem combPk_sat : (Spec.EcKey.P384.inst.publicKeyContract (abi.withConsts p38
   have hl := Proof.P384.PPC64LE.comb_words_length
   have held := Proof.P384.PPC64LE.combSatMem_held
   rw [combConsts_eq]
-  generalize p384CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, p384CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : combSatC = s
   sig_pre [Spec.EcKey.P384.inst, Spec.EcKey.Instance.publicKeyContract, Spec.EcKey.Instance.publicKeySig,
     Spec.P384.curve, Spec.EcKey.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,

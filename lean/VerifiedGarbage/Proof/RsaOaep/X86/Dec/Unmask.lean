@@ -93,12 +93,12 @@ abbrev U1 (P : EP) (σ s : State) : Prop :=
 
 /-- The label's hash function's table, the argument 23, in a buffer only read. -/
 theorem tblL_of {P : EP} {σ : State} (hi : In P σ) :
-    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr P.tabL o) 4 := by
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr P.tabL o) 4 := by
   have hf := hi.ok.fits P.TABL (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tabL.isLt; omega)] at hf
   refine ⟨P.TABL, by simp, fun o ho => ?_⟩
-  show (⟨P.tabL.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tabL o) 4
+  show (⟨P.tabL.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tabL o) 4
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 
@@ -346,12 +346,12 @@ abbrev U5 (P : EP) (σ s : State) : Prop :=
 
 /-- MGF1's table, the argument 24, in a buffer only read. -/
 theorem tbl_of {P : EP} {σ : State} (hi : In P σ) :
-    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr (P.lay.argv.getD 24 0) o) 4 := by
+    ∃ R ∈ P.lay.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr (P.lay.argv.getD 24 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
-  show (⟨P.tab.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
+  show (⟨P.tab.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 

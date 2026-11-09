@@ -86,24 +86,26 @@ namespace VG.Artifacts.EcdsaP521.X86_64.Rfc6979
 open VG.Proof.P521.X86_64 (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p521Of p521T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
-
-/-- The signature with P-521's multiplication with BMI2 and ADX (`adx`,
-`_adx`) or not, and the tables of `vs`. -/
-def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
-    (hv : OK vs ∧ "VG_P521_COMB" ∉ names vs) (adx : Bool) : Artifact :=
-  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target {
-    suffix := if adx then "_adx" else ""
-    tables := [("hmac", tables vs)]
-    code := signCodeT (p521Of adx h.law (Proof.P521.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs
-    stack := stackT
-    verified := p521T_verified adx h.law (Proof.P521.combOk7 h.law) h.inv vs hv
-    spSafe := signCode_sp _ _ _ }
-
-def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
-  if hv : OK vs ∧ "VG_P521_COMB" ∉ names vs then [withMul hasLaw vs hv false, withMul hasLaw vs hv true] else []
+open VG.Proof.Variants.MdHash.X86_64 (variants)
 
 def artifacts : List Artifact :=
-  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+  if hv : OK variants ∧ "VG_P521_COMB" ∉ names variants then [
+    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target {
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p521Of false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p521.tries variants
+      stack := stackT
+      verified := p521T_verified false hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ },
+    Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target {
+      suffix := "_adx"
+      tables := [("hmac", tables variants)]
+      code := signCodeT (p521Of true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)
+        Spec.Ecdsa.Rfc6979.Curves.p521.tries variants
+      stack := stackT
+      verified := p521T_verified true hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv variants hv
+      spSafe := signCode_sp _ _ _ }]
+  else []
 
 end VG.Artifacts.EcdsaP521.X86_64.Rfc6979
 
@@ -111,27 +113,20 @@ namespace VG.Artifacts.EcdsaP521.X86_64
 
 open VG.Proof.P521.X86_64 (hasLaw)
 
-/-- The function of `Spec.Ecdsa.P521.verifyHashApi`, multiplying modulo `p` with
-BMI2 and ADX (`adx`, `_adx`) or not: its `code`, proven (`hv`), with no
-instruction writing `rsp` (`hsp`). -/
-def verify (adx : Bool) (code : Prog X86_64.isa)
-    (hv : Verified X86_64.target code
-      (Spec.Ecdsa.P521.inst.verifyHashContract (X86_64.abi.withConsts Impl.Ecdsa.X86_64.p521.combConsts) 96))
-    (hsp : code.all (fun i => !X86_64.isa.writesSp i) = true := by sp_safe) : Artifact :=
-  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
-    suffix := (if adx then "_adx" else "")
-    code
-    stack := 96
-    verified := hv
-    spSafe := hsp }
-
 def artifacts : List Artifact := [
-  verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP521)
-    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv),
-  verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
-    Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx)
-    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)] ++
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP521
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law)
+      hasLaw.inv },
+  Spec.Ecdsa.P521.verifyHashApi.artifact X86_64.target {
+    suffix := "_adx"
+    code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
+      Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx
+    stack := 96
+    verified := Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law)
+      hasLaw.inv }] ++
   Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.X86_64

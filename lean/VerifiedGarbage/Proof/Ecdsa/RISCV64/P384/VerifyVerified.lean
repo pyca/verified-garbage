@@ -93,7 +93,8 @@ theorem verify_sat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.P384.inst
   have held := Comb.combSatMem_held
   rw [show Impl.Ecdsa.RISCV64.Comb.p384CombConsts = [(Impl.Ecdsa.RISCV64.Comb.p384Sym,
     Impl.Ecdsa.RISCV64.Comb.p384CombWords)] from rfl]
-  generalize Impl.Ecdsa.RISCV64.Comb.p384CombWords = W' at hl held ⊢
+  obtain ⟨W', eW⟩ : ∃ W, Impl.Ecdsa.RISCV64.Comb.p384CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : verifySatC = s
   sig_pre [Spec.Ecdsa.P384.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.P384.curve,
     Spec.Ecdsa.scratchWords, RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,

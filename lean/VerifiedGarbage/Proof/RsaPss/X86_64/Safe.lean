@@ -83,7 +83,7 @@ structure MdFnsSafe (f : MdFns) : Prop where
   comp : FSafe f.comp 0
   dig : FSafe f.dig 0
 
-/-- And those through the slots of the table of `Hash` at most 8 bytes. -/
+/-- And those through the slots of the table of `MdHash` at most 8 bytes. -/
 structure FnsSafe (g : Impl.Mgf1.X86_64.Table.Fns) : Prop where
   init : FSafe g.init 8
   upd : FSafe g.upd 8

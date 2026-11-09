@@ -174,6 +174,13 @@ own changes are rebuilt either way, on top of the restored build.
   features of the algorithm's variants (and a variant that needs none, by
   its suffix): never describe an implementation's techniques there, or
   anywhere else that is not its code and proofs.
+* **x86-64 functions return without secret residue.** Every x86-64
+  artifact proves `NoResidue` (`TCB/X86_64/Residue.lean`;
+  `Registration.residue`, which `X86_64.Scrub.scrubReg` provides), but those
+  `ci/residue_allowlist.txt` lists. The list only shrinks: never add a line
+  (`ci/check_residue_allowlist.py`); the emitter refuses an unlisted function
+  without a proof, and a listed one that has one or no longer exists, so
+  converting a function removes its line (the `adding-a-primitive` skill).
 * The emitter runs compiled code, so it must be what the kernel checked:
   nothing the artifacts or the emitter use may carry `implemented_by`,
   `extern` or `export`, and nothing in `lean/VerifiedGarbage/` may declare a
@@ -402,8 +409,10 @@ lemmas and tactics to use; read it before writing a proof:
 * **Unfolding:** close goals about symbolic memory or hash values with
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
   `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
-  large concrete value; rewrite tables' regions with
-  `Abi.constRegions_cons`; evaluate a recursive definition that reuses a
+  large concrete value, which `generalize` does not hide from the kernel
+  (abstract it with `obtain`); rewrite tables' regions with
+  `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
+  lemmas; evaluate a recursive definition that reuses a
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into

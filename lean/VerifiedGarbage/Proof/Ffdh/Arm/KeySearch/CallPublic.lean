@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantContract
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.ConstantMemory
 import VerifiedGarbage.Proof.Ffdh.Arm.KeySearch.CallPost
@@ -47,7 +48,7 @@ theorem call_public_plain {p : KeyPublic sampling} {used keys scalars : Nat} {s�
   simp only [State.addr] at inputs₁ inputs₂
   cases sampling with
   | full =>
-    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     simp only [args₁.x, args₁.xlen, args₁.y, args₁.ylen, args₂.x, args₂.xlen, args₂.y, args₂.ylen,
       a0₁, a1₁, a2₁, a3₁, a4₁, a5₁, a6₁, a0₂, a1₂, a2₂, a3₂, a4₂, a5₂, a6₂, sp₁, sp₂, len, dlen]
     rw [inputs₁.1, inputs₁.2, inputs₂.1, inputs₂.2]
@@ -56,7 +57,7 @@ theorem call_public_plain {p : KeyPublic sampling} {used keys scalars : Nat} {s�
     rw [status]
     simp only [true_and]
   | vetted =>
-    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     simp only [args₁.x, args₁.xlen, args₁.y, args₁.ylen, args₂.x, args₂.xlen, args₂.y, args₂.ylen,
       a0₁, a1₁, a2₁, a3₁, a4₁, a5₁, a6₁, a0₂, a1₂, a2₂, a3₂, a4₂, a5₂, a6₂, sp₁, sp₂, len, dlen]
     rw [inputs₁.1, inputs₁.2, inputs₂.1, inputs₂.2]
@@ -70,7 +71,7 @@ theorem call_public_plain {p : KeyPublic sampling} {used keys scalars : Nat} {s�
     have a8₁ := call_stackArg (j := 8) facts sp₁ mem₁ (by decide)
     have a8₂ := call_stackArg (j := 8) facts sp₂ mem₂ (by decide)
     simp only [callValue] at a7₁ a8₁ a7₂ a8₂
-    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, cachedGenerateKeyContract, cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
+    sig_pub [GenerationPolicy.attemptContract, GenerationPolicy.legacyAttemptContract, Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, reduceClassify, Loc.val, State.addr]
     simp only [args₁.x, args₁.xlen, args₁.y, args₁.ylen, args₂.x, args₂.xlen, args₂.y, args₂.ylen,
       a0₁, a1₁, a2₁, a3₁, a4₁, a5₁, a6₁, a0₂, a1₂, a2₂, a3₂, a4₂, a5₂, a6₂, a7₁, a8₁, a7₂, a8₂, sp₁, sp₂, len, dlen]
     rw [inputs₁.1, inputs₁.2, inputs₂.1, inputs₂.2]

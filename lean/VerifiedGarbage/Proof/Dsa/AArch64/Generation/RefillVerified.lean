@@ -7,6 +7,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Entry
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
 public import VerifiedGarbage.Spec.Dsa.ParameterSearchContract
 public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.HashVariants
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCorrect
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RefillCT
@@ -15,7 +16,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-! # `vg_dsa_parameter_search` on AArch64, verified
 
 `refill_correct` and `refill_ct` for the hash backends and Miller–Rabin
-variants, and a state that meets the contract's precondition. -/
+variants, and a state that meets the contract's precondition; and the pairs
+of a SHA-1 and a SHA-256 implementation that the search is emitted for
+(`hashPairs`). -/
 
 @[expose] public section
 namespace VG.Proof.Dsa.AArch64.Generation.Refill
@@ -52,5 +55,34 @@ theorem backend_verified (v1 v256 : MdHash) (v : RoundImpl)
   ⟨refill_correct (generationHashes v1 v256 h1 h256) (Generator.generatorStage v) (ProbablePrime.primeTest v),
     refill_ct (generationHashes v1 v256 h1 h256) (Generator.generatorStage v) (ProbablePrime.primeTest v),
     refill_satisfiable⟩
+
+/-- A SHA-1 and a SHA-256 implementation, as the parameter search takes
+them, and that they are SHA-1 and SHA-256. -/
+structure Hashes where
+  sha1 : MdHash
+  sha256 : MdHash
+  h1 : sha1.mgf.G.rust = "sha1"
+  h256 : sha256.mgf.G.rust = "sha256"
+
+open VG.Proof.Variants.MdHash.AArch64 (sha1Variants sha256Variants)
+
+theorem sha1Variants_rust : ∀ v ∈ sha1Variants, v.mgf.G.rust = "sha1" := by
+  intro v hv
+  simp only [sha1Variants, List.mem_cons, List.not_mem_nil, or_false] at hv
+  rcases hv with rfl | rfl <;> rfl
+
+theorem sha256Variants_rust : ∀ v ∈ sha256Variants, v.mgf.G.rust = "sha256" := by
+  intro v hv
+  simp only [sha256Variants, List.mem_cons, List.not_mem_nil, or_false] at hv
+  rcases hv with rfl | rfl <;> rfl
+
+/-- The pairs the parameter search is emitted for, best first: a SHA-1 and
+a SHA-256 implementation for the same CPUs (both baselines or both SHA-2
+extensions). Either other pair needs the features of one of these, which
+runs both hashes with them. -/
+def hashPairs : List Hashes :=
+  sha1Variants.attach.flatMap fun ⟨v1, h1⟩ => sha256Variants.attach.filterMap fun ⟨v256, h256⟩ =>
+    if v1.suffix == v256.suffix then some ⟨v1, v256, sha1Variants_rust v1 h1, sha256Variants_rust v256 h256⟩
+    else none
 
 end VG.Proof.Dsa.AArch64.Generation.Refill

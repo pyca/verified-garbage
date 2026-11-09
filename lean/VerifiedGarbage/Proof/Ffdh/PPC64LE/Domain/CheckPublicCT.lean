@@ -16,6 +16,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.PPC64LE.ParameterCandidate.CTBase
+import VerifiedGarbage.Proof.Dsa.PackedBytes
 
 /-!
 # `vg_ffdh_check_public` on PPC64LE: constant time
@@ -38,6 +40,7 @@ open VG VG.PPC64LE VG.PPC64LE.Taint VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Pro
 open VG.Impl.Bignum VG.Impl.Bignum.PPC64LE VG.Impl.Ffdh.PPC64LE.Domain
 open VG.Proof.Bignum (slot bytesAt_length)
 open VG.Proof.Bignum.PPC64LE (Two Pins two_post two_taint)
+open VG.Proof.Ffdh (lead lead_lt)
 
 /-- The public data of a run: the domain, y and the working space, `p_len`,
 `domain_len`, the working space's size in bytes, and the bytes of the domain
@@ -379,6 +382,140 @@ theorem TS {d : CD} {s : State} (h : C6 d s ∧ s.gpr .r0 = 0) : WP isa subgroup
   show t.gpr .r23 = d.S
   rw [k.gpr .r23 (by decide), hb.r23]
 
+/-! ## `subgroup`
+
+The scan for q's first nonzero octet branches on q's octets, which the
+taint analysis takes as secret: two runs on the same domain take the same
+number of iterations (`two_loopD`), the octets being the domain's, and
+`subFront` and `subBack` are checked by the taint analysis, the latter from
+the pointer and the count the scan leaves. -/
+
+/-- q's octets. -/
+abbrev CD.qb (d : CD) : List Byte := (d.db.drop (2 * d.k)).take d.k
+
+/-- What `subgroup` needs. -/
+structure SubPre (d : CD) (s : State) : Prop where
+  base : Base d s
+  hL : d.L = 3 * d.k
+  hp : arr s.mem d.S d.w 0 = d.p
+  valid : Spec.Rsa.modulusValid d.p d.k = true
+
+/-- The registers the scan and `subBack` start from. -/
+def subScanRegs : List Reg := [.r10, .r11, .r23, .r29, .r30, .r31]
+
+/-- Their values before iteration `j` of the scan. -/
+def scanVal (d : CD) (j : Nat) : Reg → BitVec 64
+  | .r10 => off d.S (slot d.w 0)
+  | .r11 => BitVec.ofNat 64 (2 * d.w)
+  | .r23 => d.S
+  | .r29 => BitVec.ofNat 64 (8 * (d.w + 2))
+  | .r30 => off (off d.D (2 * d.k)) j
+  | .r31 => BitVec.ofNat 64 (d.k - j)
+  | _ => 0
+
+/-- Before iteration `j` of the scan. -/
+structure ScanJ (d : CD) (j : Nat) (s : State) : Prop where
+  regs : ∀ r ∈ subScanRegs, s.gpr r = scanVal d j r
+  le : j ≤ lead d.qb
+  len : d.qb.length = d.k
+  k1024 : d.k ≤ 1024
+  ne : d.qb ≠ []
+  rd : ∀ i < d.qb.length, InRegions (s.rd ++ s.wr) (off (off d.D (2 * d.k)) i) 1
+  val : ∀ i (h : i < d.qb.length), s.mem (off (off d.D (2 * d.k)) i) = d.qb[i]
+
+theorem ScanJ.pins {d : CD} {j : Nat} {s₁ s₂ : State} (h₁ : ScanJ d j s₁) (h₂ : ScanJ d j s₂) :
+    ∀ r ∈ subScanRegs, s₁.gpr r = s₂.gpr r := fun r hr => (h₁.regs r hr).trans (h₂.regs r hr).symm
+
+/-- `subFront`, to the scan's start. -/
+theorem SF {d : CD} {s : State} (h : SubPre d s) : WP isa subFront s (ScanJ d 0) := by
+  have hb := h.base
+  have hf := modulus_facts h.valid
+  have hk := hb.k64
+  have hk' := hb.k1024
+  refine WP.mono (subFront_ok hb.env hb.r23 hb.r21 hb.r28 (by rw [h.hp]; exact hf.2)
+    (by rw [h.hp]; exact top_of_valid h.valid (by simp only [CD.w]; omega) (by simp only [CD.w]; omega)))
+    fun t hm => ?_
+  have hL3 := h.hL
+  have hql : d.qb.length = d.k := by
+    have hdl : d.db.length = 3 * d.k := by rw [← hb.bD, bytesAt_length, hL3]
+    simp only [CD.qb, List.length_take, List.length_drop]; omega
+  have hq : Spec.Rsa.bytesAt t.mem (off d.D (2 * d.k)) d.k = d.qb := by
+    rw [hm.body.bytesAt hb.env.hZ (fun i hi x hx => by rw [off_off']; exact hb.sepD _ (by omega) x hx),
+      show off d.D (2 * d.k) = d.D + BitVec.ofNat 64 (2 * d.k) from rfl,
+      ← VG.Proof.Dsa.bytesAt_slice _ _ (show 2 * d.k + d.k ≤ d.L by omega), hb.bD]
+  refine ⟨fun r hr => ?_, Nat.zero_le _, hql, hk', fun he => by rw [he] at hql; simp at hql; omega,
+    fun i hi => ?_, fun i hi => ?_⟩
+  · simp only [subScanRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact hm.h10
+    · exact hm.h11
+    · exact hm.r23
+    · exact hm.h29
+    · exact hm.r30
+    · rw [hm.r31]; rfl
+  · rw [hm.keep.rd, hm.keep.wr, off_off']; exact hb.rdD _ (by omega)
+  · have e := List.getElem_of_eq hq (i := i) (by rw [bytesAt_length]; omega)
+    simp only [Spec.Rsa.bytesAt, List.getElem_map, List.getElem_range] at e
+    exact e
+
+/-- One iteration of the scan. -/
+theorem SL (a : CD × Nat) (s : State) (h : ScanJ a.1 a.2 s) :
+    WP isa (.block leadBody) s fun s' => isa.eval (.nonzero .d .r17) s' = some (decide (a.2 < lead a.1.qb)) ∧
+      (decide (a.2 < lead a.1.qb) = false → ScanJ a.1 (lead a.1.qb) s') ∧
+      (decide (a.2 < lead a.1.qb) = true →
+        lead a.1.qb + 1 - (a.2 + 1) < lead a.1.qb + 1 - a.2 ∧ ScanJ a.1 (a.2 + 1) s') := by
+  rcases a with ⟨d, j⟩
+  dsimp only at h
+  have h30 := h.regs .r30 (by decide)
+  have h31 := h.regs .r31 (by decide)
+  refine WP.mono (leadStep_ok (s₀ := s) (by rw [h.len]; exact h.k1024) h.ne h.rd h.val h.le
+    ⟨h30, by rw [h31, h.len]; rfl, rfl, Keep.refl _ _⟩) fun t ⟨⟨t30, t31, tm, tk⟩, t17⟩ => ?_
+  have hL := lead_lt h.ne
+  have hreg : ∀ r ∈ [Reg.r10, .r11, .r23, .r29], t.gpr r = s.gpr r := by
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl <;> exact tk.gpr _ (by decide)
+  have mk : ∀ j', j' ≤ lead d.qb → t.gpr .r30 = off (off d.D (2 * d.k)) j' →
+      t.gpr .r31 = BitVec.ofNat 64 (d.k - j') → ScanJ d j' t := fun j' hj' a30 a31 =>
+    ⟨fun r hr => by
+      simp only [subScanRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · rw [hreg _ (by decide)]; exact h.regs _ (by decide)
+      · exact a30
+      · exact a31,
+     hj', h.len, h.k1024, h.ne, fun i hi => by rw [tk.rd, tk.wr]; exact h.rd i hi,
+     fun i hi => by rw [tm]; exact h.val i hi⟩
+  refine ⟨?_, fun hg => ?_, fun hg => ?_⟩
+  · rw [VG.PPC64LE.eval_nonzero_ofNat' t .r17 (by cases decide (j < lead d.qb) <;> decide) t17]
+    cases decide (j < lead d.qb) <;> rfl
+  · have hj : j = lead d.qb := by have := h.le; simp at hg; omega
+    rw [Nat.min_eq_right (by omega)] at t30 t31
+    exact mk _ (Nat.le_refl _) t30 (by rw [t31, h.len])
+  · have hj : j < lead d.qb := by simpa using hg
+    rw [Nat.min_eq_left (by omega)] at t30 t31
+    exact ⟨show lead d.qb + 1 - (j + 1) < lead d.qb + 1 - j by omega, mk _ (by omega) t30 (by rw [t31, h.len])⟩
+
+/-- `subgroup` takes the same time in runs on the same public data. -/
+theorem subgroup_rel {Φ : CD → State → Prop} (hΦ : ∀ d s, Φ d s → SubPre d s) :
+    RelCT isa (Two Φ) subgroup fun _ _ => True := by
+  unfold subgroup
+  refine RelCT.seq (R := Two fun d s => ScanJ d 0 s)
+    (two_post (two_taint _ (pins_base (Φ := Φ) fun d s h => (hΦ d s h).base) (by taint_decide))
+      fun d s h => SF (hΦ d s h))
+    (RelCT.seq (R := Two fun (a : CD × Nat) s => ScanJ a.1 (lead a.1.qb) s)
+      (RelCT.mono (P := Two fun (a : CD × Nat) s => ScanJ a.1 a.2 s)
+        (VG.Proof.Ffdh.PPC64LE.ParameterCandidate.two_loopD (fun a => lead a.1.qb + 1 - a.2)
+          (fun a => (a.1, a.2 + 1)) (fun a => decide (a.2 < lead a.1.qb))
+          (two_taint [.r30, .r31] (fun a s₁ s₂ h₁ h₂ r hr => ScanJ.pins h₁ h₂ r (by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+            rcases hr with rfl | rfl <;> decide)) (by taint_decide))
+          SL)
+        (fun s₁ s₂ ⟨d, h₁, h₂, hsp⟩ => ⟨(d, 0), h₁, h₂, hsp⟩) fun _ _ h => h)
+      (two_taint subScanRegs (fun _ _ _ h₁ h₂ => ScanJ.pins h₁ h₂) (by taint_decide)))
+
 /-! ## Constant time -/
 
 theorem cp_rel : RelCT isa (Two C0) checkPublic fun _ _ => True := by
@@ -402,8 +539,8 @@ theorem cp_rel : RelCT isa (Two C0) checkPublic fun _ _ => True := by
         (RelCT.seq (two_post (two_taint _ (pins_base (Φ := fun d s => C5 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1)
           (by taint_decide)) fun _ _ h => TQ h)
           (two_ite (Φ := C6) (fun d s₁ s₂ h₁ h₂ => h₁.2.2.2.trans h₂.2.2.2.symm)
-            (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 = 0) fun _ _ h => h.1.1)
-              (by taint_decide)) fun _ _ h => TS h)
+            (two_post (subgroup_rel (Φ := fun d s => C6 d s ∧ s.gpr .r0 = 0) fun _ _ h =>
+              ⟨h.1.1, h.1.2.2.2.mp h.2, h.1.2.1, h.1.2.2.1⟩) fun _ _ h => TS h)
             (two_post (two_taint _ (pins_base (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) fun _ _ h => h.1.1)
               (by taint_decide)) fun _ _ h => TK1 (Φ := fun d s => C6 d s ∧ s.gpr .r0 ≠ 0) (fun _ _ h => h.1.1) h))))
 

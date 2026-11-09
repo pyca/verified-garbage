@@ -24,7 +24,7 @@ jb 22b
 .base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
 call {vg_chacha20_xor_ssse3}
 .base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
-call {vg_poly1305_init}
+call {vg_poly1305_init_core}
 .base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
 je 23f
 call {vg_poly1305_blocks}
@@ -154,7 +154,7 @@ call {vg_poly1305_blocks}
 jmp 240b
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym crate::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
-        vg_poly1305_init = sym crate::poly1305::vg_poly1305_init,
+        vg_poly1305_init_core = sym crate::poly1305::vg_poly1305_init_core::vg_poly1305_init_core,
         vg_poly1305_blocks = sym crate::poly1305::vg_poly1305_blocks::vg_poly1305_blocks,
         vg_poly1305_finalize_scratch = sym crate::poly1305::vg_poly1305_finalize_scratch::vg_poly1305_finalize_scratch,
     )

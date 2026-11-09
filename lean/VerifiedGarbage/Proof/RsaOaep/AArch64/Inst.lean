@@ -22,35 +22,16 @@ open VG VG.AArch64
 open VG.Proof.Pbkdf2.Md.AArch64 (HashOK MgfLink MdHash mdHashes)
 open VG.Impl.Pbkdf2.Md.AArch64 (Hash)
 open VG.Proof.HashTable.AArch64 (tables fnsOf names Coh tableOf)
-open VG.Proof.HashTable (symsOf symsOf_distinct2 put5 put5_held put5_below)
+open VG.Proof.HashTable (symsOf_distinct2)
+open VG.Proof.MdHashTable.AArch64 (withTable withTable_below withTable_held held_twL)
 open VG.Proof.HashTable.AArch64 (held_tableOf hashAt_tableOf)
-
-/-! ## States holding a table -/
-
-/-- The words of `w`'s table, at the addresses `symsOf` gives `vs`' functions. -/
-def tw (vs : List MdHash) (w : MdHash) : List (BitVec 64) :=
-  [symsOf (names vs) w.H.initN, symsOf (names vs) w.H.updN, symsOf (names vs) w.H.finN,
-    BitVec.ofNat 64 (Spec.HashTable.index w.mgf.G), BitVec.ofNat 64 w.mgf.G.len]
-
-/-- A state with `s`'s registers and regions, `w`'s table at `0x300000`,
-and `vs`' functions at distinct addresses. -/
-def withTable (s : State) (vs : List MdHash) (w : MdHash) : State :=
-  { s with
-    mem := put5 s.mem 0x300000 ((tw vs w).getD 0 0) ((tw vs w).getD 1 0) ((tw vs w).getD 2 0)
-      ((tw vs w).getD 3 0) ((tw vs w).getD 4 0)
-    syms := symsOf (names vs) }
 
 theorem withTable_addr (s : State) (vs : List MdHash) (w : MdHash) (j : Nat) :
     stackArgAddr (withTable s vs w) j = stackArgAddr s j := rfl
 
 theorem withTable_arg (s : State) (vs : List MdHash) (w : MdHash) {j : Nat}
     (hj : (stackArgAddr s j).toNat + 8 ≤ 0x300000) : stackArg (withTable s vs w) j = stackArg s j :=
-  put5_below hj _ _ _ _ _
-
-/-- The table of `w`, at `0x300000`. -/
-theorem withTable_held (s : State) (vs : List MdHash) (w : MdHash) :
-    Abi.tableHeld 64 (withTable s vs w).mem 0x300000 (FnTable.words isa (withTable s vs w) (tableOf w)) :=
-  put5_held (ws := tw vs w) rfl
+  withTable_below s vs w hj
 
 /-! ## Decryption -/
 
@@ -73,7 +54,7 @@ def decSatBase : State where
     else bif Nat.beq a.toNat 0x1006A then 0x02 else bif Nat.beq a.toNat 0x10071 then 0x08
     else bif Nat.beq a.toNat 0x1007A then 0x30 else bif Nat.beq a.toNat 0x10082 then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x4600, 1⟩,
-    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x300000, 40⟩, ⟨0x300000, 40⟩, ⟨0x10000, 136⟩]
+    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10000, 136⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16640⟩]
 
 theorem dec_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32)
@@ -84,8 +65,8 @@ theorem dec_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
   have hS : (RsaPkcs1Enc.AArch64.privOf c).S + 1 = 3248 := by
     rw [← Nat.add_right_cancel_iff (n := 288), ← Dec.decStack_eq]; rfl
   rw [hS]
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
   simp only [withTable_arg _ vs w (hA 0 (by decide)), withTable_arg _ vs w (hA 1 (by decide)),
     withTable_arg _ vs w (hA 2 (by decide)), withTable_arg _ vs w (hA 3 (by decide)),
@@ -98,18 +79,18 @@ theorem dec_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
     withTable_arg _ vs w (hA 16 (by decide))]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
   sig_and_intros
   all_goals first
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
+        rw [show stackArg decSatBase 15 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
+        rw [show stackArg decSatBase 16 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-        rw [show stackArg decSatBase 15 = 0x300000 by decide]; exact withTable_held _ _ _⟩
-    | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-        rw [show stackArg decSatBase 16 = 0x300000 by decide]; exact withTable_held _ _ _⟩
     | exact symsOf_distinct2 hl
     | (simp only [Spec.Rsa.lenValid]; decide)
     | (intro a h₁ h₂
@@ -135,13 +116,13 @@ def encSatBase (H : Spec.Mgf1.Hash) : State where
     else bif Nat.beq a.toNat 0x10031 then 0x50 else bif Nat.beq a.toNat 0x10038 then 16
     else bif Nat.beq a.toNat 0x10042 then 0x30 else bif Nat.beq a.toNat 0x1004A then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, H.len⟩, ⟨0x5000, 128⟩,
-    ⟨0x300000, 40⟩, ⟨0x300000, 40⟩, ⟨0x10000, 80⟩]
+    ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10000, 80⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 16640⟩]
 
 theorem enc_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 32)
     (v : Proof.Rsa.AArch64.PublicImpl) :
     ∃ s, (Enc.encSpec (tables vs) (Enc.encP (RsaPkcs1Sig.AArch64.pdOf v))).pre s := by
-  have hha : ∀ s : State, Spec.HashTable.hashAt 64 (withTable s vs w).mem 0x300000 = some w.mgf.G := fun s =>
+  have hha : ∀ s : State, Spec.MdHashTable.hashAt 64 (withTable s vs w).mem 0x300000 = some w.mgf.G := fun s =>
     hashAt_tableOf (held_tableOf (withTable_held s vs w)).2.1
   have hH := w.mgf.mem
   generalize w.mgf.G = H at hha hH
@@ -155,8 +136,8 @@ theorem enc_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
   simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hH
   rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
     simp only [withTable_arg _ vs w (hA _ 0 (by decide)), withTable_arg _ vs w (hA _ 1 (by decide)),
       withTable_arg _ vs w (hA _ 2 (by decide)), withTable_arg _ vs w (hA _ 3 (by decide)),
@@ -165,18 +146,18 @@ theorem enc_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
       withTable_arg _ vs w (hA _ 8 (by decide)), withTable_arg _ vs w (hA _ 9 (by decide))]
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
-    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
     sig_and_intros
     all_goals first
+      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
+          rw [show stackArg (encSatBase _) 8 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
+      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
+          rw [show stackArg (encSatBase _) 9 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
       | rfl
       | decide
       | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-          rw [show stackArg (encSatBase _) 8 = 0x300000 by decide]; exact withTable_held _ _ _⟩
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-          rw [show stackArg (encSatBase _) 9 = 0x300000 by decide]; exact withTable_held _ _ _⟩
       | (intro H' hH'
          rw [show stackArg (encSatBase _) 8 = 0x300000 by decide] at hH'
          obtain rfl := Option.some.inj (hha'.symm.trans hH')
@@ -203,8 +184,8 @@ operation of `c`. -/
 theorem dec_ok (vs : List MdHash) (h : OK vs) (c : Proof.Rsa.AArch64.CrtImpl) :
     Verified AArch64.target (Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (RsaPkcs1Enc.AArch64.privOf c).name
         (RsaPkcs1Enc.AArch64.privOf c).code)
-      (Spec.RsaOaep.decryptTablesContract
-        (AArch64.abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", tables vs), ("mgf1", tables vs)])
+      (Spec.RsaOaep.decryptMdTablesContract
+        (AArch64.abi.withTables Spec.RsaOaep.decryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
         (Dec.decStack (RsaPkcs1Enc.AArch64.privOf c))) := by
   rw [Dec.decStack_eq]
   exact Dec.dec_verified h.1 _ (let ⟨_, hw⟩ := h.mem; dec_sat hw h.2.1 c)
@@ -214,8 +195,8 @@ precomputed public operation of `c`. -/
 theorem enc_ok (vs : List MdHash) (h : OK vs) (c : Proof.Rsa.AArch64.PublicImpl) :
     Verified AArch64.target (Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf vs)
         (RsaPkcs1Sig.AArch64.pdOf c).name (RsaPkcs1Sig.AArch64.pdOf c).code)
-      (Spec.RsaOaep.encryptTablesContract
-        (AArch64.abi.withTables Spec.RsaOaep.encryptTablesSig [("hash", tables vs), ("mgf1", tables vs)])
+      (Spec.RsaOaep.encryptMdTablesContract
+        (AArch64.abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", tables vs), ("mgf1", tables vs)])
         (Enc.encStack (RsaPkcs1Sig.AArch64.pdOf c))) :=
   Enc.enc_verified h.1 _ (let ⟨_, hw⟩ := h.mem; enc_sat hw h.2.1 c)
 

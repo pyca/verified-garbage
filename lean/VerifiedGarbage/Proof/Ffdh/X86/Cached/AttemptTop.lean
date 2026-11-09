@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.X86.KeyGenTop
 public import VerifiedGarbage.Spec.Ffdh.CachedKeyGenerationContract
 public import VerifiedGarbage.Proof.Ffdh.GenerationPrecompute
@@ -421,8 +422,8 @@ structure CachedABI (s : State) : Prop where
   ctx : Spec.Ffdh.generationPrecompute (arg s 6).toNat (Spec.Rsa.bytesAt s.mem (argumentPointer s 4) (arg s 5).toNat) =
     some (Spec.Rsa.wordsAt s.mem (argumentPointer s 11) (arg s 12).toNat)
 
-theorem cachedABI_of {s : State} (h : (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre s) : CachedABI s := by
-  sig_pre [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+theorem cachedABI_of {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s) : CachedABI s := by
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes, stackBelow] at h
   sig_split h
   constructor <;> with_reducible assumption
@@ -727,12 +728,12 @@ theorem operation_ok {s : State} (A : CachedABI s) :
       · exact A.yScratch.symm)
     (P := fun m e => spec s m e) fun f I espf Ft => frame_ok A f I espf Ft
 
-theorem correct (s : State) (h : (Spec.Ffdh.cachedGenerateKeyContract abi stack).pre s) :
+theorem correct (s : State) (h : (Proof.Ffdh.cachedGenerateKeyContract abi stack).pre s) :
     ∃ trace t, Exec isa Impl.Ffdh.X86.Cached.Generate.code s trace t ∧ abiPreserved s t ∧
-      (Spec.Ffdh.cachedGenerateKeyContract abi stack).post s t := by
+      (Proof.Ffdh.cachedGenerateKeyContract abi stack).post s t := by
   obtain ⟨trace, t, E, V, P⟩ := operation_ok (cachedABI_of h)
   refine ⟨trace, t, E, P, ?_⟩
-  sig_post [Spec.Ffdh.cachedGenerateKeyContract, Spec.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
+  sig_post [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, Spec.Ffdh.generateKeySig, abi,
     argSlots, argVal, argBytes]
   rw [BitVec.setWidth_append_eq_right]
   exact V

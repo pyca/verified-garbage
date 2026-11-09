@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Label
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Unmask
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Dc.Out
 import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Entry
-public import VerifiedGarbage.Proof.HashTable.PPC64LE
+public import VerifiedGarbage.Proof.MdHashTable.PPC64LE.Tables
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.ByLen
 import VerifiedGarbage.Proof.Framework.PPC64LE.Syms
 
@@ -38,7 +38,7 @@ open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Keep wp_li wp_sub wp_lsr wp_nil eval_non
 open VG.Proof.RsaPkcs1Sig (bytesAt_length bytesAt_writeBytes)
 open VG.Proof.RsaOaep (decOut decOut_short)
 open VG.Proof.Mgf1 (ifp ifn)
-open VG.Proof.HashTable.PPC64LE (TVar tables fnsOf Coh)
+open VG.Proof.MdHashTable.PPC64LE (MVar tables fns3 Coh)
 
 /-- The result and the outputs, from the entry state `s`. -/
 def Post (Hs Gs : Spec.Mgf1.Hash) (s s' : State) : Prop :=
@@ -143,8 +143,8 @@ theorem code_ok (hl : H.D ∈ lens) : WP isa (decrypt f) s (Post Hs Gs s) := by
   -- The label's hash function's digest length to `r3`.
   have TL' := tabS_wmL P TL A.mem
   refine WP.seq (WP.of_syms ?_)
-  show WP isa (.block (tword .r3 15 4 ++ [])) v _
-  refine wp_tword TL' A.base (k := 4) (by decide) (d := .r3) (by decide) fun v₁ o₁ e₁ => wp_nil fun y₃ => ?_
+  show WP isa (.block (tword .r3 15 6 ++ [])) v _
+  refine wp_tword TL' A.base (k := 6) (by decide) (d := .r3) (by decide) fun v₁ o₁ e₁ => wp_nil fun y₃ => ?_
   have e3 : v₁.gpr .r3 = BitVec.ofNat 64 H.D := e₁.trans TL'.d
   -- The code for that length.
   refine WP.seq (byLen_ok (D := H.D) (by omega)
@@ -161,12 +161,12 @@ end
 
 /-- The label's hash function's table, on entry, if it is `w`'s: what its
 calls need of it. -/
-theorem tabS_entryDL {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
-    (hpw : (Proof.HashTable.PPC64LE.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : TVar}
+theorem tabS_entryDL {vs : List MVar} (hc : Coh vs) {s : State} (P : PreD s)
+    (hpw : (Proof.MdHashTable.PPC64LE.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar}
     (hw : w ∈ vs)
-    (hh : Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s (Proof.HashTable.PPC64LE.tableOf w))) :
-    TabS w.H (fnsOf vs) 15 (SD s) s (stackArg s 15) := by
-  refine Proof.HashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s (Proof.MdHashTable.PPC64LE.tableOf w))) :
+    TabS w.H (fns3 vs) 15 (SD s) s (stackArg s 15) := by
+  refine Proof.MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
     (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
     (by rw [P.hrd]; iterate 9 apply List.mem_cons_of_mem
         exact List.mem_cons_self ..) (P.ktl.sub_left kR_sub)
@@ -175,12 +175,12 @@ theorem tabS_entryDL {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
   exact Offset.sub_base _ (by omega)
 
 /-- MGF1's table, on entry, if it is `w`'s: what MGF1 needs of it. -/
-theorem tabS_entryD {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
-    (hpw : (Proof.HashTable.PPC64LE.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : TVar}
+theorem tabS_entryD {vs : List MVar} (hc : Coh vs) {s : State} (P : PreD s)
+    (hpw : (Proof.MdHashTable.PPC64LE.names vs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar}
     (hw : w ∈ vs)
-    (hh : Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s (Proof.HashTable.PPC64LE.tableOf w))) :
-    TabS w.H (fnsOf vs) 16 (SD s) s (stackArg s 16) := by
-  refine Proof.HashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s (Proof.MdHashTable.PPC64LE.tableOf w))) :
+    TabS w.H (fns3 vs) 16 (SD s) s (stackArg s 16) := by
+  refine Proof.MdHashTable.PPC64LE.tabS_of (by decide) rfl (A := aR s) (by rw [P.hrd]; simp)
     (in_aR (by decide)) ?_ (P.ka.sub_left kR_sub) (P.sa.sub_left (sc_sub P))
     (by rw [P.hrd]; iterate 10 apply List.mem_cons_of_mem
         exact List.mem_cons_self ..) (P.kt.sub_left kR_sub)
@@ -190,23 +190,23 @@ theorem tabS_entryD {vs : List TVar} (hc : Coh vs) {s : State} (P : PreD s)
 
 /-- The tables, on entry: each one of the tables of `vs`, which names its
 hash function and holds what the calls through it need. -/
-theorem tab_ofD {vs : List TVar} (hc : Coh vs) {s : State} (h : (decSpec (tables vs)).pre s) :
-    ∃ w₁ ∈ vs, ∃ w ∈ vs, Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some w₁.l.G ∧
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 16) = some w.l.G ∧
-      TabS w₁.H (fnsOf vs) 15 (SD s) s (stackArg s 15) ∧ TabS w.H (fnsOf vs) 16 (SD s) s (stackArg s 16) := by
+theorem tab_ofD {vs : List MVar} (hc : Coh vs) {s : State} (h : (decSpec (tables vs)).pre s) :
+    ∃ w₁ ∈ vs, ∃ w ∈ vs, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 15) = some w₁.l.G ∧
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some w.l.G ∧
+      TabS w₁.H (fns3 vs) 15 (SD s) s (stackArg s 15) ∧ TabS w.H (fns3 vs) 16 (SD s) s (stackArg s 16) := by
   obtain ⟨⟨T₁, hT₁, hh₁⟩, ⟨T, hT, hh⟩, hpw⟩ := spec_tabD h
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   have hpw' := hpw.sublist (List.sublist_append_left _ _)
   have P := preD_of h
-  exact ⟨w₁, hw₁, w, hw, Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh₁).2.1,
-    Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hh).2.1,
+  exact ⟨w₁, hw₁, w, hw, Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hh₁).2.2.2,
+    Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hh).2.2.2,
     tabS_entryDL hc P hpw' hw₁ hh₁, tabS_entryD hc P hpw' hw hh⟩
 
 /-- The correctness of `vg_rsa_oaep_decrypt`, against its contract, for the
 tables of `vs`. -/
-theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (decSpec (tables vs)).pre s) :
-    ∃ t s', Exec isa (decrypt (fnsOf vs)) s t s' ∧ abiPreserved s s' ∧ (decSpec (tables vs)).post s s' := by
+theorem code_correct {vs : List MVar} (hc : Coh vs) (s : State) (h : (decSpec (tables vs)).pre s) :
+    ∃ t s', Exec isa (decrypt (fns3 vs)) s t s' ∧ abiPreserved s s' ∧ (decSpec (tables vs)).post s s' := by
   obtain ⟨w₁, -, w, -, hH, hG, TL, T⟩ := tab_ofD hc h
   have P : PreD s := preD_of h
   obtain ⟨t, s', he, habi, hr⟩ := code_ok w₁.l.ok w.l.ok w₁.l.hash w₁.l.len w₁.l.valid w.l.hash w.l.len w.l.valid
@@ -215,8 +215,8 @@ theorem code_correct {vs : List TVar} (hc : Coh vs) (s : State) (h : (decSpec (t
   have e : stackBytes = 3775 + 1 := rfl
   unfold decSpec
   rw [e]
-  sig_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Abi.withTables, abi, argRegs, stackArgs_seventeen, List.append_eq]
+  sig_post [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Abi.withTables, abi, argRegs, stackArgs_seventeen, List.append_eq]
   intro H' G' hH' hG'
   rw [hH] at hH'
   rw [hG] at hG'

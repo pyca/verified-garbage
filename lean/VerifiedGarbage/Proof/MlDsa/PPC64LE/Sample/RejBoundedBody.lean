@@ -35,7 +35,7 @@ namespace VG.Proof.MlDsa.PPC64LE.Sample.RejBounded
 open VG VG.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.Sample
 open VG.Impl.MlDsa.PPC64LE.Sample
-open VG.Proof.MlDsa.Sample (hbTry rbStep rbFold Stored zw ifT ifF hbTry_length halfByteOk_le rbFold_snoc
+open VG.Proof.MlDsa.Sample (hbTry rbStep rbFold Stored zw ifT ifF hbTry_length halfByteOk_le rbFold_snoc rbFold_append rbFold_full
   rbFold_length_le rbB rbC hbTry_eq halfByteOk_eq)
 open VG.Proof.MlKem.PPC64LE (ptr_add count_sub count_nz)
 open VG.Proof.MlKem.PPC64LE.Sample (read_one toNat_setWidth8)
@@ -128,10 +128,10 @@ abbrev spOf (σ : State) : Sp := ⟨σ.gpr .r3, 66, σ.gpr .r6, σ.gpr .r5⟩
 /-- `η`, the low 32 bits of `r4`. -/
 abbrev etaOf (σ : State) : Nat := ((σ.gpr .r4).setWidth 32).toNat
 
-/-- The XOF output the function uses: 544 bytes of `H(ρ)`. -/
-abbrev X (σ : State) : List Byte := Spec.MlDsa.H ((spOf σ).msg σ) 544
+/-- The XOF output a loop uses: `n` bytes of `H(ρ)`. -/
+abbrev X (n : Nat) (σ : State) : List Byte := Spec.MlDsa.H ((spOf σ).msg σ) n
 
-theorem X_length (σ : State) : (X σ).length = 544 := Proof.MlDsa.Sample.H_length _ _
+theorem X_length (n : Nat) (σ : State) : (X n σ).length = n := Proof.MlDsa.Sample.H_length _ _
 
 /-- The byte of iteration `t`. -/
 abbrev zAt (X : List Byte) (t : Nat) : Byte := X.getD t 0
@@ -139,10 +139,14 @@ abbrev zAt (X : List Byte) (t : Nat) : Byte := X.getD t 0
 /-- Iteration `t`, with the coefficients `L` stored, for the XOF output `X`. -/
 structure Base (σ : State) (X : List Byte) (t : Nat) (L : List Zq) (s : State) : Prop where
   env : Env (spOf σ) σ s
-  out : bytesAt s.mem ((spOf σ).at' 840) 544 = X
+  xlen : X.length ≤ 544
+  out : bytesAt s.mem ((spOf σ).at' 840) X.length = X
   r3 : s.gpr .r3 = σ.gpr .r6 + BitVec.ofNat 64 (840 + t)
-  r6 : s.gpr .r6 = BitVec.ofNat 64 (544 - t)
+  r6 : s.gpr .r6 = BitVec.ofNat 64 (X.length - t)
   r7 : s.gpr .r7 = BitVec.ofNat 64 8380417
+  r27 : s.gpr .r27 = zx (σ.gpr .r4)
+  r28 : s.gpr .r28 = BitVec.ofNat 64 66
+  r29 : s.gpr .r29 = σ.gpr .r3
   at' : At (spOf σ) L s
 
 section
@@ -158,9 +162,10 @@ theorem Base.keep {X : List Byte} {t : Nat} {L : List Zq} {s s' : State} (h : Ba
     g r (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide))
       (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide))
       (by rintro rfl; exact absurd hr (by decide))
-  exact ⟨h.env.regs hp hm gp rd wr sp, by rw [hm]; exact h.out, (g _ (by decide) (by decide) (by decide)
+  exact ⟨h.env.regs hp hm gp rd wr sp, h.xlen, by rw [hm]; exact h.out, (g _ (by decide) (by decide) (by decide)
     (by decide) (by decide)).trans h.r3, (g _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.r6,
     (g _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.r7,
+    (gp _ (by decide)).trans h.r27, (gp _ (by decide)).trans h.r28, (gp _ (by decide)).trans h.r29,
     ⟨(g _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.at'.r4,
       (g _ (by decide) (by decide) (by decide) (by decide) (by decide)).trans h.at'.r5, h.at'.len,
       by rw [hm]; exact h.at'.st⟩⟩
@@ -226,20 +231,23 @@ theorem try_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} {L
       by_contra hc; rw [ifF hc] at ea; exact hz ea
     rw [ifT hy.2, ifT hy.1]
     refine WP.mono (accept_store hp l.env l.at' hy.2 (x := ofInt (rbC η b)) (by rw [h.r10]; exact rbF_eq hη hy.1) hz)
-      fun s' ⟨at', env', rr, hf⟩ => ⟨⟨env', ?_, (rr _ (by decide) (by decide)).trans l.r3,
-        (rr _ (by decide) (by decide)).trans l.r6, (rr _ (by decide) (by decide)).trans l.r7, at'⟩,
+      fun s' ⟨at', env', rr, hf⟩ => ⟨⟨env', l.xlen, ?_, (rr _ (by decide) (by decide)).trans l.r3,
+        (rr _ (by decide) (by decide)).trans l.r6, (rr _ (by decide) (by decide)).trans l.r7,
+        (rr _ (by decide) (by decide)).trans l.r27, (rr _ (by decide) (by decide)).trans l.r28,
+        (rr _ (by decide) (by decide)).trans l.r29, at'⟩,
         (rr _ (by decide) (by decide)).trans h.r8⟩
     rw [MlKem.bytesAt_frame hf (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr
-      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := 544) (by decide))).symm) (by decide)]
+      exact (hp.a_scr.sub_right (sub_scr (a := 840) (n := X.length) (by have := l.xlen; omega))).symm) (by have := l.xlen; omega)]
     exact l.out
 
 /-! ## An iteration -/
 
 /-- The byte of iteration `t`. -/
-theorem byte_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State} (h : Base σ X t L s) :
+theorem byte_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s : State} (h : Base σ X t L s) :
     InRegions (s.rd ++ s.wr) (s.gpr .r3) 1 ∧ s.mem (s.gpr .r3) = zAt X t := by
   rw [h.r3]
+  have := h.xlen
   refine ⟨by rw [← BitVec.add_zero (σ.gpr .r6 + _), ptr_add]; exact inScrRd hp h.env.wr (by omega), ?_⟩
   have := congrArg (fun L => L.getD t 0) h.out
   rw [MlKem.bytesAt_getD _ _ (by omega), ptr_add] at this
@@ -263,7 +271,7 @@ theorem hi_eq (z : Byte) : z.setWidth 64 >>> 4 = BitVec.ofNat 64 (z.toNat / 16) 
   omega
 
 /-- The load of the byte and its low half-byte. -/
-theorem lo_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State} (h : Base σ X t L s) :
+theorem lo_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s : State} (h : Base σ X t L s) :
     WP isa (.block [.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60]) s fun s' =>
       Base σ X t L s' ∧ s'.gpr .r8 = (zAt X t).setWidth 64 ∧
         s'.gpr .r9 = BitVec.ofNat 64 ((zAt X t).toNat % 16) := by
@@ -280,7 +288,7 @@ theorem lo_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State}
     ⟨h.keep hp m (fun r a b _ _ _ => g r a b) rd wr sp, g8, by rw [g9, lo_eq]⟩
 
 /-- The load of the byte and the block of its low half-byte. -/
-theorem loHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
+theorem loHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq}
     {s : State} (h : Base σ X t L s) :
     WP isa (.block (([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] : List Instr) ++ rbHalf η)) s
       (H1 η σ X t L ((zAt X t).toNat % 16) ((zAt X t).setWidth 64)) := by
@@ -305,7 +313,7 @@ theorem hiHalf_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat}
   exact e ▸ half_ok hp hη b4 h9
 
 /-- The tries of an iteration, from its start, then `rest`. -/
-theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq}
+theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq}
     {s : State} (h : Base σ X t L s) {rest : Prog isa} {Q : State → Prop}
     (hr : ∀ s', Base σ X t (rbStep η L (zAt X t)) s' → WP isa rest s' Q) :
     WP isa (.seq (.block (([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] : List Instr) ++ rbHalf η))
@@ -316,26 +324,46 @@ theorem tries_ok {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte} {t : Nat} 
   refine WP.seq (WP.mono (hiHalf_ok hp hη b3 f8) fun s5 h5 => ?_)
   exact WP.seq (WP.mono (try_ok hp hη (by have := (zAt X t).isLt; omega) h5) fun s6 h6 => hr s6 h6.1)
 
-/-- The step, to iteration `t + 1`: `r6` zero iff it is the last. -/
-theorem step_ok {X : List Byte} {t : Nat} (ht : t < 544) {L : List Zq} {s : State} (h : Base σ X t L s) :
-    WP isa (.block [.addi .r3 .r3 1, .subi .r6 .r6 1]) s fun s' =>
-      Base σ X (t + 1) L s' ∧ (s'.gpr .r6 != 0) = decide (t + 1 ≠ 544) := by
-  have hk : WP isa (.block [.addi .r3 .r3 1, .subi .r6 .r6 1]) s fun s' =>
+omit hp in
+/-- The test of the step: `r12` nonzero iff bytes are left and `j < 256`. -/
+theorem exit_val {N t j : Nat} (ht : t < N) (hN : N < 2 ^ 63) (hj : j ≤ 256) :
+    (BitVec.ofNat 64 (N - (t + 1)) * ((BitVec.ofNat 64 j - BitVec.ofNat 64 256) >>> 63) != 0) =
+      decide (t + 1 ≠ N ∧ j < 256) := by
+  by_cases hj' : j < 256
+  · have e : (BitVec.ofNat 64 j - BitVec.ofNat 64 256) >>> 63 = 1 := by bv_omega
+    rw [e, show ∀ x : BitVec 64, x * 1 = x from fun x => by bv_omega, count_nz ht (by omega)]
+    simp [hj']
+  · have e : (BitVec.ofNat 64 j - BitVec.ofNat 64 256) >>> 63 = 0 := by bv_omega
+    rw [e, show ∀ x : BitVec 64, x * 0 = 0 from fun x => by bv_omega]
+    simp [hj']
+
+/-- The step, to iteration `t + 1`: `r12` zero iff it was the last or `j = 256`. -/
+theorem step_ok {X : List Byte} {t : Nat} (ht : t < X.length) {L : List Zq} {s : State} (h : Base σ X t L s) :
+    WP isa (.block stepBlk) s fun s' =>
+      Base σ X (t + 1) L s' ∧ (s'.gpr .r12 != 0) = decide (t + 1 ≠ X.length ∧ L.length < 256) := by
+  have hk : WP isa (.block stepBlk) s fun s' =>
       s'.gpr .r3 = s.gpr .r3 + BitVec.ofNat 64 1 ∧ s'.gpr .r6 = s.gpr .r6 - BitVec.ofNat 64 1 ∧
-      (∀ r, r ≠ .r3 → r ≠ .r6 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      s'.sp = s.sp := by
-    prun []
+      s'.gpr .r12 = (s.gpr .r6 - BitVec.ofNat 64 1) * ((s.gpr .r5 - BitVec.ofNat 64 256) >>> 63) ∧
+      (∀ r, r ≠ .r3 → r ≠ .r6 → r ≠ .r11 → r ≠ .r12 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
+    prun [stepBlk, exec_mul]
     simp only [true_and, and_true]
-    intro r a b
-    simp only [RegUpd.gpr_write, a, b, ite_false]
-  refine WP.mono hk fun s' ⟨r3, r6, g, m, rd, wr, sp⟩ => ⟨⟨?_, by rw [m]; exact h.out, ?_, ?_,
-    (g _ (by decide) (by decide)).trans h.r7, ⟨(g _ (by decide) (by decide)).trans h.at'.r4,
-      (g _ (by decide) (by decide)).trans h.at'.r5, h.at'.len, by rw [m]; exact h.at'.st⟩⟩, ?_⟩
+    intro r a b c d
+    simp only [RegUpd.gpr_write, a, b, c, d, ite_false]
+  have hx := h.xlen
+  refine WP.mono hk fun s' ⟨r3, r6, r12, g, m, rd, wr, sp⟩ => ⟨⟨?_, h.xlen, by rw [m]; exact h.out, ?_, ?_,
+    (g _ (by decide) (by decide) (by decide) (by decide)).trans h.r7,
+    (g _ (by decide) (by decide) (by decide) (by decide)).trans h.r27,
+    (g _ (by decide) (by decide) (by decide) (by decide)).trans h.r28,
+    (g _ (by decide) (by decide) (by decide) (by decide)).trans h.r29,
+    ⟨(g _ (by decide) (by decide) (by decide) (by decide)).trans h.at'.r4,
+      (g _ (by decide) (by decide) (by decide) (by decide)).trans h.at'.r5, h.at'.len, by rw [m]; exact h.at'.st⟩⟩, ?_⟩
   · exact h.env.regs hp m (fun r hr => g r (by rintro rfl; exact absurd hr (by decide))
+      (by rintro rfl; exact absurd hr (by decide)) (by rintro rfl; exact absurd hr (by decide))
       (by rintro rfl; exact absurd hr (by decide))) rd wr sp
   · rw [r3, h.r3, ptr_add, Nat.add_assoc]
   · rw [r6, h.r6]; exact count_sub ht
-  · rw [r6, h.r6, count_sub ht]; exact count_nz ht (by decide)
+  · rw [r12, h.r6, h.at'.r5, count_sub ht]; exact exit_val ht (by omega) h.at'.len
 
 end
 
@@ -346,16 +374,30 @@ theorem take_succ' (L : List Byte) {i : Nat} (h : i < L.length) : L.take (i + 1)
   rw [List.take_add_one, List.getElem?_eq_getElem h, List.getD_eq_getElem?_getD, List.getElem?_eq_getElem h]
   rfl
 
-theorem Lf_succ (η : Nat) {X : List Byte} (hX : X.length = 544) {t : Nat} (ht : t < 544) :
+theorem Lf_succ (η : Nat) {X : List Byte} {t : Nat} (ht : t < X.length) :
     Lf η X (t + 1) = rbStep η (Lf η X t) (zAt X t) := by
   simp only [Lf]
   rw [take_succ' _ (by omega), rbFold_snoc]
 
+/-- After the last byte, or once there are 256 coefficients, the bytes left
+change nothing. -/
+theorem Lf_stop {η : Nat} {X : List Byte} {t N : Nat} (htN : t ≤ N) (h : t = N ∨ (Lf η X t).length = 256) :
+    Lf η X N = Lf η X t := by
+  rcases h with rfl | h
+  · rfl
+  simp only [Lf] at h ⊢
+  have e : X.take N = X.take t ++ (X.take N).drop t := by
+    have := List.take_append_drop t (X.take N)
+    rw [List.take_take, Nat.min_eq_left htN] at this
+    exact this.symm
+  rw [e, rbFold_append, rbFold_full h]
+
 /-- An iteration: what `rbStep` does to the coefficients. -/
 theorem body_ok {σ : State} (hp : SpOk (spOf σ) σ) {η : Nat} (hη : η = 2 ∨ η = 4) {X : List Byte}
-    (hX : X.length = 544) {t : Nat} (ht : t < 544) {s : State} (h : Base σ X t (Lf η X t) s) :
-    WP isa (rbBody η) s fun s' => Base σ X (t + 1) (Lf η X (t + 1)) s' ∧ (s'.gpr .r6 != 0) = decide (t + 1 ≠ 544) := by
-  rw [Lf_succ η hX ht]
+    {t : Nat} (ht : t < X.length) {s : State} (h : Base σ X t (Lf η X t) s) :
+    WP isa (rbBody η) s fun s' => Base σ X (t + 1) (Lf η X (t + 1)) s' ∧
+      (s'.gpr .r12 != 0) = decide (t + 1 ≠ X.length ∧ (Lf η X (t + 1)).length < 256) := by
+  rw [Lf_succ η ht]
   exact tries_ok hp hη ht h fun _ h' => step_ok hp ht h'
 
 end VG.Proof.MlDsa.PPC64LE.Sample.RejBounded

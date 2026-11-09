@@ -59,7 +59,7 @@ theorem CkRegs.of_keep {s0 t u : State} (h : CkRegs s0 t) {rs : List Reg} (k : K
     (e _ (by decide)).trans h.r23, (e _ (by decide)).trans h.r26⟩
 
 /-- The registers the valid branch may change. -/
-abbrev validRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r29, .r30]
+abbrev validRegs : List Reg := [.r0, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r12, .r29, .r30]
 
 /-- `checkKey` of the arguments. -/
 abbrev ckOk (s0 : State) : Bool :=
@@ -153,13 +153,20 @@ theorem ck_valid {s0 s : State} (h0 : ckP.pre s0) (hb : KBase (ckB s0) (ckZ s0) 
     Spec.Rsa.os2ip (Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (s0.gpr .r8).toNat)⟩
   have a7 : Arrs t7.mem g.B g.w (vals v) live0 := l7.arrs.sub (by decide)
   rw [wp_seqs_append (by simp [start]) (by simp [crtChecks, eqA])]
-  refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide))) fun t8 ⟨X₁, X₂, hX, g8⟩ => ?_
+  have wl7 := l7.ws.wle
+  have hpl : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ t7.gpr .r19 = BitVec.ofNat 64 a :=
+    ⟨(s0.gpr .r10).toNat, p1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
+      ((R6.of_keep k7).r19).trans (CrtValues.ofNat_toNat64 _)⟩
+  have hql : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.q < 2 ^ (8 * a) ∧ t7.gpr .r21 = BitVec.ofNat 64 a :=
+    ⟨(PPC64LE.stackArg s0 1).toNat, q1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
+      ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)⟩
+  refine WP.mono (start_ok (g := g) (v := v) l7.ws a7 (l7.top _ (by decide)) hpl) fun t8 ⟨X₁, X₂, hX, g8⟩ => ?_
   rw [wp_seqs_append (by simp [crtChecks, eqA]) (by simp [dChecks, ltA])]
   have wl : (kK s0 + 3) / 4 ≤ 1024 := g8.ws.wle
   refine WP.mono (crtChecks_ok g8 ⟨(PPC64LE.stackArg s0 1).toNat, q1, by omega_arith, lt_pow8_of_len _ (len_bytes _ _ _),
     ((R6.of_keep k7).r21).trans (CrtValues.ofNat_toNat64 _)⟩) fun t9 ⟨R₁, R₂, R₃, hR₁, hR₂, hR₃, g9⟩ => ?_
   rw [wp_seqs_append (by simp [dChecks, ltA]) (by simp)]
-  refine WP.mono (dChecks_ok g9) fun t10 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g10⟩ => ?_
+  refine WP.mono (dChecks_ok g9 hpl hql) fun t10 ⟨Y₁, Y₂, hY₁, hY₂, A, live, g10⟩ => ?_
   rw [show seqs [.block ret] = .block ret from rfl]
   refine WP.mono (ret_ok g10) fun t ⟨⟨t3, tm⟩, kt⟩ => ⟨?_, ?_, ?_⟩
   · exact (g10.base l7.base hp.nowrap).of_regs kt tm

@@ -26,7 +26,9 @@ open VG.Proof.X25519 (toFe ladderAfter ladderAfter_step ladderStep_eq bit bit_le
 
 /-- The registers the code changes: all but the pointers to `out` (`r3`) and
 the working space (`r6`). -/
-abbrev work : List Reg := [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12]
+abbrev work : List Reg :=
+  [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22,
+    .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30]
 
 /-- `s'` is `s` but for the registers `work` and the field area. -/
 structure Stp (b : Addr) (s s' : State) : Prop where
@@ -55,7 +57,7 @@ structure Cur (b : Addr) (s0 : State) (a c : BitVec 64) (qs : List Nat) (v : Nat
 section
 variable {b : Addr} {s0 : State} {a c : BitVec 64} {qs : List Nat} {v : Nat → Fe}
 
-theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clob s s')
+theorem Cur.next {s s' : State} (h : Cur b s0 a c qs v s) (hr : Rest clobR s s')
     (hf : Frame [FA b] s.mem s'.mem) {qs' : List Nat} {v' : Nat → Fe}
     (hS : SlotsOk s'.mem b qs' v') : Cur b s0 a c qs' v' s' :=
   ⟨h.ctx.of_rest hr (by decide), h.stp.trans ⟨hr.mono (by decide), hf⟩,
@@ -69,17 +71,17 @@ theorem opMul {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho 
 theorem opAdd {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (add o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x + v y))) :=
-  WP.mono (addS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (addS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next (hr.mono clob_sub) hf hS
 
 theorem opSub {o x y : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC) (hx : x ∈ qs)
     (hy : y ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (sub o x y)) s (Cur b s0 a c (o :: qs) (upd v o (v x - v y))) :=
-  WP.mono (subS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (subS hq hal ho hx hy h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next (hr.mono clob_sub) hf hS
 
 theorem opMul24 {o x : Nat} (hq : Sep1 o qs = true) (hal : Al4 o qs = true) (ho : o + 32 ≤ ACC)
     (hx : x ∈ qs) {s : State} (h : Cur b s0 a c qs v s) :
     WP isa (.block (mulA24 o x)) s (Cur b s0 a c (o :: qs) (upd v o (a24 * v x))) :=
-  WP.mono (mul24S hq hal ho hx h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next hr hf hS
+  WP.mono (mul24S hq hal ho hx h.ctx h.slots) fun _ ⟨hr, hf, hS⟩ => h.next (hr.mono clob_sub) hf hS
 
 end
 

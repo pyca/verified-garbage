@@ -232,7 +232,8 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
       (X86_64.withStackArgScratch_spSafe
         (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))) }]
 
-/-- The artifacts of a variant: its prepared ones. -/
+/-- The artifacts of a variant: its prepared ones, for what its loops read:
+16 prepared powers (`r16`), 48 (`stitchR`), or the key context alone. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   match v.r16 with
   | some r => artifactsR16W v r.down

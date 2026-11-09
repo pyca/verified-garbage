@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.AesCbc.X86_64.Vaes512Decrypt
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -24,6 +25,15 @@ unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
 `*_verified`): the bytes it may write are zero
 (`Verified.callWipeTail'`), and the others it did not write
 (`Verified.cbc_tail_of_written`, from its `written` bound).
+
+Which are emitted, for each implementation `v` of the blocks functions and
+`z` of `vg_zeroize` (`encryptRegs`, `decryptRegs`). Encryption: none for
+VAES (`Caller.vaes`), whose encryption is AES-NI's loop; that loop, which
+writes no `scratch`, unwrapped, once (with the `z` of no suffix); and
+otherwise the call wiped with each `z`, named by both suffixes.
+Decryption: for VAES, the call wiped with the `z` that has a suffix (the
+one that needs AVX, as VAES's code does), named by `v`'s suffix alone;
+otherwise the call wiped with each `z`, named by both suffixes.
 -/
 
 @[expose] public section
@@ -192,5 +202,44 @@ theorem decryptVaes512_verified :
 
 theorem decryptVaes512_spSafe : decryptVaes512.all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe Vaes512Decrypt.spSafe
+
+/-- The implementations of `vg_aes_cbc_encrypt` over `v` that are emitted
+with `z` (see the module's documentation). -/
+def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
+  if Caller.vaes v then []
+  else if h : Caller.hardware v then
+    if z.suffix = "" then [{
+      suffix := v.suffix
+      code := Caller.encrypt v
+      stack := 8
+      verified := encrypt_free_scrubbed v h
+      spSafe := Caller.spSafe v
+      written := Caller.written v
+      writtenOk := Caller.written_ok v }]
+    else []
+  else [{
+    suffix := v.suffix ++ z.suffix
+    code := encrypt v z
+    stack := 32
+    verified := encrypt_verified v z
+    spSafe := encrypt_spSafe v z }]
+
+/-- The implementations of `vg_aes_cbc_decrypt` over `v` that are emitted
+with `z` (see the module's documentation). -/
+def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
+  if Caller.vaes v then
+    if z.suffix = "" then []
+    else [{
+      suffix := v.suffix
+      code := decrypt v z
+      stack := 32
+      verified := decrypt_verified v z
+      spSafe := decrypt_spSafe v z }]
+  else [{
+    suffix := v.suffix ++ z.suffix
+    code := decrypt v z
+    stack := 32
+    verified := decrypt_verified v z
+    spSafe := decrypt_spSafe v z }]
 
 end VG.Proof.AesCbc.X86_64.Wiped

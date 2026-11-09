@@ -300,7 +300,7 @@ theorem mgfXorT_tr {F S p ai au af : Addr} {sArg : Nat} (hsa : sArg < 32768 ∧ 
     fun t V W L R hx => ?_).seq ?_
   · obtain ⟨hA, h32, hT, x10⟩ := hx
     obtain ⟨u₀, _, T, st, sy⟩ := hT.tab
-    have hrd : InRegions (t.rd ++ t.wr) (off p 32) 8 := by rw [st.rd, st.wr]; exact T.rdD
+    have hrd : InRegions (t.rd ++ t.wr) (off p 48) 8 := by rw [st.rd, st.wr]; exact T.rdD
     have hD := (T.mem _ st.frame).2.1
     refine WP.mono (wp_sy (tabHead_ok (G := G) L R x10 hrd hD [] dst dstLen)) fun v ⟨I, syv⟩ => ?_
     obtain ⟨V', W', R', h17, h18, hW, -⟩ := I.rep

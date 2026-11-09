@@ -3,7 +3,7 @@ module
 import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.Correct
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.CTMgfT
-public import VerifiedGarbage.Proof.HashTable.RISCV64
+public import VerifiedGarbage.Proof.MdHashTable.RISCV64.Tables
 public import VerifiedGarbage.Proof.Mgf1.Basic
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTLabel
 import VerifiedGarbage.Proof.RsaOaep.RISCV64.Dc.CTPriv
@@ -58,7 +58,7 @@ open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Two Pins two_post two_ite two_alloc wp_l
 open VG.Proof.RsaOaep.RISCV64 (Base Saves SC off offs MgfAT MFit HashCT TabS TabA BT two_seq mgfXorT_ok mgfXorT_ctS
   sub_k seedArgs_taint dbArgs_taint chkK_taint restore_taint hfits sc_in)
 open VG.Proof.RsaOaep (scan_idx)
-open VG.Proof.HashTable.RISCV64 (TVar tables fnsOf Coh)
+open VG.Proof.MdHashTable.RISCV64 (MVar tables fns3 Coh)
 
 /-- `k` passed the check, in terms of the anchor. -/
 abbrev HK (D : Nat) (a : State) : Prop := 2 * D + 2 ≤ (a.gpr .a4).toNat
@@ -437,7 +437,7 @@ theorem code_ct {f : Fns} (hl : H.D ∈ lens) :
   let A₃ := fun (a v : State) => AP G H f a v ∧ v.gpr .a0 = BitVec.ofNat 64 H.D
   have hlen : RelCT isa (Two (AP G H f)) (.block (lenLoad 15)) (Two A₃) :=
     (tword_two (okXL G H f) (tabXL G H f) (Φ := fun (ac : State × Nat) t => AP G H f ac.1 t)
-      (fun _ _ h => h.dxt.toL hH) (d := .a0) (.inr (.inr rfl)) (k := 4) (by decide)
+      (fun _ _ h => h.dxt.toL hH) (d := .a0) (.inr (.inr rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 H.D) fun P _ => P.2.1.d).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨(a, 0), h₁, h₂⟩)
       fun _ _ ⟨ac, ⟨t₁, h₁, o₁, z₁, e₁⟩, ⟨t₂, h₂, o₂, z₂, e₂⟩⟩ => ⟨ac.1, ⟨h₁.only o₁ z₁, e₁⟩, ⟨h₂.only o₂ z₂, e₂⟩⟩
   refine RelCT.seq hlen ?_
@@ -470,8 +470,8 @@ theorem code_ct {f : Fns} (hl : H.D ∈ lens) :
 
 end
 
-theorem code_constantTime {vs : List TVar} (hc : Coh vs) :
-    ConstantTime isa (decSpec (tables vs)).pre (decSpec (tables vs)).pub (decrypt (fnsOf vs)) := by
+theorem code_constantTime {vs : List MVar} (hc : Coh vs) :
+    ConstantTime isa (decSpec (tables vs)).pre (decSpec (tables vs)).pub (decrypt (fns3 vs)) := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ => ?_
   obtain ⟨⟨T₁, hT₁, hhL₁⟩, ⟨T, hT, hh₁⟩, hpw₁⟩ := spec_tabD h₁
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
@@ -481,22 +481,22 @@ theorem code_constantTime {vs : List TVar} (hc : Coh vs) :
   have hh₂ := (hiff _ hT).mp hh₁
   have q₁ := hpw₁.sublist (List.sublist_append_left _ _)
   have q₂ := (spec_tabD h₂).2.2.sublist (List.sublist_append_left _ _)
-  have hn := Proof.HashTable.RISCV64.mem_names hw
-  have hnL := Proof.HashTable.RISCV64.mem_names hw₁
+  have hn := Proof.MdHashTable.RISCV64.mem_names hw
+  have hnL := Proof.MdHashTable.RISCV64.mem_names hw₁
   have P₁ := preD_of h₁
   have P₂ := preD_of h₂
-  exact code_ct w₁.l.ok w₁.l.ct w₁.l.fits w.l.ok w.l.ct w.l.fits w₁.l.hash w₁.l.len w₁.l.valid w.l.hash w.l.len
-    w.l.valid w₁.l.lens_mem _ _ _ _ _ _
+  exact code_ct w₁.w.l.ok w₁.w.l.ct w₁.w.l.fits w.w.l.ok w.w.l.ct w.w.l.fits w₁.w.l.hash w₁.w.l.len w₁.w.l.valid w.w.l.hash w.w.l.len
+    w.w.l.valid w₁.w.l.lens_mem _ _ _ _ _ _
     ⟨s₁, ⟨⟨P₁, tabS_entryD hc P₁ q₁ hw hh₁, tabS_entryDL hc P₁ q₁ hw₁ hhL₁⟩, pubD_refl s₁, ⟨rfl, rfl, rfl⟩,
         ⟨rfl, rfl, rfl⟩⟩,
       ⟨P₂, tabS_entryD hc P₂ q₂ hw hh₂, tabS_entryDL hc P₂ q₂ hw₁ hhL₂⟩, p,
-      ⟨(hsy _ hn.1).symm, (hsy _ hn.2.1).symm, (hsy _ hn.2.2).symm⟩,
-      ⟨(hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm, (hsy _ hnL.2.2).symm⟩⟩ e₁ e₂
+      ⟨(hsy _ hn.1).symm, (hsy _ hn.2.1).symm, (hsy _ hn.2.2.1).symm⟩,
+      ⟨(hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm, (hsy _ hnL.2.2.1).symm⟩⟩ e₁ e₂
 
 /-- `vg_rsa_oaep_decrypt` against its contract, for the tables of `vs`,
 given a state meeting it. -/
-theorem dec_verified {vs : List TVar} (hc : Coh vs) (hsat : ∃ s, (decSpec (tables vs)).pre s) :
-    Verified RISCV64.target (decrypt (fnsOf vs)) (decSpec (tables vs)) :=
+theorem dec_verified {vs : List MVar} (hc : Coh vs) (hsat : ∃ s, (decSpec (tables vs)).pre s) :
+    Verified RISCV64.target (decrypt (fns3 vs)) (decSpec (tables vs)) :=
   ⟨code_correct hc, code_constantTime hc, hsat⟩
 
 /-! ## A state meeting the precondition -/
@@ -520,37 +520,37 @@ def decSatState : State where
     else bif Nat.beq a.toNat 0x10070 then 0x20 else bif Nat.beq a.toNat 0x10071 then 0x08
     else bif Nat.beq a.toNat 0x1007A then 0x30 else bif Nat.beq a.toNat 0x10082 then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x4600, 1⟩,
-    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x300000, 40⟩, ⟨0x300000, 40⟩, ⟨0x10000, 136⟩]
+    ⟨0x4700, 0⟩, ⟨0x4100, 64⟩, ⟨0x300000, 88⟩, ⟨0x300000, 88⟩, ⟨0x10000, 136⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x1800, 8⟩, ⟨0x20000, 16640⟩]
 
 section
-variable {vs : List TVar} {w : TVar}
+variable {vs : List MVar} {w : MVar}
 
 theorem stackArgAddr_dsat (j : Nat) (hj : j < 17) : (stackArgAddr decSatState j).toNat + 8 ≤ 0x300000 := by
   revert j; decide
 
 theorem stackArg_dsat {j : Nat} {v : Addr} (hj : j < 17) (e : stackArg decSatState j = v) :
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) j = v :=
-  (Proof.HashTable.RISCV64.withTable_below _ _ _ (stackArgAddr_dsat j hj)).trans e
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) j = v :=
+  (Proof.MdHashTable.RISCV64.withTable_below _ _ _ (stackArgAddr_dsat j hj)).trans e
 
 theorem dsat_args :
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 0 = 1 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 1 = 0x4300 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 2 = 1 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 3 = 0x4400 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 4 = 1 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 5 = 0x4500 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 6 = 1 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 7 = 0x4600 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 8 = 1 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 9 = 0x4700 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 10 = 0 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 11 = 0x4100 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 12 = 64 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 13 = 0x20000 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 14 = 2080 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 15 = 0x300000 ∧
-    stackArg (Proof.HashTable.RISCV64.withTable decSatState vs w) 16 = 0x300000 :=
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 0 = 1 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 1 = 0x4300 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 2 = 1 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 3 = 0x4400 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 4 = 1 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 5 = 0x4500 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 6 = 1 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 7 = 0x4600 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 8 = 1 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 9 = 0x4700 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 10 = 0 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 11 = 0x4100 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 12 = 64 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 13 = 0x20000 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 14 = 2080 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 15 = 0x300000 ∧
+    stackArg (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 16 = 0x300000 :=
   ⟨stackArg_dsat (by decide) (by decide), stackArg_dsat (by decide) (by decide),
     stackArg_dsat (by decide) (by decide), stackArg_dsat (by decide) (by decide),
     stackArg_dsat (by decide) (by decide), stackArg_dsat (by decide) (by decide),
@@ -563,28 +563,28 @@ theorem dsat_args :
 
 /-- A state meeting the contract, with both tables that of `w`, at
 `0x300000`. -/
-theorem dec_sat (hw : w ∈ vs) (hl : (Proof.HashTable.RISCV64.names vs).length < 2 ^ 32) :
+theorem dec_sat (hw : w ∈ vs) (hl : (Proof.MdHashTable.RISCV64.names vs).length < 2 ^ 32) :
     ∃ s, (decSpec (tables vs)).pre s := by
-  refine ⟨Proof.HashTable.RISCV64.withTable decSatState vs w, ?_⟩
+  refine ⟨Proof.MdHashTable.RISCV64.withTable decSatState vs w, ?_⟩
   obtain ⟨a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16⟩ :=
     dsat_args (vs := vs) (w := w)
-  have e : stackArgAddr (Proof.HashTable.RISCV64.withTable decSatState vs w) 0 = 0x10000 :=
+  have e : stackArgAddr (Proof.MdHashTable.RISCV64.withTable decSatState vs w) 0 = 0x10000 :=
     show stackArgAddr decSatState 0 = _ by decide
   have e3472 : stackBytes = 3471 + 1 := rfl
   unfold decSpec
   rw [e3472]
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, stackArgs_seventeen, List.append_eq, List.range, List.range.loop]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
     a13, a14, a15, a16, e]
   sig_and_intros
   all_goals first
+    | exact ⟨Proof.MdHashTable.RISCV64.tableOf w, List.mem_map_of_mem hw, Proof.MdHashTable.RISCV64.held_twL _ _ _ rfl⟩
     | rfl
     | decide
     | exact Region.disjoint_of_sep (by decide)
-    | exact ⟨Proof.HashTable.RISCV64.tableOf w, List.mem_map_of_mem hw, Proof.HashTable.RISCV64.withTable_held _ _ _⟩
     | exact Proof.HashTable.symsOf_distinct2 hl
     | (unfold Spec.Rsa.lenValid; decide)
     | (unfold Spec.RsaPss.scratchWords Spec.Rsa.scratchWords; decide)

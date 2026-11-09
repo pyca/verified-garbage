@@ -281,6 +281,9 @@ def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
 
+/-- The functions over the permutation `v`: the optimized ones where its
+paired-state kernels may use the SHA3 instructions (`pairedSha3`), the
+others otherwise. -/
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
   if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v
 
@@ -351,6 +354,8 @@ open VG.Proof.MlDsa (signWithCacheName verifyWithCacheName preparedSignName prep
 open VG.Proof.MlDsa.AArch64.PreparedKey
 open VG.Proof.MlDsa.AArch64.Sign
 
+/-- Signing a message with the parameters `p`: with a prepared key
+(`prepared`, `preparedSignMessageApi`) or with the key's bytes. -/
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
   if prepared then
@@ -422,6 +427,8 @@ open VG.Proof.MlDsa.AArch64.PreparedKey
 open VG.Proof.MlDsa.AArch64.Sign
 open VG.Proof.MlDsa.AArch64.Verify.OptimizedSelected
 
+/-- Verifying a message with the parameters `p`: with a prepared key
+(`prepared`, `preparedVerifyMessageApi`) or with the key's bytes. -/
 def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     (module label : String) (prepared : Bool) : Artifact :=
   if prepared then

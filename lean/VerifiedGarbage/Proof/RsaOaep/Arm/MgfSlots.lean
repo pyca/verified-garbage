@@ -82,7 +82,7 @@ theorem mpOf (hg : Geo L scr) {so sl dOff dl : Nat} (sl0 : 0 < sl) (dl0 : 0 < dl
     (sd : ∀ σ, (seed σ).length = sl) {X : State → Mem → Prop}
     (hX : ∀ σ m m', X σ m → Frame (mgfW g L scr dOff dl) m m' → X σ m') {f : Fns} {j : Nat}
     {ai au af : BitVec 32} (hj : j < L.argv.length)
-    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (L.argv.getD j 0) o) 4)
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA (L.argv.getD j 0) o) 4)
     (tab : ∀ σ m, X σ m → TabFacts g.H f (L.argv.getD j 0) ai au af σ) (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) :
     MP g L scr so sl dOff dl seed (fun σ m => X σ m ∧ Sl L scr so sl dOff dl m) f j ai au af :=
   ⟨hg, sl0, dl0, fs, fd, sep, sd, fun σ m m' ⟨hx, hs⟩ hf => ⟨hX σ m m' hx hf, sl_keep g hg fd hf hs⟩,

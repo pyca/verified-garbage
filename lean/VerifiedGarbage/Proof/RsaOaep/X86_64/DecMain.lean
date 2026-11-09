@@ -91,9 +91,9 @@ variable {Hl Gm : Hash} (hH : HashOK Hl) (hG : HashOK Gm)
 include hH hG mH mG hgi hgu hgf in
 theorem decMain_ok {s t : State} (hp : DPre s) (he : EnvD s t) (hsy : t.syms = s.syms)
     (okL : Table.TabOK Hl.stream f s.syms) (hmL : Table.TabMem Hl.stream s.syms (stackArg s 17) s.mem)
-    (hDmL : s.mem.readW (off (stackArg s 17) 32) 64 = BitVec.ofNat 64 Hl.D)
+    (hDmL : s.mem.readW (off (stackArg s 17) 48) 64 = BitVec.ofNat 64 Hl.D)
     (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 18) s.mem)
-    (hDm : s.mem.readW (off (stackArg s 18) 32) 64 = BitVec.ofNat 64 Gm.D) (L : Lay t (fb s) (stackArg s 15))
+    (hDm : s.mem.readW (off (stackArg s 18) 48) 64 = BitVec.ofNat 64 Gm.D) (L : Lay t (fb s) (stackArg s 15))
     {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem (fb s) (stackArg s 15) V W) (hW : ArgsD s W)
     (h35 : W 35 = stackArg s 17)
     (hk : 2 * Hl.D + 2 ≤ (s.gpr .r8).toNat) {o : Spec.Rsa.Outcome} (hres : ResD V W (s.gpr .r8).toNat o) :
