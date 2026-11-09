@@ -1,17 +1,62 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss
+public import VerifiedGarbage.Spec.RsaPss.Contract
+public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
 # RSASSA-PSS with both of its hash functions given as tables of `MdHash`
 
-**Trusted** (as every file in `Spec/`). The functions of
-`Spec/RsaPss/Table.lean`, `vg_rsa_pss_sign` and
-`vg_rsa_pss_verify_precomputed`, with the same contracts but for `mgf1`: a
-table of the interface `MdHash` (`Spec/MdHashTable.lean`), as `hash` is,
-naming `G` by `MdHashTable.hashAt`, rather than one of `Hash`. So the
-interface `Hash` can go once nothing implements those of
-`Spec/RsaPss/Table.lean`.
+**Trusted** (as every file in `Spec/`). In the module `rsa_pss`, each with
+two last parameters, tables of the interface `MdHash`
+(`Spec/MdHashTable.lean`): `hash`, naming the hash function `H` of the
+digest and of EMSA-PSS, and `mgf1`, naming MGF1's `G`
+(`MdHashTable.hashAt`):
+
+* `vg_rsa_pss_sign`: `RSASSA-PSS-SIGN` of a digest with a salt, with the
+  private key checked against the public exponent (`RsaPss.sign H G`);
+* `vg_rsa_pss_verify_precomputed`: `RSASSA-PSS-VERIFY` of a signature for a
+  digest (`RsaPss.verify H G`), expecting a salt length or any, given the
+  modulus' `Rsa.publicPrecompute` values `pre`.
+
+So one function serves every pair of hash functions, with every
+implementation of each, rather than a function for each pair. `H` is a
+table of its compression function because verification hashes
+`M' = 0⁸ ‖ mHash ‖ salt`, whose length is secret when any salt length is
+accepted: it pads `M'` itself and compresses a public number of blocks.
+
+Numbers are as in `Spec/Rsa/Contract.lean`: slices of octets, most
+significant first, with the modulus `n` of `n_len` octets, from 64 to 1024,
+and `e` of at most `n_len`; the private key is as `vg_rsa_private_checked`
+takes it. The digest is a slice of `digest_len` octets, which must be `H`'s
+length. These are preconditions, on the public lengths; everything about
+the values is checked. Signing returns 1 and writes the signature, or
+writes zeros and returns 0 (the encoding or the key refused) or 2 (the
+internal error: the result failed its check against `e`); verification
+returns 1 for a valid signature and 0 otherwise. With a `pre` that does
+not hold the values for `n`, what verification returns is unspecified, as
+in `Proof.Rsa.publicPrecomputedCheckedContract`.
+
+The signature determines memory validity, separation and that the pointers,
+the lengths and the salt length arguments are public, through
+`Sig.contract` (among them the salt's length when signing); which tables
+`hash` and `mgf1` are, is public too (`Abi.withTables`), and the tables'
+own memory is read-only. The public key, `n` and `e`, and `pre` are
+public, and may affect timing (`leak`). Nothing else is: when signing, the
+private key, the digest, the salt and everything computed from them; when
+verifying, the digest, the signature, and everything verification computes
+from them (`EM`, `DB`, where its padding ends, the salt and its length,
+whether each check passes) are secret, and only the returned bit tells
+whether the signature is valid.
+
+`scratch` is working space of at least `scratchWords n_len` `u64`s when
+signing and `publicScratchWords n_len` when verifying (that of the RSA
+primitive, and room for the encoding, the hash functions' states and their
+working space), whose contents on return are unspecified.
+`stack` is the number of bytes below the stack pointer that an
+implementation's calls and frames use. The functions may overwrite their
+arguments passed in memory, where the calling convention allows it
+(`writeArgs`).
 -/
 
 @[expose] public section
@@ -20,6 +65,29 @@ namespace VG.Spec.RsaPss
 
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid writtenOutcome exponentDoc)
+
+/-- The `# Safety` item of `hash`, but for what the emitter adds (which
+tables it may be, `Rust.fnTablesDoc`). -/
+def hashSafety : String :=
+  "`hash` names the hash function of the digest and of the encoding: the one of \
+    `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' \
+    `MdHash` tables of this crate, `fn_tables`, say which they name)."
+
+/-- The `# Safety` item of `mgf1`, but for what the emitter adds. -/
+def mgf1Safety : String :=
+  "`mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its \
+    first word of data (the hash functions' tables of this crate, `fn_tables`, say which they \
+    name)."
+
+/-- The `# Safety` item of `digest_len`. -/
+def digestLenSafety : String :=
+  "`digest_len` must be the digest length of the hash function `hash` names."
+
+/-- The digest's length is that of the hash function the table at `hash`
+names, if it names one. -/
+def digestLenOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (digestLen : BitVec w) :
+    Prop :=
+  ∀ H, MdHashTable.hashAt ptrBits m hash = some H → digestLen.toNat = H.len
 
 /-! ## `vg_rsa_pss_sign` -/
 
