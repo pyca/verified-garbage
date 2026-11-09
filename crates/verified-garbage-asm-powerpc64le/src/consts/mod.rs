@@ -67,6 +67,10 @@ mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
 
 #[rustfmt::skip]
+mod vg_secp256k1_comb;
+pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
+
+#[rustfmt::skip]
 mod vg_seed_ppc64le_affine;
 pub use vg_seed_ppc64le_affine::VG_SEED_PPC64LE_AFFINE;
 

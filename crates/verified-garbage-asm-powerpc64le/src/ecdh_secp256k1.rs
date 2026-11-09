@@ -585,7 +585,15 @@ bl {vg_secp256k1_mul_mod_p}
         vg_secp256k1_mul_mod_p = sym super::ec_secp256k1::vg_secp256k1_mul_mod_p::vg_secp256k1_mul_mod_p,
         vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
-        vg_secp256k1_point_a0_double = sym super::ec_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
-        vg_secp256k1_point_a0_add_affine = sym super::ec_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
+        vg_secp256k1_point_a0_double = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_double::vg_secp256k1_point_a0_double,
+        vg_secp256k1_point_a0_add_affine = sym super::ecdh_secp256k1::vg_secp256k1_point_a0_add_affine::vg_secp256k1_point_a0_add_affine,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_add_affine.rs"]
+pub(crate) mod vg_secp256k1_point_a0_add_affine;
+
+#[rustfmt::skip]
+#[path = "internal/vg_secp256k1_point_a0_double.rs"]
+pub(crate) mod vg_secp256k1_point_a0_double;
