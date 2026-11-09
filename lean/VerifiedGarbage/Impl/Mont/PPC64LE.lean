@@ -303,13 +303,16 @@ def qrowMG (M : Mod) : List Instr :=
   ([.addze (treg M.n) (treg M.n), .addze .r12 .r12] : List Instr) ++
   pass true mReg 0 1 M.n ++ ([.addze (treg M.n) .r12] : List Instr)
 
-/-- The row `T = (T + q m) / 2⁶⁴`: for P-256's `p`, by shifts of `q = t₀`
-(`qrowP`, `Impl/Mont/PPC64LE/P256.lean`), else by products (`qrowMG`). -/
-def qrowM (M : Mod) (m : Nat) : List Instr := if M.n = 4 ∧ m = p256p then qrowP else qrowMG M
+/-- A row of P-256's loop: `T += u [b]`, then `T = (T + q p) / 2⁶⁴` by
+shifts of `q = t₀` (`qrowP`, `Impl/Mont/PPC64LE/P256.lean`), then the next
+word of `[a]`. -/
+def qrowU (n : Nat) : List Instr := qrowB n ++ qrowP ++ ([.addi .r5 .r5 8] : List Instr)
 
-/-- An iteration of `rmul4`. -/
+/-- An iteration of `rmul4`: for P-256's `p`, all four rows, `r8` cleared
+(the rows use it), else one row by products (`qrowMG`). -/
 def qrow (M : Mod) (m : Nat) : List Instr :=
-  qrowB M.n ++ qrowM M m ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
+  if M.n = 4 ∧ m = p256p then qrowU 4 ++ qrowU 4 ++ qrowU 4 ++ qrowU 4 ++ ([.li .r8 0] : List Instr)
+  else qrowB M.n ++ qrowMG M ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
 
 /-- Word `j` of `T - m` (both in registers), with CA, to `bReg n j` (free once
 the rows are done). -/

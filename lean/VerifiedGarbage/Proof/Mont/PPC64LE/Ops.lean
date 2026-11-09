@@ -2296,7 +2296,7 @@ theorem qrowP_row {t : State} {M : Mod} (hn : M.n = 4)
     WP isa (.block qrowP) t fun u =>
       (∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal u 0 (M.n + 1) =
         regsVal t 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t.gpr .r12).toNat + q * p256p) ∧
-      u.mem = t.mem ∧ Kp (lrow M.n) t u := by
+      u.mem = t.mem ∧ Kp (.r8 :: lrow M.n) t u := by
   have e : ∀ s : State, regsVal s 0 (M.n + 1) = accP5 s := fun s => by
     rw [hn]; simp only [regsVal, accP5, treg, List.getD_cons_zero, List.getD_cons_succ]; omega
   have q64 := (t.gpr .r15).isLt
@@ -2308,23 +2308,6 @@ theorem qrowP_row {t : State} {M : Mod} (hn : M.n = 4)
   refine WP.mono (qrowP_ok hb') fun u ⟨v, mu, ku⟩ => ⟨⟨_, q64, ?_⟩, mu, ku.mono (by rw [hn]; decide)⟩
   rw [e, e, v, hn]
   simp only [accP, accP5]
-
-/-- The row `T = (T + q m) / 2⁶⁴`, the modulus in `mReg`, `m'` in `mpReg`. -/
-theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M : Mod} {m : Nat}
-    (hn0 : 0 < M.n) (hn : M.n ≤ 4)
-    (hm : gval t mReg M.n = m) (hinv : (m * (t.gpr (mpReg M.n)).toNat + 1) % 2 ^ 64 = 0)
-    (hone : M.minv.toNat = 1 → (t.gpr (mpReg M.n)).toNat = 1)
-    (hb : regsVal t 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t.gpr .r12).toNat + 2 ^ 64 * m < 2 ^ (64 * (M.n + 2))) :
-    WP isa (.block (qrowM M m)) t fun u =>
-      (∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal u 0 (M.n + 1) =
-        regsVal t 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t.gpr .r12).toNat + q * m) ∧
-      u.mem = t.mem ∧ Kp (lrow M.n) t u := by
-  unfold qrowM
-  split
-  · rename_i h
-    obtain ⟨h4, rfl⟩ := h
-    exact qrowP_row h4 hb
-  · exact qrowMG_ok ht hn0 hn hm hinv hone hb
 
 /-- The invariant of `rmul4`'s loop, before the iteration for word `k`. -/
 structure QLoopInv (base : Addr) (M : Mod) (a b m k : Nat) (s t : State) : Prop where
@@ -2349,18 +2332,35 @@ structure QPre (base : Addr) (M : Mod) (size a b m : Nat) (s : State) : Prop whe
   b_lt : wordsVal s.mem base b M.n < m
   m_lt : m < 2 ^ (64 * M.n)
 
-theorem qrow_eq (M : Mod) (m : Nat) : qrow M m = qrowB M.n ++ (qrowM M m ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)) := by
-  simp only [qrow, List.append_assoc]
+/-- The invariant of a row: `QLoopInv` but the loop's counter. -/
+structure QRowInv (base : Addr) (M : Mod) (a b m k : Nat) (s t : State) : Prop where
+  r5 : At t base .r5 (a + 8 * k)
+  mem : t.mem = s.mem
+  kp : Kp (qclob M.n) s t
+  lt : regsVal t 0 (M.n + 1) < 2 * m
+  cong : ∃ U, 2 ^ (64 * k) * regsVal t 0 (M.n + 1) = wordsVal s.mem base a k * wordsVal s.mem base b M.n + U * m
 
-/-- An iteration of the loop. -/
-theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat} (P : QPre base M size a b m s)
-    (hk : k < M.n) {t : State} (I : QLoopInv base M a b m k s t) :
-    WP isa (.block (qrow M m)) t fun u => QLoopInv base M a b m (k + 1) s u := by
+theorem QLoopInv.row {base : Addr} {M : Mod} {a b m k : Nat} {s t : State} (I : QLoopInv base M a b m k s t) :
+    QRowInv base M a b m k s t :=
+  ⟨I.r5, I.mem, I.kp, I.lt, I.cong⟩
+
+/-- A row: `T += u [b]` (`qrowB`), the reduction `red`, which may write `L`
+(`qrowMG`, or P-256's `qrowP`), and the next word of `[a]`. -/
+theorem qstep_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat} (P : QPre base M size a b m s)
+    (hk : k < M.n) {L : List Reg} (hL : ∀ r ∈ L, r ∈ .r8 :: lrow M.n) {red : List Instr}
+    (hred : ∀ t₁ : State, Ws t₁ base size → gval t₁ mReg M.n = m → t₁.gpr (mpReg M.n) = s.gpr (mpReg M.n) →
+      regsVal t₁ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t₁.gpr .r12).toNat + 2 ^ 64 * m < 2 ^ (64 * (M.n + 2)) →
+      WP isa (.block red) t₁ fun u =>
+        (∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal u 0 (M.n + 1) =
+          regsVal t₁ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t₁.gpr .r12).toNat + q * m) ∧
+        u.mem = t₁.mem ∧ Kp L t₁ u)
+    {t : State} (I : QRowInv base M a b m k s t) :
+    WP isa (.block (qrowB M.n ++ (red ++ ([.addi .r5 .r5 8] : List Instr)))) t fun u =>
+      QRowInv base M a b m (k + 1) s u ∧ Kp (.r5 :: (lrow M.n ++ L)) t u := by
   have hs15 := P.ws.small
   have hn0 := P.n0
   have hn4 := P.n4
   have ht := I.kp.ws P.ws
-  rw [qrow_eq]
   have hB : gval t (bReg M.n) M.n = wordsVal s.mem base b M.n := by
     rw [← P.bv]; exact gval_congr fun j hj => I.kp.gpr _ (bReg_not_qclob hn4 hj)
   have hM : gval t mReg M.n = m := by
@@ -2394,8 +2394,7 @@ theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat}
   have hmp : t₁.gpr (mpReg M.n) = s.gpr (mpReg M.n) := by
     rw [K₁.gpr _ (fun h => mpReg_not_qclob hn4 (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h))),
       I.kp.gpr _ (mpReg_not_qclob hn4)]
-  refine WP.block_append (WP.mono (qrowM_ok (K₁.ws ht) (m := m) hn0 hn4 hM₁
-    (by rw [hmp]; exact P.inv) (by rw [hmp]; exact P.one) (by
+  refine WP.block_append (WP.mono (hred t₁ (K₁.ws ht) hM₁ hmp (by
       rw [V₁, hP2]
       have := I.lt
       have : u.toNat * B ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by have := u.isLt; omega) (by omega)
@@ -2404,24 +2403,24 @@ theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat}
         rw [← Nat.mul_assoc]; exact Nat.mul_le_mul_right _ (by decide)
       omega)) fun t₂ ⟨⟨q, hq, V₂⟩, M₂, K₂⟩ => ?_)
   rw [V₁] at V₂
-  refine wp_step (exec_addi (by decide) (by decide)) ?_
-  refine wp_step (exec_subi (by decide) (by decide)) (WP.block_nil ?_)
-  have K₀₂ : Kp (qclob M.n) t t₂ := (K₁.trans K₂).mono fun r hr => List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hr)
-  have hrv : ∀ (x y : BitVec 64), regsVal ((t₂.write .r5 x).write .r8 y) 0 (M.n + 1) = regsVal t₂ 0 (M.n + 1) :=
-    fun _ _ => regsVal_congr fun j _ => by simp only [write_gpr, treg_eq_r5, treg_eq_r8, ite_false]
-  have h5₂ : t₂.gpr .r5 = t.gpr .r5 := (K₁.trans K₂).gpr _ (by simp [lrow, tregs])
-  have h8₂ : t₂.gpr .r8 = t.gpr .r8 := (K₁.trans K₂).gpr _ (by simp [lrow, tregs])
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp only [At, write_gpr, reduceCtorEq, ite_false, ite_true]
+  refine wp_step (exec_addi (by decide) (by decide)) (WP.block_nil ?_)
+  have K₁₂ : Kp (lrow M.n ++ L) t t₂ :=
+    (K₁.mono fun r hr => List.mem_append_left _ hr).trans (K₂.mono fun r hr => List.mem_append_right _ hr)
+  have K₀₂ : Kp (qclob M.n) t t₂ := K₁₂.mono fun r hr => by
+    rcases List.mem_append.mp hr with h | h
+    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
+    · exact List.mem_cons_of_mem _ (hL r h)
+  have hrv : ∀ (x : BitVec 64), regsVal (t₂.write .r5 x) 0 (M.n + 1) = regsVal t₂ 0 (M.n + 1) :=
+    fun _ => regsVal_congr fun j _ => by simp only [write_gpr, treg_eq_r5, ite_false]
+  have h5₂ : t₂.gpr .r5 = t.gpr .r5 := K₁₂.gpr _ fun h => by
+    rcases List.mem_append.mp h with h | h
+    · simp [lrow, tregs] at h
+    · have := hL _ h; simp [lrow, tregs] at this
+  refine ⟨⟨?_, ?_, ?_, ?_, ?_⟩, ?_⟩
+  · simp only [At, write_gpr, ite_true]
     rw [h5₂, I.r5, off_add, show a + 8 * k + 8 = a + 8 * (k + 1) by omega]
-  · simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
-    rw [h8₂, I.r8]
-    apply BitVec.eq_of_toNat_eq
-    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
-    omega
   · show t₂.mem = s.mem; rw [M₂, M₁, I.mem]
-  · exact I.kp.trans (K₀₂.trans ((Kp.write _ _ (List.mem_cons_self ..)).trans
-      (Kp.write _ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))))
+  · exact I.kp.trans (K₀₂.trans (Kp.write _ _ (List.mem_cons_self ..)))
   · rw [hrv]
     have hrow := row_lt hTlt u.isLt hBm hq
     generalize regsVal t₂ 0 (M.n + 1) = T' at V₂ ⊢
@@ -2434,16 +2433,84 @@ theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat}
       rw [wordsVal_succ_top, huv]
     rw [hA, show 64 * (k + 1) = 64 * k + 64 by omega, Nat.pow_add, Nat.mul_assoc, V₂, Nat.mul_add, Nat.mul_add, hU, hBv]
     grind
+  · exact (K₁₂.mono fun r hr => List.mem_cons_of_mem _ hr).trans (Kp.write _ _ (List.mem_cons_self ..))
 
-/-- The loop of `rmul4`. -/
+/-- An iteration of the loop, for a modulus other than P-256's: one row. -/
+theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat} (P : QPre base M size a b m s)
+    (hP : ¬(M.n = 4 ∧ m = p256p)) (hk : k < M.n) {t : State} (I : QLoopInv base M a b m k s t) :
+    WP isa (.block (qrow M m)) t fun u => QLoopInv base M a b m (k + 1) s u := by
+  rw [qrow]
+  split
+  · rename_i h; exact absurd h hP
+  rw [show qrowB M.n ++ qrowMG M ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr) =
+    (qrowB M.n ++ (qrowMG M ++ ([.addi .r5 .r5 8] : List Instr))) ++ ([.subi .r8 .r8 1] : List Instr) by
+      simp only [List.append_assoc, List.cons_append, List.nil_append]]
+  refine WP.block_append (WP.mono (qstep_ok P hk (L := lrow M.n) (fun r hr => List.mem_cons_of_mem _ hr)
+    (fun t₁ hw hm hmp hb => qrowMG_ok hw P.n0 P.n4 hm (by rw [hmp]; exact P.inv) (by rw [hmp]; exact P.one) hb)
+    I.row) fun u ⟨R, K⟩ => ?_)
+  refine wp_step (exec_subi (by decide) (by decide)) (WP.block_nil ?_)
+  have h8 : u.gpr .r8 = t.gpr .r8 := K.gpr _ (by simp [lrow, tregs])
+  have hrv : ∀ (x : BitVec 64), regsVal (u.write .r8 x) 0 (M.n + 1) = regsVal u 0 (M.n + 1) :=
+    fun _ => regsVal_congr fun j _ => by simp only [write_gpr, treg_eq_r8, ite_false]
+  refine ⟨?_, ?_, R.mem, R.kp.trans (Kp.write _ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))), ?_, ?_⟩
+  · have := R.r5; simp only [At, write_gpr, reduceCtorEq, ite_false] at this ⊢; exact this
+  · simp only [write_gpr, ite_true]
+    rw [h8, I.r8]
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
+    omega
+  · rw [hrv]; exact R.lt
+  · rw [hrv]; exact R.cong
+
+/-- A row of P-256's iteration (`qrowU`). -/
+theorem qrowU_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat} (P : QPre base M size a b m s)
+    (hP : M.n = 4 ∧ m = p256p) (hk : k < M.n) {t : State} (I : QRowInv base M a b m k s t) :
+    WP isa (.block (qrowU 4)) t fun u => QRowInv base M a b m (k + 1) s u := by
+  obtain ⟨h4, rfl⟩ := hP
+  rw [qrowU, show qrowB 4 = qrowB M.n by rw [h4], List.append_assoc]
+  exact WP.mono (qstep_ok P hk (L := .r8 :: lrow M.n) (fun _ h => h)
+    (fun _ _ _ _ hb => qrowP_row h4 hb) I) fun _ h => h.1
+
+/-- P-256's iteration: the four rows, then the counter cleared. -/
+theorem qrowP4_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m : Nat} (P : QPre base M size a b m s)
+    (hP : M.n = 4 ∧ m = p256p) {t : State} (I : QLoopInv base M a b m 0 s t) :
+    WP isa (.block (qrow M m)) t fun u => QLoopInv base M a b m M.n s u := by
+  have h4 := hP.1
+  rw [qrow]
+  split
+  swap
+  · rename_i h; exact absurd hP h
+  simp only [List.append_assoc]
+  refine WP.block_append (WP.mono (qrowU_ok P hP (by omega) I.row) fun t₁ I₁ => ?_)
+  refine WP.block_append (WP.mono (qrowU_ok P hP (by omega) I₁) fun t₂ I₂ => ?_)
+  refine WP.block_append (WP.mono (qrowU_ok P hP (by omega) I₂) fun t₃ I₃ => ?_)
+  refine WP.block_append (WP.mono (qrowU_ok P hP (by omega) I₃) fun u R => ?_)
+  refine wp_step (exec_li (by decide)) (WP.block_nil ?_)
+  have hrv : ∀ (x : BitVec 64), regsVal (u.write .r8 x) 0 (M.n + 1) = regsVal u 0 (M.n + 1) :=
+    fun _ => regsVal_congr fun j _ => by simp only [write_gpr, treg_eq_r8, ite_false]
+  replace R : QRowInv base M a b m M.n s u := by rw [h4]; exact R
+  refine ⟨?_, ?_, R.mem, R.kp.trans (Kp.write _ _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))), ?_, ?_⟩
+  · have := R.r5; simp only [At, write_gpr, reduceCtorEq, ite_false] at this ⊢; exact this
+  · simp only [write_gpr, ite_true, Nat.sub_self]
+  · rw [hrv]; exact R.lt
+  · rw [hrv]; exact R.cong
+
+/-- The loop of `rmul4`: one row an iteration, or for P-256's `p` one
+iteration of four rows. -/
 theorem qloop_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m : Nat} (P : QPre base M size a b m s)
     {t : State} (h0 : QLoopInv base M a b m 0 s t) :
     WP isa (.loop (.block (qrow M m)) (.nonzero .d .r8)) t fun u => QLoopInv base M a b m M.n s u := by
   have hD15 : M.n < 2 ^ 15 := by have := P.n4; omega
+  by_cases hP : M.n = 4 ∧ m = p256p
+  · refine WP.loop (M := isa) (fun n t' => n = 1 ∧ QLoopInv base M a b m 0 s t') ?_ 1 t ⟨rfl, h0⟩
+    rintro n t' ⟨rfl, I⟩
+    refine WP.mono (qrowP4_ok P hP I) fun u I' => ?_
+    have he := eval_nonzero_ofNat I'.r8 (x := M.n - M.n) (by omega)
+    exact .inl ⟨by rw [he]; simp, I'⟩
   refine WP.loop (M := isa)
     (fun n t' => ∃ k, n = M.n - k ∧ k < M.n ∧ QLoopInv base M a b m k s t') ?_ M.n t ⟨0, rfl, P.n0, h0⟩
   rintro n t' ⟨k, rfl, hk, I⟩
-  refine WP.mono (qrow_ok P hk I) fun u I' => ?_
+  refine WP.mono (qrow_ok P hP hk I) fun u I' => ?_
   have he := eval_nonzero_ofNat I'.r8 (x := M.n - (k + 1)) (by omega)
   by_cases hk1 : k + 1 = M.n
   · exact .inl ⟨by rw [he]; simp [hk1], hk1 ▸ I'⟩
