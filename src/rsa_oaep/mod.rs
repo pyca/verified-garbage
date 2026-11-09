@@ -57,9 +57,48 @@ use core::fmt;
 
 use crate::cpu::detected;
 use crate::rsa::{PrivateKey, PublicKey};
-pub use crate::rsa_pkcs1_sig::Hash;
 use crate::rsa_pss::{public_scratch_words, scratch_words};
 use crate::zeroize::zeroize;
+
+/// A hash function supported by RSA OAEP. MGF1 must use the same hash
+/// function or SHA-1; other pairs return [`Error::UnsupportedHash`].
+///
+/// MD5 is not an OAEP hash choice:
+///
+/// ```compile_fail,E0599
+/// use verified_garbage::rsa_oaep::Hash;
+/// let hash = Hash::Md5;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Hash {
+    /// SHA-1.
+    Sha1,
+    /// SHA-224.
+    Sha224,
+    /// SHA-256.
+    Sha256,
+    /// SHA-384.
+    Sha384,
+    /// SHA-512.
+    Sha512,
+    /// SHA-512/224.
+    Sha512_224,
+    /// SHA-512/256.
+    Sha512_256,
+}
+
+impl Hash {
+    /// The length of the hash function's values, in bytes.
+    pub fn digest_len(self) -> usize {
+        match self {
+            Hash::Sha1 => 20,
+            Hash::Sha224 | Hash::Sha512_224 => 28,
+            Hash::Sha256 | Hash::Sha512_256 => 32,
+            Hash::Sha384 => 48,
+            Hash::Sha512 => 64,
+        }
+    }
+}
 
 /// Why an encryption or a decryption was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -596,9 +635,23 @@ mod tests {
     use alloc::string::ToString;
 
     #[test]
+    fn digest_lengths() {
+        for (hash, len) in [
+            (Hash::Sha1, 20),
+            (Hash::Sha224, 28),
+            (Hash::Sha256, 32),
+            (Hash::Sha384, 48),
+            (Hash::Sha512, 64),
+            (Hash::Sha512_224, 28),
+            (Hash::Sha512_256, 32),
+        ] {
+            assert_eq!(hash.digest_len(), len);
+        }
+    }
+
+    #[test]
     fn pairs() {
         let all = [
-            Hash::Md5,
             Hash::Sha1,
             Hash::Sha224,
             Hash::Sha256,
@@ -606,20 +659,11 @@ mod tests {
             Hash::Sha512,
             Hash::Sha512_224,
             Hash::Sha512_256,
-            Hash::Sha3_224,
-            Hash::Sha3_256,
-            Hash::Sha3_384,
-            Hash::Sha3_512,
         ];
         let mut n = 0;
         for h in all {
             for g in all {
-                let ok = h != Hash::Md5
-                    && !matches!(
-                        h,
-                        Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
-                    )
-                    && (g == h || g == Hash::Sha1);
+                let ok = g == h || g == Hash::Sha1;
                 assert_eq!(with_functions!(h, g, |_fns| ()).is_some(), ok);
                 n += usize::from(ok);
             }
@@ -631,7 +675,7 @@ mod tests {
     fn refused() {
         let (private, public) = composite_key();
         assert_eq!(
-            encrypt(&public, b"", Hash::Md5, Hash::Md5, b""),
+            encrypt(&public, b"", Hash::Sha256, Hash::Sha224, b""),
             Err(Error::UnsupportedHash)
         );
         assert_eq!(
