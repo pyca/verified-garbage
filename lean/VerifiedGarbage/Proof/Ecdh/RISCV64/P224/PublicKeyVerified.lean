@@ -85,7 +85,8 @@ theorem pk_sat : (Spec.EcKey.P224.inst.publicKeyContract
   have held := VG.Proof.Ecdsa.RISCV64.P224.Comb.combSatMem_held
   rw [show Impl.Ecdsa.RISCV64.Comb.p224CombConsts = [(Impl.Ecdsa.RISCV64.Comb.p224Sym,
     Impl.Ecdsa.RISCV64.Comb.p224CombWords)] from rfl]
-  generalize Impl.Ecdsa.RISCV64.Comb.p224CombWords = W' at hl held ⊢
+  obtain ⟨W', eW⟩ : ∃ W, Impl.Ecdsa.RISCV64.Comb.p224CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : pkSatC = s
   sig_pre [Spec.EcKey.P224.inst, Spec.EcKey.Instance.publicKeyContract, Spec.EcKey.Instance.publicKeySig,
     Spec.P224.curve, Spec.EcKey.scratchWords, RISCV64.abi, RISCV64.argRegs, Abi.withConsts, Abi.constRegions,
