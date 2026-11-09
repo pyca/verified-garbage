@@ -212,4 +212,28 @@ def selectAcc64 : Prog isa :=
 /-- The arithmetic, after the bases are loaded. -/
 def tail : Prog isa := .seq zeroAcc (.seq rounds (.seq subMod64M selectAcc64))
 
+/-! ## The shared kernel
+
+`montOp` (`PublicChecked.lean`) calls `tail` as one function, `kernel`,
+rather than inlining it: a call may change `r0`, `r11` and `r12` on the way
+(linkage code, see `TCB/PPC64LE/Isa.lean`), so the caller passes `2 w` in
+`r4` and `-m⁻¹ mod 2³²` in `r3`, and its own return address in `r14`, which
+the kernel keeps in the temporary's word `w + 1` (`r9 + 8 w + 8`), which
+`tail` does not write, and loads again at its end. `tail` leaves `r12` as
+it found it (`restoreMinv`), and `r11` is `2 w` again. -/
+
+/-- `r12 := r3`, `r11 := r4`, and `r14` stored in the temporary's word
+`w + 1`. -/
+def kernelEntry : List Instr :=
+  [.addi .r12 .r3 0, .addi .r11 .r4 0, .lsl .r3 .r4 2, .add .r3 .r9 .r3, .store .d .r14 .r3 8]
+
+/-- `r14` loaded again from the temporary's word `w + 1`. -/
+def kernelExit : List Instr := [.lsl .r3 .r11 2, .add .r3 .r9 .r3, .load .d .r14 .r3 8]
+
+/-- The kernel: `tail` between `kernelEntry` and `kernelExit`. -/
+def kernel : Prog isa := .seq (.block kernelEntry) (.seq tail (.block kernelExit))
+
+/-- The name of the kernel's function. -/
+def kernelName : String := "vg_rsa_mont_kernel"
+
 end VG.Impl.Bignum.PPC64LE
