@@ -1461,7 +1461,7 @@ bl {vg_p384_sub_mod_n}
         vg_p384_sub_mod_p = sym super::ec_p384::vg_p384_sub_mod_p::vg_p384_sub_mod_p,
         vg_p384_mul_mod_n = sym super::ecdsa_p384::vg_p384_mul_mod_n::vg_p384_mul_mod_n,
         vg_p384_point_add = sym super::ec_p384::vg_p384_point_add::vg_p384_point_add,
-        vg_p384_point_double = sym super::ec_p384::vg_p384_point_double::vg_p384_point_double,
+        vg_p384_point_double = sym super::ecdsa_p384::vg_p384_point_double::vg_p384_point_double,
         vg_p384_sub_mod_n = sym super::ecdsa_p384::vg_p384_sub_mod_n::vg_p384_sub_mod_n,
     )
 }
@@ -1563,6 +1563,10 @@ pub(crate) mod vg_p384_add_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_p384_mul_mod_n.rs"]
 pub(crate) mod vg_p384_mul_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p384_point_double.rs"]
+pub(crate) mod vg_p384_point_double;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p384_sub_mod_n.rs"]
