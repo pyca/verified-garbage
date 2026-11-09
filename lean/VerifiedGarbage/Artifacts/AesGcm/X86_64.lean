@@ -37,18 +37,15 @@ def artifacts : List Artifact := [
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul_avx512"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare
-    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified
-    features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq", "avx512f"] },
+    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_vpclmul"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16
-    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified
-    features := ["avx", "avx2", "ssse3", "vpclmulqdq"] },
+    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := "_pclmul_avx"
     code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16
-    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified
-    features := ["avx", "pclmulqdq"] },
+    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified },
   Spec.Gcm.prepareApi.artifact X86_64.target {
     suffix := ""
     code := Impl.Gcm.X86_64.Flag.prepareAbsent
@@ -56,8 +53,7 @@ def artifacts : List Artifact := [
   Spec.Gcm.wipePreparedApi.artifact X86_64.target {
     suffix := "_avx"
     code := Impl.Gcm.X86_64.Flag.wipe true
-    verified := Proof.Gcm.X86_64.Prepare.wipe_verified true
-    features := ["avx"] },
+    verified := Proof.Gcm.X86_64.Prepare.wipe_verified true },
   Spec.Gcm.wipePreparedApi.artifact X86_64.target {
     code := Impl.Gcm.X86_64.Flag.wipe false
     verified := Proof.Gcm.X86_64.Prepare.wipe_verified false }]
@@ -81,15 +77,13 @@ def artifacts (c : Ctr32Impl) (n : GhashName) : List Artifact :=
     code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish v.callees)
     stack := 2584
     verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v)
-    features := (v.ctr.features ++ v.gh.features).dedup },
+    spSafe := X86_64.withStackArgScratch_spSafe (streamFinish_spSafe v) },
   Spec.Gcm.streamVerifyApi.artifact X86_64.target {
     suffix := c.suffix ++ n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify v.callees)
     stack := 2592
     verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v)
-    features := (v.ctr.features ++ v.gh.features).dedup }]
+    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) }]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32Ghash
 
@@ -111,8 +105,7 @@ def artifacts (c : Ctr32Impl) : List Artifact :=
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesGcm.X86_64.init v.callees)
     stack := 2576
     verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
-    features := (v.ctr.features ++ v.key.features).dedup }]
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v) }]
 
 end VG.Artifacts.AesGcm.X86_64.AesCtr32
 
@@ -129,29 +122,25 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     code := sealCodeF v
     stack := 2624
     verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inr rfl) (sealCodeF_verified v))
-    spSafe := sealCodeF_spAll v
-    features := v.impl.features },
+    spSafe := sealCodeF_spAll v },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := openCodeF v
     stack := 2632
     verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inr rfl) (openCodeF_verified v))
-    spSafe := openCodeF_spAll v
-    features := v.impl.features },
+    spSafe := openCodeF_spAll v },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (openToCodeF v) (openToCode v)
     stack := openToStackF v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR_onFlag v)
-    spSafe := openToCodeR_onFlag_spAll v
-    features := v.impl.features },
+    spSafe := openToCodeR_onFlag_spAll v },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := streamEncryptCodeF v
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_ofB (Or.inr rfl) (streamEncryptCodeF_verified v))
-    spSafe := streamEncryptCodeF_spAll v
-    features := v.impl.features },
+    spSafe := streamEncryptCodeF_spAll v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48
@@ -164,8 +153,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
       (streamDecrypt_framed v.impl))
     spSafe := VG.X86_64.onFlag_spSafe
       (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR v)))
-      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
-    features := v.impl.features },
+      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 48 (sealGatherCodeF v)
@@ -176,8 +164,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
     verified := VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR_onFlag v)
     spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF_spAll v)
       (X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
-    features := v.impl.features }]
+        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))) }]
 
 /-- The prepared artifacts of the implementations `v`, which read only the
 key context. -/
@@ -187,36 +174,31 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)
     stack := 2624
     verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_of_base (sealSel_framed v.impl Short.shortFacts))
-    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB)
-    features := v.impl.features },
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB) },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)
     stack := 2632
     verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_of_base (openSel_framed v.impl Short.shortFacts))
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB)
-    features := v.impl.features },
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB) },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := openToCode v
     stack := openToStack v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
-    spSafe := openToCode_spAll v
-    features := v.impl.features },
+    spSafe := openToCode_spAll v },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_of_base (streamEncrypt_framed v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl)
-    features := v.impl.features },
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees)
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_of_base (streamDecrypt_framed v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)
-    features := v.impl.features },
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl) },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 240 5
@@ -225,8 +207,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     stack := 5128
     verified := VG.Proof.AesGcm.Flag.sealGather_keyed (Flag.sealGather_of_base (Gather.sealGather_framed (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
     spSafe := X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))
-    features := v.impl.features }]
+        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)) }]
 
 /-- The prepared artifacts of the implementations `v` whose loops read 16
 prepared powers: by the count, those or the ones on the key context. -/
@@ -236,30 +217,26 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := sealCodeF16 v
     stack := 2624
     verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_ofB (Or.inl rfl) (sealCodeF16_verified v r))
-    spSafe := sealCodeF16_spAll v
-    features := v.impl.features },
+    spSafe := sealCodeF16_spAll v },
   Spec.Gcm.openPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := openCodeF16 v
     stack := 2632
     verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_ofB (Or.inl rfl) (openCodeF16_verified v r))
-    spSafe := openCodeF16_spAll v
-    features := v.impl.features },
+    spSafe := openCodeF16_spAll v },
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
     stack := openToStackF16 v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR16_onFlag v r)
-    spSafe := openToCodeR16_onFlag_spAll v r
-    features := v.impl.features },
+    spSafe := openToCodeR16_onFlag_spAll v r },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := streamEncryptCodeF16 v
     stack := 2608
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed
       (Flag.streamEncrypt_ofB (Or.inl rfl) (streamEncryptCodeF16_verified v))
-    spSafe := streamEncryptCodeF16_spAll v
-    features := v.impl.features },
+    spSafe := streamEncryptCodeF16_spAll v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16
@@ -272,8 +249,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
       (streamDecrypt_framed v.impl))
     spSafe := VG.X86_64.onFlag_spSafe
       (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v)))
-      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl))
-    features := v.impl.features },
+      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) },
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16 (sealGatherCodeF16 v r)
@@ -284,8 +260,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     verified := VG.Proof.AesGcm.Flag.sealGather_keyed (sealGatherR16_onFlag v r)
     spSafe := VG.X86_64.onFlag_spSafe (sealGatherCodeF16_spAll v r)
       (X86_64.withStackArgScratch_spSafe
-        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl)))
-    features := v.impl.features }]
+        (Gather.sealGather_spAll (shortFn v) (initFn v.impl) (aadFn v.impl) (toFn v) (finFn v.impl))) }]
 
 /-- The artifacts of a variant: its prepared ones. -/
 def artifacts (v : GcmVariant) : List Artifact :=
@@ -311,16 +286,14 @@ def artifacts (n : GhashName) : List Artifact :=
       (Impl.AesGcm.X86_64.streamInit v.callees)
     stack := 2576
     verified := streamInit_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamInit_spSafe v)
-    features := v.gh.features },
+    spSafe := X86_64.withStackScratch_spSafe_of (streamInit_spSafe v) },
   Spec.Gcm.streamAadApi.artifact X86_64.target {
     suffix := n.impl.suffix
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9
       (Impl.AesGcm.X86_64.streamAad v.callees)
     stack := 2576
     verified := streamAad_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (streamAad_spSafe v)
-    features := v.gh.features }]
+    spSafe := X86_64.withStackScratch_spSafe_of (streamAad_spSafe v) }]
 
 end VG.Artifacts.AesGcm.X86_64.Ghash
 

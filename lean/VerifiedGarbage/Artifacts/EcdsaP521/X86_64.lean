@@ -97,8 +97,7 @@ def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) (vs : Li
     code := signCodeT (p521Of adx h.law (Proof.P521.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs
     stack := stackT
     verified := p521T_verified adx h.law (Proof.P521.combOk7 h.law) h.inv vs hv
-    spSafe := signCode_sp _ _ _
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
+    spSafe := signCode_sp _ _ _ }
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if hv : OK vs ∧ "VG_P521_COMB" ∉ names vs then [withMul hasLaw vs hv false, withMul hasLaw vs hv true] else []
@@ -124,8 +123,7 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 96
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    spSafe := hsp }
 
 def artifacts : List Artifact := [
   verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true

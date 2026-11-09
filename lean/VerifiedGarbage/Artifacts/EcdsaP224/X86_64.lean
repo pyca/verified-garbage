@@ -92,8 +92,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
       code := signCodeT (p224 hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
       stack := stackT
       verified := p224T_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv vs hv
-      spSafe := signCode_sp _ _ _
-      features := [] }]
+      spSafe := signCode_sp _ _ _ }]
   else []
 
 def artifacts : List Artifact :=

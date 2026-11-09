@@ -43,8 +43,7 @@ def artifacts (v : EcbImpl) : List Artifact := [
       (Impl.TripleDes.X86_64.Batch.decrypt true (v.name .encrypt) (v.code .encrypt))
     stack := 3176
     verified := cfb_framed v
-    spSafe := cfb_spSafe v
-    features := v.features }]
+    spSafe := cfb_spSafe v }]
 
 end VG.Artifacts.TripleDesCfb.X86_64.TripleDesEcb
 

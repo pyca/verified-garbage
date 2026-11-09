@@ -35,42 +35,36 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 0 (Impl.Sm4Gcm.AArch64.«seal» v.callees)
     stack := 4048
-    verified := seal_framed v
-    features := v.features },
+    verified := seal_framed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.callees)
     stack := 4048
-    verified := open_framed v
-    features := v.features },
+    verified := open_framed v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamEncrypt v.callees)
     stack := 4032
-    verified := streamEncrypt_framed v
-    features := v.features },
+    verified := streamEncrypt_framed v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamDecrypt v.callees)
     stack := 4032
-    verified := streamDecrypt_framed v
-    features := v.features },
+    verified := streamDecrypt_framed v },
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x5
       (Impl.Sm4Gcm.AArch64.streamFinish v.callees)
     stack := 4032
-    verified := streamFinish_framed v
-    features := v.features },
+    verified := streamFinish_framed v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamVerify v.callees)
     stack := 4032
-    verified := streamVerify_framed v
-    features := v.features }]
+    verified := streamVerify_framed v }]
 
 /-- `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`: AES-GCM's code and
 proofs, calling the implementation of `vg_ghash` the variant `v` names (and no
@@ -82,16 +76,14 @@ def artifactsAes (v : GcmVariant) : List Artifact := [
       (Impl.AesGcm.AArch64.streamInit (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
     stack := 2560
     verified := Proof.AesGcm.AArch64.streamInit_framed
-      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩)
-    features := v.gh.impl.features },
+      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩) },
   Spec.Sm4.Gcm.streamAadApi.artifact AArch64.target {
     suffix := v.gh.impl.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5
       (Impl.AesGcm.AArch64.streamAad (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
     stack := 2560
     verified := Proof.AesGcm.AArch64.streamAad_framed
-      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩)
-    features := v.gh.impl.features }]
+      (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩) }]
 
 /-- The artifacts calling the implementation of `vg_ghash` the variant `v` names. -/
 def artifacts (v : GcmVariant) : List Artifact := artifactsOf ⟨v.gh.impl⟩ ++ artifactsAes v

@@ -26,20 +26,17 @@ def artifacts : List Artifact := [
   Spec.EcKey.P224.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.P224.codeU
-    verified := Proof.EcKey.Compressed.Arm.P224.verifiedU
-    features := ["umaal"] },
+    verified := Proof.EcKey.Compressed.Arm.P224.verifiedU },
   Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.P224Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.P224Decompress.verifiedU hasLaw.law
-    features := ["umaal"] },
+    verified := Proof.EcKey.Compressed.Arm.P224Decompress.verifiedU hasLaw.law },
   Spec.EcKey.P224.publicKeyApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.publicKeyP224Comb
     verified := Proof.EcKey.Arm.P224.combPk_verified hasLaw.law },
   Spec.EcKey.P224.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.publicKeyP224CombU
-    verified := Proof.EcKey.Arm.P224.combPkU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.EcKey.Arm.P224.combPkU_verified hasLaw.law }]
 
 end VG.Artifacts.EcP224.Arm

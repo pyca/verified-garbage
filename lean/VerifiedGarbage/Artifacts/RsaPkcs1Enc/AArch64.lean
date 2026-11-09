@@ -39,8 +39,7 @@ def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
-      verified := dec_verified h (privOf c) (dec_sat c)
-      features := h.features ++ c.features.filter (!h.features.contains ·) }]
+      verified := dec_verified h (privOf c) (dec_sat c) }]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
@@ -57,8 +56,7 @@ def artifacts (v : PublicImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))
     stack := Rnd.rndStack (pdOf v).stack
-    verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat
-    features := v.features }]
+    verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat }]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.RsaPublicPrecomputed
 

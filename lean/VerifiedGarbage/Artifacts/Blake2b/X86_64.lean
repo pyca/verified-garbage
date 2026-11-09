@@ -39,14 +39,12 @@ def artifacts : List Artifact := [
       code := Impl.StackScratch.X86_64.withStackScratch 584 .r8 v.update
       stack := 8 + 584
       verified := v.update_framed
-      spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe
-      features := v.features },
+      spSafe := X86_64.withStackScratch_spSafe_of v.updateSpSafe },
     Spec.Blake2.finalizeBApi.artifact VG.X86_64.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch 584 .rcx v.finalize
       stack := 8 + 584
       verified := v.finalize_framed
-      spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe
-      features := v.features }])
+      spSafe := X86_64.withStackScratch_spSafe_of v.finalizeSpSafe }])
 
 end VG.Artifacts.Blake2b.X86_64

@@ -33,7 +33,6 @@ def artifacts : List Artifact :=
       verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha256_verified v)
         Proof.Pbkdf2.Whole.X86.sha256_pbkFrameSat
         (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha256_stack v)
-      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2Sp
-      features := v.features }]
+      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2Sp }]
 
 end VG.Artifacts.Pbkdf2Sha256.X86

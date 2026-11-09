@@ -41,7 +41,6 @@ def artifacts : List Artifact :=
       code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
       stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
       verified := v.pbkdf2F
-      spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp
-      features := v.features }]
+      spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp }]
 
 end VG.Artifacts.Pbkdf2Sha512.X86_64

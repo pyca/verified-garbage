@@ -33,8 +33,7 @@ def artifacts (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
     code := Impl.ChaCha20.X86.Stream.apply v.callee
     stack := 32
     verified := Proof.ChaCha20.X86.Stream.apply_verified v
-    spSafe := Proof.ChaCha20.X86.Stream.apply_spSafe v
-    features := v.features }]
+    spSafe := Proof.ChaCha20.X86.Stream.apply_spSafe v }]
 
 end VG.Artifacts.ChaCha20.X86.ChaCha20Xor
 

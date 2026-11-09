@@ -60,8 +60,7 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
       tables := [("hmac", tables vs)]
       code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
       stack := stackT
-      verified := secp256k1T_verified hasLaw.law hasLaw.inv vs hv
-      features := [] }]
+      verified := secp256k1T_verified hasLaw.law hasLaw.inv vs hv }]
   else []
 
 def artifacts : List Artifact :=

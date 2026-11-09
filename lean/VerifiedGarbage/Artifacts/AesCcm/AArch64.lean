@@ -31,14 +31,12 @@ def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.seal v.callee v.ctr.callee)
     stack := 2592
-    verified := Proof.AesCcm.seal_keyed (seal_framed v)
-    features := v.features },
+    verified := Proof.AesCcm.seal_keyed (seal_framed v) },
   Spec.Ccm.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesCcm.AArch64.open v.callee v.ctr.callee)
     stack := 2592
-    verified := Proof.AesCcm.open_keyed (open_framed v)
-    features := v.features }]
+    verified := Proof.AesCcm.open_keyed (open_framed v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun v => artifactsFor v

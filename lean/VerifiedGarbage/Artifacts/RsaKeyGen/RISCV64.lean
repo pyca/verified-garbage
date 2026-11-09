@@ -31,8 +31,7 @@ def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 656
     code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
-    verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v
-    features := v.features }]
+    verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v }]
 
 end VG.Artifacts.RsaKeyGen.RISCV64.MillerRabin
 

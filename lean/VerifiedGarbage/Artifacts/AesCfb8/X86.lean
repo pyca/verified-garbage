@@ -19,15 +19,13 @@ def artifactsFor (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     code := Impl.AesCfb8.X86.encrypt v.enc
     stack := 24
     verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
-    spSafe := encrypt_spSafe v
-    features := v.features },
+    spSafe := encrypt_spSafe v },
   Spec.Cfb8.aesDecryptApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.AesCfb8.X86.decrypt v.enc
     stack := 24
     verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
-    spSafe := decrypt_spSafe v
-    features := v.features }]
+    spSafe := decrypt_spSafe v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun v => artifactsFor v

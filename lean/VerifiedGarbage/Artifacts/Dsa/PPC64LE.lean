@@ -26,8 +26,7 @@ def artifactsFor (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
     stack := 176
-    verified := search_params v
-    features := v.features }]
+    verified := search_params v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun v => artifactsFor v

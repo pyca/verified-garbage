@@ -262,8 +262,7 @@ def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 256
     code := Proof.RsaKeyGen.Arm.Generate.genCode v
-    verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v
-    features := v.features }]
+    verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }]
 
 end VG.Artifacts.RsaKeyGen.Arm.MillerRabin
 

@@ -45,8 +45,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
     suffix := v.suffix
     code := v.pc
     stack := 56
-    verified := v.pcVerified
-    features := v.features }]
+    verified := v.pcVerified }]
 
 end VG.Artifacts.Rsa.Arm.RsaPrivateCrt
 

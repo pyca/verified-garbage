@@ -54,8 +54,7 @@ def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.publicKeyBrainpoolP384r1U
-    verified := Proof.EcKey.Arm.BrainpoolP384r1.pkU_verified hasLaw.law
-    features := ["umaal"] },
+    verified := Proof.EcKey.Arm.BrainpoolP384r1.pkU_verified hasLaw.law },
   Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact Arm.target {
     code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.code
     verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.verified },
@@ -65,12 +64,10 @@ def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.verifiedU
-    features := ["umaal"] },
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.verifiedU },
   Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.verifiedU hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.verifiedU hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP384r1.Arm

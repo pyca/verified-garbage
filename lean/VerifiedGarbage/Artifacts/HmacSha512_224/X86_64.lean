@@ -42,14 +42,12 @@ def artifacts : List Artifact :=
       code := Proof.Pbkdf2.Md.X86_64.initCode v.H v.I
       stack := 24 + Proof.Pbkdf2.Md.X86_64.anyFrame v.I
       verified := v.hmacInitF
-      spSafe := v.hmacInitFSp
-      features := v.features },
+      spSafe := v.hmacInitFSp },
     v.I.finalizeApi.artifact X86_64.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86_64.withStackScratch (Proof.Pbkdf2.Md.X86_64.hmacFrame v.I) .r8 v.H.hmacFin
       stack := 16 + Proof.Pbkdf2.Md.X86_64.hmacFrame v.I
       verified := v.hmacFinF
-      spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp
-      features := v.features }]
+      spSafe := X86_64.withStackScratch_spSafe_of v.hmacFinSp }]
 
 end VG.Artifacts.HmacSha512_224.X86_64

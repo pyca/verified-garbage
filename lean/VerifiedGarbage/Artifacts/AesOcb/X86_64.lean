@@ -73,22 +73,19 @@ def artifactsFor (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86_64.withStackScratch 2568 .rcx (Impl.AesOcb.X86_64.init (callees v))
     stack := 2576
     verified := init_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v)
-    features := v.features },
+    spSafe := X86_64.withStackScratch_spSafe_of (init_spSafe v) },
   Spec.Ocb.sealApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.seal (callees v))
     stack := 3640
     verified := Proof.AesOcb.seal_keyed (seal_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v)
-    features := v.features },
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) },
   Spec.Ocb.openApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 3632 4 (Impl.AesOcb.X86_64.open (callees v))
     stack := 3640
     verified := Proof.AesOcb.open_keyed (open_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v)
-    features := v.features }]
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun v => artifactsFor v

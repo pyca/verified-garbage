@@ -40,8 +40,7 @@ def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3
       (Impl.AesSiv.AArch64.init v.expand v.callee v.suffix)
     stack := 2560
-    verified := init_framed v
-    features := v.features }]
+    verified := init_framed v }]
 
 end VG.Artifacts.AesSiv.AArch64.AesCtr32
 
@@ -56,15 +55,13 @@ def artifacts (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.encrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2576
-    verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
-    features := v.features },
+    verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v) },
   Spec.Siv.decryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2576 .x7
       (Impl.AesSiv.AArch64.decrypt v.callee v.ctr.callee v.ctr.suffix)
     stack := 2576
-    verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
-    features := v.features }]
+    verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v) }]
 
 end VG.Artifacts.AesSiv.AArch64.CmacAesUpdate
 

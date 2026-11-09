@@ -32,16 +32,14 @@ def artifactsFor (v : CrtImpl) : List Artifact := [
     suffix := v.suffix
     code := Proof.RsaPkcs1Enc.Arm.Dec.decryptCode v
     stack := 3584
-    verified := (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v)
-    features := v.features },
+    verified := (Proof.RsaPkcs1Enc.Arm.Dec.code_verified v) },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact Arm.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Enc.Arm.Random.code ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
       (Impl.RsaPkcs1Enc.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name (Proof.Rsa.Arm.pdOfCrt v).code)
     stack := 2312
     verified := (Proof.RsaPkcs1Enc.Arm.Rnd.code_verified ("vg_rsa_pkcs1_encrypt_precomputed" ++ v.suffix)
-      (Proof.Rsa.Arm.pdOfCrt v))
-    features := v.features }]
+      (Proof.Rsa.Arm.pdOfCrt v)) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun v => artifactsFor v

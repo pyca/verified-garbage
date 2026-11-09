@@ -39,8 +39,7 @@ def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCode v c
     stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Dec.code_verified v c
-    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c
-    features := v.features ++ c.features.filter (!v.features.contains ·) }]
+    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86.Sha256RsaPrivateCrt
 

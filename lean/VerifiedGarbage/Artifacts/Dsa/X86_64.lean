@@ -40,44 +40,38 @@ def artifacts (v : Backend) : List Artifact := [
       (Impl.Dsa.X86_64.PrevalidatedSign.sign v.sq v.mul)
     stack := v.stack + 256
     verified := random_sign_prevalidated_verified v
-    spSafe := random_sign_sp v.prevalidatedSigner
-    features := v.features },
+    spSafe := random_sign_sp v.prevalidatedSigner },
   Spec.Dsa.validatePrivateKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.PrevalidatedSign.validate v.sq v.mul
     stack := v.stack
     verified := v.validatePrivateVerified
-    spSafe := v.validatePrivateSp
-    features := v.features },
+    spSafe := v.validatePrivateSp },
   Spec.Dsa.validatePublicKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.Prevalidated.validate v.sq v.mul
     stack := v.stack
     verified := v.validateVerified
-    spSafe := v.validateSp
-    features := v.features },
+    spSafe := v.validateSp },
   Spec.Dsa.verifyPrevalidatedApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.Prevalidated.verify v.sq v.mul
     stack := v.stack
     verified := v.prevalidatedVerified
-    spSafe := v.prevalidatedSp
-    features := v.features },
+    spSafe := v.prevalidatedSp },
   Spec.Dsa.generateKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
       (Impl.Dsa.X86_64.Generate.checkParameters v.sq v.mul) (Impl.Dsa.X86_64.Generate.deriveChecked v.sq v.mul)
     stack := v.stack + 256
     verified := keygen_verified v
-    spSafe := keygen_sp v
-    features := v.features },
+    spSafe := keygen_sp v },
   Spec.Dsa.deriveKeyApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.Dsa.X86_64.Generate.deriveKey v.sq v.mul
     stack := v.stack
     verified := v.deriveVerified
-    spSafe := v.deriveSp
-    features := v.features }]
+    spSafe := v.deriveSp }]
 
 end VG.Artifacts.Dsa.X86_64.DsaArithmetic
 
@@ -100,8 +94,7 @@ def artifacts (v1 v256 : Proof.Pbkdf2.Md.X86_64.MdHash) (v : RoundImpl) : List A
         stack := 632
         code := searchCode v1 v256 v
         verified := search_verified v1 v256 v h1 h256
-        spSafe := searchCode_spSafe v1 v256 v
-        features := hashes ++ v.features.filter (!hashes.contains ·) }]
+        spSafe := searchCode_spSafe v1 v256 v }]
     else []
   else []
 
