@@ -113,8 +113,7 @@ theorem combSign_ok (hL : Weierstrass.Law Spec.P224.curve) (s : State) (hs : sig
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
   have hd : Region.Disjoint ⟨s.syms p224Comb.tsym, 8 * p224CombWords.length⟩ ⟨s.gpr .r7, 8192⟩ :=
-    (hk.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) member)).2.1 _
-      (by rw [hpre.wr]; simp)
+    hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := signWith_ok p224_ok (by decide) hL hpre fun s₁ S₁ sy =>
     Proof.P224.PPC64LE.comb_generator_ok hL S₁
       (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
@@ -147,7 +146,8 @@ theorem combSign_sat :
   have hl := Proof.P224.PPC64LE.comb_words_length
   have held := Proof.P224.PPC64LE.combSatMem_held
   rw [combConsts_eq]
-  generalize p224CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, p224CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : combSatC = s
   sig_pre [Spec.Ecdsa.P224.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.P224.curve, Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,

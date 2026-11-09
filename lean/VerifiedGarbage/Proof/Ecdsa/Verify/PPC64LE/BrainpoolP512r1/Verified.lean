@@ -272,8 +272,7 @@ theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State)
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
   have hd : Region.Disjoint ⟨s.syms brainpoolp512r1Comb.tsym, 8 * brainpoolp512r1CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
-    (hk.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) member)).2.1 _
-      (by rw [hpre.wr]; simp)
+    hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok brainpoolp512r1_ok hL hpre (combPts_ok hL ht rfl hd)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
@@ -308,7 +307,8 @@ theorem vSat : (Proof.Ecdsa.verifyContract Spec.Ecdsa.BrainpoolP512r1.inst (abi.
   have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
   have held := vSatMem_held
   rw [combConsts_eq]
-  generalize brainpoolp512r1CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : vSatC = s
   sig_pre [Spec.Ecdsa.BrainpoolP512r1.inst, Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.BrainpoolP512r1.curve,
     Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
@@ -347,7 +347,8 @@ theorem verifyHash_sat :
   have hl := Proof.BrainpoolP512r1.PPC64LE.comb_words_length
   have held := vSatMem_held
   rw [combConsts_eq]
-  generalize brainpoolp512r1CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, brainpoolp512r1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : hSatC = s
   sig_pre [Spec.Ecdsa.Instance.verifyHashContract, Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.BrainpoolP512r1.inst,
     Spec.BrainpoolP512r1.curve, Spec.Ecdsa.scratchWords, PPC64LE.abi, PPC64LE.argRegs, Abi.withConsts, Abi.constRegions,

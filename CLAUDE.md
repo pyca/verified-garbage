@@ -409,8 +409,10 @@ lemmas and tactics to use; read it before writing a proof:
 * **Unfolding:** close goals about symbolic memory or hash values with
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
   `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
-  large concrete value; rewrite tables' regions with
-  `Abi.constRegions_cons`; evaluate a recursive definition that reuses a
+  large concrete value, which `generalize` does not hide from the kernel
+  (abstract it with `obtain`); rewrite tables' regions with
+  `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
+  lemmas; evaluate a recursive definition that reuses a
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
