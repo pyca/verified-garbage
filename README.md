@@ -1429,7 +1429,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅ AES-NI, VAES, AVX2</td>
+<td>✅ AES-NI</td>
 
 <td>✅ AES, PMULL</td>
 

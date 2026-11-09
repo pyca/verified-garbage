@@ -2,4 +2,4 @@ name = "AES-ECB (128-, 192- and 256-bit keys)"
 family = "Ciphers"
 specs = ["Aes"]
 modules = ["src/cipher/aes/ecb.rs"]
-asm = ["aes"]
+asm = ["aes", "aes_ecb"]

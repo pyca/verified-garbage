@@ -31,7 +31,7 @@ b 21f
 20:
 21:
 .base64 "QAgT6BAI0+kYCPPpIAgT6igIM+owCFPqOAhz6qYDCHwgAIBO""#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -67,6 +67,6 @@ b 21f
 21:
 .base64 "AAAU6AgA1OkQAPTpGAAU6iAAdOooANTrMAD06zgAlOqmAwh8IACBOQAAYDkAAGz5CABs+RAAbPkYAGz5IABs+SgAbPkwAGz5OABs+WAAITggAIBO""#,
         vg_aes_ofb = sym super::aes_ofb::vg_aes_ofb,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

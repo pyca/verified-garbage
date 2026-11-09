@@ -39,7 +39,7 @@ ldr r6, [sp, #8]
 ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -80,7 +80,7 @@ ldr r6, [sp, #8]
 ldr lr, [sp, #12]
 ldr r4, [sp], #16
 bx lr",
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
