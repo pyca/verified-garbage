@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.Ecdsa.Arm.VerifyHash
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P224.Arm.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P224Comb
 
 /-! # ECDSA over P-224 (FIPS 186-5) on 32-bit ARM -/
 
@@ -15,6 +16,8 @@ public import VerifiedGarbage.Proof.P224.Arm.Law
 namespace VG.Artifacts.EcdsaP224.Arm
 
 open VG.Proof.P224.Arm (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT stackT p224CombCurve p224T_verified p224CombCurveU p224UT_verified)
+open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P224.verifyHashApi.artifact Arm.target {
@@ -28,6 +31,18 @@ def artifacts : List Artifact := [
       Impl.Ecdsa.Arm.verifyP224CombU
     stack := 96
     verified := Proof.Ecdsa.Verify.Arm.P224.verifyHashU_verified hasLaw.law
+    features := ["umaal"] },
+  Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact Arm.target {
+    tables := [("hmac", tables vars)]
+    code := signCodeT (p224CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p224.tries vars
+    stack := stackT
+    verified := p224T_verified hasLaw.law },
+  Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", tables vars)]
+    code := signCodeT (p224CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p224.tries vars
+    stack := stackT
+    verified := p224UT_verified hasLaw.law
     features := ["umaal"] }]
 
 end VG.Artifacts.EcdsaP224.Arm

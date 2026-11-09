@@ -42,6 +42,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP512r1
 
 /-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on 32-bit ARM -/
 
@@ -50,6 +51,8 @@ public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Law
 namespace VG.Artifacts.EcdsaBrainpoolP512r1.Arm
 
 open VG.Proof.BrainpoolP512r1.Arm (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT stackT brainpoolp512r1 brainpoolp512r1T_verified brainpoolp512r1U brainpoolp512r1UT_verified)
+open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP512r1.verifyHashApi.artifact Arm.target {
@@ -63,6 +66,18 @@ def artifacts : List Artifact := [
       Impl.Ecdsa.Verify.Arm.verifyBrainpoolP512r1U
     stack := 96
     verified := Proof.Ecdsa.Verify.Arm.BrainpoolP512r1.verifyHashU_verified hasLaw.law
+    features := ["umaal"] },
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact Arm.target {
+    tables := [("hmac", tables vars)]
+    code := signCodeT (brainpoolp512r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vars
+    stack := stackT
+    verified := brainpoolp512r1T_verified hasLaw.law },
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", tables vars)]
+    code := signCodeT (brainpoolp512r1U hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vars
+    stack := stackT
+    verified := brainpoolp512r1UT_verified hasLaw.law
     features := ["umaal"] }]
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.Arm

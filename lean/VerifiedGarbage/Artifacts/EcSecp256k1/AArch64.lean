@@ -23,6 +23,9 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Zero
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Secp256k1.AArch64.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # secp256k1 on AArch64, generic over its proven group law and inversions -/
 
@@ -33,6 +36,12 @@ namespace VG.Artifacts.EcSecp256k1.AArch64
 open VG.Proof.Secp256k1.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.Secp256k1.code
+    verified := Proof.EcKey.Compressed.AArch64.Secp256k1.verified hasLaw.inv },
+  Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.Secp256k1Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeySecp256k1
     verified := Proof.EcKey.AArch64.Secp256k1.pk_verified hasLaw.law hasLaw.inv }]

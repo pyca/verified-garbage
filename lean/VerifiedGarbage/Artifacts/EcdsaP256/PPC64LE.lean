@@ -12,10 +12,31 @@ public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Lit
 public import VerifiedGarbage.Proof.P256.PPC64LE.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P256
+public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256CombLit
 
 /-! # ECDSA over P-256 (FIPS 186-5) on PPC64LE -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-256 on PPC64LE, with HMAC as a table
+namespace VG.Artifacts.EcdsaP256.PPC64LE.Rfc6979
+
+open VG.Proof.P256.PPC64LE (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT stackT OK p256R p256T_verified)
+open VG.Proof.HmacTable.PPC64LE (vars tables names)
+
+def artifacts : List Artifact :=
+  if hv : OK vars ∧ "VG_P256_COMB" ∉ names vars then [
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact PPC64LE.target {
+      tables := [("hmac", tables vars)]
+      code := signCodeT (p256R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p256.tries vars
+      stack := stackT
+      verified := p256T_verified hasLaw.law vars hv }]
+  else []
+
+end VG.Artifacts.EcdsaP256.PPC64LE.Rfc6979
 
 namespace VG.Artifacts.EcdsaP256.PPC64LE
 
@@ -26,6 +47,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.PPC64LE.verifyP256
     stack := 112
-    verified := Proof.Ecdsa.Verify.PPC64LE.verifyHash_verified hasLaw.law }]
+    verified := Proof.Ecdsa.Verify.PPC64LE.verifyHash_verified hasLaw.law }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.PPC64LE

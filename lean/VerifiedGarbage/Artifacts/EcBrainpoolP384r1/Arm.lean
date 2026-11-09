@@ -36,6 +36,8 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP384r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress
 
 /-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
@@ -53,6 +55,22 @@ def artifacts : List Artifact := [
     suffix := "_umaal"
     code := Impl.EcKey.Arm.publicKeyBrainpoolP384r1U
     verified := Proof.EcKey.Arm.BrainpoolP384r1.pkU_verified hasLaw.law
+    features := ["umaal"] },
+  Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.code
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.verified },
+  Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.code
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.verified hasLaw.law },
+  Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1.verifiedU
+    features := ["umaal"] },
+  Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress.verifiedU hasLaw.law
     features := ["umaal"] }]
 
 end VG.Artifacts.EcBrainpoolP384r1.Arm

@@ -18,10 +18,23 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
 
 /-! # ML-KEM on AArch64 -/
 
 @[expose] public section
+
+-- ML-KEM-1024 on AArch64
+namespace VG.Artifacts.MlKem.AArch64.MlKem1024
+
+def artifacts : List Artifact := [
+  Spec.MlKem1024.checkEkApi.artifact AArch64.target {
+    code := Impl.MlKem1024.AArch64.checkEk
+    verified := Proof.MlKem1024.AArch64.CheckEk.checkEk_verified }]
+
+end VG.Artifacts.MlKem.AArch64.MlKem1024
 
 namespace VG.Artifacts.MlKem.AArch64
 
@@ -168,6 +181,7 @@ namespace VG.Artifacts.MlKem.AArch64
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2)
+  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2) ++
+  MlKem1024.artifacts
 
 end VG.Artifacts.MlKem.AArch64
