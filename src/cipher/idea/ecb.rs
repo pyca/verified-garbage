@@ -13,7 +13,7 @@ use crate::align::CacheAligned;
 use crate::arch::dispatch::idea::{
     vg_idea_ecb_auto, vg_idea_expand_key_auto, vg_idea_invert_key_auto,
 };
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded IDEA key for ECB encryption and decryption: its encryption
@@ -28,8 +28,7 @@ pub struct IdeaEcb {
 
 impl IdeaEcb {
     /// Expands a 16-byte key for use in either direction.
-    pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+    pub fn new(key: &[u8; 16]) -> Self {
         let mut encrypt = CacheAligned([0; 104]);
         let mut decrypt = CacheAligned([0; 104]);
         crate::dit::enter!(dit);
@@ -39,7 +38,7 @@ impl IdeaEcb {
             vg_idea_expand_key_auto(dit, key, &mut encrypt.0);
             vg_idea_invert_key_auto(dit, &encrypt.0, &mut decrypt.0);
         }
-        Ok(Self { encrypt, decrypt })
+        Self { encrypt, decrypt }
     }
 
     /// Encrypts complete eight-byte blocks in place. Empty input is valid.

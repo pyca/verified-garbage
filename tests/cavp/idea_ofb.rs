@@ -11,8 +11,6 @@
     target_arch = "riscv64"
 ))]
 
-use verified_garbage::error::InvalidKeyLength;
-
 use verified_garbage::cipher::idea::IdeaOfb;
 
 use verified_garbage_test_vectors::unhex;
@@ -26,7 +24,7 @@ fn pyca_vectors() {
             let line = record.lines().find(|l| l.starts_with(label)).unwrap();
             unhex(line.split_once(" = ").unwrap().1.trim())
         };
-        let key = get("KEY");
+        let key: [u8; 16] = get("KEY").try_into().unwrap();
         let iv: [u8; 8] = get("IV").try_into().unwrap();
         let (plaintext, ciphertext) = (get("PLAINTEXT"), get("CIPHERTEXT"));
         key_lens.push(key.len());
@@ -35,21 +33,11 @@ fn pyca_vectors() {
             crate::modes::check(
                 iv,
                 io,
-                &|iv| IdeaOfb::new(&key, iv).unwrap(),
+                &|iv| IdeaOfb::new(&key, iv),
                 IdeaOfb::apply_keystream,
                 IdeaOfb::apply_keystream_final,
             );
         }
     }
     assert_eq!(key_lens, [16; 20]);
-}
-
-#[test]
-fn errors() {
-    for len in [0, 8, 15, 17, 24, 32] {
-        assert_eq!(
-            IdeaOfb::new(&vec![0; len], &[0; 8]).err(),
-            Some(InvalidKeyLength)
-        );
-    }
 }

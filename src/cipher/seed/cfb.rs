@@ -16,7 +16,7 @@ use crate::arch::dispatch::seed_cfb::{
     vg_seed_cfb128_decrypt_auto, vg_seed_cfb128_decrypt_final_auto, vg_seed_cfb128_encrypt_auto,
     vg_seed_cfb128_encrypt_final_auto,
 };
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded SEED key.
@@ -41,11 +41,11 @@ pub struct SeedCfb128Encryptor {
 
 impl SeedCfb128Encryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Encrypts whole 16-byte blocks in place, continuing the message.
@@ -94,11 +94,11 @@ pub struct SeedCfb128Decryptor {
 
 impl SeedCfb128Decryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Decrypts whole 16-byte blocks in place, continuing the message.
@@ -133,14 +133,13 @@ impl Drop for SeedCfb128Decryptor {
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 128]);
         crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe { vg_seed_expand_key_auto(dit, key, &mut schedule.0) };
-        Ok(Self { schedule })
+        Self { schedule }
     }
 
     /// Encrypts the whole blocks of `buffer` in place, from the block `iv`,
