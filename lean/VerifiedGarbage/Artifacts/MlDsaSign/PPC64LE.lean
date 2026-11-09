@@ -22,6 +22,18 @@ def artifacts : List Artifact := [
   Spec.MlDsa.sign87Api.artifact PPC64LE.target {
     code := Impl.MlDsa.PPC64LE.Sign.sign87
     stack := 240
-    verified := Proof.MlDsa.PPC64LE.Sign.sign87_verified }]
+    verified := Proof.MlDsa.PPC64LE.Sign.sign87_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Sign.signPrepared44
+    stack := 240
+    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared44_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Sign.signPrepared65
+    stack := 240
+    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared65_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact PPC64LE.target {
+    code := Impl.MlDsa.PPC64LE.Sign.signPrepared87
+    stack := 240
+    verified := Proof.MlDsa.PPC64LE.Sign.signPrepared87_verified }]
 
 end VG.Artifacts.MlDsaSign.PPC64LE

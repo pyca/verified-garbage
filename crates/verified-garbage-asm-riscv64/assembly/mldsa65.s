@@ -3396,6 +3396,22 @@ vg_mldsa65_sign:
 	ret
 	.option pop
 
+vg_mldsa65_sign_prepared:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	lui a5, 1
+	addi a5, a5, -64
+	add a5, a0, a5
+	lui a6, 4
+	addi a6, a6, 1024
+	call {vg_mldsa65_sign_with_cache}
+	ld ra, 8(sp)
+	addi sp, sp, 16
+	ret
+	.option pop
+
 vg_mldsa65_sign_message:
 	.option push
 	.option arch, +m, +c
@@ -3631,6 +3647,22 @@ vg_mldsa65_verify:
 	sd ra, 8(sp)
 	addi a4, a0, 0
 	addi a5, zero, 0
+	call {vg_mldsa65_verify_with_cache}
+	ld ra, 8(sp)
+	addi sp, sp, 16
+	ret
+	.option pop
+
+vg_mldsa65_verify_prepared:
+	.option push
+	.option arch, +m, +c
+	addi sp, sp, -16
+	sd ra, 8(sp)
+	lui a4, 0
+	addi a4, a4, 1952
+	add a4, a0, a4
+	lui a5, 2
+	addi a5, a5, -2048
 	call {vg_mldsa65_verify_with_cache}
 	ld ra, 8(sp)
 	addi sp, sp, 16

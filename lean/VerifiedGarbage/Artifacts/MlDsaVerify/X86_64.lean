@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.MlDsa.X86_64.PreparedKey.ExternalMu
+
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Prims
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Instrs
 import Mathlib.Tactic.Conv
@@ -64,7 +66,31 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) 0
     stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
-    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 0 }]
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 0 },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86_64.target {
+    suffix := v.code.sfx
+    features := v.features
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) 1
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_self ..) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 1 },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86_64.target {
+    suffix := v.code.sfx
+    features := v.features
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) 1
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 1 },
+  (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86_64.target {
+    suffix := v.code.sfx
+    features := v.features
+    code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
+      (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) 1
+    stack := 40
+    verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
+    spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 1 }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MlDsaArith.X86_64.variants.flatMap fun v => artifactsFor v

@@ -131,7 +131,9 @@ macro_rules! mldsa_tests {
                             h.finalize(&mut mu);
                             mu
                         };
-                        pk.verify_mu(&mu, &sig)
+                        let r = pk.verify_mu(&mu, &sig);
+                        assert_eq!(pk.clone().prepare().verify_mu(&mu, &sig), r);
+                        r
                     };
                     let expected = if t.passed {
                         Ok(())
@@ -198,6 +200,19 @@ macro_rules! mldsa_tests {
             let sig = key.sign_deterministic(b"message", b"context").unwrap();
             let pk = key.verifying_key().clone().prepare();
             let key = key.prepare();
+            let mu = [0x5a; 64];
+            for rnd in [[0; 32], [0x42; 32]] {
+                let sig = key.sign_mu(&mu, &rnd).unwrap();
+                assert_eq!(key.signing_key().sign_mu(&mu, &rnd), Ok(sig));
+                assert_eq!(pk.verify_mu(&mu, &sig), Ok(()));
+                assert_eq!(pk.verifying_key().verify_mu(&mu, &sig), Ok(()));
+                let mut wrong_mu = mu;
+                wrong_mu[0] ^= 1;
+                assert_eq!(pk.verify_mu(&wrong_mu, &sig), Err(InvalidSignature));
+                let mut wrong_sig = sig;
+                wrong_sig[0] ^= 1;
+                assert_eq!(pk.verify_mu(&mu, &wrong_sig), Err(InvalidSignature));
+            }
             assert_eq!(key.signing_key().seed(), &[7; 32]);
             assert_eq!(pk.verifying_key(), key.signing_key().verifying_key());
             assert_eq!(key.sign_deterministic(b"message", b"context"), Ok(sig));

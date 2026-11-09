@@ -28,6 +28,21 @@ def artifacts : List Artifact := [
     code := Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.sign87_verified }]
+    verified := Proof.MlDsa.X86.Message.sign87_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
+    code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
+      (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa44)
+    stack := 136
+    verified := Proof.MlDsa.X86.Message.signPrepared44_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
+    code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
+      (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa65)
+    stack := 136
+    verified := Proof.MlDsa.X86.Message.signPrepared65_verified },
+  (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
+    code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
+      (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87)
+    stack := 136
+    verified := Proof.MlDsa.X86.Message.signPrepared87_verified }]
 
 end VG.Artifacts.MlDsaSign.X86

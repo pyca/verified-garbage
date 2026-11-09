@@ -23,7 +23,13 @@ def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
     features := v.features
     code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false
     stack := 64
-    verified := verify_entry_verified v hp _ false }]
+    verified := verify_entry_verified v hp _ false },
+  (preparedVerifyApi p module label).artifact AArch64.target {
+    suffix := v.callee.suffix
+    features := v.features
+    code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true
+    stack := 64
+    verified := verify_entry_verified v hp _ true }]
 
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
   entries v mlDsa44 (.inl rfl) "mldsa44" "ML-DSA-44" ++
