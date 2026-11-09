@@ -38,7 +38,7 @@ on `n`.
 namespace VG.Impl.AesXts.PPC64LE
 
 open VG.PPC64LE
-open VG.Impl.AesCbc.PPC64LE (xorInto callArgs advance encCall decCall slot advance8 batched vsetup xorSlots)
+open VG.Impl.AesCbc.PPC64LE (xorInto callArgs advance encCall decCall slot advance8 batched vsetup)
 
 /-- The tweak at `r16` times `α`. -/
 def mulA : List Instr :=
@@ -77,16 +77,30 @@ def tweaks8 : List Instr :=
   [.load .d .r9 .r16 0, .load .d .r10 .r16 8] ++ (List.range 8).flatMap tweakReg ++
     [.store .d .r9 .r16 0, .store .d .r10 .r16 8]
 
+open VG.Impl.Aes.PPC64LE.Crypto (breg data mask) in
+/-- Block `j` at `r6` XORed with its tweak, slot `j`, in `lxvd2x`'s order,
+then put in the rounds' byte order by one `vperm` (a permutation of bytes,
+which commutes with XOR); and `r6` advanced. -/
+def readTweaked (j : Nat) : List Instr :=
+  [.lxvd2x (breg j) .r6 .r0, .addi .r7 .r19 (slot j), .lxvd2x data .r7 .r0,
+   .vop (.logic .xor (breg j) (breg j) data), .vop (.perm (breg j) (breg j) (breg j) mask),
+   .addi .r6 .r6 16]
+
+open VG.Impl.Aes.PPC64LE.Crypto (breg data mask) in
+/-- Block `j` put back in `lxvd2x`'s order by one `vperm`, XORed with its
+tweak, slot `j`, in that order, and stored at `r6`; and `r6` advanced. -/
+def writeTweaked (j : Nat) : List Instr :=
+  [.vop (.perm (breg j) (breg j) (breg j) mask), .addi .r7 .r19 (slot j), .lxvd2x data .r7 .r0,
+   .vop (.logic .xor (breg j) (breg j) data), .stxvd2x (breg j) .r6 .r0, .addi .r6 .r6 16]
+
 /-- The eight blocks at `r17` read, XORed with their tweaks, enciphered
 (`inverse = false`) or deciphered, XORed with their tweaks again and stored
-in place. -/
+in place: each XOR in memory's order, so that a block takes one `vperm`
+each way. -/
 def vgroup (inverse : Bool) : Prog isa :=
-  .seq (.block (tweaks8 ++ vsetup ++
-      (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
-      [.subi .r6 .r6 128] ++ xorSlots))
+  .seq (.block (tweaks8 ++ vsetup ++ (List.range 8).flatMap readTweaked ++ [.subi .r6 .r6 128]))
     (.seq (Impl.Aes.PPC64LE.Crypto.aes inverse (Impl.Aes.PPC64LE.Crypto.batchRegs 8))
-      (.block (xorSlots ++ (Impl.Aes.PPC64LE.Crypto.batchRegs 8).flatMap
-        (fun v => Impl.Aes.PPC64LE.Crypto.storeAdvance v) ++ advance8)))
+      (.block ((List.range 8).flatMap writeTweaked ++ advance8)))
 
 def encrypt : Prog isa := batched (vgroup false) encBody
 

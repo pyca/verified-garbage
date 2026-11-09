@@ -182,6 +182,46 @@ theorem inputs_of_local {nr : Nat} {gs : List Reg} {vs : List VReg} {u x : State
   ⟨(hl.keep.gpr h0).trans h.zero, (hl.v _ hm).trans h.mask, (hl.keep.gpr h4).trans h.rounds, h.min, h.max,
     fun j hj => by rw [hl.keep.2.1, hl.keep.2.2, hl.keep.gpr h3]; exact h.reads j hj⟩
 
+/-- After the rounds' registers are set up for the eight blocks at `r17`. -/
+structure Setup (s₀ : State) (k : Nat) (t u : State) : Prop where
+  g : ∀ r ∈ preserved, u.gpr r = t.gpr r
+  r6 : u.gpr .r6 = blk s₀ k
+  r3 : u.gpr .r3 = W s₀
+  inp : Inputs (R s₀) u
+  rd : u.rd = t.rd
+  wr : u.wr = t.wr
+  mem : u.mem = t.mem
+
+theorem vsetup_wp {s₀ : State} (hp : UPre s₀) {k : Nat} {t : State}
+    (r14 : t.gpr .r14 = W s₀) (r15 : t.gpr .r15 = s₀.gpr .r4) (r17 : t.gpr .r17 = blk s₀ k)
+    (hR : t.rd ++ t.wr = [schR s₀, ivR s₀, dataR s₀, scrR s₀]) {rest : List Instr} {Φ : State → Prop}
+    (cont : ∀ u, Setup s₀ k t u → WP isa (.block rest) u Φ) :
+    WP isa (.block (vsetup ++ rest)) t Φ := by
+  simp only [vsetup, Impl.AesCbc.PPC64LE.mov, List.cons_append, List.nil_append]
+  refine wp_mr fun t₁ u₁ => wp_mr fun t₂ u₂ => wp_mr fun t₃ u₃ => ?_
+  have g₃ (r : Reg) (h3 : r ≠ .r3) (h4 : r ≠ .r4) (h6 : r ≠ .r6) : t₃.gpr r = t.gpr r := by
+    rw [u₃.other r h6, u₂.other r h4, u₁.other r h3]
+  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  have rd₃ : t₃.rd = t.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
+  have wr₃ : t₃.wr = t.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
+  rw [WP.block_append_iff]
+  refine WP.mono (Proof.Aes.PPC64LE.Crypto.setup_ok t₃) fun t₄ ⟨h0, hm, _, hl₄⟩ => cont t₄ ?_
+  have hR₀ := hp.rounds
+  refine ⟨fun r hr => ?_, ?_, ?_, ⟨h0, hm, ?_, by rcases hR₀ with e | e | e <;> omega,
+    by rcases hR₀ with e | e | e <;> omega, fun j hj => ?_⟩, by rw [hl₄.keep.2.1, rd₃],
+    by rw [hl₄.keep.2.2, wr₃], by rw [hl₄.mem, m₃]⟩
+  · obtain ⟨h0, h3, h4, h6, -, -, -, -, h11, h12⟩ := pres_ne hr
+    rw [hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
+  · rw [hl₄.keep.gpr (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r17]
+  · rw [hl₄.keep.gpr (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, r14]
+  · rw [hl₄.keep.gpr (by decide), u₃.other _ (by decide), u₂.gpr, u₁.other _ (by decide), r15]
+    exact ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
+  · rw [hl₄.keep.2.1, hl₄.keep.2.2, rd₃, wr₃, hR, hl₄.keep.gpr (by decide), u₃.other _ (by decide),
+      u₂.other _ (by decide), u₁.gpr, r14]
+    have : j ≤ 14 := by rcases hR₀ with e | e | e <;> omega
+    exact in_rw (r := schR s₀) (by simp) (Offset.contains_base (d := 16 * j) (n := 16) (k := 240) _ (by omega)
+      (by omega))
+
 /-- After the rounds' registers are set up and the eight blocks at `r17`
 read. -/
 structure Read8 (s₀ : State) (k : Nat) (t u : State) : Prop where
@@ -200,46 +240,21 @@ theorem read8_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 8 ≤ N s�
     (cont : ∀ u, Read8 s₀ k t u → WP isa (.block rest) u Φ) :
     WP isa (.block (vsetup ++ ((batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
       (.subi .r6 .r6 128 :: rest)))) t Φ := by
-  simp only [vsetup, Impl.AesCbc.PPC64LE.mov, List.cons_append, List.nil_append]
-  refine wp_mr fun t₁ u₁ => wp_mr fun t₂ u₂ => wp_mr fun t₃ u₃ => ?_
-  have g₃ (r : Reg) (h3 : r ≠ .r3) (h4 : r ≠ .r4) (h6 : r ≠ .r6) : t₃.gpr r = t.gpr r := by
-    rw [u₃.other r h6, u₂.other r h4, u₁.other r h3]
-  have m₃ : t₃.mem = t.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have rd₃ : t₃.rd = t.rd := by rw [u₃.rd, u₂.rd, u₁.rd]
-  have wr₃ : t₃.wr = t.wr := by rw [u₃.wr, u₂.wr, u₁.wr]
-  rw [WP.block_append_iff]
-  refine WP.mono (Proof.Aes.PPC64LE.Crypto.setup_ok t₃) fun t₄ ⟨h0, hm, _, hl₄⟩ => ?_
-  have rw₄ : t₄.rd ++ t₄.wr = t.rd ++ t.wr := by rw [hl₄.keep.2.1, hl₄.keep.2.2, rd₃, wr₃]
-  have r6₄ : t₄.gpr .r6 = blk s₀ k := by
-    rw [hl₄.keep.gpr (by decide), u₃.gpr, u₂.other _ (by decide), u₁.other _ (by decide), r17]
+  refine vsetup_wp hp r14 r15 r17 hR fun t₄ h₄ => ?_
   rw [← List.singleton_append, ← List.append_assoc, WP.block_append_iff]
   refine WP.mono (?_ : WP isa (.block ((batchRegs 8).flatMap (Impl.Aes.PPC64LE.Crypto.readBlock false) ++
       [.subi .r6 .r6 128])) t₄ (BatchRead false t₄ 8)) fun u hb => cont u ?_
-  · refine Proof.Aes.PPC64LE.Crypto.batch_read_ok false 8 t₄ (by decide) h0 hm (fun e => absurd e (by decide))
-      fun i hi => ?_
-    rw [rw₄, hR, r6₄, blk_add]
+  · refine Proof.Aes.PPC64LE.Crypto.batch_read_ok false 8 t₄ (by decide) h₄.inp.zero h₄.inp.mask
+      (fun e => absurd e (by decide)) fun i hi => ?_
+    rw [h₄.rd, h₄.wr, hR, h₄.r6, blk_add]
     exact in_rw (by simp) (cBlk16 hp (by omega))
-  have hR₀ := hp.rounds
-  have hm₄ : t₄.mem = t.mem := by rw [hl₄.mem, m₃]
-  refine ⟨fun r hr => ?_, by rw [hb.ptr, r6₄], ?_, ⟨?_, ?_, ?_, by rcases hR₀ with e | e | e <;> omega,
-    by rcases hR₀ with e | e | e <;> omega, fun j hj => ?_⟩, ?_, ?_, by rw [hb.effects.mem, hm₄],
+  refine ⟨fun r hr => ?_, by rw [hb.ptr, h₄.r6], by rw [hb.effects.keep.gpr (by decide), h₄.r3],
+    inputs_of_local h₄.inp ⟨hb.effects.keep, hb.effects.v, hb.effects.mem⟩ (by decide) (by decide) (by decide)
+      (by simp [(batchFacts ⟨8, by decide⟩).2.2.1]),
+    by rw [hb.effects.keep.2.1, h₄.rd], by rw [hb.effects.keep.2.2, h₄.wr], by rw [hb.effects.mem, h₄.mem],
     fun j hj => ?_⟩
-  · obtain ⟨h0, h3, h4, h6, -, -, -, -, h11, h12⟩ := pres_ne hr
-    rw [hb.effects.keep.gpr (by simpa using h6), hl₄.keep.gpr (by simp [h0, h11, h12]), g₃ r h3 h4 h6]
-  · rw [hb.effects.keep.gpr (by decide), hl₄.keep.gpr (by decide), u₃.other _ (by decide),
-      u₂.other _ (by decide), u₁.gpr, r14]
-  · exact (hb.effects.keep.gpr (by decide)).trans h0
-  · exact (hb.effects.v _ (by simp [(batchFacts ⟨8, by decide⟩).2.2.1])).trans hm
-  · rw [hb.effects.keep.gpr (by decide), hl₄.keep.gpr (by decide), u₃.other _ (by decide), u₂.gpr,
-      u₁.other _ (by decide), r15]
-    exact ((BitVec.ofNat_toNat _ _).trans (BitVec.setWidth_eq _)).symm
-  · rw [hb.effects.keep.2.1, hb.effects.keep.2.2, rw₄, hR, hb.effects.keep.gpr (by decide),
-      hl₄.keep.gpr (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, r14]
-    have : j ≤ 14 := by rcases hR₀ with e | e | e <;> omega
-    exact in_rw (r := schR s₀) (by simp) (Offset.contains_base (d := 16 * j) (n := 16) (k := 240) _ (by omega)
-      (by omega))
-  · rw [hb.effects.keep.2.1, hl₄.keep.2.1, rd₃]
-  · rw [hb.effects.keep.2.2, hl₄.keep.2.2, wr₃]
-  · rw [hb.val j hj, readValue, ite_eq_right (by decide), r6₄, blk_add, hm₄]
+  · obtain ⟨-, -, -, h6, -⟩ := pres_ne hr
+    rw [hb.effects.keep.gpr (by simpa using h6), h₄.g r hr]
+  · rw [hb.val j hj, readValue, ite_eq_right (by decide), h₄.r6, blk_add, h₄.mem]
 
 end VG.Proof.AesCbc.PPC64LE

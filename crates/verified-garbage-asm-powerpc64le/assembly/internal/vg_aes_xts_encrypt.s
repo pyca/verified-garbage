@@ -145,62 +145,54 @@ vg_aes_xts_encrypt:
 	vsldoi %v19, %v0, %v19, 8
 	vsldoi %v19, %v19, %v1, 8
 	lxvd2x 32, %r6, %r0
+	addi %r7, %r19, 0
+	lxvd2x 41, %r7, %r0
+	vxor %v0, %v0, %v9
 	vperm %v0, %v0, %v0, %v19
 	addi %r6, %r6, 16
 	lxvd2x 33, %r6, %r0
+	addi %r7, %r19, 16
+	lxvd2x 41, %r7, %r0
+	vxor %v1, %v1, %v9
 	vperm %v1, %v1, %v1, %v19
 	addi %r6, %r6, 16
 	lxvd2x 34, %r6, %r0
+	addi %r7, %r19, 32
+	lxvd2x 41, %r7, %r0
+	vxor %v2, %v2, %v9
 	vperm %v2, %v2, %v2, %v19
 	addi %r6, %r6, 16
 	lxvd2x 35, %r6, %r0
+	addi %r7, %r19, 48
+	lxvd2x 41, %r7, %r0
+	vxor %v3, %v3, %v9
 	vperm %v3, %v3, %v3, %v19
 	addi %r6, %r6, 16
 	lxvd2x 36, %r6, %r0
+	addi %r7, %r19, 64
+	lxvd2x 41, %r7, %r0
+	vxor %v4, %v4, %v9
 	vperm %v4, %v4, %v4, %v19
 	addi %r6, %r6, 16
 	lxvd2x 37, %r6, %r0
+	addi %r7, %r19, 80
+	lxvd2x 41, %r7, %r0
+	vxor %v5, %v5, %v9
 	vperm %v5, %v5, %v5, %v19
 	addi %r6, %r6, 16
 	lxvd2x 38, %r6, %r0
+	addi %r7, %r19, 96
+	lxvd2x 41, %r7, %r0
+	vxor %v6, %v6, %v9
 	vperm %v6, %v6, %v6, %v19
 	addi %r6, %r6, 16
 	lxvd2x 39, %r6, %r0
+	addi %r7, %r19, 112
+	lxvd2x 41, %r7, %r0
+	vxor %v7, %v7, %v9
 	vperm %v7, %v7, %v7, %v19
 	addi %r6, %r6, 16
 	addi %r6, %r6, -128
-	addi %r7, %r19, 0
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v0, %v0, %v9
-	addi %r7, %r19, 16
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v1, %v1, %v9
-	addi %r7, %r19, 32
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v2, %v2, %v9
-	addi %r7, %r19, 48
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v3, %v3, %v9
-	addi %r7, %r19, 64
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v4, %v4, %v9
-	addi %r7, %r19, 80
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v5, %v5, %v9
-	addi %r7, %r19, 96
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v6, %v6, %v9
-	addi %r7, %r19, 112
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v7, %v7, %v9
 	or %r9, %r3, %r3
 	lxvd2x 40, %r9, %r0
 	vperm %v8, %v8, %v8, %v19
@@ -239,60 +231,52 @@ vg_aes_xts_encrypt:
 	vcipherlast %v5, %v5, %v8
 	vcipherlast %v6, %v6, %v8
 	vcipherlast %v7, %v7, %v8
+	vperm %v0, %v0, %v0, %v19
 	addi %r7, %r19, 0
 	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
 	vxor %v0, %v0, %v9
-	addi %r7, %r19, 16
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v1, %v1, %v9
-	addi %r7, %r19, 32
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v2, %v2, %v9
-	addi %r7, %r19, 48
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v3, %v3, %v9
-	addi %r7, %r19, 64
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v4, %v4, %v9
-	addi %r7, %r19, 80
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v5, %v5, %v9
-	addi %r7, %r19, 96
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v6, %v6, %v9
-	addi %r7, %r19, 112
-	lxvd2x 41, %r7, %r0
-	vperm %v9, %v9, %v9, %v19
-	vxor %v7, %v7, %v9
-	vperm %v0, %v0, %v0, %v19
 	stxvd2x 32, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v1, %v1, %v1, %v19
+	addi %r7, %r19, 16
+	lxvd2x 41, %r7, %r0
+	vxor %v1, %v1, %v9
 	stxvd2x 33, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v2, %v2, %v2, %v19
+	addi %r7, %r19, 32
+	lxvd2x 41, %r7, %r0
+	vxor %v2, %v2, %v9
 	stxvd2x 34, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v3, %v3, %v3, %v19
+	addi %r7, %r19, 48
+	lxvd2x 41, %r7, %r0
+	vxor %v3, %v3, %v9
 	stxvd2x 35, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v4, %v4, %v4, %v19
+	addi %r7, %r19, 64
+	lxvd2x 41, %r7, %r0
+	vxor %v4, %v4, %v9
 	stxvd2x 36, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v5, %v5, %v5, %v19
+	addi %r7, %r19, 80
+	lxvd2x 41, %r7, %r0
+	vxor %v5, %v5, %v9
 	stxvd2x 37, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v6, %v6, %v6, %v19
+	addi %r7, %r19, 96
+	lxvd2x 41, %r7, %r0
+	vxor %v6, %v6, %v9
 	stxvd2x 38, %r6, %r0
 	addi %r6, %r6, 16
 	vperm %v7, %v7, %v7, %v19
+	addi %r7, %r19, 112
+	lxvd2x 41, %r7, %r0
+	vxor %v7, %v7, %v9
 	stxvd2x 39, %r6, %r0
 	addi %r6, %r6, 16
 	addi %r17, %r17, 128
