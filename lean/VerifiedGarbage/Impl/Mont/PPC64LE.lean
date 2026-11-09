@@ -372,12 +372,15 @@ def ldStep (sub : Bool) (j : Nat) : List Instr :=
 def subMStep (m j : Nat) : List Instr :=
   movImm64 .r12 (mword m j) ++ ([carryOp true (j == 0) (vReg j) (vReg j) .r12] : List Instr)
 
-/-- Word `j` of `m` under the mask `r11` added, with CA, to `vReg j`, and
-stored at `[r4 + 8j]`. -/
-def backStep (m j : Nat) : List Instr :=
-  movImm64 .r12 (mword m j) ++
-    ([.logic .and .r12 .r12 .r11, carryOp false (j == 0) (vReg j) (vReg j) .r12, .store .d (vReg j) .r4 (8 * j)] :
-      List Instr)
+/-- Word `j` of `m` under the mask `r11` added, with CA, to `vReg j`: the
+mask itself where the word is all ones. -/
+def backAdd (m j : Nat) : List Instr :=
+  if mword m j = 2 ^ 64 - 1 then [carryOp false (j == 0) (vReg j) (vReg j) .r11]
+  else movImm64 .r12 (mword m j) ++
+    ([.logic .and .r12 .r12 .r11, carryOp false (j == 0) (vReg j) (vReg j) .r12] : List Instr)
+
+/-- `backAdd`, and the word stored at `[r4 + 8j]`. -/
+def backStep (m j : Nat) : List Instr := backAdd m j ++ ([.store .d (vReg j) .r4 (8 * j)] : List Instr)
 
 /-- `[r4] = [r5] + [r6] mod m`, for `n ≤ 4`. -/
 def add4 (n m : Nat) : List Instr :=
