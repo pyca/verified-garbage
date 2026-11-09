@@ -36,6 +36,9 @@ address in both runs, and keeps them).
 
 `addi` and `subi` of a register with a known base move the base; `mr` (`or d,
 n, n`) copies it. Frames (`push`, `pop`, `alloc`, `free`) are not analysed.
+The vector registers are not tracked, so all are secret: a vector
+instruction keeps the taint, `mfvsrd` writes a secret register, and a table
+load (`lxvd2xTbl`) needs a public offset, its one address.
 -/
 
 @[expose] public section
@@ -151,8 +154,12 @@ def step (τ : T) : Instr → Option T
     if pub τ a && pub τ b then some { τ with slots := if pub τ t then τ.slots else [] } else none
   | .mflr d => some (wr τ d false)
   | .mtlr _ => some τ
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
+  -- The vector registers are not tracked: they are all secret.
+  | .vop _ | .mtvsrd .. => some τ
+  | .mfvsrd d _ => some (wr τ d false)
+  | .lxvd2xTbl _ _ b .. => if pub τ b then some τ else none
+  | .adrSym d _ => some (wr τ d false)
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
 
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
@@ -502,11 +509,56 @@ theorem addrX_eq {s : State} {a b : Reg} {ea : Addr} (h : addrX s a b = some ea)
   split at h <;> [cases h; cases h]
   rfl
 
+/-- The relation holds of states with the same registers, stack pointer,
+regions and memory: it says nothing of the vector registers, the link
+register or the unknowns. -/
+theorem Agree.of_same {τ : T} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
+    (g₁ : s₁'.gpr = s₁.gpr) (g₂ : s₂'.gpr = s₂.gpr) (p₁ : s₁'.sp = s₁.sp) (p₂ : s₂'.sp = s₂.sp)
+    (w₁ : s₁'.wr = s₁.wr) (w₂ : s₂'.wr = s₂.wr) (m₁ : s₁'.mem = s₁.mem) (m₂ : s₂'.mem = s₂.mem) :
+    Agree τ s₁' s₂' := by
+  obtain ⟨hsp, hr, hw, wf₁, wf₂, ok, sl⟩ := ha
+  refine ⟨by rw [p₁, p₂, hsp], fun r h => by rw [g₁, g₂]; exact hr r h, fun h => by rw [w₁, w₂]; exact hw h,
+    ?_, ?_, ok, ?_⟩
+  · simp only [Wf, region] at wf₁ ⊢; rw [g₁, w₁]; exact wf₁
+  · simp only [Wf, region] at wf₂ ⊢; rw [g₂, w₂]; exact wf₂
+  · simp only [SlotsAgree, byteAddr, region] at sl ⊢; rw [m₁, m₂, w₁, w₂]; exact sl
+
 theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ s₁ s₂)
     (hs : step τ i = some τ') (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
   cases i with
-  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x => simp only [step, reduceCtorEq] at hs
+  | vop op =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.map_eq_some_iff] at e₁ e₂
+    obtain ⟨⟨d₁, v₁⟩, -, rfl⟩ := e₁; obtain ⟨⟨d₂, v₂⟩, -, rfl⟩ := e₂
+    exact ⟨rfl, ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl⟩
+  | mtvsrd d n =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl⟩
+  | mfvsrd d n =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    simp only [reduceExec, Option.some.injEq] at e₁ e₂; subst e₁ e₂
+    exact ⟨rfl, ha.wrW d fun h => by cases h⟩
+  | lxvd2xTbl d a b name ws =>
+    simp only [step] at hs
+    split at hs <;> [skip; cases hs]
+    rename_i hb; cases hs
+    refine ⟨by simp [addrs, ha.reg hb], ?_⟩
+    simp only [reduceExec] at e₁ e₂
+    split at e₁ <;> [skip; cases e₁]
+    split at e₂ <;> [skip; cases e₂]
+    cases e₁; cases e₂
+    exact ha.of_same rfl rfl rfl rfl rfl rfl rfl rfl
+  | adrSym d name =>
+    simp only [step, Option.some.injEq] at hs; subst hs
+    by_cases hd : d = .r0
+    · simp only [reduceExec, hd, ne_eq, not_true_eq_false, ↓reduceIte, reduceCtorEq] at e₁
+    simp only [reduceExec, ne_eq, hd, not_false_eq_true, ↓reduceIte, Option.some.injEq] at e₁ e₂
+    subst e₁ e₂
+    exact ⟨rfl, (ha.wrW d (v₁ := s₁.syms name) (v₂ := s₂.syms name) fun h => by cases h).of_same
+      rfl rfl rfl rfl rfl rfl rfl rfl⟩
   | addSp d imm =>
     simp only [step, Option.some.injEq] at hs; subst hs
     simp only [reduceExec] at e₁ e₂
@@ -843,8 +895,11 @@ def stepK (τ : T) : Instr → Option T
     bif pub τ a && pub τ b then some { τ with slots := bif pub τ t then τ.slots else [] } else none
   | .mflr d => some (wrK τ d false)
   | .mtlr _ => some τ
-  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .adrSym ..
-  | .vop .. | .lxvd2x .. | .lxvd2xTbl .. | .stxvd2x .. | .mtvsrd .. | .mfvsrd .. => none
+  | .vop _ | .mtvsrd .. => some τ
+  | .mfvsrd d _ => some (wrK τ d false)
+  | .lxvd2xTbl _ _ b .. => bif pub τ b then some τ else none
+  | .adrSym d _ => some (wrK τ d false)
+  | .push _ | .pop _ | .alloc _ | .free _ | .bctrl | .lxvd2x .. | .stxvd2x .. => none
 
 theorem wrK_eq (τ : T) (d : Reg) (p : Bool) : wrK τ d p = wr τ d p := by
   simp only [wrK, wr, killK_eq]

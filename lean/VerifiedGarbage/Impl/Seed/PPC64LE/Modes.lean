@@ -22,11 +22,11 @@ blocks. Its slots are the blocks function's working space (136, as
 then the modes' six. The blocks function computes the rounds of sixteen
 blocks whatever their number, so a call on one block costs about as much as
 on sixteen: CBC and CFB decryption take sixteen a step while sixteen are
-left, then one, with `wideCore d`, of sixteen (174 slots, `[u64; 174]`;
-`Impl/Modes/PPC64LE/Wide.lean`). The serial modes, CBC and CFB encryption and
-OFB, take one block a step, by the single-block core (`Serial.lean`), whose
-slots are those of `dirCore d`, of one block (144 slots in all,
-`[u64; 144]`).
+left with `wideCore d`, of sixteen (174 slots, `[u64; 174]`;
+`Impl/Modes/PPC64LE/Wide.lean`), then one a step by the single-block core
+(`Serial.lean`, `Core.seq2With`). The serial modes, CBC and CFB encryption
+and OFB, take one block a step by the single-block core, whose slots are
+those of `dirCore d`, of one block (144 slots in all, `[u64; 144]`).
 
 The blocks function writes every general-purpose register but `r2`, and
 restores the callee-saved ones (`r14`–`r31`, the modes' state `r29`–`r31`
@@ -91,24 +91,26 @@ abbrev wideCore (d : Direction) : Modes.PPC64LE.Core := core d 16
 
 /-- `vg_seed_cbc_encrypt_chained`, with its scratch buffer as the fifth
 argument: one block a step, by the single-block core. -/
-def cbcEncryptChained : Prog isa := Serial.core.seq (Modes.Mode.cbcEncChained 4)
+def cbcEncryptChained : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_seed_cbc_decrypt_chained`, with its scratch buffer as the fifth
-argument: sixteen blocks a step, then one. -/
+argument: sixteen blocks a step, then one by the single-block core. -/
 def cbcDecryptChained : Prog isa :=
-  (wideCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
+  (wideCore .decrypt).seq2With (Serial.core .decrypt).crypt (Modes.Mode.cbcDecWide 4 16)
+    (Modes.Mode.cbcDecChained 4) 4
 
 /-- `vg_seed_ofb`, with its scratch buffer as the fifth argument: one block a
 step, by the single-block core. -/
-def ofb : Prog isa := Serial.core.seq (Modes.Mode.ofb 4)
+def ofb : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.ofb 4)
 
 /-- `vg_seed_cfb128_encrypt`, with its scratch buffer as the fifth argument:
 one block a step, by the single-block core. -/
-def cfbEncrypt : Prog isa := Serial.core.seq (Modes.Mode.cfbEnc 4)
+def cfbEncrypt : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_seed_cfb128_decrypt`, with its scratch buffer as the fifth argument:
-sixteen blocks a step, then one. -/
+sixteen blocks a step, then one by the single-block core. -/
 def cfbDecrypt : Prog isa :=
-  (wideCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 16) (Modes.Mode.cfbDecEarly 4) 4
+  (wideCore .encrypt).seq2With (Serial.core .encrypt).crypt (Modes.Mode.cfbDecWide 4 16)
+    (Modes.Mode.cfbDecEarly 4) 4
 
 end VG.Impl.Seed.PPC64LE

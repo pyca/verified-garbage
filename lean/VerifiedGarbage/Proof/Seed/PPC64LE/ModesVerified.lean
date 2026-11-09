@@ -22,7 +22,9 @@ public import VerifiedGarbage.Spec.Ofb
 
 `cbcEncryptChained_verified`, `ofb_verified`, … : the modes of
 `Proof/Modes/PPC64LE/` over SEED's cores (`Mode.wideCoreSpec` for CBC and CFB
-decryption, the single-block `Serial.coreSpec` for the serial modes), with the
+decryption's groups of sixteen, the single-block `Serial.coreSpec` for the
+serial modes and, by `Serial.oneOk`, for the blocks left after the groups),
+with the
 working space as the fifth argument (`modeContract`), meet the contracts
 with a scratch buffer of 144 words (174 for CBC and CFB decryption) (`Proof.Seed.cbcEncChainedScratchContract`,
 `fbScratchContract`).
@@ -95,42 +97,44 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.
 theorem cipher_enc {g : Nat} {hg : 0 < g ∧ g ≤ 16} (k : Spec.Seed.Schedule) :
     (coreSpec .encrypt g hg).cipher k = Spec.Seed.cipher k := by
   simp only [coreSpec, Proof.Seed.dirCipher]
-theorem cipher_ser (k : Spec.Seed.Schedule) : Serial.coreSpec.cipher k = Spec.Seed.cipher k := rfl
+theorem cipher_ser (k : Spec.Seed.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Seed.cipher k := rfl
 theorem cipher_dec {g : Nat} {hg : 0 < g ∧ g ≤ 16} (k : Spec.Seed.Schedule) :
     (coreSpec .decrypt g hg).cipher k = Spec.Seed.invCipher k := by
   simp only [coreSpec, Proof.Seed.dirCipher]
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 144 cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 144 cbcEncPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcEncChained_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cbcEncChained 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.cbcEncChained 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.cbcEncChained_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.cbcEncChained 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.cbcEncChained 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 174 cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 174 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (wideCoreSpec .decrypt) (lg := 4) (by decide) (by decide) (by decide)
+  WP.mono (Proof.Modes.PPC64LE.cbcDecWideWith_wp (wideCoreSpec .decrypt) (Serial.oneOk .decrypt) (lg := 4)
+    (by decide) (by decide) (by decide)
     (seqPre_of (core .decrypt 16) rfl rfl (wideCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl hs)
     (keyArgs_of (core .decrypt 16) rfl (M := Mode.cbcDecChained 4) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ofb_correct (s : State) (hs : (modeContract 144 ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract 144 ofbPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ofb_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ofb 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.ofb 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.ofb_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.ofb 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.ofb 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_correct (s : State) (hs : (modeContract 144 cfbEncPost).pre s) :
     ∃ t s', Exec isa cfbEncrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 144 cfbEncPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbEnc_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbEnc 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.cfbEnc 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.cfbEnc_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.cfbEnc 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.cfbEnc 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract 174 cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 174 cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDecWide_wp (wideCoreSpec .encrypt) (lg := 4) (by decide) (by decide) (by decide)
+  WP.mono (Proof.Modes.PPC64LE.cfbDecWideWith_wp (wideCoreSpec .encrypt) (Serial.oneOk .encrypt) (lg := 4)
+    (by decide) (by decide) (by decide)
     (seqPre_of (core .encrypt 16) rfl rfl (wideCoreSpec .encrypt).layout (M := Mode.cfbDecEarly 4) rfl hs)
     (keyArgs_of (core .encrypt 16) rfl (M := Mode.cfbDecEarly 4) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩

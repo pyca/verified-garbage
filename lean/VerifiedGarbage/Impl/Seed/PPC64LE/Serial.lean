@@ -1,15 +1,18 @@
 module
 
 public import VerifiedGarbage.Impl.Modes.PPC64LE.Seq
+public import VerifiedGarbage.Spec.Seed
 
 /-!
 # A single-block SEED core on PPC64LE
 
-The serial modes (CBC and CFB encryption, OFB) take one block a step, but
-the blocks function (`Modes.lean`) computes sixteen lanes whatever the
-number of blocks. `core` enciphers the one block of its buffer as RFC 4269
-describes, the halves in general-purpose registers, each `G`'s S-boxes on the
-vector unit.
+The serial modes (CBC and CFB encryption, OFB) take one block a step, and
+CBC and CFB decryption one block a step for the blocks left after their
+groups of sixteen, but the blocks function (`Modes.lean`) computes sixteen
+lanes whatever the number of blocks. `core d` enciphers (`d = .encrypt`) or
+deciphers (the round keys in reverse, RFC 4269 §2.4) the one block of its
+buffer as RFC 4269 describes, the halves in general-purpose registers, each
+`G`'s S-boxes on the vector unit.
 
 SEED's S-boxes `S1` and `S2` (`Spec.Seed.s0`, `s1`) are `A · x^247 ⊕ c` and
 `A' · x^251 ⊕ c'` in their field, and `x^247` and `x^251` are powers of two of
@@ -52,6 +55,7 @@ namespace VG.Impl.Seed.PPC64LE.Serial
 
 open VG.PPC64LE
 open VG.Impl.Modes.PPC64LE (sb)
+open VG.Spec.Seed (Direction)
 
 /-! ## The tables -/
 
@@ -117,19 +121,26 @@ def gFn (x : Reg) : List Instr :=
 
 /-! ## A round -/
 
-/-- `L ^= F(K_j, R)`, the left half in `p0`, `p1` and the right in `q0`, `q1`. -/
+/-- `L ^= F(K_j, R)`, the left half in `p0`, `p1` and the right in `q0`, `q1`,
+with the round key `j` of the schedule. -/
 def fRound (p0 p1 q0 q1 : Reg) (j : Nat) : List Instr :=
   [.load .w .r9 .r3 (8 * j), .load .w .r10 .r3 (8 * j + 4),
    .logic .xor .r9 .r9 q0, .logic .xor .r10 .r10 q1, .logic .xor .r10 .r9 .r10] ++
   gFn .r10 ++ [.add .r9 .r10 .r9] ++ gFn .r9 ++ [.add .r10 .r9 .r10] ++ gFn .r10 ++
   [.add .r9 .r10 .r9, .logic .xor p0 p0 .r9, .logic .xor p1 p1 .r10]
 
+/-- The round key of round `j` in the direction `d`: in order to encrypt,
+in reverse to decrypt (§2.4). -/
+def keyIdx : Direction → Nat → Nat
+  | .encrypt, j => j
+  | .decrypt, j => 15 - j
+
 /-- Round `j`: the halves in `r4`, `r6` and `r7`, `r8` alternately. -/
-def round (j : Nat) : List Instr :=
-  if j % 2 = 0 then fRound .r4 .r6 .r7 .r8 j else fRound .r7 .r8 .r4 .r6 j
+def round (d : Direction) (j : Nat) : List Instr :=
+  if j % 2 = 0 then fRound .r4 .r6 .r7 .r8 (keyIdx d j) else fRound .r7 .r8 .r4 .r6 (keyIdx d j)
 
 /-- The sixteen rounds. -/
-def rounds : List Instr := (List.range 16).flatMap round
+def rounds (d : Direction) : List Instr := (List.range 16).flatMap (round d)
 
 /-! ## The block -/
 
@@ -143,10 +154,10 @@ def storeBlock : List Instr :=
   [.li .r0 (8 * bufSlot), .storeRev .w .r7 sb .r0, .li .r0 (8 * bufSlot + 4), .storeRev .w .r8 sb .r0,
    .li .r0 (8 * bufSlot + 8), .storeRev .w .r4 sb .r0, .li .r0 (8 * bufSlot + 12), .storeRev .w .r6 sb .r0]
 
-/-- The single-block core, for encryption (the schedule's round keys in order). -/
-def core : Modes.PPC64LE.Core where
+/-- The single-block core in the direction `d`. -/
+def core (d : Direction) : Modes.PPC64LE.Core where
   prepare := .block []
-  crypt := .block (loadTables ++ loadBlock ++ rounds ++ storeBlock)
+  crypt := .block (loadTables ++ loadBlock ++ rounds d ++ storeBlock)
   slots := bufSlot + 2
   total := bufSlot + 8
   buf := bufSlot
