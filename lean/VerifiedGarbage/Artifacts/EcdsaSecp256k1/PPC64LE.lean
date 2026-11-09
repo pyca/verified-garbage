@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LE
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.Verify.Secp256k1.PPC64LE
@@ -11,7 +10,6 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Verified
 public import VerifiedGarbage.Spec.Ecdsa.Verify.Secp256k1
 public import VerifiedGarbage.Impl.Ecdsa.PPC64LE.VerifyHash
 public import VerifiedGarbage.TCB.PPC64LE.Print
-import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Lit
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
 
