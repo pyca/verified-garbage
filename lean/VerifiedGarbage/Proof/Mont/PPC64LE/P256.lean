@@ -50,143 +50,158 @@ theorem rowP_L {w1 w2 w3 w4 : Nat} (h1 : w1 < 2 ^ 64) (h2 : w2 < 2 ^ 64) (h3 : w
     (h4 : w4 < 2 ^ 64) : w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 < 2 ^ 256 := by
   omega
 
-theorem rowP_final {E L Q : Nat} (key : E + 2 ^ 320 = 2 ^ 64 * (L + 2 ^ 256 * Q)) (q1 : 1 ≤ Q) :
-    2 ^ 64 * (L + 2 ^ 256 * (Q - 1)) = E := by
+theorem rowP_lt0 {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) : x + y < 2 ^ 65 := by
   omega
 
-theorem rowP_chainB {x3 x4 A B s1 u1 v1 s2 u2 v2 : Nat} (hAl : A < 2 ^ 64) (hBl : B < 2 ^ 32)
-    (hs1 : x3 + (2 ^ 64 - 1 - A) + 1 = s1) (es1 : u1 + 2 ^ 64 * v1 = s1)
-    (hs2 : x4 + (2 ^ 64 - 1 - B) + v1 = s2) (es2 : u2 + 2 ^ 64 * v2 = s2) :
-    u1 + 2 ^ 64 * u2 + 2 ^ 128 * v2 + A + 2 ^ 64 * B = x3 + 2 ^ 64 * x4 + 2 ^ 128 := by
+theorem rowP_lt {x y d : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) (hd : d ≤ 1) : x + y + d < 2 ^ 65 := by
   omega
 
-theorem rowP_chainA {x0 x1 x2 A B u1 u2 a1 w1 d1 a2 w2 d2 a3 w3 d3 a4 w4 d4 : Nat}
-    (ha1 : x1 + A = a1) (ea1 : w1 + 2 ^ 64 * d1 = a1) (ha2 : x2 + B + d1 = a2) (ea2 : w2 + 2 ^ 64 * d2 = a2)
-    (ha3 : u1 + x0 + d2 = a3) (ea3 : w3 + 2 ^ 64 * d3 = a3) (ha4 : u2 + x0 + d3 = a4)
-    (ea4 : w4 + 2 ^ 64 * d4 = a4) :
+theorem rowP_not {A : Nat} (h : A < 2 ^ 64) : 2 ^ 64 - 1 - A < 2 ^ 64 := by
+  omega
+
+theorem rowP_d {w d a : Nat} (h : w + 2 ^ 64 * d = a) (ha : a < 2 ^ 65) : d ≤ 1 := by
+  omega
+
+theorem rowP_sub {x0 A B u1 v1 u2 v2 : Nat} (hx : x0 < 2 ^ 64) (hA : A + 2 ^ 64 * B = x0 * 2 ^ 32)
+    (hAl : A < 2 ^ 64) (hBl : B < 2 ^ 32) (hu1 : u1 < 2 ^ 64) (hu2 : u2 < 2 ^ 64)
+    (e1 : u1 + 2 ^ 64 * v1 = x0 + (2 ^ 64 - 1 - A) + 1)
+    (e2 : u2 + 2 ^ 64 * v2 = x0 + (2 ^ 64 - 1 - B) + v1) :
+    u1 + 2 ^ 64 * u2 = x0 + 2 ^ 64 * x0 - x0 * 2 ^ 32 := by
+  omega
+
+theorem rowP_add {x1 x2 x3 x4 A B u1 u2 w1 d1 w2 d2 w3 d3 w4 d4 : Nat}
+    (e1 : w1 + 2 ^ 64 * d1 = x1 + A) (e2 : w2 + 2 ^ 64 * d2 = x2 + B + d1)
+    (e3 : w3 + 2 ^ 64 * d3 = x3 + u1 + d2) (e4 : w4 + 2 ^ 64 * d4 = x4 + u2 + d3) :
     w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 + 2 ^ 256 * d4 =
-      x1 + A + 2 ^ 64 * (x2 + B) + 2 ^ 128 * (u1 + x0) + 2 ^ 192 * (u2 + x0) := by
+      x1 + A + 2 ^ 64 * (x2 + B) + 2 ^ 128 * (x3 + u1) + 2 ^ 192 * (x4 + u2) := by
   omega
 
-theorem rowP_key {x0 x1 x2 x3 x4 c A B u1 u2 v2 w1 w2 w3 w4 d4 : Nat} (hA : A + 2 ^ 64 * B = x0 * 2 ^ 32)
-    (eB : u1 + 2 ^ 64 * u2 + 2 ^ 128 * v2 + A + 2 ^ 64 * B = x3 + 2 ^ 64 * x4 + 2 ^ 128)
+theorem rowP_key {x0 x1 x2 x3 x4 c A B u1 u2 w1 w2 w3 w4 d4 : Nat} (hx : x0 < 2 ^ 64)
+    (hA : A + 2 ^ 64 * B = x0 * 2 ^ 32) (hD : u1 + 2 ^ 64 * u2 = x0 + 2 ^ 64 * x0 - x0 * 2 ^ 32)
     (eA : w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 + 2 ^ 256 * d4 =
-      x1 + A + 2 ^ 64 * (x2 + B) + 2 ^ 128 * (u1 + x0) + 2 ^ 192 * (u2 + x0)) :
-    x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c +
-      x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 + 2 ^ 320 =
-      2 ^ 64 * (w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 + 2 ^ 256 * (c + v2 + d4)) := by
+      x1 + A + 2 ^ 64 * (x2 + B) + 2 ^ 128 * (x3 + u1) + 2 ^ 192 * (x4 + u2)) :
+    x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c + x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 =
+      2 ^ 64 * (w1 + 2 ^ 64 * w2 + 2 ^ 128 * w3 + 2 ^ 192 * w4 + 2 ^ 256 * (c + d4)) := by
   omega
 
-theorem rowP_top {c v2 d4 L E : Nat} (hL : L < 2 ^ 256)
-    (hE : E < 2 ^ 384) (key : E + 2 ^ 320 = 2 ^ 64 * (L + 2 ^ 256 * (c + v2 + d4))) :
-    ((2 ^ 64 - 1 % 2 ^ 64 + (c + v2) % 2 ^ 64) % 2 ^ 64 + d4) % 2 ^ 64 = c + v2 + d4 - 1 ∧
-      1 ≤ c + v2 + d4 := by
+theorem rowP_top {c d4 L E : Nat} (hL : L < 2 ^ 256) (hE : E < 2 ^ 384)
+    (key : E = 2 ^ 64 * (L + 2 ^ 256 * (c + d4))) : (c + d4) % 2 ^ 64 = c + d4 := by
   omega
 
-/-- The row's words, as the code computes them, are `(T + q p) / 2⁶⁴`. -/
-theorem rowP_arith (x0 x1 x2 x3 x4 c : Nat) (b0 : x0 < 2 ^ 64) (b3 : x3 < 2 ^ 64)
-    (hb : x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c +
-      x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 < 2 ^ 384) :
+theorem rowP_arith (x0 x1 x2 x3 x4 c : Nat) (b0 : x0 < 2 ^ 64) (b1 : x1 < 2 ^ 64) (b2 : x2 < 2 ^ 64)
+    (b3 : x3 < 2 ^ 64) (b4 : x4 < 2 ^ 64)
+    (hb : x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c + x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 < 2 ^ 384) :
     2 ^ 64 *
       ((x1 + x0 * 2 ^ 32 % 2 ^ 64) % 2 ^ 64 +
-              2 ^ 64 * ((x2 + x0 / 2 ^ 32 + (x1 + x0 * 2 ^ 32 % 2 ^ 64) / 2 ^ 64) % 2 ^ 64) +
+              2 ^ 64 * ((x2 + x0 / 2 ^ 32 + (decide (2 ^ 64 ≤ x1 + x0 * 2 ^ 32 % 2 ^ 64)).toNat) % 2 ^ 64) +
             2 ^ 128 *
-              (((x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 + x0 +
-                  (x2 + x0 / 2 ^ 32 + (x1 + x0 * 2 ^ 32 % 2 ^ 64) / 2 ^ 64) / 2 ^ 64) %
+              ((x3 + (x0 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 +
+                  (decide (2 ^ 64 ≤ x2 + x0 / 2 ^ 32 + (decide (2 ^ 64 ≤ x1 + x0 * 2 ^ 32 % 2 ^ 64)).toNat)).toNat) %
                 2 ^ 64) +
           2 ^ 192 *
-            (((x4 + (2 ^ 64 - 1 - x0 / 2 ^ 32) + (x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) / 2 ^ 64) % 2 ^ 64 +
-                  x0 +
-                ((x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 + x0 +
-                    (x2 + x0 / 2 ^ 32 + (x1 + x0 * 2 ^ 32 % 2 ^ 64) / 2 ^ 64) / 2 ^ 64) /
-                  2 ^ 64) %
+            ((x4 +
+                  (x0 + (2 ^ 64 - 1 - x0 / 2 ^ 32) +
+                      (decide (2 ^ 64 ≤ x0 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1)).toNat) %
+                    2 ^ 64 +
+                (decide
+                    (2 ^ 64 ≤
+                      x3 + (x0 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 +
+                        (decide
+                            (2 ^ 64 ≤
+                              x2 + x0 / 2 ^ 32 + (decide (2 ^ 64 ≤ x1 + x0 * 2 ^ 32 % 2 ^ 64)).toNat)).toNat)).toNat) %
               2 ^ 64) +
         2 ^ 256 *
-          (((2 ^ 64 - 1 % 2 ^ 64 +
-                  (c +
-                      (x4 + (2 ^ 64 - 1 - x0 / 2 ^ 32) + (x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) / 2 ^ 64) /
-                        2 ^ 64) %
-                    2 ^ 64) %
-                2 ^ 64 +
-              ((x4 + (2 ^ 64 - 1 - x0 / 2 ^ 32) + (x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) / 2 ^ 64) % 2 ^ 64 +
-                    x0 +
-                  ((x3 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 + x0 +
-                      (x2 + x0 / 2 ^ 32 + (x1 + x0 * 2 ^ 32 % 2 ^ 64) / 2 ^ 64) / 2 ^ 64) /
-                    2 ^ 64) /
-                2 ^ 64) %
+          ((c +
+              (decide
+                  (2 ^ 64 ≤
+                    x4 +
+                        (x0 + (2 ^ 64 - 1 - x0 / 2 ^ 32) +
+                            (decide (2 ^ 64 ≤ x0 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1)).toNat) %
+                          2 ^ 64 +
+                      (decide
+                          (2 ^ 64 ≤
+                            x3 + (x0 + (2 ^ 64 - 1 - x0 * 2 ^ 32 % 2 ^ 64) + 1) % 2 ^ 64 +
+                              (decide
+                                  (2 ^ 64 ≤
+                                    x2 + x0 / 2 ^ 32 +
+                                      (decide (2 ^ 64 ≤ x1 + x0 * 2 ^ 32 % 2 ^ 64)).toNat)).toNat)).toNat)).toNat) %
             2 ^ 64)) =
-    x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c +
-      x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 := by
+    x0 + 2 ^ 64 * x1 + 2 ^ 128 * x2 + 2 ^ 192 * x3 + 2 ^ 256 * x4 + 2 ^ 320 * c + x0 * 115792089210356248762697446949407573530086143415290314195533631308867097853951 := by
   have hA : x0 * 2 ^ 32 % 2 ^ 64 + 2 ^ 64 * (x0 / 2 ^ 32) = x0 * 2 ^ 32 := by omega
   have hAl : x0 * 2 ^ 32 % 2 ^ 64 < 2 ^ 64 := Nat.mod_lt _ (by decide)
   have hBl : x0 / 2 ^ 32 < 2 ^ 32 := by omega
   generalize x0 * 2 ^ 32 % 2 ^ 64 = A at *
   generalize x0 / 2 ^ 32 = B at *
-  generalize hs1 : x3 + (2 ^ 64 - 1 - A) + 1 = s1
-  have ls1 : s1 < 2 ^ 65 := by omega
+  -- t₁ + A
+  generalize ha1 : x1 + A = a1
+  have h1 : a1 < 2 ^ 65 := by rw [← ha1]; exact rowP_lt0 b1 hAl
+  have ea1 := Nat.mod_add_div a1 (2 ^ 64)
+  have ma1 := Nat.mod_lt a1 (show 0 < 2 ^ 64 by decide)
+  rw [carry_toNat h1]
+  generalize a1 % 2 ^ 64 = w1 at *
+  generalize a1 / 2 ^ 64 = d1 at *
+  -- q - A
+  generalize hs1 : x0 + (2 ^ 64 - 1 - A) + 1 = s1
+  have hs1b : s1 < 2 ^ 65 := by rw [← hs1]; exact rowP_lt b0 (rowP_not hAl) (Nat.le_refl 1)
   have es1 := Nat.mod_add_div s1 (2 ^ 64)
   have ms1 := Nat.mod_lt s1 (show 0 < 2 ^ 64 by decide)
+  rw [carry_toNat hs1b]
   generalize s1 % 2 ^ 64 = u1 at *
   generalize s1 / 2 ^ 64 = v1 at *
-  generalize hs2 : x4 + (2 ^ 64 - 1 - B) + v1 = s2
+  -- t₂ + B
+  generalize ha2 : x2 + B + d1 = a2
+  have h2 : a2 < 2 ^ 65 := by rw [← ha2]; exact rowP_lt b2 (Nat.lt_trans hBl (by decide)) (rowP_d ea1 h1)
+  have ea2 := Nat.mod_add_div a2 (2 ^ 64)
+  have ma2 := Nat.mod_lt a2 (show 0 < 2 ^ 64 by decide)
+  rw [carry_toNat h2]
+  generalize a2 % 2 ^ 64 = w2 at *
+  generalize a2 / 2 ^ 64 = d2 at *
+  -- q - B
+  generalize hs2 : x0 + (2 ^ 64 - 1 - B) + v1 = s2
   have es2 := Nat.mod_add_div s2 (2 ^ 64)
   have ms2 := Nat.mod_lt s2 (show 0 < 2 ^ 64 by decide)
   generalize s2 % 2 ^ 64 = u2 at *
   generalize s2 / 2 ^ 64 = v2 at *
-  generalize ha1 : x1 + A = a1
-  have ea1 := Nat.mod_add_div a1 (2 ^ 64)
-  have ma1 := Nat.mod_lt a1 (show 0 < 2 ^ 64 by decide)
-  generalize a1 % 2 ^ 64 = w1 at *
-  generalize a1 / 2 ^ 64 = d1 at *
-  generalize ha2 : x2 + B + d1 = a2
-  have ea2 := Nat.mod_add_div a2 (2 ^ 64)
-  have ma2 := Nat.mod_lt a2 (show 0 < 2 ^ 64 by decide)
-  generalize a2 % 2 ^ 64 = w2 at *
-  generalize a2 / 2 ^ 64 = d2 at *
-  generalize ha3 : u1 + x0 + d2 = a3
+  -- t₃ + D's low word
+  generalize ha3 : x3 + u1 + d2 = a3
+  have h3 : a3 < 2 ^ 65 := by rw [← ha3]; exact rowP_lt b3 ms1 (rowP_d ea2 h2)
   have ea3 := Nat.mod_add_div a3 (2 ^ 64)
   have ma3 := Nat.mod_lt a3 (show 0 < 2 ^ 64 by decide)
+  rw [carry_toNat h3]
   generalize a3 % 2 ^ 64 = w3 at *
   generalize a3 / 2 ^ 64 = d3 at *
-  generalize ha4 : u2 + x0 + d3 = a4
+  -- t₄ + D's high word
+  generalize ha4 : x4 + u2 + d3 = a4
+  have h4 : a4 < 2 ^ 65 := by rw [← ha4]; exact rowP_lt b4 ms2 (rowP_d ea3 h3)
   have ea4 := Nat.mod_add_div a4 (2 ^ 64)
   have ma4 := Nat.mod_lt a4 (show 0 < 2 ^ 64 by decide)
-  generalize a4 % 2 ^ 64 = w4 at *
-  generalize a4 / 2 ^ 64 = d4 at *
-  have eB := rowP_chainB hAl hBl hs1 es1 hs2 es2
-  have eA := rowP_chainA ha1 ea1 ha2 ea2 ha3 ea3 ha4 ea4
-  have key := rowP_key (x0 := x0) (x1 := x1) (x2 := x2) (x3 := x3) (x4 := x4) (c := c) hA eB eA
-  obtain ⟨top, q1⟩ := rowP_top (rowP_L ma1 ma2 ma3 ma4) hb key
-  rw [top]
-  exact rowP_final key q1
+  rw [carry_toNat h4]
+  have hD := rowP_sub b0 hA hAl hBl ms1 ms2 (es1.trans hs1.symm) (es2.trans hs2.symm)
+  have eA := rowP_add (ea1.trans ha1.symm) (ea2.trans ha2.symm) (ea3.trans ha3.symm) (ea4.trans ha4.symm)
+  have key := rowP_key (x0 := x0) (x1 := x1) (x2 := x2) (x3 := x3) (x4 := x4) (c := c) b0 hA hD eA
+  rw [rowP_top (rowP_L ma1 ma2 ma3 ma4) hb key, key]
 
 /-- P-256's row: `2⁶⁴ T' = T + q p` for `q = t₀`, when `T + q p < 2³⁸⁴`. -/
 theorem qrowP_ok {t : State} (hb : accP t + (t.gpr .r15).toNat * p256p < 2 ^ 384) :
     WP isa (.block qrowP) t fun u =>
       2 ^ 64 * accP5 u = accP t + (t.gpr .r15).toNat * p256p ∧ u.mem = t.mem ∧
-      Kp [.r9, .r11, .r12, .r15, .r16, .r17, .r18, .r19] t u := by
+      Kp [.r8, .r9, .r11, .r12, .r15, .r16, .r17, .r18, .r19] t u := by
   unfold qrowP
   refine wp_step (exec_lsl (by decide)) ?_
   refine wp_step (exec_lsr_d (by decide)) ?_
   refine wp_step exec_subc ?_
   refine wp_step exec_sube ?_
-  refine wp_step exec_addze ?_
-  refine wp_step (exec_subi (by decide) (by decide)) ?_
   refine wp_step exec_addc ?_
   refine wp_step exec_adde ?_
   refine wp_step exec_adde ?_
   refine wp_step exec_adde ?_
   refine wp_step exec_addze ?_
-  refine wp_step exec_ori ?_
-  refine wp_step exec_ori ?_
-  refine wp_step exec_ori ?_
-  refine wp_step exec_ori ?_
   refine wp_step exec_ori (WP.block_nil ?_)
   refine ⟨?_, rfl, ?_⟩
   · simp only [accP, accP5] at hb ⊢
     simp only [write_gpr, RegUpd.gpr_writeCarry, RegUpd.ca_writeCarry, reduceCtorEq,
       ite_true, ite_false, BitVec.toNat_ofNat, BitVec.toNat_or, BitVec.toNat_shiftLeft,
-      BitVec.toNat_ushiftRight, BitVec.toNat_sub]
+      BitVec.toNat_ushiftRight]
     have b15 := (t.gpr .r15).isLt
     have b16 := (t.gpr .r16).isLt
     have b17 := (t.gpr .r17).isLt
@@ -201,16 +216,12 @@ theorem qrowP_ok {t : State} (hb : accP t + (t.gpr .r15).toNat * p256p < 2 ^ 384
     generalize (t.gpr .r12).toNat = c at *
     simp only [Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, BitVec.toNat_setWidth,
       show (0 : BitVec 16).toNat = 0 from rfl, Nat.zero_mod, Nat.or_zero] at *
-    simp (disch := omega) only [carry_toNat]
     rw [p256p_eq] at hb ⊢
-    exact rowP_arith x0 x1 x2 x3 x4 c b15 b18 hb
-  · exact ((((((((((((((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans
-      (Kp.writeCarry _ _ (by decide))).trans (Kp.writeCarry _ _ (by decide))).trans
-      (Kp.writeCarry _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
+    exact rowP_arith x0 x1 x2 x3 x4 c b15 b16 b17 b18 b19 hb
+  · exact (((((((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans
       (Kp.writeCarry _ _ (by decide))).trans (Kp.writeCarry _ _ (by decide))).trans
       (Kp.writeCarry _ _ (by decide))).trans (Kp.writeCarry _ _ (by decide))).trans
-      (Kp.writeCarry _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
-      (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
-      (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide)))
+      (Kp.writeCarry _ _ (by decide))).trans (Kp.writeCarry _ _ (by decide))).trans
+      (Kp.writeCarry _ _ (by decide))).trans (Kp.write _ _ (by decide))
 
 end VG.Proof.Mont.PPC64LE
