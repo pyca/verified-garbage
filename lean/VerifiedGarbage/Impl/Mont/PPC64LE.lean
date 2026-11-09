@@ -142,19 +142,41 @@ def rrowB (n : Nat) : List Instr :=
   [.load .d .r9 .r5 0, .li .r0 0] ++ rmacs .r6 0 0 0 n ++
   ([.addc (treg n) (treg n) .r0, .li .r12 0, .addze .r12 .r12] : List Instr)
 
-/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` at
-`[acc + 8 (n + 1)]`, the modulus at `r7`, the top word in `r12`): the low
-word of `t₀ + q m₀`, zero, is dropped, and the other words are moved one
-register down. -/
-def rrowM (M : Mod) (acc : Nat) : List Instr :=
+/-- `k` for a Mersenne modulus `m = 2^(64 (n - 1) + k) - 1` of `n ≥ 2`
+words with `0 < k < 64` (P-521's `p`, `k = 9`), else 0. -/
+def mersK (n m : Nat) : Nat :=
+  match (List.range 64).find? (fun k => 0 < k && 2 ≤ n && m + 1 == 2 ^ (64 * (n - 1) + k)) with
+  | some k => k
+  | none => 0
+
+/-- The row `T = (T + t₀ m) / 2⁶⁴` for a Mersenne modulus
+`m = 2^(64 (n - 1) + k) - 1` (`m ≡ -1 mod 2⁶⁴`, so `q = t₀`), the top word
+in `r12`: `(T - t₀) / 2⁶⁴ + t₀ 2^(64 (n - 2) + k)`, the accumulator moved
+one register down with `t₀ 2^k` (`r10`, and its high word `r0`) added at
+word `n - 2`. No multiplication. -/
+def rredF (n k : Nat) : List Instr :=
+  ([.lsl .r10 (treg 0) k, .lsr .d .r0 (treg 0) (64 - k)] : List Instr) ++
+  (List.range (n - 2)).map (fun j => .ori (treg j) (treg (j + 1)) 0) ++
+  ([.addc (treg (n - 2)) (treg (n - 1)) .r10, .adde (treg (n - 1)) (treg n) .r0, .addze (treg n) .r12] :
+    List Instr)
+
+/-- `rrowM` for any modulus. -/
+def rrowG (M : Mod) (acc : Nat) : List Instr :=
   ([.load .d .r10 wb (acc + 8 * (M.n + 1)), .mul .r9 (treg 0) .r10, .load .d .r10 .r7 0,
     .mulhu .r0 .r9 .r10, .mul .r10 .r9 .r10, .addc .r10 .r10 (treg 0), .addze .r0 .r0] : List Instr) ++
   rmacs .r7 8 1 0 (M.n - 1) ++
   ([.addc (treg (M.n - 1)) (treg M.n) .r0, .addze (treg M.n) .r12] : List Instr)
 
+/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` at
+`[acc + 8 (n + 1)]`, the modulus at `r7`, the top word in `r12`): the low
+word of `t₀ + q m₀`, zero, is dropped, and the other words are moved one
+register down. For a Mersenne modulus, `rredF`. -/
+def rrowM (M : Mod) (m acc : Nat) : List Instr :=
+  if 0 < mersK M.n m then rredF M.n (mersK M.n m) else rrowG M acc
+
 /-- An iteration of `rmul`. -/
-def rrow (M : Mod) (acc : Nat) : List Instr :=
-  rrowB M.n ++ rrowM M acc ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
+def rrow (M : Mod) (m acc : Nat) : List Instr :=
+  rrowB M.n ++ rrowM M m acc ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
 
 /-- Word `j` of `T - m` (`T` in registers, `m` at `r7`), with CA, to
 `[M.tmp + 8j]`. -/
@@ -185,9 +207,9 @@ def rrestore (n acc : Nat) : List Instr := (List.range (n + 1)).map fun j => .lo
 
 /-- `[r4] = [r5] [r6] R⁻¹ mod m`, the accumulator in registers (`[r4]` may
 be `[r5]` or `[r6]`). -/
-def rmul (M : Mod) (acc : Nat) : Prog isa :=
+def rmul (M : Mod) (m acc : Nat) : Prog isa :=
   .seq (.block (setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
-  .seq (.loop (.block (rrow M acc)) (.nonzero .d .r8)) <|
+  .seq (.loop (.block (rrow M m acc)) (.nonzero .d .r8)) <|
     .block (rcsub M ++ rrestore M.n acc)
 
 /-! ## Constants of 64 bits in registers -/
@@ -284,10 +306,10 @@ def rmulSel (M : Mod) (m acc : Nat) : Prog isa :=
   .seq (.block (if M.n ≤ 4 then
       setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M m ++ [.li .r8 M.n]
     else setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
-  .seq (.loop (.block (if M.n ≤ 4 then qrow M else rrow M acc)) (.nonzero .d .r8)) <|
+  .seq (.loop (.block (if M.n ≤ 4 then qrow M else rrow M m acc)) (.nonzero .d .r8)) <|
     .block (if M.n ≤ 4 then qcsub M ++ rrestore (2 * M.n) acc else rcsub M ++ rrestore M.n acc)
 
-theorem rmulSel_eq (M : Mod) (m acc : Nat) : rmulSel M m acc = if M.n ≤ 4 then rmul4 M m acc else rmul M acc := by
+theorem rmulSel_eq (M : Mod) (m acc : Nat) : rmulSel M m acc = if M.n ≤ 4 then rmul4 M m acc else rmul M m acc := by
   unfold rmulSel rmul4 rmul; split <;> rfl
 
 /-! ## Sums and differences of at most four words, in registers
