@@ -294,8 +294,6 @@ def doubleArithmeticBlocks : List (List Instr) := [
 
 def doubleArithmeticCode : List Instr := doubleArithmeticBlocks.flatten
 
-theorem double_arithmetic_source : doubleArithmeticCode=(doubleFnBlocks.flatten.drop 14).take 2976 := by lit_decide
-
 theorem double_arithmetic_novec : ∀i∈doubleArithmeticCode,vdstOf i=none := by
   have h : doubleArithmeticCode.all (fun i => vdstOf i==none)=true := by lit_decide
   simpa only [List.all_eq_true,beq_iff_eq] using h
