@@ -36,6 +36,7 @@ theorem comb_layout : Layout brainpoolp256r1Comb where
   al := by decide
   negApart := by decide
   zeroApart := by decide
+  qAt := rfl
 
 theorem comb_config (hC : Law Spec.BrainpoolP256r1.curve) :
     Config brainpoolp256r1Comb Spec.BrainpoolP256r1.curve comb7 comb7Start where

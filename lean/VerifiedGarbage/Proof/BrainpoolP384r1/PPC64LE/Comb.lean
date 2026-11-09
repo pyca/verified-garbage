@@ -36,6 +36,7 @@ theorem comb_layout : Layout brainpoolp384r1Comb where
   al := by decide
   negApart := by decide
   zeroApart := by decide
+  qAt := rfl
 
 set_option exponentiation.threshold 512 in
 theorem comb_config (hC : Law Spec.BrainpoolP384r1.curve) :
