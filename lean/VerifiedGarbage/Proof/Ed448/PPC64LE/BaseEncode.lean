@@ -35,6 +35,23 @@ open VG.Spec.Ed448 (Point)
 section
 variable {b : Addr}
 
+/-- The doublewords at `3840` and above in the working space, where the
+return address, `r14` and `r15`–`r31` are saved, are those of `m`. -/
+def HiKept (b : Addr) (m m' : Mem) : Prop :=
+  ∀ q, 3840 ≤ q → q + 8 ≤ 4096 → m'.readW (b + BitVec.ofNat 64 q) 64 = m.readW (b + BitVec.ofNat 64 q) 64
+
+theorem HiKept.trans {m1 m2 m3 : Mem} (h1 : HiKept b m1 m2) (h2 : HiKept b m2 m3) : HiKept b m1 m3 :=
+  fun q hq hq' => (h2 q hq hq').trans (h1 q hq hq')
+
+theorem HiKept.of_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨b + BitVec.ofNat 64 3840, 256⟩ r) : HiKept b m m' :=
+  fun q hq hq' => hf.readW (Region.contains_self _ _)
+    (fun r hr => (hd r hr).sub_left (Offset.sub b (e := 3840) (k := 256) hq (by omega))) (by decide)
+
+theorem HiKept.of_fa {m m' : Mem} (hf : Frame [VG.Proof.X448.PPC64LE.FA b] m m') : HiKept b m m' :=
+  HiKept.of_frame hf fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base b (by decide) (by omega)
+
 /-- The slots below `Y` stay through `freeze`. -/
 theorem slots_freeze {m m' : Mem} {o : Addr}
     (hf : Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨o, 56⟩] m m') (hd : Region.Disjoint ⟨b, 4096⟩ ⟨o, 56⟩)
@@ -72,7 +89,8 @@ theorem byte0 {m : Mem} {o : Addr} {x : Nat} (h : VG.Spec.X448.bytesAt m o 56 = 
 theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     (hout : (⟨o, 57⟩ : Region) ∈ s.wr) (hdisj : Region.Disjoint ⟨b, 4096⟩ ⟨o, 57⟩) {p : Point}
     (hS : SlotsOk s.mem b RQ (ptV p p)) :
-    WP isa baseEncode s fun s' => Spec.Ed448.bytesAt s'.mem o 57 = Spec.Ed448.encodePoint p := by
+    WP isa baseEncode s fun s' => Spec.Ed448.bytesAt s'.mem o 57 = Spec.Ed448.encodePoint p ∧
+      HiKept b s.mem s'.mem ∧ Ctx b s' := by
   have hd56 : Region.Disjoint ⟨b, 4096⟩ ⟨o, 56⟩ := hdisj.sub_right (Region.sub_prefix (by decide))
   have hv : ∀ q ∈ EQ, q ≠ R → FS s.mem b q = ptV p p q := fun q hq hqR => hS q (by
     simp only [EQ, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -83,8 +101,8 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   refine WP.seq (WP.mono (invertQ_ok (qs := EQ) (by decide) (by decide) (by decide) (by decide) hc hv rfl)
     fun s1 ⟨hst1, hc1, hS1⟩ => ?_)
   refine WP.seq (WP.mono (mulS (o := X2) (x := RX) (y := R) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) hc1 hS1) fun s2 ⟨hr2, _, hS2⟩ => ?_)
-  have hr2' : Rest [.r0, .r4, .r5, .r7, .r8, .r9, .r10, .r11, .r12] s s2 := hst1.rest.trans (hr2.mono (by decide))
+    (by decide) (by decide) (by decide) (by decide) hc1 hS1) fun s2 ⟨hr2, hf2, hS2⟩ => ?_)
+  have hr2' : Rest work s s2 := hst1.rest.trans (hr2.mono (by decide))
   have hc2 : Ctx b s2 := hc1.of_rest hr2 (by decide)
   have h32 : s2.gpr .r3 = o := by rw [hr2'.gpr _ (by decide), h3]
   refine WP.seq (WP.append (freeze_ok hc2 h32
@@ -114,13 +132,13 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
   rw [← hm7] at hS7
   -- `y`.
   refine WP.seq (WP.mono (mulS (o := X2) (x := RY) (y := R) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) hc7 hS7) fun s8 ⟨hr8, _, hS8⟩ => ?_)
+    (by decide) (by decide) (by decide) (by decide) hc7 hS7) fun s8 ⟨hr8, hf8, hS8⟩ => ?_)
   have hc8 : Ctx b s8 := hc7.of_rest hr8 (by decide)
   have h38 : s8.gpr .r3 = o := by rw [hr8.gpr _ (by decide), hr7.gpr _ (by decide), h33]
   have hw8 : s8.wr = s.wr := by rw [hr8.wr, hr7.wr, hw3]
   refine WP.append (freeze_ok hc8 h38
     (fun k hk => in_base (len := 57) (by rw [hw8]; exact hout) (by omega_arith) (by omega_arith)) hd56)
-    fun s9 ⟨hb9, hr9, _, _⟩ => ?_
+    fun s9 ⟨hb9, hr9, hf9, _⟩ => ?_
   refine wp_stb (a := o + BitVec.ofNat 64 56) (by decide) (by decide)
     (by rw [hr9.gpr _ (by decide), h38])
     (by rw [hr9.wr, hw8]; exact in_base hout (by decide) (by decide)) fun s10 u10 => WP.block_nil ?_
@@ -128,6 +146,25 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     rw [hS8 X2 (by decide)]
     simp only [upd, ptV, RX, RY, RZ, X2, Z2, R, Nat.reduceEqDiff, ↓reduceIte]
   have hm10 : s10.mem = s9.mem.writeW (o + BitVec.ofNat 64 56) ((s9.gpr .r12).setWidth 8) := u10.mem
+  have f10 : Frame [⟨o + BitVec.ofNat 64 56, 1⟩] s9.mem s10.mem := by
+    rw [hm10]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ (8 / 8))
+  -- The saved doublewords.
+  have hdo : Region.Disjoint ⟨b + BitVec.ofNat 64 3840, 256⟩ ⟨o, 57⟩ :=
+    hdisj.sub_left (Offset.sub_base _ (by omega))
+  have hfr : ∀ {m m' : Mem}, Frame [⟨b + BitVec.ofNat 64 Y, 56⟩, ⟨o, 56⟩] m m' → HiKept b m m' :=
+    fun hf => HiKept.of_frame hf fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact Offset.disjoint b (.inr (by decide)) (by omega) (by decide)
+      · exact hdo.sub_right (Region.sub_prefix (by decide))
+  have hi : HiKept b s.mem s10.mem :=
+    (HiKept.of_fa hst1.frame).trans <| (HiKept.of_fa hf2).trans <| (hfr hf3).trans <|
+      (show HiKept b s3.mem s7.mem by rw [hm7]; exact fun _ _ _ => rfl).trans <|
+      (HiKept.of_fa hf8).trans <| (hfr hf9).trans <|
+      HiKept.of_frame f10 fun r hr => by
+        rw [List.mem_singleton.mp hr]; exact hdo.sub_right (Offset.sub_base _ (by decide))
+  refine ⟨?_, hi, (hc8.of_rest hr9 (by decide)).of_rest (u10.rest []) (by decide)⟩
   have e12' : s9.gpr .r12 = s7.gpr .r12 := by rw [hr9.gpr _ (by decide), hr8.gpr _ (by decide)]
   -- The bytes.
   obtain ⟨X, Y', Z⟩ := p
@@ -135,9 +172,7 @@ theorem baseEncode_ok {s : State} (hc : Ctx b s) {o : Addr} (h3 : s.gpr .r3 = o)
     show (57 : Nat) = 56 + 1 from rfl, Proof.Ed448.bytesAt_eq, Proof.X25519.bytesAt_add]
   refine (congrArg (· ++ Spec.X25519.bytesAt s10.mem (o + BitVec.ofNat 64 56) 1) ?_).trans
     (congrArg (Proof.X25519.leBytes 56 (Y' * VG.Proof.X448.pw Z (P - 2)).val ++ ·) ?_)
-  · have f : Frame [⟨o + BitVec.ofNat 64 56, 1⟩] s9.mem s10.mem := by
-      rw [hm10]
-      exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ (8 / 8))
+  · have f := f10
     have e : Spec.X25519.bytesAt s10.mem o 56 = Spec.X25519.bytesAt s9.mem o 56 := by
       simp only [Spec.X25519.bytesAt]
       refine List.map_congr_left fun i hi => ?_

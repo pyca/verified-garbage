@@ -16,8 +16,8 @@ import VerifiedGarbage.Proof.Framework.Taint
 
 `vg_x448` meets the shared contract of `Spec/X448/Contract.lean`: the
 proof against `x448PPC64LE`, which it implies, and a state satisfying it.
-The code restores the nonvolatile registers `r14`–`r31` it uses
-(`x448_correct`), never writes `r2` or the link register, and calls no
+The code restores the nonvolatile registers `r15`–`r31` it uses
+(`x448_correct`), never writes `r2`, `r14` or the link register, and calls no
 function, so the ABI's obligations hold of every execution.
 -/
 
@@ -30,13 +30,13 @@ open VG VG.PPC64LE
 theorem x448_ok (s : State) (hs : x448PPC64LE.pre s) :
     ∃ t s', Exec isa Impl.X448.PPC64LE.x448 s t s' ∧ abiPreserved s s' ∧ x448PPC64LE.post s s' := by
   obtain ⟨t, s', he, h, hnv⟩ := x448_correct (XPre.of hs)
-  have hd : ∀ r ∈ [Reg.r2], ∀ i ∈ instrs Impl.X448.PPC64LE.x448, dstOf i ≠ some r :=
+  have hd : ∀ r ∈ [Reg.r2, .r14], ∀ i ∈ instrs Impl.X448.PPC64LE.x448, dstOf i ≠ some r :=
     nv_of_avoids (by decide +kernel)
-  have hpre : ∀ r ∈ preserved, r = .r2 ∨ ∃ i < 18, Impl.X448.PPC64LE.nvR i = r := by decide
+  have hpre : ∀ r ∈ preserved, r ∈ [Reg.r2, .r14] ∨ ∃ i < 17, Impl.X448.PPC64LE.nvR i = r := by decide
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he,
     Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
-  rcases hpre r hr with rfl | ⟨i, hi, rfl⟩
-  · exact Exec.gpr (hd _ List.mem_cons_self) he (.inl (by decide +kernel))
+  rcases hpre r hr with h2 | ⟨i, hi, rfl⟩
+  · exact Exec.gpr (hd _ h2) he (.inl (by decide +kernel))
   · exact hnv i hi
 
 theorem x448_ct' : ConstantTime isa x448PPC64LE.pre x448PPC64LE.pub Impl.X448.PPC64LE.x448 :=
@@ -64,13 +64,13 @@ theorem x448Base_ok (s : State) (hs : x448BasePPC64LE.pre s) :
     ∃ t s', Exec isa Impl.X448.PPC64LE.x448Base s t s' ∧ abiPreserved s s' ∧
       x448BasePPC64LE.post s s' := by
   obtain ⟨t, s', he, h, hnv⟩ := x448Base_correct (BPre.of hs)
-  have hd : ∀ r ∈ [Reg.r2], ∀ i ∈ instrs Impl.X448.PPC64LE.x448Base, dstOf i ≠ some r :=
+  have hd : ∀ r ∈ [Reg.r2, .r14], ∀ i ∈ instrs Impl.X448.PPC64LE.x448Base, dstOf i ≠ some r :=
     nv_of_avoids (by decide +kernel)
-  have hpre : ∀ r ∈ preserved, r = .r2 ∨ ∃ i < 18, Impl.X448.PPC64LE.nvR i = r := by decide
+  have hpre : ∀ r ∈ preserved, r ∈ [Reg.r2, .r14] ∨ ∃ i < 17, Impl.X448.PPC64LE.nvR i = r := by decide
   refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he,
     Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
-  rcases hpre r hr with rfl | ⟨i, hi, rfl⟩
-  · exact Exec.gpr (hd _ List.mem_cons_self) he (.inl (by decide +kernel))
+  rcases hpre r hr with h2 | ⟨i, hi, rfl⟩
+  · exact Exec.gpr (hd _ h2) he (.inl (by decide +kernel))
   · exact hnv i hi
 
 theorem x448Base_ct' : ConstantTime isa x448BasePPC64LE.pre x448BasePPC64LE.pub

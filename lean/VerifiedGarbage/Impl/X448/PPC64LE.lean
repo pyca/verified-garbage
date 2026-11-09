@@ -17,8 +17,9 @@ from its base, which stays in `r6` (`out` stays in `r3`):
 * `x1, x2, z2, x3, z3`, the ladder's temporaries, the constant `a24`, the
   inversion's result and the final reduction's temporary, 56 bytes each
   (`X1`, …);
-* the 28 limbs of a product (`ACC`, 112 bytes) and the bits of the scalar
-  (`BITS`, byte `t` is bit `t` of the clamped scalar).
+* the 28 limbs of a product of Ed448's scalar arithmetic (`ACC`, 112 bytes),
+  the bits of the scalar (`BITS`, byte `t` is bit `t` of the clamped
+  scalar), and the caller's `r15`–`r31` (`NV`).
 
 The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²⁴ + 1`:
 
@@ -27,22 +28,18 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   `2³²`, and the carry out in `r8`;
 * `fold`: the carry out `c` folded in as `c + 2²²⁴ c`: added to limbs 0 and
   7 and carried again; `tail` folds twice, after which nothing carries out;
-* `mul`: the product's fourteen doublewords row by row (a row is seven
-  products of doublewords, `mulld` and `mulhdu`, added with `addc` and
-  `addze`), the same bytes as its 28 limbs; then,
-  for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
-  once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
-  `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
-* `mulX` (`mulP`), X448's: the same product in registers, which it does not
-  restore: the operands' seven doublewords each loaded into `opA` and `opB`,
-  the product's fourteen doublewords column by column into `pw` (a column's
+* `mul` (`mulX`), in registers, which it does not restore: the operands'
+  seven doublewords each loaded into `opA` and `opB` (`r15`–`r28`), the
+  product's fourteen doublewords column by column into `pw` (a column's
   products of doublewords, `mulld` and `mulhdu`, added into three registers
-  with `addc`, `adde` and `addze`; the later words in the registers of
-  operands' words no later column reads), then, with `H = Hₗ + 2²²⁴ Hₕ` its
-  high half, `L + 2⁴⁴⁸ H ≡ L + H + (2²²⁴ Hₗ + Hₕ) + 2²²⁴ Hₕ` by three carry
-  chains (the second adds `H` rotated by 224 bits, computed into `rotReg`
-  first), their carry `c` folded in as `c + 2²²⁴ c` twice, and the result
-  stored;
+  with `addc`, `adde` and `addze`, the third cleared after the first
+  term's product; the later words in the registers of operands' words no
+  later term reads), then, with `H = Hₗ + 2²²⁴ Hₕ` its high half,
+  `L + 2⁴⁴⁸ H ≡ L + H + (2²²⁴ Hₗ + Hₕ) + 2²²⁴ Hₕ` by three carry chains (the
+  second adds `H` rotated by 224 bits, computed into `rotReg` first), their
+  carry `c` folded in as `c + 2²²⁴ c` twice, and the result stored. It
+  changes `r4`, `r5`, `r7`–`r11` and `r15`–`r31`, but not `r0`, `r12` or
+  `r14`, which the ladder and Ed448's loops keep values in;
 * `add`, `sub`: the seven doublewords of `a + b` (carry chain, `addc`/`adde`)
   and of `a - b` modulo `2⁴⁴⁸` (borrow chain, `subc`/`sube`), each stored as
   it is made, then the carry `c` added as `c + 2²²⁴ c`, or the borrow `β`
@@ -58,12 +55,10 @@ by the one-word multiplication `mulA24`), over the bits of the scalar
 from 447 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
-by `r12`, with either multiplication (`invertW`: `mulX` here, `mul` in
-Ed448's `invert`).
+by `r12` (`invertW`, of any multiplication; `invert`, of `mul`).
 
-`vg_x448` saves `r14`–`r31`, which `mulX` uses, at `NV` before the ladder,
-and restores them before the final reduction; `mul` uses only volatile
-registers, for Ed448's code, which keeps values in them. The only branches are on the loop
+`vg_x448` saves `r15`–`r31`, which `mul` uses, at `NV` before the ladder,
+and restores them before the final reduction. The only branches are on the loop
 counters, and every address is a pointer plus a constant or a counter, so
 only the pointers can affect timing.
 -/
@@ -196,62 +191,6 @@ def row (a b : Nat) : List Instr :=
   [.load .w .r4 .r9 a, .li .r8 0] ++ pass .r9 ACC (rowSrc b) ++
     [.store .w .r8 .r9 (ACC + 56), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
-/-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
-carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
-word stored over `acc[i + j]` and its high word the next carry (`mulld`,
-`mulhdu`, and `addc`/`addze` of the doubleword and the carry). -/
-def rowStep64 (b j : Nat) : List Instr :=
-  [.load .d .r5 .r6 (b + 8 * j), .mul .r7 .r4 .r5, .mulhu .r5 .r4 .r5,
-    .load .d .r10 .r9 (ACC + 8 * j), .addc .r7 .r7 .r10, .addze .r5 .r5, .addc .r7 .r7 .r8,
-    .addze .r8 .r5, .store .d .r7 .r9 (ACC + 8 * j)]
-
-/-- Row `i` of the product of doublewords: `acc[i, i + 8) = acc[i, i + 7) + a_i · b`. -/
-def row64 (a b : Nat) : List Instr :=
-  [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
-    [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
-
-/-- Doubleword `k` of the high half `H` of the product rotated by 224 bits,
-`(H₍ₖ₊₃₎ mod 7 >> 32) + (H₍ₖ₊₄₎ mod 7 << 32)`, into `r8`. -/
-def rotSrc (k : Nat) : List Instr :=
-  [.load .d .r5 .r6 (ACC + 56 + 8 * ((k + 3) % 7)), .load .d .r10 .r6 (ACC + 56 + 8 * ((k + 4) % 7)),
-    .lsr .d .r5 .r5 32, .lsl .r10 .r10 32, .add .r8 .r5 .r10]
-
-/-- Doubleword `k ≥ 3` of the high half `H` of the product with its low 224
-bits cleared, into `r8`. -/
-def hiSrc (k : Nat) : List Instr :=
-  if k = 3 then [.load .d .r8 .r6 (ACC + 56 + 24), .lsr .d .r8 .r8 32, .lsl .r8 .r8 32]
-  else [.load .d .r8 .r6 (ACC + 56 + 8 * k)]
-
-/-- Doubleword `k` of `[o]` plus what `src k` leaves in `r8`, by the carry chain. -/
-def accStep (src : Nat → List Instr) (o k : Nat) : List Instr :=
-  .load .d .r7 .r6 (o + 8 * k) :: src k ++ [chainOp false k .r8, .store .d .r7 .r6 (o + 8 * k)]
-
-/-- The sums of the reduction of the product `L + 2⁴⁴⁸ H` at `ACC` into `[o]`:
-with `H = Hₗ + 2²²⁴ Hₕ`, `2⁴⁴⁸ H ≡ H + 2²²⁴ Hₗ + Hₕ + 2²²⁴ Hₕ`, so `[o] = L + H`,
-then `+= 2²²⁴ Hₗ + Hₕ` (`H` rotated by 224 bits), then `+= 2²²⁴ Hₕ` (`H` with
-its low 224 bits cleared), three carry chains whose carries `c ≤ 3` are summed
-in `r4`; `2³² c` into `r5` and zero into `r8`, as `carryPrep` leaves them. -/
-def sums (o : Nat) : List Instr :=
-  (List.range 7).flatMap (chainStep false o ACC (ACC + 56)) ++ [.li .r4 0, .addze .r4 .r4] ++
-    (List.range 7).flatMap (accStep rotSrc o) ++ [.addze .r4 .r4] ++
-    (List.range 4).flatMap (fun j => accStep hiSrc o (j + 3)) ++
-    [.addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
-
-/-- The reduction of the product at `ACC` into `[o]`: the `sums`, then their
-carry folded in as `c + 2²²⁴ c` twice, as `add` does. -/
-def reduce (o : Nat) : List Instr :=
-  sums o ++ (List.range 7).flatMap (foldStep false o) ++ carryPrep ++
-    (List.range 7).flatMap (foldStep false o)
-
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
-fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
-products (a loop, so that the ladder's loop stays within the reach of its
-branch), then its reduction (`reduce`). -/
-def mul (o a b : Nat) : Prog isa :=
-  .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
-    (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
-      (.block (reduce o)))
-
 /-! ## Multiplication in registers -/
 
 /-- The registers of the operands' words: `a_i` in `opA i`, `b_j` in `opB j`. -/
@@ -333,15 +272,15 @@ def mulX (o a b : Nat) : List Instr :=
   ldsAt a (slotsOf opA 7) ++ ldsAt b (slotsOf opB 7) ++ [.li (pw 0) 0, .li (pw 1) 0] ++
     (List.range 13).flatMap colR ++ reduceR ++ stdsAt o (slotsOf pw 7)
 
-/-- `mulX`, as a program. -/
-def mulP (o a b : Nat) : Prog isa := .block (mulX o a b)
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`): `mulX`, as a program. -/
+def mul (o a b : Nat) : Prog isa := .block (mulX o a b)
 
-/-- The nonvolatile registers `r14`–`r31`, which `mulX` uses. -/
+/-- The nonvolatile registers `r15`–`r31`, which `mulX` uses. -/
 def nvR (i : Nat) : Reg :=
-  [.r14, .r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
-    .r31].getD i .r14
+  [.r15, .r16, .r17, .r18, .r19, .r20, .r21, .r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29, .r30,
+    .r31].getD i .r15
 
-/-- Where `vg_x448` saves `r14`–`r31`: after `BITS`. -/
+/-- Where `vg_x448` saves `r15`–`r31`: after `BITS`. -/
 def NV : Nat := 1512
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
@@ -368,12 +307,12 @@ def stepHead : List Instr :=
 in order. -/
 def step : Prog isa :=
   .seq (.block stepHead) <|
-  .seq (.block (add A X2 Z2)) <| .seq (mulP AA A A) <| .seq (.block (sub B X2 Z2)) <|
-  .seq (mulP BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
-  .seq (.block (sub D X3 Z3)) <| .seq (mulP DA D A) <| .seq (mulP CB C B) <|
-  .seq (.block (add X3 DA CB)) <| .seq (mulP X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mulP Z3 Z3 Z3) <| .seq (mulP Z3 X1 Z3) <| .seq (mulP X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
-  .seq (.block (add Z2 AA Z2)) <| .seq (mulP Z2 E Z2) (.block [])
+  .seq (.block (add A X2 Z2)) <| .seq (mul AA A A) <| .seq (.block (sub B X2 Z2)) <|
+  .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
+  .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
+  .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
+  .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 448 iterations, for `t` from 447 down to 0, with `swap = 0`. -/
 def ladder : Prog isa :=
@@ -493,9 +432,9 @@ def bits : Prog isa :=
 
 /-- What follows the setup. -/
 def afterSetup : Prog isa :=
-  .seq (.block (stdsAt NV (slotsOf nvR 18))) <|
-  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq (invertW mulP) <|
-  .seq (mulP X2 X2 R) (.block (ldsAt NV (slotsOf nvR 18) ++ freeze))
+  .seq (.block (stdsAt NV (slotsOf nvR 17))) <|
+  .seq bits <| .seq ladder <| .seq (.block lastSwap) <| .seq invert <|
+  .seq (mul X2 X2 R) (.block (ldsAt NV (slotsOf nvR 17) ++ freeze))
 
 def x448 : Prog isa := .seq (.block setup) afterSetup
 
