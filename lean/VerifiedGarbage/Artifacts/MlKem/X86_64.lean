@@ -49,6 +49,9 @@ namespace VG.Artifacts.MlKem.X86_64.MlKemSample4Zeroize
 open VG.Proof.MlKem.X86_64 (Sample4Impl)
 open VG.Proof.Zeroize.X86_64 (ZeroizeImpl)
 
+/-- The functions over `v`, wiping with `z`: none where `Wipe.skip` (an
+implementation of `vg_mlkem_sample_ntt4` that needs CPU features is emitted
+only with an implementation of `vg_zeroize` that needs some of them). -/
 def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List Artifact :=
   if Proof.MlKem.X86_64.Wipe.skip v z then [] else [
   Spec.MlKem.keyGenApi.artifact X86_64.target {

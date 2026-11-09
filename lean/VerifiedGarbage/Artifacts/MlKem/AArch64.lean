@@ -146,6 +146,10 @@ def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArc
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.decapsP1024_verified v _ }]
 
+/-- The functions over the paired-state permutation `x2` and the
+single-state one `v`: the paired path where `x2` uses the SHA3 instructions
+(`paired`), the sponge path where both are the baseline (`sponge`), and
+none for the other pairs. -/
 def artifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
   if paired x2 then pairedArtifacts x2 v else if sponge x2 v then spongeArtifacts v else []
 

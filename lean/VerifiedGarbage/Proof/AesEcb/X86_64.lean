@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.BlocksVariant
 public import VerifiedGarbage.Proof.Framework.X86_64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-ECB on x86-64
@@ -18,6 +19,13 @@ otherwise a call of it, then of `z` on the first `v.encWritten` bytes of
 `Verified.callWipeTail'`, with the side conditions of
 `Proof/AesEcb/Wipe.lean`, with 24 bytes of stack, the frame and the return
 address). Likewise for decryption.
+
+Which of these are emitted, for each `v` and `z` (`encryptRegs`,
+`decryptRegs`): `v`'s code alone, where it writes nothing in `scratch`,
+once (with the `z` of no suffix); the call wiped with `z` where `v` needs
+AVX, only with the `z` that needs it (so the instance has `v`'s suffix and
+needs no more than `v`'s features); and otherwise the call wiped with each
+`z`, named by both suffixes.
 -/
 
 @[expose] public section
@@ -101,5 +109,55 @@ theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
 
 theorem decrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (wiped z v.decWritten v.dec).all (fun i => !isa.writesSp i) = true := wiped_spSafe v.decSpSafe
+
+/-- The implementations of `vg_aes_ecb_encrypt` over `v` that are emitted with
+`z` (see the module's documentation). -/
+def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.encryptApi target) :=
+  if h : v.encWritten = 0 then
+    if z.suffix = "" then [{
+      suffix := v.suffix
+      code := v.enc.code
+      verified := encrypt_free v h
+      spSafe := v.encSpSafe }]
+    else []
+  else if v.features.contains "avx" then
+    if z.features = ["avx"] then [{
+      suffix := v.suffix
+      code := wiped z v.encWritten v.enc
+      stack := 24
+      verified := encrypt_verified v z
+      spSafe := encrypt_spSafe v z }]
+    else []
+  else [{
+    suffix := v.suffix ++ z.suffix
+    code := wiped z v.encWritten v.enc
+    stack := 24
+    verified := encrypt_verified v z
+    spSafe := encrypt_spSafe v z }]
+
+/-- The implementations of `vg_aes_ecb_decrypt` over `v` that are emitted with
+`z` (see the module's documentation). -/
+def decryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.AesEcb.decryptApi target) :=
+  if h : v.decWritten = 0 then
+    if z.suffix = "" then [{
+      suffix := v.suffix
+      code := v.dec.code
+      verified := decrypt_free v h
+      spSafe := v.decSpSafe }]
+    else []
+  else if v.features.contains "avx" then
+    if z.features = ["avx"] then [{
+      suffix := v.suffix
+      code := wiped z v.decWritten v.dec
+      stack := 24
+      verified := decrypt_verified v z
+      spSafe := decrypt_spSafe v z }]
+    else []
+  else [{
+    suffix := v.suffix ++ z.suffix
+    code := wiped z v.decWritten v.dec
+    stack := 24
+    verified := decrypt_verified v z
+    spSafe := decrypt_spSafe v z }]
 
 end VG.Proof.AesEcb.X86_64
