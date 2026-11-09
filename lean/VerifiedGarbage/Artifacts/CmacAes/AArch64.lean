@@ -37,36 +37,23 @@ def artifacts : List Artifact :=
 end VG.Artifacts.CmacAes.AArch64.Absorb
 
 namespace VG.Artifacts.CmacAes.AArch64
-def direct : List Artifact := [
-  ]
-end VG.Artifacts.CmacAes.AArch64
-
--- AES-CMAC (NIST SP 800-38B) on AArch64
-namespace VG.Artifacts.CmacAes.AArch64.AesCtr32
 
 open VG.Proof.CmacAes.AArch64
 
-def artifacts (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
-  Spec.Cmac.aesInitApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3
-      (Impl.CmacAes.Stream.AArch64.init v.expand v.callee v.suffix)
-    stack := 2304
-    verified := Proof.CmacAes.Stream.AArch64.init_framed v },
-  Spec.Cmac.aesFinishApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch 2304 .x4
-      (Impl.CmacAes.Stream.AArch64.finish v.callee v.suffix)
-    stack := 2304
-    verified := Proof.CmacAes.Stream.AArch64.finish_framed v }]
-
-end VG.Artifacts.CmacAes.AArch64.AesCtr32
-
-namespace VG.Artifacts.CmacAes.AArch64
-
 def artifacts : List Artifact :=
   Absorb.artifacts ++
-  direct ++
-  (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun v => AesCtr32.artifacts v)
+  (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
+    Spec.Cmac.aesInitApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3
+        (Impl.CmacAes.Stream.AArch64.init v.expand v.callee v.suffix)
+      stack := 2304
+      verified := Proof.CmacAes.Stream.AArch64.init_framed v },
+    Spec.Cmac.aesFinishApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch 2304 .x4
+        (Impl.CmacAes.Stream.AArch64.finish v.callee v.suffix)
+      stack := 2304
+      verified := Proof.CmacAes.Stream.AArch64.finish_framed v }])
 
 end VG.Artifacts.CmacAes.AArch64

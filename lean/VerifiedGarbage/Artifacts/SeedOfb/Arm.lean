@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Seed.Arm.FbFinalVerified
 public import VerifiedGarbage.Impl.Seed.Arm.FbFinal
 
-/-! # SEED-OFB artifacts on baseline ARMv7 -/
+/-! # SEED-OFB on ARMv7 -/
 
 @[expose] public section
 

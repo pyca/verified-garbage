@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.X86.Sha256
 public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86 -/
 
 @[expose] public section
 

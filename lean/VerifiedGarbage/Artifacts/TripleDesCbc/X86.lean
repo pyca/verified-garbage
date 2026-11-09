@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.CbcLit
 
-/-! # Triple DES-CBC artifacts on baseline x86 (32-bit) -/
+/-! # Triple DES-CBC on x86 -/
 
 @[expose] public section
 

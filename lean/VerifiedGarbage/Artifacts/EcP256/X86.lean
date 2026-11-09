@@ -73,7 +73,7 @@ public import VerifiedGarbage.Proof.P256.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256Decompress
 
-/-! # P-256 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
+/-! # P-256 public keys (FIPS 186-5 §A.2) on x86 -/
 
 @[expose] public section
 

@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSASSA-PSS signing on x86-64, with the hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
 @[expose] public section
 

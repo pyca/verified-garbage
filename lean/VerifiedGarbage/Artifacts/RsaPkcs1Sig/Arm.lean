@@ -352,7 +352,7 @@ public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
-/-! # RSASSA-PKCS1-v1_5 signing on ARMv7, for each implementation of the CRT -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on ARMv7 -/
 
 @[expose] public section
 
@@ -360,26 +360,24 @@ namespace VG.Artifacts.RsaPkcs1Sig.Arm
 
 open VG.Proof.Rsa.Arm (CrtImpl)
 
-def artifactsFor (v : CrtImpl) : List Artifact := [
-  Spec.RsaPkcs1Sig.signApi.artifact Arm.target {
-    suffix := v.suffix
-    code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
-    stack := 4584
-    verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v) },
-  Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
-      (Proof.Rsa.Arm.pdOfCrt v).code
-    stack := 2192
-    verified := (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v)) },
-  Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
-      (Proof.Rsa.Arm.pdOfCrt v).code
-    stack := 2192
-    verified := (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v)) }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
+    Spec.RsaPkcs1Sig.signApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
+      stack := 4584
+      verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v) },
+    Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+        (Proof.Rsa.Arm.pdOfCrt v).code
+      stack := 2192
+      verified := (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v)) },
+    Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
+        (Proof.Rsa.Arm.pdOfCrt v).code
+      stack := 2192
+      verified := (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v)) }]
 
 end VG.Artifacts.RsaPkcs1Sig.Arm

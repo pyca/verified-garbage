@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Seed.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Seed.PPC64LE.FbFinalLit
 
-/-! # SEED-CFB128 artifacts on baseline PPC64LE -/
+/-! # SEED-CFB128 on PPC64LE -/
 
 @[expose] public section
 

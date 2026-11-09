@@ -28,6 +28,8 @@ public import VerifiedGarbage.Proof.TripleDes.Bytes
 public import VerifiedGarbage.Proof.TripleDes.Permutation
 public import VerifiedGarbage.TCB.AArch64.Print
 
+/-! # Triple DES on AArch64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.TripleDes.AArch64

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Sha1
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-/-! # PBKDF2-HMAC-SHA-1 (RFC 8018) on RISC-V: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-1 (RFC 8018) on RISC-V -/
 
 @[expose] public section
 

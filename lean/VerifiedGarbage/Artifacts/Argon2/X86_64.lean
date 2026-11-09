@@ -46,7 +46,7 @@ public import VerifiedGarbage.Proof.Variants.Blake2b.X86_64
 public import VerifiedGarbage.Proof.Variants.Argon2Compress.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # Argon2 on x86-64, for each BLAKE2b backend with the implementation of G for the same CPUs -/
+/-! # Argon2 (RFC 9106) on x86-64 -/
 
 @[expose] public section
 

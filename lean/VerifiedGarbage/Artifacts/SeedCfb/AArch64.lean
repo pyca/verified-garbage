@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 import VerifiedGarbage.Proof.Seed.AArch64.FbFinalLit
 
-/-! # SEED-CFB128 artifacts on baseline AArch64 -/
+/-! # SEED-CFB128 on AArch64 -/
 
 @[expose] public section
 

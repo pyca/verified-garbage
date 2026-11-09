@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Secp256k1.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.Secp256k1Comb
 
-/-! # ECDSA over secp256k1 (FIPS 186-5) on 32-bit ARM -/
+/-! # ECDSA over secp256k1 (FIPS 186-5) on ARMv7 -/
 
 @[expose] public section
 

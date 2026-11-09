@@ -21,24 +21,13 @@ def direct : List Artifact := [
     code := Impl.RsaKeyGen.RISCV64.KeyInit.init
     verified := Proof.RsaKeyGen.RISCV64.KeyInit.init_verified }]
 
-end VG.Artifacts.RsaKeyGen.RISCV64
-
--- RSA key generation on RISC-V, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.RISCV64.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.RISCV64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
-    suffix := v.suffix
-    stack := 656
-    code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
-    verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v }]
-
-end VG.Artifacts.RsaKeyGen.RISCV64.MillerRabin
-
-namespace VG.Artifacts.RsaKeyGen.RISCV64
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun (v : Proof.MillerRabin.RISCV64.RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
+      suffix := v.suffix
+      stack := 656
+      code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
+      verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v }])
 
 end VG.Artifacts.RsaKeyGen.RISCV64

@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Cast5.RISCV64.FbFinalLit
 
-/-! # CAST5-OFB artifacts on baseline RISC-V -/
+/-! # CAST5-OFB on RISC-V -/
 
 @[expose] public section
 

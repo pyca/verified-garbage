@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # CAST5 key expansion and ECB on baseline AArch64 -/
+/-! # CAST5 (RFC 2144) on AArch64 -/
 
 @[expose] public section
 

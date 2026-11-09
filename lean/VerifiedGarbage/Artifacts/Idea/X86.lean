@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Idea.X86.Lit
 
-/-! # IDEA artifacts on baseline x86 (32-bit) -/
+/-! # IDEA on x86 -/
 
 @[expose] public section
 

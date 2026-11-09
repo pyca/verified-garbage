@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key, and from a random tape, on x86 -/
+/-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86 -/
 
 @[expose] public section
 

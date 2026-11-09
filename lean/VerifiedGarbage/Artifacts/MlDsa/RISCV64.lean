@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.MlDsa.RISCV64.PkTr
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.PreparedKey.Inst
 public import VerifiedGarbage.Proof.MlDsa.RISCV64.Message.Inst
 
-/-! # ML-DSA (FIPS 204) on RISC-V (RV64) -/
+/-! # ML-DSA (FIPS 204) on RISC-V -/
 
 @[expose] public section
 

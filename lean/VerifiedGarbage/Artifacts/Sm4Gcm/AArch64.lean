@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Sm4Gcm.AArch64.Instances
 public import VerifiedGarbage.Proof.AesGcm.AArch64.GhashImpls
 public import VerifiedGarbage.Proof.Variants.Sm4Gcm.AArch64
 
-/-! # SM4-GCM on baseline AArch64: its key setup -/
+/-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on AArch64 -/
 
 @[expose] public section
 

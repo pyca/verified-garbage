@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.TripleDes.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FbFinalLit
 
-/-! # Triple DES-CFB artifacts on baseline PPC64LE -/
+/-! # Triple DES-CFB64 on PPC64LE -/
 
 @[expose] public section
 

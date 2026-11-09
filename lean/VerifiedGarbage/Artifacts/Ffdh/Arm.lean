@@ -30,7 +30,7 @@ public import VerifiedGarbage.Proof.Variants.Ffdh.Arm
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 
-/-! # Native FFDH on little-endian AAPCS ARMv7, including baseline and UMAAL arithmetic -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 
@@ -146,21 +146,9 @@ def direct : List Artifact :=
 
 end VG.Artifacts.Ffdh.Arm
 
--- Emit complete native FFDH parameter generation for every shared ARMv7 Miller–Rabin backend
-namespace VG.Artifacts.Ffdh.Arm.MillerRabin
-open VG
-
-def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact :=
-  let b := Proof.Ffdh.Arm.parameterBackend v
-  [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
-    suffix := b.suffix
-    stack := 232
-    code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
-    verified := Proof.Ffdh.Arm.ParameterSearch.verified b }]
-
-end VG.Artifacts.Ffdh.Arm.MillerRabin
-
 namespace VG.Artifacts.Ffdh.Arm
+
+open VG
 
 def artifacts : List Artifact :=
   Cached.artifacts ++
@@ -168,6 +156,12 @@ def artifacts : List Artifact :=
   Domain.artifacts ++
   Exchange.artifacts ++
   direct ++
-  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) =>
+    let b := Proof.Ffdh.Arm.parameterBackend v
+    [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
+      suffix := b.suffix
+      stack := 232
+      code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
+      verified := Proof.Ffdh.Arm.ParameterSearch.verified b }])
 
 end VG.Artifacts.Ffdh.Arm

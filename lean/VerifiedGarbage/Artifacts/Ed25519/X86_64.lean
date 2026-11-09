@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Sha512Compress.X86_64
 
-/-! # Ed25519 (RFC 8032) on x86-64, over SHA-512 -/
+/-! # Ed25519 (RFC 8032) on x86-64 -/
 
 @[expose] public section
 

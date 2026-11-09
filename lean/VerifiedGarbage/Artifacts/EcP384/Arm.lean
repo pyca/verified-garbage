@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P384Decompress
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
-/-! # P-384 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # P-384 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 

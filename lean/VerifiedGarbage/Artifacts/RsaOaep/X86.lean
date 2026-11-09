@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-OAEP encryption with a precomputed public key on x86, with both hash functions as tables -/
+/-! # RSAES-OAEP (RFC 8017) on x86 -/
 
 @[expose] public section
 

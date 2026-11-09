@@ -26,23 +26,9 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
 
-/-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
+/-! # ML-KEM (FIPS 203) on x86-64 -/
 
 @[expose] public section
-
--- ML-KEM-1024 (FIPS 203) on x86-64: the polynomial primitives
-namespace VG.Artifacts.MlKem.X86_64.MlKem1024
-
-def artifacts : List Artifact := [
-  Spec.MlKem1024.checkEkApi.artifact X86_64.target {
-    code := Impl.MlKem1024.X86_64.checkEk1024
-    verified := Proof.MlKem1024.X86_64.checkEk1024_verified },
-  Spec.MlKem1024.checkEkApi.artifact X86_64.target {
-    suffix := "_avx2"
-    code := Impl.MlKem1024.X86_64.checkEk1024Avx2
-    verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified }]
-
-end VG.Artifacts.MlKem.X86_64.MlKem1024
 
 namespace VG.Artifacts.MlKem.X86_64
 
@@ -121,6 +107,13 @@ namespace VG.Artifacts.MlKem.X86_64
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MlKemSample4.X86_64.variants.flatMap fun v => VG.Proof.Variants.Zeroize.X86_64.variants.flatMap fun v2 => MlKemSample4Zeroize.artifacts v v2) ++
-  MlKem1024.artifacts
+  [
+    Spec.MlKem1024.checkEkApi.artifact X86_64.target {
+      code := Impl.MlKem1024.X86_64.checkEk1024
+      verified := Proof.MlKem1024.X86_64.checkEk1024_verified },
+    Spec.MlKem1024.checkEkApi.artifact X86_64.target {
+      suffix := "_avx2"
+      code := Impl.MlKem1024.X86_64.checkEk1024Avx2
+      verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified }]
 
 end VG.Artifacts.MlKem.X86_64

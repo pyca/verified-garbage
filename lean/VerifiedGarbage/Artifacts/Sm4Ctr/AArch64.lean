@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 
-/-! # SM4-CTR artifacts on baseline AArch64 -/
+/-! # SM4-CTR on AArch64 -/
 
 @[expose] public section
 

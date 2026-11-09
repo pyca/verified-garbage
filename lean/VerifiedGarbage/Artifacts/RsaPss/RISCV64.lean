@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.RISCV64.Sat
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-/-! # RSASSA-PSS on RISC-V, with both hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on RISC-V -/
 
 @[expose] public section
 

@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Selftest.X86_64
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.TCB.Registration
 
-/-! # The pipeline self-test on x86-64 -/
+/-! # The emitter's self-test on x86-64 -/
 
 @[expose] public section
 

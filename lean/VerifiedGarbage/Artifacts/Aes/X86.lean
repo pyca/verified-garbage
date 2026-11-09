@@ -28,7 +28,7 @@ public import VerifiedGarbage.Proof.Framework.X86.Mmx
 public import VerifiedGarbage.Proof.Framework.X86.StackScratchWipe
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # AES on x86 -/
+/-! # AES (FIPS 197) on x86 -/
 
 @[expose] public section
 

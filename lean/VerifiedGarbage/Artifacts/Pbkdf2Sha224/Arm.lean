@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Pbkdf2.Whole.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # PBKDF2-HMAC-SHA-224 (RFC 8018) on ARMv7: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-224 (RFC 8018) on ARMv7 -/
 
 @[expose] public section
 

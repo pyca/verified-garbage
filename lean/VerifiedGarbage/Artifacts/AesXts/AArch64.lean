@@ -10,32 +10,22 @@ public import VerifiedGarbage.Proof.Variants.AesXts.AArch64
 
 @[expose] public section
 
--- XTS-AES (IEEE Std 1619-2007, NIST SP 800-38E) of whole data units on AArch64
-namespace VG.Artifacts.AesXts.AArch64.Unit
+namespace VG.Artifacts.AesXts.AArch64
 
 open VG.Proof.AesXts.AArch64.Unit
-
-def artifactsFor (v : Proof.AesXts.AArch64.XtsImpl) : List Artifact := [
-  Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.AesXts.AArch64Unit.encrypt v.enc
-    verified := encrypt_verified v },
-  Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
-    verified := decrypt_verified v }]
-
-def artifacts : List Artifact :=
-  VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun v => artifactsFor v
-
-end VG.Artifacts.AesXts.AArch64.Unit
-
-namespace VG.Artifacts.AesXts.AArch64
 
 open VG.Proof.AesXts.AArch64
 
 def artifacts : List Artifact := [
   ] ++
-  Unit.artifacts
+  (VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun (v : Proof.AesXts.AArch64.XtsImpl) => [
+    Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.AArch64Unit.encrypt v.enc
+      verified := encrypt_verified v },
+    Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
+      verified := decrypt_verified v }])
 
 end VG.Artifacts.AesXts.AArch64

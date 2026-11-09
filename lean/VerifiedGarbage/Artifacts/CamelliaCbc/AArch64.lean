@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # Camellia-CBC artifacts on baseline AArch64 -/
+/-! # Camellia-CBC on AArch64 -/
 
 @[expose] public section
 

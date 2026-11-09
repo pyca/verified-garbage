@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Idea.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # IDEA-CBC artifacts on baseline AArch64 -/
+/-! # IDEA-CBC on AArch64 -/
 
 @[expose] public section
 

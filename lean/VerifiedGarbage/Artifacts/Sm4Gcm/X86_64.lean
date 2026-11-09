@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Aes.X86_64.Variant
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Variants.Ghash.X86_64
 
-/-! # SM4-GCM on baseline x86-64: its key setup -/
+/-! # SM4-GCM (NIST SP 800-38D, RFC 8998) on x86-64 -/
 
 @[expose] public section
 

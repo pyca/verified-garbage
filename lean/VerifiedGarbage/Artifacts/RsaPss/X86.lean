@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSASSA-PSS verification on x86 with a precomputed key, with the hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on x86 -/
 
 @[expose] public section
 

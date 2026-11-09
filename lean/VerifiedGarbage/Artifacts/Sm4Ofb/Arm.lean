@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Sm4.Arm.FbFinalVerified
 public import VerifiedGarbage.Impl.Sm4.Arm.FbFinal
 
-/-! # SM4-OFB artifacts on baseline ARMv7 -/
+/-! # SM4-OFB on ARMv7 -/
 
 @[expose] public section
 

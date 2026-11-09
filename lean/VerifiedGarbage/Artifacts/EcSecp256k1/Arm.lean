@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Secp256k1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
-/-! # secp256k1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # secp256k1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 

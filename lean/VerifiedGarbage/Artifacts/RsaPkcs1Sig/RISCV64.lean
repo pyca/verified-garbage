@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.RISCV64.Sign.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-/-! # PKCS #1 v1.5 signing, and verification and recovery with a precomputed RSA public key, on RISC-V -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on RISC-V -/
 
 @[expose] public section
 

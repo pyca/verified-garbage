@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Cast5.Arm.FbFinal
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # CAST5-CFB64 artifacts on baseline ARMv7 -/
+/-! # CAST5-CFB64 on ARMv7 -/
 
 @[expose] public section
 

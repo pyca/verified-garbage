@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Rc2.RISCV64.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Cbc.Lit
 import VerifiedGarbage.Proof.Rc2.RISCV64.Stream.Lit
 
-/-! # RC2 artifacts on baseline RISC-V -/
+/-! # RC2 on RISC-V -/
 
 @[expose] public section
 

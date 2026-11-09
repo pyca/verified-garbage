@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rc2.Arm.Cbc.Chained
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # RC2 artifacts on baseline ARMv7 -/
+/-! # RC2 on ARMv7 -/
 
 @[expose] public section
 

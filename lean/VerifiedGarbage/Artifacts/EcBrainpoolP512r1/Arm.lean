@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP512r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress
 
-/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 

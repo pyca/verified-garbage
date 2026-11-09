@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Poly1305.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Poly1305 (RFC 8439 §2.5) on 32-bit ARM -/
+/-! # Poly1305 (RFC 8439 §2.5) on ARMv7 -/
 
 @[expose] public section
 

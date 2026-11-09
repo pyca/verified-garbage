@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.P192.Lit
 public import VerifiedGarbage.Proof.P192.PPC64LE.Law
 
-/-! # ECDH over P-192 (SP 800-56A §5.7.1.2) on PPC64LE -/
+/-! # ECDH over P-192 (SP 800-56A) on PPC64LE -/
 
 @[expose] public section
 

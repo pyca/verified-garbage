@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSASSA-PSS signing on AArch64, with the hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on AArch64 -/
 
 @[expose] public section
 

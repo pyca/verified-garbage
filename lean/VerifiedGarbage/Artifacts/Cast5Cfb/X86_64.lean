@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Cast5.X86_64.FbFinalLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
-/-! # CAST5-CFB64 artifacts on baseline x86-64 -/
+/-! # CAST5-CFB64 on x86-64 -/
 
 @[expose] public section
 

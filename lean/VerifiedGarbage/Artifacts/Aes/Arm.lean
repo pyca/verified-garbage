@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # AES on ARMv7 -/
+/-! # AES (FIPS 197) on ARMv7 -/
 
 @[expose] public section
 

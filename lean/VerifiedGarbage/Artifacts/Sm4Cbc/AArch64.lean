@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # SM4-CBC artifacts on baseline AArch64 -/
+/-! # SM4-CBC on AArch64 -/
 
 @[expose] public section
 

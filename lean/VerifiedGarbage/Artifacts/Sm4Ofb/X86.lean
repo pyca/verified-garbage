@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Sm4.X86.FbLit
 import VerifiedGarbage.Proof.Sm4.X86.FbFinalLit
 
-/-! # SM4-OFB artifacts on baseline x86 (32-bit) -/
+/-! # SM4-OFB on x86 -/
 
 @[expose] public section
 

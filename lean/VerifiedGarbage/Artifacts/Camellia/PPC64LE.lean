@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Camellia.PPC64LE.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # Camellia artifacts on PPC64LE -/
+/-! # Camellia on PPC64LE -/
 
 @[expose] public section
 

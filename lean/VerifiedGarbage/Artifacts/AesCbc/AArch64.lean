@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
-/-! # AES-CBC decryption with seven independent AES states -/
+/-! # AES-CBC (NIST SP 800-38A §6.2) on AArch64 -/
 
 @[expose] public section
 
@@ -29,40 +29,33 @@ def direct : List Artifact := [
 
 end VG.Artifacts.AesCbc.AArch64
 
--- AES-CBC (NIST SP 800-38A §6.2) on AArch64
-namespace VG.Artifacts.AesCbc.AArch64.AesBlocks
+namespace VG.Artifacts.AesCbc.AArch64
 
 open VG.Proof.AesCbc.AArch64
 
-def artifacts (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact :=
-  (if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [
-    Spec.Cbc.aesEncryptApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Caller.encrypt v
-      verified := Wiped.encrypt_free_scrubbed v h
-      written := Caller.written v
-      writtenOk := Caller.written_ok v }]
-  else [
-    Spec.Cbc.aesEncryptApi.artifact AArch64.target {
-      suffix := v.suffix
-      code := Wiped.encrypt v
-      stack := 32
-      verified := Wiped.encrypt_verified v }]) ++
-  -- With the Cryptographic Extension, decryption is `Decrypt.codeAes`
-  -- (`Artifacts/AesCbc/AArch64.lean`), which writes no `scratch`.
-  if v.free then [] else [
-  Spec.Cbc.aesDecryptApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Wiped.decrypt v
-    stack := 32
-    verified := Wiped.decrypt_verified v }]
-
-end VG.Artifacts.AesCbc.AArch64.AesBlocks
-
-namespace VG.Artifacts.AesCbc.AArch64
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun v => AesBlocks.artifacts v)
+  (VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.BlocksImpl) =>
+    (if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [
+      Spec.Cbc.aesEncryptApi.artifact AArch64.target {
+        suffix := v.suffix
+        code := Caller.encrypt v
+        verified := Wiped.encrypt_free_scrubbed v h
+        written := Caller.written v
+        writtenOk := Caller.written_ok v }]
+    else [
+      Spec.Cbc.aesEncryptApi.artifact AArch64.target {
+        suffix := v.suffix
+        code := Wiped.encrypt v
+        stack := 32
+        verified := Wiped.encrypt_verified v }]) ++
+    -- With the Cryptographic Extension, decryption is `Decrypt.codeAes`
+    -- (`Artifacts/AesCbc/AArch64.lean`), which writes no `scratch`.
+    if v.free then [] else [
+    Spec.Cbc.aesDecryptApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Wiped.decrypt v
+      stack := 32
+      verified := Wiped.decrypt_verified v }])
 
 end VG.Artifacts.AesCbc.AArch64

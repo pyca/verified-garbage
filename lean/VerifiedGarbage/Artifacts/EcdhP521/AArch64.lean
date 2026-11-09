@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.P521.AArch64.Law
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.P521Native.NativeVerified
 
-/-! # ECDH over P-521 on AArch64 -/
+/-! # ECDH over P-521 (SP 800-56A) on AArch64 -/
 
 @[expose] public section
 namespace VG.Artifacts.EcdhP521.AArch64

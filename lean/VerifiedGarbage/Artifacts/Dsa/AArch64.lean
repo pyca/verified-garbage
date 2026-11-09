@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # DSA parameter search on AArch64 -/
+/-! # DSA (FIPS 186-4) on AArch64 -/
 
 @[expose] public section
 
@@ -27,52 +27,6 @@ def direct : List Artifact := [
     verified := Proof.Dsa.AArch64.ParameterSearchInit.init_verified }]
 
 end VG.Artifacts.Dsa.AArch64
-
--- DSA signing and verification for every AArch64 arithmetic backend
-namespace VG.Artifacts.Dsa.AArch64.DsaArithmetic
-open VG.Proof.Dsa.AArch64
-
-def artifacts (v : Backend) : List Artifact := [
-  Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v)
-      (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
-    stack := v.stack + 256
-    verified := random_sign_prevalidated_verified v
-    spSafe := random_sign_sp v.prevalidatedSigner },
-  Spec.Dsa.validatePrivateKeyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul
-    stack := v.stack
-    verified := v.validatePrivateVerified
-    spSafe := v.validatePrivateSp },
-  Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.Prevalidated.validate v.mul
-    stack := v.stack
-    verified := v.validateVerified
-    spSafe := v.validateSp },
-  Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.Prevalidated.verify v.mul
-    stack := v.stack
-    verified := v.prevalidatedVerified
-    spSafe := v.prevalidatedSp },
-  Spec.Dsa.generateKeyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
-      (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul)
-    stack := v.stack + 256
-    verified := keygen_verified v
-    spSafe := keygen_sp v },
-  Spec.Dsa.deriveKeyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.Dsa.AArch64.Generate.deriveKey v.mul
-    stack := v.stack
-    verified := v.deriveVerified
-    spSafe := v.deriveSp }]
-
-end VG.Artifacts.Dsa.AArch64.DsaArithmetic
 
 -- DSA parameter generation over refillable tapes with every SHA-1, SHA-256 and Miller–Rabin backend on AArch64
 namespace VG.Artifacts.Dsa.AArch64.MdHashMdHashMillerRabin
@@ -101,9 +55,49 @@ end VG.Artifacts.Dsa.AArch64.MdHashMdHashMillerRabin
 
 namespace VG.Artifacts.Dsa.AArch64
 
+open VG.Proof.Dsa.AArch64
+
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.DsaArithmetic.AArch64.variants.flatMap fun v => DsaArithmetic.artifacts v) ++
+  (VG.Proof.Variants.DsaArithmetic.AArch64.variants.flatMap fun (v : Backend) => [
+    Spec.Dsa.randomSignPrevalidatedApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.RandomSign.code (prevalidatedSignerName v)
+        (Impl.Dsa.AArch64.PrevalidatedSign.sign v.mul)
+      stack := v.stack + 256
+      verified := random_sign_prevalidated_verified v
+      spSafe := random_sign_sp v.prevalidatedSigner },
+    Spec.Dsa.validatePrivateKeyApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.PrevalidatedSign.validate v.mul
+      stack := v.stack
+      verified := v.validatePrivateVerified
+      spSafe := v.validatePrivateSp },
+    Spec.Dsa.validatePublicKeyApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.Prevalidated.validate v.mul
+      stack := v.stack
+      verified := v.validateVerified
+      spSafe := v.validateSp },
+    Spec.Dsa.verifyPrevalidatedApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.Prevalidated.verify v.mul
+      stack := v.stack
+      verified := v.prevalidatedVerified
+      spSafe := v.prevalidatedSp },
+    Spec.Dsa.generateKeyApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.GenerateKey.code (keygenCheckName v) (keygenDeriveName v)
+        (Impl.Dsa.AArch64.Generate.checkParameters v.mul) (Impl.Dsa.AArch64.Generate.deriveChecked v.mul)
+      stack := v.stack + 256
+      verified := keygen_verified v
+      spSafe := keygen_sp v },
+    Spec.Dsa.deriveKeyApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.Dsa.AArch64.Generate.deriveKey v.mul
+      stack := v.stack
+      verified := v.deriveVerified
+      spSafe := v.deriveSp }]) ++
   (VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v => VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v2 => VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun v3 => MdHashMdHashMillerRabin.artifacts v v2 v3)
 
 end VG.Artifacts.Dsa.AArch64

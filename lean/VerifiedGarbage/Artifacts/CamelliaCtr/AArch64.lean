@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Camellia.AArch64.Lit
 
-/-! # Camellia-CTR artifacts on baseline AArch64 -/
+/-! # Camellia-CTR on AArch64 -/
 
 @[expose] public section
 

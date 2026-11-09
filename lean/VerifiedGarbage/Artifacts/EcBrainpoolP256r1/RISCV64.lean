@@ -13,7 +13,7 @@ public import VerifiedGarbage.Impl.EcKey.Compressed.BrainpoolP256r1.RISCV64
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.Verified
 import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP256r1.Lit
 
-/-! # brainpoolp256r1 public keys (FIPS 186-5 §A.2) on RISC-V -/
+/-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on RISC-V -/
 
 @[expose] public section
 

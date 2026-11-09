@@ -13,35 +13,33 @@ namespace VG.Artifacts.AesEcb.X86
 
 open VG.Proof.AesEcb.X86
 
-def artifactsFor (v : Proof.Aes.X86.BlocksImpl) : List Artifact :=
-  (if h : v.encWritten = 0 then [
-    Spec.AesEcb.encryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := v.enc.code
-      verified := encrypt_free v h
-      spSafe := v.encSpSafe }]
-  else [
-    Spec.AesEcb.encryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesEcb.X86.wiped v.enc v.encWritten
-      stack := 32
-      verified := encrypt_verified v
-      spSafe := encrypt_spSafe v }]) ++
-  (if h : v.decWritten = 0 then [
-    Spec.AesEcb.decryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := v.dec.code
-      verified := decrypt_free v h
-      spSafe := v.decSpSafe }]
-  else [
-    Spec.AesEcb.decryptApi.artifact X86.target {
-      suffix := v.suffix
-      code := Impl.AesEcb.X86.wiped v.dec v.decWritten
-      stack := 32
-      verified := decrypt_verified v
-      spSafe := decrypt_spSafe v }])
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun (v : Proof.Aes.X86.BlocksImpl) =>
+    (if h : v.encWritten = 0 then [
+      Spec.AesEcb.encryptApi.artifact X86.target {
+        suffix := v.suffix
+        code := v.enc.code
+        verified := encrypt_free v h
+        spSafe := v.encSpSafe }]
+    else [
+      Spec.AesEcb.encryptApi.artifact X86.target {
+        suffix := v.suffix
+        code := Impl.AesEcb.X86.wiped v.enc v.encWritten
+        stack := 32
+        verified := encrypt_verified v
+        spSafe := encrypt_spSafe v }]) ++
+    (if h : v.decWritten = 0 then [
+      Spec.AesEcb.decryptApi.artifact X86.target {
+        suffix := v.suffix
+        code := v.dec.code
+        verified := decrypt_free v h
+        spSafe := v.decSpSafe }]
+    else [
+      Spec.AesEcb.decryptApi.artifact X86.target {
+        suffix := v.suffix
+        code := Impl.AesEcb.X86.wiped v.dec v.decWritten
+        stack := 32
+        verified := decrypt_verified v
+        spSafe := decrypt_spSafe v }])
 
 end VG.Artifacts.AesEcb.X86

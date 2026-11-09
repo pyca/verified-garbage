@@ -29,7 +29,7 @@ public import VerifiedGarbage.Proof.Variants.AesGcm.X86
 public import VerifiedGarbage.Proof.Aes.X86.VariantProof
 public import VerifiedGarbage.Proof.Variants.Ghash.X86
 
-/-! # AES-GCM's AES-only function on x86: `vg_aes_gcm_init` -/
+/-! # AES-GCM (NIST SP 800-38D) on x86 -/
 
 @[expose] public section
 
