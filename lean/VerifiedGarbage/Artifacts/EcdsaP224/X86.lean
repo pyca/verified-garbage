@@ -1,6 +1,6 @@
 module
-import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.Lit
 
+import VerifiedGarbage.Proof.Ecdsa.Verify.X86.P224.Lit
 public import VerifiedGarbage.TCB.X86.Target
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.X86.P224.Verified
@@ -61,10 +61,36 @@ import VerifiedGarbage.Proof.Framework.X86.TaintMono
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P224.X86.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P224
+public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 /-! # ECDSA over P-224 (FIPS 186-5) on x86 (32-bit) -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-224 on x86 (32-bit), with HMAC as a table
+namespace VG.Artifacts.EcdsaP224.X86.Rfc6979
+
+open VG.Proof.P224.X86 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT stackT OK p224 p224T_verified signCode_sp)
+open VG.Proof.HmacTable.X86 (tables names vars)
+
+def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
+    (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
+  if hv : OK (vars vs1 vs256) then [
+    Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86.target {
+      tables := [("hmac", tables (vars vs1 vs256))]
+      code := signCodeT (p224 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p224.tries (vars vs1 vs256)
+      stack := stackT
+      verified := p224T_verified hasLaw.law (vars vs1 vs256) hv
+      spSafe := signCode_sp _ _ _ }]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
+
+end VG.Artifacts.EcdsaP224.X86.Rfc6979
 
 namespace VG.Artifacts.EcdsaP224.X86
 
@@ -75,6 +101,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifyP224
     stack := 136
-    verified := Proof.Ecdsa.Verify.X86.P224.verifyHash_verified hasLaw.law }]
+    verified := Proof.Ecdsa.Verify.X86.P224.verifyHash_verified hasLaw.law }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP224.X86

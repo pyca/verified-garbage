@@ -54,19 +54,58 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P224.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.P224
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P224
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P224Decompress
 
 /-! # P-224 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
 
+-- Standalone P224 public-point compression on x86-64
+namespace VG.Artifacts.EcP224.X86_64.Compressed
+
+open VG.Proof.P224.X86_64 (hasLaw)
+open VG.Proof.EcKey.Compressed.X86_64.P224
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.P224.inst.compressPublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 },
+    Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact X86_64.target {
+      code := Proof.EcKey.Compressed.X86_64.P224Decompress.code false
+      verified := Proof.EcKey.Compressed.X86_64.P224Decompress.verified hasLaw.law hasLaw.inv false
+      stack := 8 }]
+
+end VG.Artifacts.EcP224.X86_64.Compressed
+
+-- Standalone P224 public-key validation on x86-64
+namespace VG.Artifacts.EcP224.X86_64.Validate
+
+open VG.Proof.P224.X86_64 (hasLaw)
+open VG.Proof.EcKey.Validate.X86_64.P224
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.P224.inst.validatePublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 }]
+
+end VG.Artifacts.EcP224.X86_64.Validate
+
 namespace VG.Artifacts.EcP224.X86_64
 
 open VG.Proof.P224.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
-  Spec.EcKey.P224.publicKeyApi.artifact X86_64.target {
-    code := Impl.EcKey.X86_64.publicKeyP224
-    stack := 8
-    verified := Proof.EcKey.X86_64.P224.pk_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv }]
+def artifacts : List Artifact :=
+  Compressed.artifacts ++
+  [
+    Spec.EcKey.P224.publicKeyApi.artifact X86_64.target {
+      code := Impl.EcKey.X86_64.publicKeyP224
+      stack := 8
+      verified := Proof.EcKey.X86_64.P224.pk_verified hasLaw.law (Proof.P224.combOk7 hasLaw.law) hasLaw.inv }] ++
+  Validate.artifacts
 
 end VG.Artifacts.EcP224.X86_64

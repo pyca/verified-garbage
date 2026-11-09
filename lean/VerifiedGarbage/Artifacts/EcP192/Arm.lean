@@ -36,6 +36,8 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P192.Arm.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P192
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P192Decompress
 
 /-! # P-192 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
@@ -46,6 +48,12 @@ namespace VG.Artifacts.EcP192.Arm
 open VG.Proof.P192.Arm (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P192.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.P192.code
+    verified := Proof.EcKey.Compressed.Arm.P192.verified },
+  Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.P192Decompress.code
+    verified := Proof.EcKey.Compressed.Arm.P192Decompress.verified hasLaw.law },
   Spec.EcKey.P192.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.publicKeyP192
     verified := Proof.EcKey.Arm.P192.pk_verified hasLaw.law }]

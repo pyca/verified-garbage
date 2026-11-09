@@ -37,7 +37,12 @@ instructions in an ISA model) go in their own PR before either.
    `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
+   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`). An
+   algorithm has one file per target, holding the artifacts of all its
+   functions, whatever variant lists they map over
+   (`artifacts := [ … ] ++ Sign.artifacts`, with the artifacts of a function
+   generic over a list in a namespace of their own): never a directory for
+   one of its functions or interfaces. Each artifact is made
    from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
    with the file importing
    `Proof/Framework/Registration.lean` for its default proofs, and its

@@ -49,6 +49,8 @@ public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.Pratt
 public import VerifiedGarbage.Proof.P256.AArch64.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P256Decompress
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -59,6 +61,12 @@ namespace VG.Artifacts.EcP256.AArch64
 open VG.Proof.P256.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P256.code
+    verified := Proof.EcKey.Compressed.AArch64.P256.verified hasLaw.inv },
+  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P256Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.P256Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.P256.publicKeyApi.artifact AArch64.target {
     code := Impl.P256.Booth.publicKey
     verified := Proof.EcKey.AArch64.booth_pk_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) }]

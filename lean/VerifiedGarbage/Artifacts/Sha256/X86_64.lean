@@ -13,6 +13,9 @@ import VerifiedGarbage.Proof.Sha256.X86_64.Lit
 namespace VG.Artifacts.Sha256.X86_64
 
 def artifacts : List Artifact := [
+  Spec.Sha256.init224Api.artifact X86_64.target {
+    code := Impl.Sha256.X86_64.Stream.init224
+    verified := Proof.Sha256.X86_64.Shared.init224 },
   Spec.Sha256.initApi.artifact X86_64.target {
     code := Impl.Sha256.X86_64.Stream.init
     verified := Proof.Sha256.X86_64.Shared.init }]

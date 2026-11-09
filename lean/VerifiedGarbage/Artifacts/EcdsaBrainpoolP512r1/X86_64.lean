@@ -66,10 +66,37 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.X86_64.Law
+public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.BrainpoolP512r1
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # brainpoolP512r1 on x86-64, generic over its proven group law and inversions -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over brainpoolP512r1 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaBrainpoolP512r1.X86_64.Rfc6979
+
+open VG.Proof.BrainpoolP512r1.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK brainpoolp512r1 brainpoolp512r1T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if hv : OK vs ∧ "VG_BRAINPOOLP512R1_COMB" ∉ names vs then [
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1SignApi.artifact X86_64.target {
+      suffix := ""
+      tables := [("hmac", tables vs)]
+      code := signCodeT (brainpoolp512r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp512r1.tries vs
+      stack := stackT
+      verified := brainpoolp512r1T_verified hasLaw.law hasLaw.inv vs hv
+      spSafe := signCode_sp _ _ _
+      features := [] }]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+
+end VG.Artifacts.EcdsaBrainpoolP512r1.X86_64.Rfc6979
 
 namespace VG.Artifacts.EcdsaBrainpoolP512r1.X86_64
 
@@ -80,6 +107,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP512r1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP512r1
     stack := 96
-    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP512r1.verifyHash_verified hasLaw.law hasLaw.inv }]
+    verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP512r1.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaBrainpoolP512r1.X86_64
