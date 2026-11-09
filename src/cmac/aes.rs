@@ -52,6 +52,11 @@ impl AesCmac {
     /// bytes long (AES-128, AES-192 or AES-256).
     pub fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
         crate::dit::enter!(dit);
+        Self::new_with(dit, key)
+    }
+
+    /// Runs with the timing token of the enclosing operation.
+    fn new_with(dit: crate::dit::Dit<'_>, key: &[u8]) -> Result<Self, InvalidKeyLength> {
         if !matches!(key.len(), 16 | 24 | 32) {
             return Err(InvalidKeyLength);
         }
@@ -79,6 +84,11 @@ impl AesCmac {
     /// If the message reaches 2⁶⁴ bytes.
     pub fn update(&mut self, data: &[u8]) {
         crate::dit::enter!(dit);
+        self.update_with(dit, data)
+    }
+
+    /// Runs with the timing token of the enclosing operation.
+    fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
         let count = self
             .count
             .checked_add(data.len() as u64)
@@ -152,6 +162,21 @@ impl AesCmac {
         c.update(data);
         Ok(c.finalize())
     }
+
+    /// Checks that `mac` is the whole MAC of `data` with `key`, in constant
+    /// time, with data independent timing turned on once for the operation.
+    /// `key` must be 16, 24 or 32 bytes long. An invalid key length or a
+    /// mismatched MAC returns `InvalidMac`; truncated MACs are rejected.
+    pub fn verify_mac(key: &[u8], data: &[u8], mac: &[u8]) -> Result<(), InvalidMac> {
+        crate::dit::enter!(dit);
+        let mut c = Self::new_with(dit, key).map_err(|_| InvalidMac)?;
+        c.update_with(dit, data);
+        if crate::ct::eq(dit, &c.finalize_with(dit), mac) {
+            Ok(())
+        } else {
+            Err(InvalidMac)
+        }
+    }
 }
 
 #[cfg(test)]
@@ -208,5 +233,24 @@ mod tests {
         let mut c = AesCmac::new(&[0; 16]).unwrap();
         c.count = u64::MAX;
         c.update(b"x");
+    }
+    #[test]
+    fn verify_mac() {
+        for len in [16, 24, 32] {
+            let key = &[0x3c; 32][..len];
+            for data in [&b""[..], &b"message"[..]] {
+                let mac = AesCmac::mac(key, data).unwrap();
+                assert_eq!(AesCmac::verify_mac(key, data, &mac), Ok(()));
+                for i in 0..mac.len() {
+                    let mut bad = mac;
+                    bad[i] ^= 1;
+                    assert!(AesCmac::verify_mac(key, data, &bad).is_err());
+                }
+                for bad in [&mac[..mac.len() - 1], &[][..], &[0; 17][..]] {
+                    assert!(AesCmac::verify_mac(key, data, bad).is_err());
+                }
+            }
+        }
+        assert!(AesCmac::verify_mac(&[], b"", &[]).is_err());
     }
 }

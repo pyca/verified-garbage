@@ -201,6 +201,22 @@ macro_rules! blake2 {
                 h.update_with(dit, data);
                 h.finalize_with(dit)
             }
+            /// Checks that `mac` is the whole `N`-byte MAC of `data` with
+            /// `key`, in constant time. An empty key computes an unkeyed digest.
+            ///
+            /// # Panics
+            ///
+            #[doc = concat!("If `key` is longer than ", stringify!($max), " bytes.")]
+            pub fn verify_mac(key: &[u8], data: &[u8], mac: &[u8]) -> Result<(), $crate::error::InvalidMac> {
+                crate::dit::enter_if!(dit, !key.is_empty(), crate::dit::Why::UnkeyedHash);
+                let mut h = Self::new_keyed_with(dit, key);
+                h.update_with(dit, data);
+                if $crate::ct::eq(dit, &h.finalize_with(dit), mac) {
+                    Ok(())
+                } else {
+                    Err($crate::error::InvalidMac)
+                }
+            }
         }
 
         impl<const N: usize> super::HashFunction for $name<N> {
@@ -255,6 +271,13 @@ mod tests {
         let (key, data) = (b"key", b"data");
         macro_rules! sizes {
             ($($hash:ident<$n:literal>),*) => {$(
+                for k in [&key[..], &[][..]] {
+                    for d in [&data[..], &[][..]] {
+                        check($hash::<$n>::digest_keyed(k, d), |m| {
+                            $hash::<$n>::verify_mac(k, d, m)
+                        });
+                    }
+                }
                 check($hash::<$n>::digest_keyed(key, data), |m| {
                     let mut h = $hash::<$n>::new_keyed(key);
                     h.update(data);
