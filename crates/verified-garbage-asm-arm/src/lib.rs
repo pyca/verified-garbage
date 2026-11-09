@@ -461,6 +461,10 @@ pub mod rc2;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
 #[rustfmt::skip]
+pub mod rc2_cbc;
+
+#[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]
+#[rustfmt::skip]
 pub mod rc4;
 
 #[cfg(all(target_arch = "arm", target_endian = "little", not(target_vendor = "apple")))]

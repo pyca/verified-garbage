@@ -1,4 +1,4 @@
-//! RC2-CBC, including initialization, update, and unpadded finalization.
+//! RC2-CBC, including initialization and in-place encryption/decryption.
 
 use criterion::Criterion;
 
@@ -35,15 +35,16 @@ pub fn bench(c: &mut Criterion) {
         for size in SIZES {
             g.throughput(Throughput::Bytes(size as u64));
             let data = vec![0x5a; size];
-            // Both libraries write into a buffer allocated once, outside the
+            // Allocate the OpenSSL output and the in-place buffer outside the
             // timed code.
             let mut output = vec![0; size + 8];
+            let mut buffer = crate::InPlace::new(size, &data);
             g.bench(BenchmarkId::new(VG, size), |b| match mode {
                 Mode::Encrypt => b.iter(|| {
                     let mut ctx = Rc2CbcEncryptor::new(black_box(&key), black_box(&iv)).unwrap();
-                    let n = ctx.update(black_box(&data), &mut output).unwrap();
-                    ctx.finalize().unwrap();
-                    black_box(&output[..n]);
+                    buffer.copy_from_slice(black_box(&data));
+                    ctx.encrypt(black_box(&mut buffer)).unwrap();
+                    black_box(&buffer);
                 }),
                 Mode::Decrypt => b.iter(|| {
                     let mut ctx = Rc2CbcDecryptor::new_with_effective_bits(
@@ -52,9 +53,9 @@ pub fn bench(c: &mut Criterion) {
                         128,
                     )
                     .unwrap();
-                    let n = ctx.update(black_box(&data), &mut output).unwrap();
-                    ctx.finalize().unwrap();
-                    black_box(&output[..n]);
+                    buffer.copy_from_slice(black_box(&data));
+                    ctx.decrypt(black_box(&mut buffer)).unwrap();
+                    black_box(&buffer);
                 }),
             });
             g.bench(BenchmarkId::new(OPENSSL, size), |b| {
