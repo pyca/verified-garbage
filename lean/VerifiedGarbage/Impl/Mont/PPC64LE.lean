@@ -135,12 +135,23 @@ def rmac (rs : Reg) (src rd dst j : Nat) : List Instr :=
 /-- `k` steps of a row. -/
 def rmacs (rs : Reg) (src rd dst k : Nat) : List Instr := (List.range k).flatMap (rmac rs src rd dst)
 
-/-- The row `T += u [b]`, for word `r5` of `[a]` (`[b]` at `r6`): `n` steps,
-then the carry word added into `treg n`, and the carry out, the top word,
-to `r12`. -/
+/-- The low (or high) word of `r9 · [r6 + 8j]` (through `r11`), added with
+CA into `treg (dd + j)`. -/
+def mStep (hi : Bool) (dd j : Nat) : List Instr :=
+  [.load .d .r11 .r6 (8 * j), if hi then .mulhu .r11 .r9 .r11 else .mul .r11 .r9 .r11,
+    carryOp false (j == 0) (treg (dd + j)) (treg (dd + j)) .r11]
+
+/-- `k` steps of a chain with `[b]` in memory. -/
+def mpass (hi : Bool) (dd k : Nat) : List Instr := (List.range k).flatMap (mStep hi dd)
+
+/-- The row `T += u [b]`, for word `r5` of `[a]` (`[b]` at `r6`), as two
+carry chains, as `qrowB` but with `[b]` read from memory: the low words of
+the products into `treg 0`, …, the carry into `treg n` and from it to
+`r12`, then the high words into `treg 1`, …, the carry into `r12`. -/
 def rrowB (n : Nat) : List Instr :=
-  [.load .d .r9 .r5 0, .li .r0 0] ++ rmacs .r6 0 0 0 n ++
-  ([.addc (treg n) (treg n) .r0, .li .r12 0, .addze .r12 .r12] : List Instr)
+  [.load .d .r9 .r5 0] ++ mpass false 0 n ++
+  ([.addze (treg n) (treg n), .li .r12 0, .addze .r12 .r12] : List Instr) ++
+  mpass true 1 n ++ ([.addze .r12 .r12] : List Instr)
 
 /-- `k` for a Mersenne modulus `m = 2^(64 (n - 1) + k) - 1` of `n ≥ 2`
 words with `0 < k < 64` (P-521's `p`, `k = 9`), else 0. -/
