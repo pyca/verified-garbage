@@ -570,6 +570,22 @@ theorem cfbDecSeq_wp (hp : SeqPre c (Mode.cfbDec c.bw) s₀) (hk : cs.KeyArgs s�
   · exact h2.trans (by rw [(cfbDec_run _ _ _).1]; rfl)
   · rw [h3 rfl, (cfbDec_run _ _ _).2]; rfl
 
+/-- CBC decryption, one block a step: `cbcDecChained_wp`'s conclusions and
+what it changes. -/
+theorem cbcDecSeq_wp (hp : SeqPre c (Mode.cbcDecChained c.bw) s₀)
+    (hk : cs.KeyArgs s₀ (wrs0 c (Mode.cbcDecChained c.bw) s₀) k) :
+    WP isa (c.seq (Mode.cbcDecChained c.bw)) s₀ fun s' => abiPreserved s₀ s' ∧
+      chunksAt (4 * c.bw) s'.mem (Dp s₀) (N s₀) = Spec.Cbc.decrypt (cs.cipher k) (iv0 c s₀) (blocks0 (c := c) s₀) ∧
+      bytesAt s'.mem (P s₀) (4 * c.bw) = Spec.Cbc.next (iv0 c s₀) (blocks0 (c := c) s₀) ∧
+      Changes c (Mode.cbcDecChained c.bw) s₀ s' := by
+  have b := blk_bounds (c := c) (st := (Mode.cbcDecChained c.bw).step) rfl
+  refine WP.mono (seq_changes_wp cs hp ((copyBlk_inBounds (b _) (b _)))
+    ((append_ok (append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)))
+        (copyBlk_inBounds (b _) (b _))))
+    (cbcDecChained_computes (cs.cipher_len k)) hk) fun s' ⟨h1, h2, h3, h4⟩ => ⟨h1, ?_, ?_, h4⟩
+  · exact h2.trans (by rw [decrypt_run]; rfl)
+  · rw [h3 rfl, decrypt_run_next]; rfl
+
 /-- The loop of `seq` over counter mode, one block a step. -/
 theorem ctrEarly_loops {o : Op} {g : List Byte → List Byte} (hbw : c.bw = 4) (hg : IncOp o g)
     (hgl : ∀ c, c.length = 16 → (g c).length = 16) (ho : ∀ len : Loc → Nat, 16 ≤ len .chn → o.InBounds len) :

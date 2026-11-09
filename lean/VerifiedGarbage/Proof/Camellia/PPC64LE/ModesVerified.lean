@@ -278,22 +278,6 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pr
       show 4 * Serial.core.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_ser] at h3
     exact h3
 
-theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
-    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
-  have hw := Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 3) (by decide) (by decide) (by decide)
-    (seqPre_of hs (dirCore .decrypt) rfl rfl (dirCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl) (keyArgs_of hs (dirCore .decrypt) rfl (M := Mode.cbcDecChained 4) rfl)
-  obtain ⟨eP, eD, eN⟩ := entry_args s
-  rw [eP, eD, eN] at hw
-  refine WP.mono (run_wrapped hs rfl rfl rfl (WP.mono hw fun _ h => And.intro h.1 (And.intro h.2.1 h.2.2.1))
-    (WP.mono hw fun _ h => h.2.2.2)) fun s' ⟨abi, s₂, hm, h2, h3⟩ => ⟨abi, ?_, ?_⟩
-  all_goals rw [← hm]
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_dec] at h2
-    exact h2
-  · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN,
-      show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
-    exact h3
-
 theorem ofb_correct (s : State) (hs : (modeContract ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract ofbPost).post s s' := by
   have hw := Proof.Modes.PPC64LE.ofb_wp Serial.coreSpec
@@ -387,6 +371,38 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
       exact h2
     · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
         show 4 * (dirCore Dir.encrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
+
+attribute [local irreducible] Spec.Camellia.cipher Spec.Camellia.invCipher in
+theorem cipher_serDec (m : Mem) (p : Addr) (R : Nat) :
+    Serial.decCoreSpec.cipher (R, schedWords m p R) = Spec.Camellia.invCipher (Spec.Camellia.subkeysAt m p R) :=
+  rfl
+
+theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
+    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
+  refine pick_wrapped hs (M := Mode.cbcDecChained 4) rfl
+    (fun s₁ s₂ hm h => by simpa only [cbcDecPost, dataAt, ivAt, hm] using h) fun v => ?_
+  obtain ⟨eP, eD, eN, eM⟩ := entry_args_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecSeq_wp Serial.decCoreSpec
+      ((seqPre_of hs Serial.decCore rfl rfl Serial.decCoreSpec.layout (M := Mode.cbcDecChained 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs Serial.decCore rfl (M := Mode.cbcDecChained 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.decCore.bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_serDec] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * Serial.decCore.bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
+      exact h3
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 3) (by decide) (by decide)
+      (by decide) ((seqPre_of hs (dirCore .decrypt) rfl rfl (dirCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of hs (dirCore .decrypt) rfl (M := Mode.cbcDecChained 4) rfl))) fun s' ⟨h1, h2, h3, h4⟩ =>
+        ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, ⟨?_, ?_⟩, h4.write_r8.congr rfl rfl rfl⟩
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs, cipher_dec] at h2
+      exact h2
+    · simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM,
+        show 4 * (dirCore Dir.decrypt).bw = 16 from rfl, iv_entry hs, data_entry hs] at h3
       exact h3
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
