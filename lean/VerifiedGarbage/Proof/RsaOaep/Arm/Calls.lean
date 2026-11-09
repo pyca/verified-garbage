@@ -812,12 +812,12 @@ theorem tword_cert {k : Nat} (hk : k < 3) :
 
 /-- The load of the table's digest length (its word 4), through `r0`, to its slot. -/
 theorem tabD_cert :
-    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r12]) (.block [.ldr .r0 .r0 16, st .r0 sHl]) hc).isSome =
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r0, .r12]) (.block [.ldr .r0 .r0 24, st .r0 sHl]) hc).isSome =
       true := ⟨_, by taint_decide⟩
 
 /-- The load of a table's digest length (its word 4), through `r1`. -/
 theorem lenWord_cert :
-    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r1]) (.block [.ldr .r1 .r1 16]) hc).isSome = true :=
+    ∃ hc, (VG.Taint.check VG.Arm.taint (Taint.ofRegs [.r1]) (.block [.ldr .r1 .r1 24]) hc).isSome = true :=
   ⟨_, by taint_decide⟩
 
 /-- The comparisons of the digest length in `r1` with each of `lens`. -/

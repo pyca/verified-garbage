@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.X86_64.EncCall
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -35,7 +35,7 @@ theorem stackArgs_twelve (s : State) :
       stackArg s 5, stackArg s 6, stackArg s 7, stackArg s 8, stackArg s 9, stackArg s 10, stackArg s 11] := rfl
 
 /-- MGF1's table. -/
-def tabE (s : State) : Region := ⟨stackArg s 11, 40⟩
+def tabE (s : State) : Region := ⟨stackArg s 11, 88⟩
 
 /-- All ten stack arguments. -/
 def argsT (s : State) : Region := ⟨stackArgAddr s 0, 96⟩
@@ -45,38 +45,38 @@ def tabFnsE (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
 
 /-- The contract, with the tables `ts` for both hash functions. -/
 abbrev encC (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.encryptTablesContract (abi.withTables Spec.RsaOaep.encryptTablesSig [("hash", ts), ("mgf1", ts)])
+  Spec.RsaOaep.encryptMdTablesContract (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)])
     encStack
 
 /-- The table of the label's hash function. -/
-def tabLE (s : State) : Region := ⟨stackArg s 10, 40⟩
+def tabLE (s : State) : Region := ⟨stackArg s 10, 88⟩
 
 /-- `PPre`, with the tables: the label's hash function's (the stack argument
 10) and MGF1's (11). -/
 structure PPreT (H : Spec.Mgf1.Hash) (s : State) : Prop extends PPre H s where
   sp4 : (s.gpr .rsp).toNat + 104 ≤ 2 ^ 64
   argsT' : InRegions s.rd (stackArgAddr s 0) 96
-  tab : InRegions s.rd (stackArg s 11) 40
+  tab : InRegions s.rd (stackArg s 11) 88
   argsTOut : (argsT s).Disjoint (outR s)
   argsTScr : (argsT s).Disjoint (scrR s)
   argsTStack : (argsT s).Disjoint (stkR s)
   tabOut : (tabE s).Disjoint (outR s)
   tabScr : (tabE s).Disjoint (scrR s)
   tabStack : (tabE s).Disjoint (stkR s)
-  tabWrap : (stackArg s 11).toNat + 40 ≤ 2 ^ 64
-  tabL : InRegions s.rd (stackArg s 10) 40
+  tabWrap : (stackArg s 11).toNat + 88 ≤ 2 ^ 64
+  tabL : InRegions s.rd (stackArg s 10) 88
   tabLOut : (tabLE s).Disjoint (outR s)
   tabLScr : (tabLE s).Disjoint (scrR s)
   tabLStack : (tabLE s).Disjoint (stkR s)
-  tabLWrap : (stackArg s 10).toNat + 40 ≤ 2 ^ 64
+  tabLWrap : (stackArg s 10).toNat + 88 ≤ 2 ^ 64
 
 /-- The tables: each one of `ts`. -/
 theorem tabs_of {ts : List FnTable} {s : State} (h : (encC ts).pre s) :
     (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 10) (FnTable.words isa s T)) ∧
       (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 11) (FnTable.words isa s T)) ∧
       (tabFnsE ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) := by
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     encStack, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
@@ -85,9 +85,9 @@ theorem tabs_of {ts : List FnTable} {s : State} (h : (encC ts).pre s) :
 
 /-- The precondition, for the hash function `H` that the table `hash` names. -/
 theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC ts).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 10) = some H) : PPreT H s := by
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 10) = some H) : PPreT H s := by
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     encStack, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h

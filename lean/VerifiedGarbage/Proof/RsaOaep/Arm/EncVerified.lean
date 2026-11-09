@@ -101,8 +101,8 @@ theorem code_ok (hc : Coh vs) (c : PdImpl) {s : State} (hs : (espec vs).pre s) :
   · rw [pushRegion_eq (F := frameBytes) (A := 56) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).ro) (rw := ((epw (vs := vs) s s w w₁).lay w₁.g.H.D).rw) hsp']
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  · sig_post [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
     intro H G hH hG
     rw [show BitVec.setWidth 64 (stackArg s 12) = State.addr (stackArg s 12) from rfl, hashAt_tableOf hfitL hidxL,
@@ -136,8 +136,8 @@ theorem code_ct (hc : Coh vs) (c : PdImpl) : ConstantTime isa (espec vs).pre (es
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   have hsp1 := spec_sp h₁
-  sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp

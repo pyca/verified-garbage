@@ -11,7 +11,7 @@ n_len = a4, e = a5, e_len = a6, p = a7, p_len, q, q_len, dp, dp_len, dq,
 dq_len, qinv, qinv_len, label, label_len, ct, ct_len, scratch, scratch_len,
 hash, mgf1)`, the last seventeen on the stack, with the label's hash function
 that of the table `hash` (its stack argument 15) and MGF1 over that of the
-table `mgf1` (its stack argument 16), both of the interface `Hash`, which it
+table `mgf1` (its stack argument 16), both of the interface `MdHash`, which it
 calls, with `vg_rsa_private_checked`. The steps are those of PPC64LE
 (`Impl/RsaOaep/PPC64LE/Decrypt.lean`): after the private operation, the
 digest length of `hash` selects the code for that length (`byLen`).

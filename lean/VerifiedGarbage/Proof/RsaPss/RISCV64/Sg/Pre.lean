@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
 public import VerifiedGarbage.Proof.RsaOaep.RISCV64.Base
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.Framework.Mem
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Sg/Pre.lean`, `Sg/Entry.lean`), with the frame of
 RSAES-OAEP decryption (`Proof/RsaOaep/RISCV64/Dc/Priv.lean`): `PreS D s`, the
-shared contract's precondition (`Spec.RsaPss.signTableContract`, with the stack of
+shared contract's precondition (`Spec.RsaPss.signMdTableContract`, with the stack of
 the frames and of `vg_rsa_private_checked`, `stackBytes`), by name
 (`preS_of`), for a digest of `D` bytes; the working space `Ss s` and the
 values `Base` fixes in `s1`–`s4` (`vS s`: `k`, `out`, `lo` and `salt_len`),
@@ -66,13 +66,13 @@ abbrev dgR (D : Nat) (s : State) : Region := ⟨stackArg s 8, D⟩
 abbrev sR (s : State) : Region := ⟨stackArg s 10, (stackArg s 11).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 14) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
 
 /-- The stack the function uses. -/
 abbrev kS (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 stackBytes, stackBytes⟩
 
-/-- What the code needs of `signTableContract.pre`, by name, for a hash
+/-- What the code needs of `signMdTableContract.pre`, by name, for a hash
 function of `D`-byte digests (the table `hash`'s). -/
 structure PreS (D : Nat) (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
@@ -131,7 +131,7 @@ structure PreS (D : Nat) (s : State) : Prop where
   wsl : (stackArg s 10).toNat + (stackArg s 11).toNat ≤ 2 ^ 64
   wsc : (stackArg s 12).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64
   wth : (stackArg s 14).toNat + 88 ≤ 2 ^ 64
-  wtg : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
+  wtg : (stackArg s 15).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .a3).toNat
   k2 : (s.gpr .a3).toNat ≤ 1024
   ok : (s.gpr .a1).toNat = (s.gpr .a3).toNat
@@ -150,10 +150,10 @@ structure PreS (D : Nat) (s : State) : Prop where
   al15 : (stackArg s 15).toNat % 8 = 0
 
 /-- The contract, with the hash function one of the tables `tsH` of `MdHash`
-and MGF1's one of the tables `tsG` of `Hash`, and the stack of the frames and
+and MGF1's one of the tables `tsG` of `MdHash`, and the stack of the frames and
 of `vg_rsa_private_checked`. -/
 abbrev signSpec (tsH tsG : List FnTable) : Contract isa :=
-  Spec.RsaPss.signTableContract (abi.withTables Spec.RsaPss.signTableSig [("hash", tsH), ("mgf1", tsG)])
+  Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", tsG)])
     stackBytes
 
 /-- Unfolds the precondition at `h`. -/
@@ -161,16 +161,12 @@ macro "sign_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 3471 + 1 := rfl
   unfold signSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig,
-    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig,
-    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.RsaPss.digestLenOk, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.RsaPss.digestLenOk, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 

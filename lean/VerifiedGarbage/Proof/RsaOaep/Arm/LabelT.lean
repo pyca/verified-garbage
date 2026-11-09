@@ -34,7 +34,7 @@ variable {L : Lay} {scr : BitVec 32}
 section TCall
 
 variable (hg : Geo L scr) {g : OHash} {f : Fns} {p ai au af : BitVec 32}
-  (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA p o) 4) {Inv : State → Mem → Prop}
+  (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA p o) 4) {Inv : State → Mem → Prop}
   (hS : ∀ σ m, Inv σ m → m.readW (L.fr sTab) 32 = p) (hT : ∀ σ m, Inv σ m → TabFacts g.H f p ai au af σ)
 include hg tbl hS hT
 
@@ -45,7 +45,7 @@ theorem tloadG_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X 
     (hk3 : k < 3) {a : BitVec 32} (ha : ∀ σ, TabFacts g.H f p ai au af σ → σ.mem.readW (tA p (4 * k)) 32 = a) :
     VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) (.block (tload k))
       (fun σ s => ((Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) ∧ s.gpr .r4 = a) := by
-  have hk : 4 * k + 4 ≤ 20 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega
   obtain ⟨tR, tRo, tC⟩ := tbl
   let F : State → State → Prop := fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
   have keepF : ∀ σ s v, F σ s → F σ (s.setReg .r4 v) := fun σ s v ⟨⟨hc, hm, hx⟩, sy⟩ =>
@@ -102,7 +102,7 @@ end TCall
 
 /-- The label's hash, with the hash function `h` of the table at `p`. -/
 theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32}
-    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA p o) 4)
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA p o) 4)
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) {j o ll : Nat} {lab : BitVec 32} (hj : j + 1 < L.argv.length)
     (hj4 : arg (j + 1) < 4096) (hj4' : arg j < 4096)
     (hlab : L.argv.getD j 0 = lab) (hll : L.argv.getD (j + 1) 0 = BitVec.ofNat 32 ll)

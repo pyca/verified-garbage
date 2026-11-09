@@ -43,7 +43,7 @@ open VG.Proof.Pbkdf2.Md.AArch64 (MdHash)
 open VG.Impl.RsaPss.AArch64 (MdFns shapeOf)
 open VG.Proof.RsaPss.AArch64 (Finds)
 open VG.Proof.Bignum (off)
-open VG.Proof.HashTable (pw_ne find_name)
+open VG.Proof.HashTable (pw_ne find_name symsOf putWs putWs_out putWs_held)
 
 /-- The index of `w`'s hash function in `Mgf1.hashes`. -/
 def idx (w : MdHash) : Nat := Spec.HashTable.index w.mgf.G
@@ -149,5 +149,54 @@ theorem hashAt_tableOf {m : Mem} {p : Addr} {w : MdHash}
   simp only [idx]
   simp only [Proof.Pbkdf2.Md.AArch64.mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hm
   rcases hm with e | e | e | e | e | e | e | e <;> rw [e] <;> rfl
+
+/-! ## States holding a table, for the contracts' satisfiability -/
+
+/-- The words of `v`'s table, its functions at the addresses `symsOf` gives
+`vs`' functions. -/
+def tw (vs : List MdHash) (v : MdHash) : List (BitVec 64) :=
+  (tableOf v).fns.map (symsOf (names vs)) ++ (tableOf v).data
+
+theorem tw_length (vs : List MdHash) (v : MdHash) : (tw vs v).length = 11 := by
+  simp [tw, tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]
+
+/-- The words of `v`'s table, one by one: a list whose cells unfold without
+evaluating the words (`tw_eq`). -/
+def twL (vs : List MdHash) (v : MdHash) : List (BitVec 64) :=
+  [(tw vs v).getD 0 0, (tw vs v).getD 1 0, (tw vs v).getD 2 0, (tw vs v).getD 3 0, (tw vs v).getD 4 0,
+    (tw vs v).getD 5 0, (tw vs v).getD 6 0, (tw vs v).getD 7 0, (tw vs v).getD 8 0, (tw vs v).getD 9 0,
+    (tw vs v).getD 10 0]
+
+theorem tw_eq (vs : List MdHash) (v : MdHash) : twL vs v = tw vs v := rfl
+
+theorem twL_room (vs : List MdHash) (v : MdHash) : (0x300000 : Addr).toNat + 8 * (twL vs v).length < 2 ^ 64 := by
+  simp only [twL, List.length_cons, List.length_nil]; decide
+
+/-- A state with `s`'s registers and regions, `v`'s table at `0x300000`,
+and `vs`' functions at distinct addresses. -/
+def withTable (s : State) (vs : List MdHash) (v : MdHash) : State :=
+  { s with mem := putWs s.mem 0x300000 (twL vs v), syms := symsOf (names vs) }
+
+/-- `v`'s table at `0x300000`, in any memory `putWs` writes it to, with
+`vs`' functions at the addresses `symsOf` gives them: a statement about the
+memory as the contracts unfold it, which `exact` matches without unfolding
+`putWs`. -/
+theorem held_twL (m : Mem) (vs : List MdHash) (v : MdHash) {st : State} (hs : st.syms = symsOf (names vs)) :
+    Abi.tableHeld 64 (putWs m 0x300000 (twL vs v)) 0x300000 (FnTable.words isa st (tableOf v)) := by
+  have h := putWs_held (m := m) (p := 0x300000) (ws := twL vs v) (twL_room vs v)
+  rw [tw_eq] at h
+  have e : FnTable.words isa st (tableOf v) = tw vs v := by
+    simp only [FnTable.words, tw]; rw [hs]
+  rwa [e]
+
+/-- The table of `v`, at `0x300000`. -/
+theorem withTable_held (s : State) (vs : List MdHash) (v : MdHash) :
+    Abi.tableHeld 64 (withTable s vs v).mem 0x300000 (FnTable.words isa (withTable s vs v) (tableOf v)) :=
+  held_twL _ _ _ rfl
+
+/-- Below `0x300000`, a word as in `s`. -/
+theorem withTable_below (s : State) (vs : List MdHash) (v : MdHash) {a : Addr} (ha : a.toNat + 8 ≤ 0x300000) :
+    (withTable s vs v).mem.readW a 64 = s.mem.readW a 64 :=
+  putWs_out (.inl (by simpa using ha)) (twL_room vs v) (by omega)
 
 end VG.Proof.MdHashTable.AArch64

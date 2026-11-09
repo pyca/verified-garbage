@@ -37,14 +37,14 @@ def contract : Contract isa where
 
 theorem implies (hsat : ∃ s, (encC ts).pre s) : (contract ts).Implies (encC ts) where
   pre := fun _ h => h
-  post := by sig_implies_post [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.RsaOaep.seedLenOk, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
+  post := by sig_implies_post [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.RsaOaep.seedLenMdOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
       Abi.withTables, Sig.wordIndex, abi, argRegs, contract, postT, post, Consistent, encK, encStack, stackArgs_twelve,
       List.append_eq, tabFnsE]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.RsaOaep.seedLenOk, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
+    sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.RsaOaep.seedLenMdOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
       Abi.withTables, Sig.wordIndex, abi, argRegs, contract, postT, post, Consistent, encK, encStack, stackArgs_twelve,
       List.append_eq, tabFnsE] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,

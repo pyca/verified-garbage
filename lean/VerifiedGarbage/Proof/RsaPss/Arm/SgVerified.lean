@@ -26,7 +26,7 @@ not fit, or the encoding and the call. Before it, the table's index chooses
 the body for `h`'s shape (`tab_vp`, by RSAES-OAEP's `byLen_vp`). The frames
 around it (`wrap_ok`, `wrap_ct`), the result as the shared contract states
 it, with `hash` any of the tables of `MdHash` of `mvs` and `mgf1` any of the
-tables of `Hash` of `vs`: `vg_rsa_pss_sign`, calling `vg_rsa_private_checked`
+tables of `MdHash` of `vs`: `vg_rsa_pss_sign`, calling `vg_rsa_private_checked`
 over any implementation `v` of `vg_rsa_private_crt`, is verified
 (`sign_verified`).
 -/
@@ -127,7 +127,7 @@ variable (mvs : List MVar) (vs : List TVar)
 
 /-- The code, calling `vg_rsa_private_checked` over `v`, with the hash
 function any of the tables of `MdHash` of `mvs` and MGF1's any of the tables
-of `Hash` of `vs`. -/
+of `MdHash` of `vs`. -/
 abbrev signCode (v : Proof.Rsa.Arm.CrtImpl) : Prog isa :=
   sign (MdHashTable.Arm.fnsOf mvs) (HashTable.Arm.fnsOf vs) (Proof.Rsa.Arm.privName v) (Proof.Rsa.Arm.privCode v)
 
@@ -144,7 +144,7 @@ theorem spec_tab {hs ts : List FnTable} {s : State} (h : (spec hs ts).pre s) :
       (∃ T ∈ ts, Abi.tableHeld 32 s.mem (State.addr (stackArg s 19)) (FnTable.words isa s T)) ∧
       ((hs.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (stackArg s 18).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 19).toNat + 20 ≤ 2 ^ 32 ∧
+      (stackArg s 18).toNat + 44 ≤ 2 ^ 32 ∧ (stackArg s 19).toNat + 44 ≤ 2 ^ 32 ∧
       Spec.RsaPss.digestLenOk 32 s.mem (State.addr (stackArg s 18)) (stackArg s 13) := by
   sign_pre at h
   sig_split h
@@ -224,9 +224,9 @@ theorem tf_of {s s' : State} {w : MVar} {wg : TVar} (hw : w ∈ mvs) (hwg : wg �
 
 /-- Unfolds the contract's postcondition. -/
 macro "sign_post" : tactic => `(tactic| (
-  sig_post [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]))
 
 theorem code_ok (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State}
@@ -290,9 +290,9 @@ theorem code_ct (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v :
   obtain ⟨⟨T, hT, hh₁⟩, ⟨Tg, hTg, hhg₁⟩, -, -, -, -⟩ := spec_tab h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
   obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hTg
-  sig_pub [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp
@@ -326,7 +326,7 @@ theorem code_ct (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (v :
 
 /-- `vg_rsa_pss_sign`, calling `vg_rsa_private_checked` over `v`, with the
 hash function any of the tables of `MdHash` of `mvs` and MGF1's any of the
-tables of `Hash` of `vs`, meets the shared contract (satisfiable,
+tables of `MdHash` of `vs`, meets the shared contract (satisfiable,
 `SgSat.lean`). -/
 theorem sign_verified (hc : MdHashTable.Arm.Coh mvs) (hcg : HashTable.Arm.Coh vs) (hsat : ∃ s, (sspec mvs vs).pre s)
     (v : Proof.Rsa.Arm.CrtImpl) : Verified target (signCode mvs vs v) (sspec mvs vs) :=

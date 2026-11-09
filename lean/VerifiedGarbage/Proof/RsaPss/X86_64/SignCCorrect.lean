@@ -201,7 +201,7 @@ theorem signC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns} {privN : String} {
   have hnB : Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat = n₀ :: rest := bytesAt_cons _ _ (by omega_arith)
   have hrl : rest.length = (s.gpr .rcx).toNat - 1 := by simp [hrest, Spec.Rsa.bytesAt]
   have hHs : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G → H = Hs ∧ G = Gs := fun H G a b =>
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G → H = Hs ∧ G = Gs := fun H G a b =>
     ⟨Option.some.inj (a.symm.trans E.hH), Option.some.inj (b.symm.trans E.hG)⟩
   have hx3' : t3.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10 := by rw [hx3, hx2', hx2, hx1]; rfl
   refine WP.ite (M := isa) _ (show isa.eval .e t3 = _ by rw [show isa.eval .e t3 = t3.zf from rfl, hz3, hz2', hz2])

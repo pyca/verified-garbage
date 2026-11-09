@@ -298,8 +298,8 @@ theorem main_done {t : State} (B : Before Gs.len s t) (sy : t.syms = s.syms) (h0
     fun k hk r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact (P.ktg.sub_right (tab_sub (n := 5) hk)).symm
-      · exact (P.stg.sub_right (tab_sub (n := 5) hk)).symm
+      · exact (P.ktg.sub_right (tab_sub (n := 11) (by omega))).symm
+      · exact (P.stg.sub_right (tab_sub (n := 11) (by omega))).symm
   have T' : MdTabS H cn cc dn dc f hArg Sp (reE s t₂.mem) (stackArg s 6) := T.transfer rfl rfl rfl hSC c₂.mem
     (hA 6 (by decide)) fun k hk r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

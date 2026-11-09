@@ -11,7 +11,7 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.VfSat
 What the registrations check of the hash functions whose tables a function
 takes (`OK`), and the instances' proofs against the contracts the
 registrations state, with the hash function any of the tables of `MdHash`
-and MGF1's any of the tables of `Hash`: signing (`sign_ok`) and
+and MGF1's any of the tables of `MdHash`: signing (`sign_ok`) and
 verification (`verify_ok`).
 -/
 

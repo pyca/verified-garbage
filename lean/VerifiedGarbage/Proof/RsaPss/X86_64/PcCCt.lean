@@ -409,10 +409,10 @@ theorem vtabWords_call {s t : State} (hp : Pre tsH tsG s) (hM : Frame (vwrR s) s
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (below_call _ (by decide) (by decide))
   have fSE : Frame (vwrR s) s.mem t.callEntry.mem := hM.trans (fE.sub fun r hr => by
     rw [List.mem_singleton.mp hr]; exact ⟨_, List.mem_cons_self .., vret8_sub s⟩)
-  simp only [tabWords, vtab_read hp fSE (.inl rfl) (by decide : 0 + 8 ≤ 40),
-    vtab_read hp fSE (.inl rfl) (by decide : 24 + 8 ≤ 40), vtab_read hp fSE (.inl rfl) (by decide : 32 + 8 ≤ 40),
-    vtab_read hp fSE (.inr rfl) (by decide : 0 + 8 ≤ 40), vtab_read hp fSE (.inr rfl) (by decide : 8 + 8 ≤ 40),
-    vtab_read hp fSE (.inr rfl) (by decide : 16 + 8 ≤ 40), vtab_read hp fSE (.inr rfl) (by decide : 32 + 8 ≤ 40)]
+  simp only [tabWords, vtab_read hp fSE (.inl rfl) (by decide : 0 + 8 ≤ 56),
+    vtab_read hp fSE (.inl rfl) (by decide : 24 + 8 ≤ 56), vtab_read hp fSE (.inl rfl) (by decide : 32 + 8 ≤ 56),
+    vtab_read hp fSE (.inr rfl) (by decide : 0 + 8 ≤ 56), vtab_read hp fSE (.inr rfl) (by decide : 8 + 8 ≤ 56),
+    vtab_read hp fSE (.inr rfl) (by decide : 16 + 8 ≤ 56), vtab_read hp fSE (.inr rfl) (by decide : 48 + 8 ≤ 56)]
 
 variable {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
   (hsel : ∀ a, Pre tsH tsG a → ∃ T Hs Gs, KGood (tsH := tsH) (tsG := tsG) f g a T Hs Gs)

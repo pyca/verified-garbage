@@ -33,7 +33,7 @@ variable {L : Lay} {scr : BitVec 32}
 address in its slot, and what the table holds in every run) and `X`, which
 an update of `esi` keeps: as the call of `n`, at `a` in every run. -/
 theorem tcallG_vp (hg : Geo L scr) {g : OHash} {f : Fns} {p ai au af : BitVec 32}
-    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr p o) 4) {Inv : State → Mem → Prop}
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr p o) 4) {Inv : State → Mem → Prop}
     (hS : ∀ σ m, Inv σ m → m.readW (L.fr sTab) 32 = p) (hT : ∀ σ m, Inv σ m → TabFacts g.H f p ai au af σ)
     {X : State → State → Prop} (hX : ∀ σ s t v, X σ s → Upd s t .esi v → X σ t) {k : Nat}
     (hk3 : k < 3) {ts : List (String × Prog isa)} {rs : List Reg} {n : String} {cn : Prog isa}
@@ -45,7 +45,7 @@ theorem tcallG_vp (hg : Geo L scr) {g : OHash} {f : Fns} {p ai au af : BitVec 32
     (h : VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms)
       (.frame (.push rs) (.call n cn) (.pop .eax rs.length)) G) :
     VP (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms) (tcall k ts rs) G := by
-  have hk : 4 * k + 4 ≤ 20 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega
   obtain ⟨tR, tRo, tC⟩ := tbl
   let F : State → State → Prop := fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
   have keepF : ∀ σ s t v, F σ s → Upd s t .esi v → F σ t := fun σ s t v ⟨⟨hc, hm, hx⟩, sy⟩ u =>
@@ -82,7 +82,7 @@ theorem tcallG_vp (hg : Geo L scr) {g : OHash} {f : Fns} {p ai au af : BitVec 32
 
 /-- The label's hash, with the hash function `h` of the table at `p`. -/
 theorem labelT_vp (hg : Geo L scr) (h : OHash) {f : Fns} {p ai au af : BitVec 32}
-    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr p o) 4)
+    (tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr p o) 4)
     (fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []) {j o ll : Nat} {lab : BitVec 32} (hj : j + 1 < L.argv.length)
     (ht : TaintOk [.esp, .ebp] (.block (updLabArgs j))) (ht' : TaintOk [.esp, .ebp] (.block (finLabArgs j o)))
     (hlab : L.argv.getD j 0 = lab) (hll : L.argv.getD (j + 1) 0 = BitVec.ofNat 32 ll)

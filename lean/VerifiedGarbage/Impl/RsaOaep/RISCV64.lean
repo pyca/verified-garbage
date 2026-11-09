@@ -11,8 +11,8 @@ public import VerifiedGarbage.Impl.ICall
 n_len = a3, e = a4, e_len = a5, label = a6, label_len = a7, msg, msg_len,
 seed, seed_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
 ten on the stack, with the label's hash function that of the table `hash`
-and MGF1 over that of the table `mgf1`, both of the interface `Hash`
-(`Spec/HashTable.lean`), which it calls, with
+and MGF1 over that of the table `mgf1`, both of the interface `MdHash`
+(`Spec/MdHashTable.lean`), which it calls, with
 `vg_rsa_public_precomputed_checked`. The steps are those of PPC64LE
 (`Impl/RsaOaep/PPC64LE.lean`): the digest length of `hash` (its word 4)
 selects the code for that length (`byLen`, among `lens`), which is all that
@@ -148,7 +148,7 @@ at compile time (`mgfXor`) or that of the table that is our stack argument
 `j` (`mgfXorT`: the table's functions 0, 1 and 2 are `init`, `update` and
 `finalize`, which it calls indirectly, `tcall`: their address, the table's
 word, into `t1`, then `jalr ra, 0(t1)`, of whichever of the functions `Fns`
-lists is at that address; `hLen` is the table's word 4). For each counter `c`
+lists is at that address; `hLen` is the table's word 6). For each counter `c`
 (`s10`) from 0, while `done = c hLen` (`s11`) is below `dstLen`: the state
 is set by `init`, `update` absorbs `src` and `I2OSP(c, 4)` (written
 big-endian to `scratch + oCtr`), `finalize` writes the digest to
@@ -183,10 +183,10 @@ section Table
 variable (f : Fns) (j : Nat)
 
 /-- The digest in `a4`, `dst + done` in `a5`, and in `a6`
-`min(hLen, dstLen - done)`: `hLen` (the table's word 4) `+ ((rem - hLen) ∧
+`min(hLen, dstLen - done)`: `hLen` (the table's word 6) `+ ((rem - hLen) ∧
 -(rem < hLen))` for `rem = dstLen - done`. -/
 def xorHeadT : List Instr :=
-  tword .a6 j 4 ++ [.addi .a4 .s0 oDig, .add .a5 .s8 .s11, .sub .t1 .s9 .s11, .sub .t2 .t1 .a6,
+  tword .a6 j 6 ++ [.addi .a4 .s0 oDig, .add .a5 .s8 .s11, .sub .t1 .s9 .s11, .sub .t2 .t1 .a6,
     .shift .srl .d .t3 .t2 63, .li .t4 0, .sub .t3 .t4 .t3, .logic .and .t2 .t2 .t3, .add .a6 .a6 .t2]
 
 /-- A byte of the digest XORed into `dst`. -/
@@ -201,7 +201,7 @@ def xorOutT : Prog isa := .seq (.block (xorHeadT j)) (countLoop .a6 xorBody)
 /-- The next counter and `done`, and in `t1` 1 while `done < dstLen`, 0
 after. -/
 def nextCtrT : List Instr :=
-  tword .t1 j 4 ++ [.addi .s10 .s10 1, .add .s11 .s11 .t1, .sub .t1 .s11 .s9, .shift .srl .d .t1 .t1 63]
+  tword .t1 j 6 ++ [.addi .s10 .s10 1, .add .s11 .s11 .t1, .sub .t1 .s11 .s9, .shift .srl .d .t1 .t1 63]
 
 /-- One block: the digest of `src ‖ I2OSP(c, 4)`, XORed into `dst`, with
 the hash function of the table that is our stack argument `j`. -/
@@ -226,8 +226,8 @@ def hashLabelT (ua fa : List Instr) : Prog isa :=
 /-! ## The hash function's digest length -/
 
 /-- The digest length of the table that is our stack argument `j` (its word
-4), to `a0`. -/
-def lenLoad : List Instr := tword .a0 j 4
+6), to `a0`. -/
+def lenLoad : List Instr := tword .a0 j 6
 
 end Table
 

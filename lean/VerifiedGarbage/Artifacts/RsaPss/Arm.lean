@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
@@ -19,14 +19,14 @@ open VG.Proof.RsaPss.Arm (OK sign_ok verify_ok)
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars then [
-      Spec.RsaPss.signTableApi.artifact Arm.target {
+      Spec.RsaPss.signMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]
         code := Proof.RsaPss.Arm.Sg.signCode Proof.MdHashTable.Arm.vars Proof.HashTable.Arm.vars v
         stack := 3624
         verified := sign_ok h v },
-      Spec.RsaPss.verifyPrecomputedTableApi.artifact Arm.target {
+      Spec.RsaPss.verifyPrecomputedMdTableApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", Proof.MdHashTable.Arm.tables Proof.MdHashTable.Arm.vars),
           ("mgf1", Proof.HashTable.Arm.tables Proof.HashTable.Arm.vars)]

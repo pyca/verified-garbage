@@ -62,7 +62,7 @@ vg_rsa_oaep_decrypt:
 	add x9, sp, #0
 	str x16, [x9, #256]
 	ldr x16, [sp, #256]
-	ldr x16, [x16, #32]
+	ldr x16, [x16, #48]
 	sub x17, x16, #16
 	cbz x17, 20f
 	sub x17, x16, #20
@@ -121,7 +121,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -219,7 +219,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -519,7 +519,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -617,7 +617,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -918,7 +918,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -1016,7 +1016,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -1317,7 +1317,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -1415,7 +1415,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -1716,7 +1716,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -1814,7 +1814,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -2115,7 +2115,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -2213,7 +2213,7 @@ vg_rsa_oaep_decrypt:
 	ldr x10, [sp, #416]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -2494,7 +2494,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add x9, sp, #0
 	str x16, [x9, #256]
 	ldr x16, [sp, #256]
-	ldr x16, [x16, #32]
+	ldr x16, [x16, #48]
 	sub x17, x16, #16
 	cbz x17, 20f
 	sub x17, x16, #20
@@ -2613,7 +2613,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -2711,7 +2711,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -2948,7 +2948,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3046,7 +3046,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3284,7 +3284,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3382,7 +3382,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3620,7 +3620,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3718,7 +3718,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -3956,7 +3956,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -4054,7 +4054,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -4292,7 +4292,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0
@@ -4390,7 +4390,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	ldr x10, [sp, #360]
 	add x9, sp, #0
 	str x10, [x9, #256]
-	ldr x10, [x10, #32]
+	ldr x10, [x10, #48]
 	add x9, sp, #0
 	str x10, [x9, #264]
 	movz x10, #0, lsl #0

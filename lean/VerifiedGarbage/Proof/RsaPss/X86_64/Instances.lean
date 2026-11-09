@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallFrame
 
 For variants `vs` of `MdHash` that pass the checks the registrations make
 (`OK`), what signing and verification need of the tables a state holds: a
-table of `MdHash` of a variant `w` of `vs` and a table of `Hash` of a
+table of `MdHash` of a variant `w` of `vs` and a table of `MdHash` of a
 variant `w'` give the functions `tabsOf vs w w'` and the hash functions
 `w.mgf.G` and `w'.mgf.G`, which every state whose public data agree also
 holds, and with which `encode` and `checkEncoding` for the index of `w`'s hash
@@ -151,7 +151,7 @@ theorem chk_safe : ∀ i ∈ idxs, SpSafe (checkEncoding (MdHashTable.X86_64.fns
 /-! ## The tables a state holds -/
 
 /-- The functions of the tables of `vs` at distinct addresses: those of the
-tables of `MdHash`, and of `Hash`. -/
+tables of `MdHash`, and of `MdHash`. -/
 theorem distinct_split {sy : String → Addr}
     (h : (tabFns (MdHashTable.X86_64.tables vs) ++ tabFns (HashTable.X86_64.tables vs)).Pairwise
       fun f g => f ≠ g → sy f ≠ sy g) :

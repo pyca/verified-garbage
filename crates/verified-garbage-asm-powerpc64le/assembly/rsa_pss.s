@@ -184,7 +184,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -206,7 +206,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 223b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -714,7 +714,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -736,7 +736,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 255b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1245,7 +1245,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1267,7 +1267,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 287b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -1776,7 +1776,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -1798,7 +1798,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2119b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2307,7 +2307,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2329,7 +2329,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2151b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -2835,7 +2835,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -2857,7 +2857,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2183b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3363,7 +3363,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3385,7 +3385,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2215b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -3891,7 +3891,7 @@ vg_rsa_pss_verify_precomputed:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 408(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -3913,7 +3913,7 @@ vg_rsa_pss_verify_precomputed:
 	bne %cr0, 2247b
 	addi %r12, %r1, 0
 	ld %r12, 408(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -4514,7 +4514,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -4536,7 +4536,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 231b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -4882,7 +4882,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -4904,7 +4904,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 252b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -5251,7 +5251,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -5273,7 +5273,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 273b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -5620,7 +5620,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -5642,7 +5642,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 294b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -5989,7 +5989,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6011,7 +6011,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2115b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -6358,7 +6358,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6380,7 +6380,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2136b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -6727,7 +6727,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -6749,7 +6749,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2157b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29
@@ -7096,7 +7096,7 @@ vg_rsa_pss_sign:
 	bctrl
 	addi %r9, %r1, 0
 	ld %r9, 472(%r9)
-	ld %r9, 32(%r9)
+	ld %r9, 48(%r9)
 	addi %r11, %r14, 1280
 	add %r12, %r26, %r29
 	subf %r8, %r29, %r27
@@ -7118,7 +7118,7 @@ vg_rsa_pss_sign:
 	bne %cr0, 2178b
 	addi %r12, %r1, 0
 	ld %r12, 472(%r12)
-	ld %r12, 32(%r12)
+	ld %r12, 48(%r12)
 	addi %r28, %r28, 1
 	add %r29, %r29, %r12
 	subf %r12, %r27, %r29

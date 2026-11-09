@@ -25,7 +25,7 @@ namespace VG.Proof.RsaPss.AArch64.Sgn
 open VG VG.AArch64 VG.Impl.RsaPss.AArch64
 open VG.Proof.RsaPss.AArch64 (off off_add ebV)
 
-/-- The outcome `signTableContract.post` asks for, with the hash function `Hs`
+/-- The outcome `signMdTableContract.post` asks for, with the hash function `Hs`
 and MGF1's `Gs`. -/
 def signOut (Hs Gs : Spec.Mgf1.Hash) (s : State) : Spec.Rsa.Outcome :=
   Spec.RsaPss.sign Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat)

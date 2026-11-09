@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.RsaPss.AArch64.Shapes
 
 For variants `vs` of `MdHash` that pass the checks the registrations make
 (`OK`), what signing and verification need of the tables a state holds: a
-table of `MdHash` of a variant `w` of `vs` and a table of `Hash` of a
+table of `MdHash` of a variant `w` of `vs` and a table of `MdHash` of a
 variant `w'` give the functions `tabsOf vs w w'` and the hash functions
 `w.mgf.G` and `w'.mgf.G`, with which `encode` and `checkEncoding` for the
 index of `w`'s hash function (whose code is that of `w`, `encode_shape`) are
@@ -131,7 +131,7 @@ end
 /-! ## The tables a state holds -/
 
 /-- The functions of the tables of `vs` at distinct addresses: those of the
-tables of `MdHash`, and of `Hash`. -/
+tables of `MdHash`, and of `MdHash`. -/
 theorem distinct_split {sy : String → Addr}
     (h : (((MdHashTable.AArch64.tables vs).map (·.fns)).flatten ++
       ((HashTable.AArch64.tables vs).map (·.fns)).flatten).Pairwise fun f g => f ≠ g → sy f ≠ sy g) :

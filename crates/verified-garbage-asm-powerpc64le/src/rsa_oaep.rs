@@ -5,7 +5,7 @@
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
-/// Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
+/// Contract: `VG.Spec.RsaOaep.decryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether its decoding is valid or the message's length.
 ///
 /// # Safety
 ///
@@ -21,8 +21,8 @@
 /// * `label` must be valid for reads of `label_len` bytes.
 /// * `ct` must be valid for reads of `ct_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` and `ct_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -34,14 +34,14 @@
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out`, `msg_len` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the 3776 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_decrypt(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
         r#".base64 "Af8h+AAAgTlwAMz5eADs+YAADPqIACz6kABM+pgAbPqgAIz6qACs+rAAzPq4AOz6wAAM+8gALPvQAEz72ABs++AAjPvoAKz7pgIIfPAADPjIAczpeDvvfHgbcHx4K7F8qAFM6rABbOpB/yH4AACBOWAATPkgAgzoaAAM+CgCDOhwAAz4MAIM6HgADPg4AgzogAAM+EACDOiIAAz4SAIM6JAADPhQAgzomAAM+FgCDOigAAz4YAIM6KgADPgAIAA4FAIOfLAADPiQAmzpAPxrObgAbPkAAG44eHvkfXgzxXx4e+Z9eEMHfXhLKH14AizpeHvqfQ=="
 bl {vg_rsa_private_checked}
-.base64 "wAAhOD4AdFQAAGE42AFj6CAAY+jw/4M4AAAkKA=="
+.base64 "wAAhOD4AdFQAAGE42AFj6DAAY+jw/4M4AAAkKA=="
 beq %cr0, 20f
 .base64 "7P+DOAAAJCg="
 beq %cr0, 22f
@@ -55,19 +55,19 @@ beq %cr0, 28f
 bne %cr0, 210f
 .base64 "QQAOO7//LzsBAE47QABgOwAAgDsAAKA7"
 212:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 213:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 213b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 212b
 .base64 "AQAOO0AAIDtBAE47v/9vOwAAgDsAAKA7"
 214:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 215:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 215b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 214b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATkEAjjgABa44AAAOi0AAwDg="
 216:
@@ -112,19 +112,19 @@ b 29f
 bne %cr0, 224f
 .base64 "MQAOO8//LzsBAE47MABgOwAAgDsAAKA7"
 226:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 227:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 227b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 226b
 .base64 "AQAOOzAAIDsxAE47z/9vOwAAgDsAAKA7"
 228:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 229:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 229b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 228b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATjEAjjgABa44AAAOizAAwDg="
 230:
@@ -170,19 +170,19 @@ b 27f
 bne %cr0, 238f
 .base64 "IQAOO9//LzsBAE47IABgOwAAgDsAAKA7"
 240:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 241:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 241b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 240b
 .base64 "AQAOOyAAIDshAE473/9vOwAAgDsAAKA7"
 242:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 243:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 243b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 242b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATiEAjjgABa44AAAOiyAAwDg="
 244:
@@ -228,19 +228,19 @@ b 25f
 bne %cr0, 252f
 .base64 "HQAOO+P/LzsBAE47HABgOwAAgDsAAKA7"
 254:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 255:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 255b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 254b
 .base64 "AQAOOxwAIDsdAE474/9vOwAAgDsAAKA7"
 256:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 257:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 257b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 256b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSATh0AjjgABa44AAAOixwAwDg="
 258:
@@ -286,19 +286,19 @@ b 23f
 bne %cr0, 266f
 .base64 "FQAOO+v/LzsBAE47FABgOwAAgDsAAKA7"
 268:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 269:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 269b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 268b
 .base64 "AQAOOxQAIDsVAE476/9vOwAAgDsAAKA7"
 270:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 271:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 271b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 270b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSAThUAjjgABa44AAAOixQAwDg="
 272:
@@ -344,19 +344,19 @@ b 21f
 bne %cr0, 280f
 .base64 "EQAOO+//LzsBAE47EABgOwAAgDsAAKA7"
 282:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 283:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 283b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 282b
 .base64 "AQAOOxAAIDsRAE477/9vOwAAgDsAAKA7"
 284:
-.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTngAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE54AGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE54AGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE54AGM6RAAjOmmA4l9IQSATgAAITngASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 285:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 285b
-.base64 "AACBOeABjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOeABjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 284b
 .base64 "AARuOAAAgTnYAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4k0V+eJtmfkgF7jgAAIE52AGM6QgAjOmmA4l9IQSATgAEbjh4m2R+AAWuOEgFzjgAAIE52AGM6RAAjOmmA4l9IQSAThEAjjgABa44AAAOixAAwDg="
 286:
@@ -403,7 +403,7 @@ bne %cr0, 293b
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
+/// Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the message, the label or the seed.
 ///
 /// # Safety
 ///
@@ -415,8 +415,8 @@ bne %cr0, 293b
 /// * `seed` must be valid for reads of `seed_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
-/// * `hash` must be valid for reads of `5 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -429,12 +429,12 @@ bne %cr0, 293b
 /// * `mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables of this crate, `fn_tables`, say which they name).
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `label`, `msg`, `seed`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 304 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
-/// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
+pub(crate) unsafe extern "C" fn vg_rsa_oaep_encrypt_precomputed(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "Af8h+AAAgTlwAMz5eADs+YAADPqIACz6kABM+pgAbPqgAIz6qACs+rAAzPq4AOz6wAAM+8gALPvQAEz72ABs++AAjPvoAKz7pgIIfPAADPiAAczpeDPPfHgbcHx4O/F8eEMSfXhLM314U1R9kAGs6pgBzOqIAezqYAEs6WgBTOlwAWzpAABhOKABY+ggAGPo8P+DOAAAJCg="
+        r#".base64 "Af8h+AAAgTlwAMz5eADs+YAADPqIACz6kABM+pgAbPqgAIz6qACs+rAAzPq4AOz6wAAM+8gALPvQAEz72ABs++AAjPvoAKz7pgIIfPAADPiAAczpeDPPfHgbcHx4O/F8eEMSfXhLM314U1R9kAGs6pgBzOqIAezqYAEs6WgBTOlwAWzpAABhOKABY+gwAGPo8P+DOAAAJCg="
 beq %cr0, 20f
 .base64 "7P+DOAAAJCg="
 beq %cr0, 22f
@@ -470,19 +470,19 @@ bne %cr0, 218b
 bne %cr0, 219b
 .base64 "AQAOO0AAIDtBAE47v/9vOwAAgDsAAKA7"
 220:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 221:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 221b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 220b
 .base64 "QQAOO7//LzsBAE47QABgOwAAgDsAAKA7"
 222:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 223:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 223b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 222b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}
@@ -530,19 +530,19 @@ bne %cr0, 234b
 bne %cr0, 235b
 .base64 "AQAOOzAAIDsxAE47z/9vOwAAgDsAAKA7"
 236:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 237:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 237b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 236b
 .base64 "MQAOO8//LzsBAE47MABgOwAAgDsAAKA7"
 238:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 239:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 239b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 238b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}
@@ -591,19 +591,19 @@ bne %cr0, 250b
 bne %cr0, 251b
 .base64 "AQAOOyAAIDshAE473/9vOwAAgDsAAKA7"
 252:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 253:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 253b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 252b
 .base64 "IQAOO9//LzsBAE47IABgOwAAgDsAAKA7"
 254:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 255:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 255b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 254b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}
@@ -652,19 +652,19 @@ bne %cr0, 266b
 bne %cr0, 267b
 .base64 "AQAOOxwAIDsdAE474/9vOwAAgDsAAKA7"
 268:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 269:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 269b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 268b
 .base64 "HQAOO+P/LzsBAE47HABgOwAAgDsAAKA7"
 270:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 271:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 271b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 270b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}
@@ -713,19 +713,19 @@ bne %cr0, 282b
 bne %cr0, 283b
 .base64 "AQAOOxQAIDsVAE476/9vOwAAgDsAAKA7"
 284:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 285:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 285b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 284b
 .base64 "FQAOO+v/LzsBAE47FABgOwAAgDsAAKA7"
 286:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 287:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 287b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 286b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}
@@ -774,19 +774,19 @@ bne %cr0, 298b
 bne %cr0, 299b
 .base64 "AQAOOxAAIDsRAE477/9vOwAAgDsAAKA7"
 2100:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 2101:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 2101b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 2100b
 .base64 "EQAOO+//LzsBAE47EABgOwAAgDsAAKA7"
 2102:
-.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpIAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
+.base64 "AARuOAAAgTmoAYzpAACM6aYDiX0hBIBOAARuOAAAgDh4wwV/eMsmf0gF7jgAAIE5qAGM6QgAjOmmA4l9IQSATkAFrjh444h/AwAFmQLCCHkCAAWZAsIIeQEABZkCwgh5AAAFmQAEbjh4yyR/BADAOEgF7jgAAIE5qAGM6QgAjOmmA4l9IQSATgAEbjgEAJk4AAWuOEgFzjgAAIE5qAGM6RAAjOmmA4l9IQSATgAAITmoASnpMAAp6QAFbjkU6pp9UNgdfVBASX3gD0Z5AADgOFA4xnw4MEp9FFIpfQ=="
 2103:
 .base64 "AABLiQAADIl4Ugh9AAAMmQEAazkBAIw5//8pOQAAKSg="
 bne %cr0, 2103b
-.base64 "AACBOagBjOkgAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
+.base64 "AACBOagBjOkwAIzpAQCcOxRivX9Q6Jt94A+MeQAALCg="
 bne %cr0, 2102b
 .base64 "AACBOQAggDgUIo58YACM+AD8tzhoAKz4eIMDfnh75H14q6V+eLPGfniLJ354k0h+AAAuOXh76n0="
 bl {vg_rsa_public_precomputed_checked}

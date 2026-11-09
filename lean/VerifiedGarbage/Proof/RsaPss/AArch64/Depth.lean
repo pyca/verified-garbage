@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 `encode` and `checkEncoding` push their frame (21 units of 16 bytes); the
 functions they call through the table of `MdHash` push at most one frame
 (`FnsD`), and MGF1 its own frame (17 units) around the calls of the
-functions of the table of `Hash`, which push at most one: their depth is at
+functions of the table of `MdHash`, which push at most one: their depth is at
 most 39 (`encode_depth`, `chk_depth`).
 -/
 

@@ -39,8 +39,8 @@ open VG.Proof.HashTable.AArch64 (tables tableOf fnsOf Coh tabOK_of held_tableOf 
 
 theorem pub_sp {ts : List FnTable} {P : Nat} {s₁ s₂ : State}
     (h : (decSpec ts P).pub s₁ s₂) : s₁.sp = s₂.sp := by
-  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h.1
 

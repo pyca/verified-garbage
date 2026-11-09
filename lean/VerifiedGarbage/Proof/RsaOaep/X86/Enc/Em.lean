@@ -200,12 +200,12 @@ theorem emv_keep {P : EP} (hg : Geo (P.lay h.H.D) P.scr) (hK : P.K ≤ 1024) {m 
 
 /-- The label's hash function's table, the argument 16, in a buffer only read. -/
 theorem tblL_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
-    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr P.tabL o) 4 := by
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr P.tabL o) 4 := by
   have hf := hi.ok.fits P.TABL (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tabL.isLt; omega)] at hf
   refine ⟨P.TABL, by simp, fun o ho => ?_⟩
-  show (⟨P.tabL.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tabL o) 4
+  show (⟨P.tabL.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tabL o) 4
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 

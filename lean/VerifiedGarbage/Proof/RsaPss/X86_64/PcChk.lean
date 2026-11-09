@@ -195,17 +195,18 @@ theorem chkArgs_ok {s u : State} (hp : Pre tsH tsG s) (L : Lay u (fb s) (stackAr
 /-- A table's word, read from memory that changed only in the writable
 regions and below the frame. -/
 theorem vtab_read {s : State} (hp : Pre tsH tsG s) {m : Mem} (hM : Frame (vwrR s) s.mem m) {i o : Nat}
-    (hi : i = 8 ∨ i = 9) (ho : o + 8 ≤ 40) :
+    (hi : i = 8 ∨ i = 9) (ho : o + 8 ≤ 56) :
     m.readW (off (stackArg s i) o) 64 = s.mem.readW (off (stackArg s i) o) 64 := by
-  have sH : Region.Sub ⟨stackArg s 8, 40⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
-  have hw : (stackArg s i).toNat + 40 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega
-  refine hM.readW (r := ⟨stackArg s i, 40⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
+  have sH : Region.Sub ⟨stackArg s 8, 56⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
+  have sG : Region.Sub ⟨stackArg s 9, 56⟩ ⟨stackArg s 9, 88⟩ := Region.sub_prefix (by decide)
+  have hw : (stackArg s i).toNat + 56 ≤ 2 ^ 64 := by rcases hi with rfl | rfl <;> [have := hp.wTH; have := hp.wTG] <;> omega
+  refine hM.readW (r := ⟨stackArg s i, 56⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r hr => ?_) (by decide)
   simp only [vwrR, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hi with rfl | rfl <;> rcases hr with rfl | rfl
   · exact (hp.dKtH.sub_right sH).symm
   · exact (hp.dstH.sub_right sH).symm
-  · exact hp.dKtG.symm
-  · exact hp.dstG.symm
+  · exact (hp.dKtG.sub_right sG).symm
+  · exact (hp.dstG.sub_right sG).symm
 
 /-- The index of the table `hash`'s hash function, at word 5 of the table. -/
 theorem vidx_read {s : State} (hp : Pre tsH tsG s) {m : Mem} (hM : Frame (vwrR s) s.mem m) :
@@ -231,7 +232,7 @@ variable (T : Tabs) in
 /-- What `checkEncoding` reads: the digest, the encoding, the tables and its
 stack arguments. -/
 def kRd (s : State) (lo el : Nat) : List Region :=
-  [⟨s.gpr .r8, T.H.D⟩, ⟨off (stackArg s 4) lo, el⟩, ⟨stackArg s 8, 40⟩, ⟨stackArg s 9, 40⟩, ⟨fb s, 32⟩]
+  [⟨s.gpr .r8, T.H.D⟩, ⟨off (stackArg s 4) lo, el⟩, ⟨stackArg s 8, 56⟩, ⟨stackArg s 9, 56⟩, ⟨fb s, 32⟩]
 
 /-- What it writes: its working space, after the output. -/
 def kWr (s : State) : List Region :=
@@ -317,7 +318,8 @@ theorem ck_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : Pre tsH t
   have sStk : Region.Sub ⟨fb s - 8 - BitVec.ofNat 64 chkStack, chkStack⟩ (vstkR s) := by
     simp only [vstkR, fb, show (8 : Addr) = BitVec.ofNat 64 8 from rfl, sub_sub']
     exact Offset.sub_below _ (by decide) (by decide)
-  have sH : Region.Sub ⟨stackArg s 8, 40⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
+  have sH : Region.Sub ⟨stackArg s 8, 56⟩ ⟨stackArg s 8, 88⟩ := Region.sub_prefix (by decide)
+  have sG : Region.Sub ⟨stackArg s 9, 56⟩ ⟨stackArg s 9, 88⟩ := Region.sub_prefix (by decide)
   have dRA : (⟨fb s - 8, 8⟩ : Region).Disjoint ⟨fb s, 32⟩ :=
     (Offset.base_disjoint_below (fb s) (n := 8) (k := 32) (by omega)).symm
   have dKA : (⟨fb s - 8 - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨fb s, 32⟩ := by
@@ -334,9 +336,9 @@ theorem ck_pre {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {s t : State} (hp : Pre tsH t
     hp.dKdg.sub_left sStk, (hp.dKs.sub_left sStk).sub_right sI, (hp.dKs.sub_left sStk).sub_right sR, dKA,
     hp.wDg, by rw [toNat_off (by omega)]; omega, by rw [toNat_off (by omega), hsc]; unfold kw at *; omega,
     heb1, heb2, hel, by rw [hsc]; unfold Proof.RsaPss.encodingScratchWords kw at *; omega,
-    (hp.dstH.sub_left sR).sub_right sH, hp.dstG.sub_left sR, (hp.dKtH.sub_left sRet).sub_right sH,
-    hp.dKtG.sub_left sRet, (hp.dKtH.sub_left sStk).sub_right sH, hp.dKtG.sub_left sStk,
-    by have := hp.wTH; omega, hp.wTG, hTab⟩
+    (hp.dstH.sub_left sR).sub_right sH, (hp.dstG.sub_left sR).sub_right sG, (hp.dKtH.sub_left sRet).sub_right sH,
+    (hp.dKtG.sub_left sRet).sub_right sG, (hp.dKtH.sub_left sStk).sub_right sH, (hp.dKtG.sub_left sStk).sub_right sG,
+    by have := hp.wTH; omega, by have := hp.wTG; omega, hTab⟩
 
 theorem ck_covers {T : Tabs} {s t : State} (hp : Pre tsH tsG s) (hrd : t.rd = s.rd) (hwr : t.wr = frR s :: s.wr)
     {lo el : Nat} (hlo : lo + el ≤ (s.gpr .rsi).toNat) (hD : T.H.D = (s.gpr .r9).toNat) :
@@ -359,7 +361,7 @@ theorem ck_covers {T : Tabs} {s t : State} (hp : Pre tsH tsG s) (hrd : t.rd = s.
   · exact ⟨⟨s.gpr .r8, (s.gpr .r9).toNat⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
   · exact ⟨_, List.mem_append_right _ hscr, lo, rfl, by dsimp only; omega⟩
   · exact ⟨⟨stackArg s 8, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
-  · exact ⟨⟨stackArg s 9, 40⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
+  · exact ⟨⟨stackArg s 9, 88⟩, hin _ (by rw [hp.hrdE]; simp), 0, z _, by dsimp only; omega⟩
   · exact ⟨_, List.mem_append_right _ hfr, 0, z _, by dsimp only; decide⟩
 
 theorem ck_call {T : Tabs} {Hs Gs : Spec.Mgf1.Hash} {chkN : String} {chkC : Prog isa}

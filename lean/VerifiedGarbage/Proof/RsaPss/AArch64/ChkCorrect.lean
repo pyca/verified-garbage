@@ -191,7 +191,7 @@ theorem mgfScr_sub {D : Nat} {tsH tsG : List FnTable} {s : State} (hp : PreC D t
     Region.Sub ⟨off (s.gpr .x6) mgfOff, 8192⟩ (sR s) :=
   Offset.sub_base _ (by have := hp.hs; unfold mgfOff Proof.RsaPss.encScratch at *; omega)
 
-/-- Where MGF1 works, and the table of `Hash`, from the table at the entry. -/
+/-- Where MGF1 works, and the table of `MdHash`, from the table at the entry. -/
 theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : MdFns}
     {G : Impl.Pbkdf2.Md.AArch64.Stream} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {s w : State}
     (hp : PreC D tsH tsG s) (ht : TabsAt H dn f G g (stackArg s 0) (stackArg s 1) s) (hw : AtCT s w) :
@@ -202,12 +202,12 @@ theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : 
   have hws := hp.ws
   have hhs := hp.hs
   have hS := mgfScr_sub hp
-  have kG : ∀ {R : Region}, R.Sub (kR 288 s) → Region.Disjoint ⟨stackArg s 1, 40⟩ R := fun hR =>
+  have kG : ∀ {R : Region}, R.Sub (kR 288 s) → Region.Disjoint ⟨stackArg s 1, 88⟩ R := fun hR =>
     (hp.ktG.sub_left hR).symm
-  have sG : ∀ {R : Region}, R.Sub (sR s) → Region.Disjoint ⟨stackArg s 1, 40⟩ R := fun hR =>
+  have sG : ∀ {R : Region}, R.Sub (sR s) → Region.Disjoint ⟨stackArg s 1, 88⟩ R := fun hR =>
     (hp.stG.sub_left hR).symm
   have hd : ∀ r ∈ mgfWr (fb s) (s.gpr .x6) ++ [⟨off (s.gpr .x6) mgfOff, 8192⟩, slotR (fb s) sPos],
-      Region.Disjoint ⟨stackArg s 1, 40⟩ r := by
+      Region.Disjoint ⟨stackArg s 1, 88⟩ r := by
     intro r hr
     simp only [mgfWr, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -218,20 +218,20 @@ theorem env_of {D : Nat} {tsH tsG : List FnTable} {H : Hash} {dn : String} {f : 
     · rw [mgfFrame_eq]; exact (hp.ktG.sub_left (below_sub 288 s)).symm
     · exact sG hS
     · exact kG (frame_sub 288 s (by decide))
-  have hd0 : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region), ⟨s.gpr .x6, oRsa⟩], Region.Disjoint ⟨stackArg s 1, 40⟩ r :=
+  have hd0 : ∀ r ∈ [(⟨fb s, frameBytes⟩ : Region), ⟨s.gpr .x6, oRsa⟩], Region.Disjoint ⟨stackArg s 1, 88⟩ r :=
     fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact kG (frame_sub0 288 s)
       · exact sG (rsa_sub hp)
-  have hin : ∀ d, d + 8 ≤ 40 → InRegions (w.rd ++ w.wr) (off (stackArg s 1) d) 8 := fun d hd' => by
+  have hin : ∀ d, d + 8 ≤ 88 → InRegions (w.rd ++ w.wr) (off (stackArg s 1) d) 8 := fun d hd' => by
     rw [hw.e.rd, hp.hrd]
-    exact ⟨tGR s, by simp, Offset.contains_base _ (k := 40) (by omega) (by omega)⟩
+    exact ⟨tGR s, by simp, Offset.contains_base _ (k := 88) (by omega) (by omega)⟩
   exact {
     slot := hw.wm
     ok := by rw [hw.sy]; exact ht.gok
     rd := fun j hj => hin (8 * j) (by omega)
-    rdD := hin 32 (by decide)
+    rdD := hin 48 (by decide)
     mem := fun m hm => by
       rw [hw.sy]
       exact ⟨TabMem.keep (TabMem.keep ht.gm hw.e.mem hd0) hm hd,

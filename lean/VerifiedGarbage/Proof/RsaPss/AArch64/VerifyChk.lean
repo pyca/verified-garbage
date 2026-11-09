@@ -335,11 +335,11 @@ structure CSel (f : MdFns) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (tsH tsG : 
   eG : T.tsG = tsG
   selH : ∃ TH ∈ tsH, (FnTable.words isa s TH).length = 11 ∧
     Abi.tableHeld 64 s.mem (stackArg s 6) (FnTable.words isa s TH)
-  selG : ∃ TG ∈ tsG, (FnTable.words isa s TG).length = 5 ∧
+  selG : ∃ TG ∈ tsG, (FnTable.words isa s TG).length = 11 ∧
     Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s TG)
   tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 6) (stackArg s 7) s
   hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 6) = some Hs
-  hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 7) = some Gs
+  hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 7) = some Gs
   hD : T.H.D = (s.gpr .x5).toNat
   hl : Hs.len = T.H.D
   ok : ∀ s', (Chk.chkK T Hs Gs).pre s' → ∃ t s'', Exec isa (checkEncoding f (ofIdx i) g) s' t s'' ∧
@@ -349,7 +349,7 @@ structure CSel (f : MdFns) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (tsH tsG : 
 /-- The regions a call of `checkEncoding` reads and writes. -/
 abbrev chkRdT (D : Nat) (t : State) : List Region :=
   [⟨t.gpr .x0, D⟩, ⟨t.gpr .x1, (t.gpr .x2).toNat⟩, Sig.tableRegion 64 (stackArg t 0) 11,
-    Sig.tableRegion 64 (stackArg t 1) 5, ⟨stackArgAddr t 0, 16⟩]
+    Sig.tableRegion 64 (stackArg t 1) 11, ⟨stackArgAddr t 0, 16⟩]
 abbrev chkWrT (t : State) : List Region := [⟨t.gpr .x6, (t.gpr .x7).toNat * 8⟩]
 
 /-- The call's arguments meet `checkEncoding`'s contract. -/
@@ -386,7 +386,7 @@ theorem chkPre_of {f : MdFns} {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {tsH tsG
     rcases hr with rfl | rfl
     · exact hp.ktH.symm
     · exact hp.stH.symm
-  have dG : ∀ r ∈ [kR K s, sR s], Region.Disjoint ⟨stackArg s 7, 40⟩ r := fun r hr => by
+  have dG : ∀ r ∈ [kR K s, sR s], Region.Disjoint ⟨stackArg s 7, 88⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact hp.ktG.symm
