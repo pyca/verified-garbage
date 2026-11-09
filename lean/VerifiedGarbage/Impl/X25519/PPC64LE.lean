@@ -244,8 +244,75 @@ def mulA24 (o a : Nat) : List Instr :=
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
 def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
-/-- `[o] = [a] · [b]`, with the product in `ACC`. -/
-abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
+/-! ### The multiplication in registers
+
+X25519's multiplication keeps its operands and its product in the
+nonvolatile registers `r14`–`r30`, which `x25519` saves once, around the
+ladder and the inversion (`saveNV`, `restoreNV`); Ed25519 uses `mulAt`. -/
+
+/-- Word `i` of the first operand, `r14`–`r17`. -/
+def opA (i : Nat) : Reg := if i = 0 then .r14 else if i = 1 then .r15 else if i = 2 then .r16 else .r17
+
+/-- Word `j` of the second operand, `r18`–`r21`. -/
+def opB (j : Nat) : Reg := if j = 0 then .r18 else if j = 1 then .r19 else if j = 2 then .r20 else .r21
+
+/-- Word `k` of the product, `r22`–`r30`: with the next two, column `k`'s
+accumulator. -/
+def pw (k : Nat) : Reg :=
+  [Reg.r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29].getD k .r30
+
+/-- The operands' words into `opA` and `opB`. -/
+def loadOps (a b : Nat) : List Instr :=
+  (List.range 4).map (fun i => .load .d (opA i) .r6 (a + 8 * i)) ++
+    (List.range 4).map fun j => .load .d (opB j) .r6 (b + 8 * j)
+
+/-- A term `a_i b_j` of column `k` added to `pw k, pw (k + 1), pw (k + 2)`. -/
+def termR (k : Nat) (p : Nat × Nat) : List Instr :=
+  [.mul .r7 (opA p.1) (opB p.2), .mulhu .r4 (opA p.1) (opB p.2), .addc (pw k) (pw k) .r7,
+    .adde (pw (k + 1)) (pw (k + 1)) .r4, .addze (pw (k + 2)) (pw (k + 2))]
+
+/-- Column `k`: its accumulator's top word cleared, then its terms. -/
+def colR (k : Nat) : List Instr := .li (pw (k + 2)) 0 :: (colPairs k).flatMap (termR k)
+
+/-- The words of `[a] · [b]` in `pw 0`, …, `pw 7`, by columns. -/
+def productR (a b : Nat) : List Instr :=
+  loadOps a b ++ [.li (pw 0) 0, .li (pw 1) 0] ++ (List.range 7).flatMap colR
+
+/-- `d = n + part of 38 src`: the low word of `38 src` (`mulld`), or with `hi`
+the high word (`mulhdu`), added with the carry in if `e` (38 in `r5`). -/
+def opR (d n src : Reg) (hi e : Bool) : List Instr :=
+  [if hi then .mulhu .r4 src .r5 else .mul .r4 src .r5, if e then .adde d n .r4 else .addc d n .r4]
+
+/-- Word `k` of `L + lo(38 H)` into `wreg k`, with the carry chain. -/
+def redLoR (k : Nat) : List Instr := opR (wreg k) (pw k) (pw (4 + k)) false (k != 0)
+
+/-- The high word of `38 H_k` added into word `k + 1` (into `r7`, the top
+word, for `k = 3`), with the carry chain. -/
+def redHiR (k : Nat) : List Instr :=
+  opR (if k = 3 then .r7 else wreg (k + 1)) (if k = 3 then .r7 else wreg (k + 1)) (pw (4 + k)) true (k != 0)
+
+/-- The product in `pw` reduced into `[o]`, as `reduce38` does. -/
+def reduceR (o : Nat) : List Instr :=
+  .li .r5 38 :: (List.range 4).flatMap redLoR ++ [.li .r7 0, .addze .r7 .r7] ++
+    (List.range 4).flatMap redHiR ++ foldTop ++ foldTop ++ stores4 o
+
+/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), in registers. -/
+def mulR (o a b : Nat) : List Instr := productR a b ++ reduceR o
+
+/-- `[o] = [a] · [b]`. -/
+abbrev mul (o a b : Nat) : Prog isa := .block (mulR o a b)
+
+/-- Where `x25519` saves `r14`–`r30`. -/
+def SAVE : Nat := 896
+
+/-- Nonvolatile register `k` of those `mulR` uses, `r14`–`r30`. -/
+def nvR (k : Nat) : Reg := if k < 4 then opA k else if k < 8 then opB (k - 4) else pw (k - 8)
+
+/-- `r14`–`r30` saved at `SAVE`. -/
+def saveNV : List Instr := (List.range 17).map fun k => .store .d (nvR k) .r6 (SAVE + 8 * k)
+
+/-- … and restored. -/
+def restoreNV : List Instr := (List.range 17).map fun k => .load .d (nvR k) .r6 (SAVE + 8 * k)
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
@@ -370,7 +437,7 @@ def bits : Prog isa :=
         .li .r7 1, .stb .r7 .r6 (BITS + 254)]))
 
 def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block freeze)
+  .seq (.block setup) <| .seq bits <| .seq (.block saveNV) <| .seq ladder <| .seq (.block lastSwap) <|
+    .seq invert <| .seq (mul X2 X2 R) (.block (restoreNV ++ freeze))
 
 end VG.Impl.X25519.PPC64LE
