@@ -74,20 +74,20 @@ abbrev finalContract (post : State → State → Prop) : Contract isa := modeCon
 
 /-- `finalContract`'s precondition gives the modes', for steps of a byte. -/
 theorem seqPre_of {post : State → State → Prop} {s : State} (h : (finalContract post).pre s) :
-    SeqPre Serial.core byteMode s := by
+    SeqPre (Serial.core .encrypt) byteMode s := by
   obtain ⟨hrd, hwr, -, -, -, dVD, dVS, dDS, -, fV, fD, fS⟩ := h
-  have eB : 4 * Serial.core.bw = 16 := rfl
-  have eS : scrRegion Serial.core (S s) = ⟨s.gpr .r7, 8 * (slots + 6)⟩ := rfl
-  have eV : ivR s Serial.core = ⟨s.gpr .r4, 16⟩ := rfl
+  have eB : 4 * (Serial.core .encrypt).bw = 16 := rfl
+  have eS : scrRegion (Serial.core .encrypt) (S s) = ⟨s.gpr .r7, 8 * (slots + 6)⟩ := rfl
+  have eV : ivR s (Serial.core .encrypt) = ⟨s.gpr .r4, 16⟩ := rfl
   have eD : Proof.Modes.PPC64LE.dataRegion (s.gpr .r5) byteMode.step (s.gpr .r6).toNat =
       ⟨s.gpr .r5, 1 * (s.gpr .r6).toNat⟩ := rfl
   refine ⟨⟨by rw [hwr]; simp [Serial.core], fS⟩, by rw [eV, hwr]; simp, fun _ => by rw [eV, hwr]; simp,
     by rw [eB]; exact fV, by rw [eD, hwr]; simp, fD,
     by rw [eD, eS]; exact dDS, by rw [eV, eS]; exact dVS, fun _ => by rw [eV, eD]; exact dVD,
-    ⟨by decide, by rw [eB]; decide⟩, Serial.coreSpec.layout⟩
+    ⟨by decide, by rw [eB]; decide⟩, (Serial.coreSpec .encrypt).layout⟩
 
 theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (finalContract post).pre s) :
-    KeyArgs s (Proof.Modes.PPC64LE.wrs0 Serial.core byteMode s) (Spec.Sm4.scheduleAt s.mem (s.gpr .r3)) := by
+    KeyArgs s (Proof.Modes.PPC64LE.wrs0 (Serial.core .encrypt) byteMode s) (Spec.Sm4.scheduleAt s.mem (s.gpr .r3)) := by
   obtain ⟨hrd, -, -, dKD, dKS, -, -, -, fK, -, -, -⟩ := h
   refine ⟨_, rfl, rfl, by rw [hrd]; exact List.mem_singleton_self _, fK, fun r hr => ?_⟩
   simp only [Proof.Modes.PPC64LE.wrs0, Proof.Modes.PPC64LE.wrs, List.mem_cons, List.not_mem_nil,
@@ -99,11 +99,11 @@ theorem keyArgs_of {post : State → State → Prop} {s : State} (h : (finalCont
 
 theorem cfbEncryptFinal_correct (s : State) (hs : (finalContract encPost).pre s) :
     ∃ t s', Exec isa cfbEncryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract encPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbEncFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.cfbEncFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
 
 theorem cfbDecryptFinal_correct (s : State) (hs : (finalContract decPost).pre s) :
     ∃ t s', Exec isa cfbDecryptFinal s t s' ∧ abiPreserved s s' ∧ (finalContract decPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDecFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.cfbDecFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
 
 /-! ## Constant time -/
 
@@ -185,7 +185,7 @@ def ofbPost (s s' : State) : Prop :=
 
 theorem ofbFinal_correct (s : State) (hs : (finalContract ofbPost).pre s) :
     ∃ t s', Exec isa ofbFinal s t s' ∧ abiPreserved s s' ∧ (finalContract ofbPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ofbFinal_wp Serial.coreSpec (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
+  WP.mono (Proof.Modes.PPC64LE.ofbFinal_wp (Serial.coreSpec .encrypt) (seqPre_of hs) (keyArgs_of hs)) fun _ h => h
 
 theorem ofbFinal_constantTime {post : State → State → Prop} :
     ConstantTime isa (finalContract post).pre modePub ofbFinal :=
