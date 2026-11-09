@@ -27,8 +27,7 @@ def artifactsFor (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.Dsa.Arm.Generation.code (geo1 v) (geo2 v) (geo3 v)
     stack := 304
-    verified := search_params v
-    features := v.features }]
+    verified := search_params v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun v => artifactsFor v

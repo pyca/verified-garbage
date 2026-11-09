@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_pbkdf2_hmac_sha256_shani` requires (`Artifact.features`).
-pub const VG_PBKDF2_HMAC_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_PBKDF2_HMAC_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// PBKDF2-HMAC-SHA-256 (RFC 8018 §5.2, with HMAC-SHA-256 as the pseudorandom function): writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` with `c` iterations to `out`. Calls the verified SHA-256 and HMAC-SHA-256 functions.
 ///
@@ -20,7 +20,7 @@ pub const VG_PBKDF2_HMAC_SHA256_SHANI_FEATURES: verified_garbage_cpu::Features =
 /// * `c` must be positive, and `out_len` at most `(2^32 - 1) * 32`.
 /// * `out` must not overlap `password` or `salt` (distinct Rust objects never do).
 /// * None of `password`, `salt` and `out` may overlap the arguments on the stack, overlap the return address on the stack or the 1712 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_sha256_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(

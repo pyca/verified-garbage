@@ -55,7 +55,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP512r1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeBrainpoolP512r1U
-    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.BrainpoolP512r1.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhBrainpoolP512r1.Arm

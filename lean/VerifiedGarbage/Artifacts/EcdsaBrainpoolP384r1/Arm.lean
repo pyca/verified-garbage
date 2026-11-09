@@ -64,8 +64,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
       Impl.Ecdsa.Verify.Arm.verifyBrainpoolP384r1U
     stack := 96
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verifyHashU_verified hasLaw.law
-    features := ["umaal"] },
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verifyHashU_verified hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp384r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vars
@@ -76,7 +75,6 @@ def artifacts : List Artifact := [
     tables := [("hmac", tables vars)]
     code := signCodeT (brainpoolp384r1U hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vars
     stack := stackT
-    verified := brainpoolp384r1UT_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := brainpoolp384r1UT_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.Arm

@@ -24,6 +24,5 @@ def artifacts : List Artifact := [
   Spec.Zeroize.zeroizeApi.artifact target {
     suffix := "_avx"
     code := Impl.Zeroize.X86_64.zeroizeAvx
-    verified := Proof.Zeroize.X86_64.verifiedAvx
-    features := ["avx"] }]
+    verified := Proof.Zeroize.X86_64.verifiedAvx }]
 end VG.Artifacts.Zeroize.X86_64

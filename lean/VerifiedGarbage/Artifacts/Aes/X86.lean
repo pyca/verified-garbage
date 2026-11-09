@@ -43,8 +43,7 @@ def artifacts : List Artifact := [
     suffix := "_aesni"
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.Aes.X86.AesNi.expandKey
     stack := 532
-    verified := Proof.Aes.X86.aesni_expandKey_framed
-    features := ["aes"] },
+    verified := Proof.Aes.X86.aesni_expandKey_framed },
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     code := Impl.Aes.X86.encryptBlocks
     verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86.encryptBlocks_verified },
@@ -54,12 +53,10 @@ def artifacts : List Artifact := [
   Spec.Aes.encryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Aes.X86.AesNi.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86.AesNi.encryptBlocks_verified
-    features := ["aes"] },
+    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.X86.AesNi.encryptBlocks_verified },
   Spec.Aes.decryptBlocksApi.artifact X86.target {
     suffix := "_aesni"
     code := Impl.Aes.X86.AesNi.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86.AesNi.decryptBlocks_verified
-    features := ["aes"] }]
+    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.X86.AesNi.decryptBlocks_verified }]
 
 end VG.Artifacts.Aes.X86

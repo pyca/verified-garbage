@@ -34,13 +34,11 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Proof.Pbkdf2.Md.AArch64.initCode v.H v.I
       stack := 16 + Proof.Pbkdf2.Md.AArch64.anyFrame v.I
-      verified := v.hmacInitF
-      features := v.features },
+      verified := v.hmacInitF },
     v.I.finalizeApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
       stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
-      verified := v.hmacFinF
-      features := v.features }]
+      verified := v.hmacFinF }]
 
 end VG.Artifacts.HmacSha256.AArch64

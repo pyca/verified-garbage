@@ -17,13 +17,11 @@ def artifactsFor (v : Proof.Aes.AArch64.BlocksImpl) : List Artifact := [
   Spec.Cfb8.aesEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCfb8.AArch64.encrypt v.enc
-    verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v)
-    features := v.features },
+    verified := Proof.AesCfb8.encrypt_keyed (encrypt_verified v) },
   Spec.Cfb8.aesDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesCfb8.AArch64.decrypt v.enc
-    verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v)
-    features := v.features }]
+    verified := Proof.AesCfb8.decrypt_keyed (decrypt_verified v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.AArch64.variants.flatMap fun v => artifactsFor v

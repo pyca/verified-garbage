@@ -35,6 +35,6 @@ def artifacts : List Artifact := [
     verified := Proof.Sha1.X86_64.Shared.init }] ++
   (VG.Proof.Variants.MdHash.X86_64.sha1Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
-      f.api.artifact X86_64.target { f.reg with suffix := v.suffix, features := v.features })
+      f.api.artifact X86_64.target { f.reg with suffix := v.suffix})
 
 end VG.Artifacts.Sha1.X86_64

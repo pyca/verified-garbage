@@ -111,8 +111,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       code := Impl.RsaOaep.X86_64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_ok vs h (privOf c)
-      spSafe := dec_spSafe vs (privOf c)
-      features := c.features }]
+      spSafe := dec_spSafe vs (privOf c) }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
@@ -131,8 +130,7 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_6
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code
       stack := encStack
       verified := enc_ok vs h c
-      spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe vs c
-      features := c.features }]
+      spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe vs c }]
   else []
 
 end VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash

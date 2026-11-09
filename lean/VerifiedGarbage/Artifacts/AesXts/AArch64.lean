@@ -19,13 +19,11 @@ def artifactsFor (v : Proof.AesXts.AArch64.XtsImpl) : List Artifact := [
   Spec.Xts.aesEncryptUnitApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesXts.AArch64Unit.encrypt v.enc
-    verified := encrypt_verified v
-    features := v.features },
+    verified := encrypt_verified v },
   Spec.Xts.aesDecryptUnitApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.AesXts.AArch64Unit.decrypt v.enc v.dec
-    verified := decrypt_verified v
-    features := v.features }]
+    verified := decrypt_verified v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesXts.AArch64.variants.flatMap fun v => artifactsFor v

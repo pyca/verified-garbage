@@ -30,20 +30,17 @@ def artifacts : List Artifact := [
   Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.Secp256k1.codeU
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1.verifiedU
-    features := ["umaal"] },
+    verified := Proof.EcKey.Compressed.Arm.Secp256k1.verifiedU },
   Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.codeU
-    verified := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.verifiedU hasLaw.law
-    features := ["umaal"] },
+    verified := Proof.EcKey.Compressed.Arm.Secp256k1Decompress.verifiedU hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.publicKeySecp256k1Comb
     verified := Proof.EcKey.Arm.Secp256k1.combPk_verified hasLaw.law },
   Spec.EcKey.Secp256k1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdsa.Arm.publicKeySecp256k1CombU
-    verified := Proof.EcKey.Arm.Secp256k1.combPkU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.EcKey.Arm.Secp256k1.combPkU_verified hasLaw.law }]
 
 end VG.Artifacts.EcSecp256k1.Arm

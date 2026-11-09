@@ -75,8 +75,7 @@ def artifacts (v1 : Proof.Sha1.X86.Variants.Backend) (v256 : Proof.Sha256.X86.Va
     code := Impl.Dsa.X86.Generation.code (geo1 v1 v) (geo256 256 v256 v) (geo256 384 v256 v)
     stack := 216
     verified := verified v1 v256 v
-    spSafe := code_all v1 v256 v
-    features := hashes ++ v.features.filter (!hashes.contains ·) }]
+    spSafe := code_all v1 v256 v }]
 
 end VG.Artifacts.Dsa.X86.Sha1Sha256MillerRabin
 

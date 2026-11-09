@@ -365,22 +365,19 @@ def artifactsFor (v : CrtImpl) : List Artifact := [
     suffix := v.suffix
     code := Proof.RsaPkcs1Sig.Arm.Sg.signCode v
     stack := 4584
-    verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v)
-    features := v.features },
+    verified := (Proof.RsaPkcs1Sig.Arm.Sg.code_verified v) },
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact Arm.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Sig.Arm.Precomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
       (Proof.Rsa.Arm.pdOfCrt v).code
     stack := 2192
-    verified := (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v))
-    features := v.features },
+    verified := (Proof.RsaPkcs1Sig.Arm.Vf.code_verified (Proof.Rsa.Arm.pdOfCrt v)) },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact Arm.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Sig.Arm.RecoverPrecomputed.code (Proof.Rsa.Arm.pdOfCrt v).name
       (Proof.Rsa.Arm.pdOfCrt v).code
     stack := 2192
-    verified := (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v))
-    features := v.features }]
+    verified := (Proof.RsaPkcs1Sig.Arm.Rc.code_verified (Proof.Rsa.Arm.pdOfCrt v)) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun v => artifactsFor v

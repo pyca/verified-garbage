@@ -82,8 +82,7 @@ def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) 
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_verified h (privOf c)
-      spSafe := dec_spSafe h (privOf c)
-      features := h.features ++ c.features.filter (!h.features.contains ·) }]
+      spSafe := dec_spSafe h (privOf c) }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 
@@ -99,8 +98,7 @@ def artifacts (v : PublicImpl) : List Artifact := [
     code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
     stack := Rnd.rndStack
     verified := Rnd.code_verified v
-    spSafe := Rnd.code_spSafe v
-    features := v.features }]
+    spSafe := Rnd.code_spSafe v }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.RsaPublicPrecomputed
 

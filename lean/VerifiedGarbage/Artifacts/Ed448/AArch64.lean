@@ -53,7 +53,6 @@ namespace VG.Artifacts.Ed448.AArch64.PublicKey
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     vendor := v.vendor
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
     stack := 352
@@ -70,7 +69,6 @@ namespace VG.Artifacts.Ed448.AArch64.SignCached
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     vendor := v.vendor
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
     stack := 352
@@ -87,7 +85,6 @@ namespace VG.Artifacts.Ed448.AArch64.Verify
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.Ed448.verifyApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     vendor := v.vendor
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
     stack := 352

@@ -64,8 +64,7 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 336
     code := Proof.Ffdh.PPC64LE.Generation.searchCode v
-    verified := Proof.Ffdh.PPC64LE.Generation.search_verified v
-    features := v.features }]
+    verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }]
 
 end VG.Artifacts.Ffdh.PPC64LE.MillerRabin
 

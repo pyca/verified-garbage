@@ -60,7 +60,6 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .encrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx512_depth .encrypt)
-    features := ["avx", "avx2", "avx512f"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .encrypt) },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
     suffix := "_avx2"
@@ -70,7 +69,6 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx2_verified .encrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx2_sp .encrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .encrypt)
-    features := ["avx", "avx2"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx2_sp .encrypt) },
   Spec.TripleDes.ecbEncryptApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128
@@ -88,7 +86,6 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx512_verified .decrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx512_depth .decrypt)
-    features := ["avx", "avx2", "avx512f"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx512_sp .decrypt) },
   Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
     suffix := "_avx2"
@@ -98,7 +95,6 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.X86_64.ecb_framed (Proof.TripleDes.X86_64.EcbCall.avx2_verified .decrypt)
       (Code.all_of_allInstrs (Proof.TripleDes.X86_64.EcbCall.avx2_sp .decrypt))
       (Proof.TripleDes.X86_64.EcbCall.avx2_depth .decrypt)
-    features := ["avx", "avx2"]
     spSafe := Proof.TripleDes.X86_64.ecb_spSafe (Proof.TripleDes.X86_64.EcbCall.avx2_sp .decrypt) },
   Spec.TripleDes.ecbDecryptApi.artifact X86_64.target {
     code := Impl.StackScratch.X86_64.withStackScratchWiped 1032 .rcx 128

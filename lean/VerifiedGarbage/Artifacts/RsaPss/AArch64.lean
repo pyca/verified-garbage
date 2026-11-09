@@ -27,8 +27,7 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64
       code := Impl.RsaPss.AArch64.signC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (privOf c).name (privOf c).code
       stack := Proof.RsaPss.AArch64.Sgn.stk (privOf c).stack
-      verified := sign_ok h c
-      features := c.features }]
+      verified := sign_ok h c }]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPrivateCrtAllMdHash
@@ -47,8 +46,7 @@ def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArc
       code := Impl.RsaPss.AArch64.verifyC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (pdOf c).name (pdOf c).code
       stack := Proof.RsaPss.AArch64.Sgn.stk 624
-      verified := verify_ok h c
-      features := c.features }]
+      verified := verify_ok h c }]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPublicPrecomputedAllMdHash

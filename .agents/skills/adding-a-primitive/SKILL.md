@@ -86,9 +86,10 @@ instructions in an ISA model) go in their own PR before either.
    for code that depends on a `Bool` or an enumeration (`adx`, a field
    variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). If its code uses instructions outside
-   the target's baseline ISA, list the CPU features they require in
-   `features` (the emitter rejects anything but the exact set).
+   them). The CPU features the code needs beyond the target's baseline ISA
+   are never stated: `Api.artifact` takes them from its instructions and
+   those of the functions it calls (`Code.requiresDedup`, from the ISA
+   model's `requires`).
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee

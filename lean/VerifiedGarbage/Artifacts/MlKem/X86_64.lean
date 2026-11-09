@@ -40,8 +40,7 @@ def artifacts : List Artifact := [
   Spec.MlKem1024.checkEkApi.artifact X86_64.target {
     suffix := "_avx2"
     code := Impl.MlKem1024.X86_64.checkEk1024Avx2
-    verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified
-    features := ["avx", "avx2"] }]
+    verified := Proof.MlKem1024.X86_64.checkEk1024Avx2_verified }]
 
 end VG.Artifacts.MlKem.X86_64.MlKem1024
 
@@ -54,8 +53,7 @@ def direct : List Artifact := [
   Spec.MlKem.checkEkApi.artifact X86_64.target {
     suffix := "_avx2"
     code := Impl.MlKem.X86_64.checkEkAvx2
-    verified := Proof.MlKem.X86_64.checkEkAvx2_verified
-    features := ["avx", "avx2"] }]
+    verified := Proof.MlKem.X86_64.checkEkAvx2_verified }]
 
 end VG.Artifacts.MlKem.X86_64
 
@@ -72,57 +70,49 @@ def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List Artifact :=
     code := Impl.MlKem.X86_64.keyGenW v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.keyGenW_verified v z
-    spSafe := Proof.MlKem.X86_64.keyGenW_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.keyGenW_spSafe v z },
   Spec.MlKem.encapsHApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsHW v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.encapsHW_verified v z
-    spSafe := Proof.MlKem.X86_64.encapsHW_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.encapsHW_spSafe v z },
   Spec.MlKem.encapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsW v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.encapsW_verified v z
-    spSafe := Proof.MlKem.X86_64.encapsW_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.encapsW_spSafe v z },
   Spec.MlKem.decapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.decapsW v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.decapsW_verified v z
-    spSafe := Proof.MlKem.X86_64.decapsW_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.decapsW_spSafe v z },
   Spec.MlKem1024.keyGenApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.keyGen1024W v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.keyGen1024W_verified v z
-    spSafe := Proof.MlKem.X86_64.keyGen1024W_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.keyGen1024W_spSafe v z },
   Spec.MlKem1024.encapsHApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsH1024W v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.encapsH1024W_verified v z
-    spSafe := Proof.MlKem.X86_64.encapsH1024W_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.encapsH1024W_spSafe v z },
   Spec.MlKem1024.encapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encaps1024W v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.encaps1024W_verified v z
-    spSafe := Proof.MlKem.X86_64.encaps1024W_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z },
+    spSafe := Proof.MlKem.X86_64.encaps1024W_spSafe v z },
   Spec.MlKem1024.decapsApi.artifact X86_64.target {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.decaps1024W v.callee v.suffix z.name z.code
     stack := 56
     verified := Proof.MlKem.X86_64.decaps1024W_verified v z
-    spSafe := Proof.MlKem.X86_64.decaps1024W_spSafe v z
-    features := Proof.MlKem.X86_64.Wipe.features v z }]
+    spSafe := Proof.MlKem.X86_64.decaps1024W_spSafe v z }]
 
 end VG.Artifacts.MlKem.X86_64.MlKemSample4Zeroize
 
