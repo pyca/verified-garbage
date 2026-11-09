@@ -252,19 +252,19 @@ theorem point_low_z1_ok (s : State) (hz : s.gpr .x1=0) :
  have z2 := (k1.gpr .x1 (by decide)).trans z1
  have k1 := k1.mono (show ∀r∈_,r∈pointLowClob by decide)
  have K2 := K1.trans k1
- rw [K1.gpr .x3 (by decide),K1.gpr .x4 (by decide),K1.gpr .x5 (by decide),K1.gpr .x6 (by decide),K1.gpr .x7 (by decide),K1.gpr .x8 (by decide),K1.gpr .x9 (by decide)] at e1
+ simp only [K1.gpr .x3 (by decide),K1.gpr .x4 (by decide),K1.gpr .x5 (by decide),K1.gpr .x6 (by decide),K1.gpr .x7 (by decide),K1.gpr .x8 (by decide),K1.gpr .x9 (by decide)] at e1
  rw [WP.block_append_iff]
  refine WP.mono (point_cross2_z1_ok s2 z2) fun s3 ⟨e2,k2⟩ => ?_
  have z3 := (k2.gpr .x1 (by decide)).trans z2
  have k2 := k2.mono (show ∀r∈_,r∈pointLowClob by decide)
  have K3 := K2.trans k2
- rw [K2.gpr .x4 (by decide),K2.gpr .x5 (by decide),K2.gpr .x6 (by decide),K2.gpr .x7 (by decide),K2.gpr .x8 (by decide),K2.gpr .x9 (by decide)] at e2
+ simp only [K2.gpr .x4 (by decide),K2.gpr .x5 (by decide),K2.gpr .x6 (by decide),K2.gpr .x7 (by decide),K2.gpr .x8 (by decide),K2.gpr .x9 (by decide)] at e2
  rw [WP.block_append_iff]
  refine WP.mono (point_cross3_z1_ok s3 z3) fun s4 ⟨e3,k3⟩ => ?_
  have z4 := (k3.gpr .x1 (by decide)).trans z3
  have k3 := k3.mono (show ∀r∈_,r∈pointLowClob by decide)
  have K4 := K3.trans k3
- rw [K3.gpr .x5 (by decide),K3.gpr .x6 (by decide),K3.gpr .x7 (by decide),K3.gpr .x8 (by decide),K3.gpr .x9 (by decide)] at e3
+ simp only [K3.gpr .x5 (by decide),K3.gpr .x6 (by decide),K3.gpr .x7 (by decide),K3.gpr .x8 (by decide),K3.gpr .x9 (by decide)] at e3
  rw [WP.block_append_iff]
  refine WP.mono (point_double_z1_ok s4 z4) fun s5 ⟨e4,k4⟩ => ?_
  have k4 := k4.mono (show ∀r∈_,r∈pointLowClob by decide)
@@ -272,26 +272,20 @@ theorem point_low_z1_ok (s : State) (hz : s.gpr .x1=0) :
  refine WP.mono (point_diag_ok s5) fun t ⟨carry, e5,k5⟩ => ?_
  have k5 := k5.mono (show ∀r∈_,r∈pointLowClob by decide)
  have K6 := K5.trans k5
- rw [K5.gpr .x2 (by decide),K5.gpr .x3 (by decide),K5.gpr .x4 (by decide),K5.gpr .x5 (by decide),K5.gpr .x6 (by decide),K5.gpr .x7 (by decide),K5.gpr .x8 (by decide),K5.gpr .x9 (by decide)] at e5
+ simp only [K5.gpr .x2 (by decide),K5.gpr .x3 (by decide),K5.gpr .x4 (by decide),K5.gpr .x5 (by decide),K5.gpr .x6 (by decide),K5.gpr .x7 (by decide),K5.gpr .x8 (by decide),K5.gpr .x9 (by decide)] at e5
  -- Substitute each accumulated sum before asking arithmetic to eliminate the carry.
- rw [e0] at e1
- rw [e1] at e2
- rw [e2] at e3
- rw [e3] at e4
- rw [e4] at e5
+ simp only [e0] at e1
+ simp only [e1] at e2
+ simp only [e2] at e3
+ simp only [e3] at e4
+ simp only [e4] at e5
  refine ⟨?_,K6⟩
  have expand := low_expand (s.gpr .x2).toNat (s.gpr .x3).toNat (s.gpr .x4).toNat (s.gpr .x5).toNat (s.gpr .x6).toNat (s.gpr .x7).toNat (s.gpr .x8).toNat (s.gpr .x9).toNat
  have hb : ((s.gpr .x2).toNat + 18446744073709551616*(s.gpr .x3).toNat + 340282366920938463463374607431768211456*(s.gpr .x4).toNat + 6277101735386680763835789423207666416102355444464034512896*(s.gpr .x5).toNat + 115792089237316195423570985008687907853269984665640564039457584007913129639936*(s.gpr .x6).toNat + 2135987035920910082395021706169552114602704522356652769947041607822219725780640550022962086936576*(s.gpr .x7).toNat + 39402006196394479212279040100143613805079739270465446667948293404245721771497210611414266254884915640806627990306816*(s.gpr .x8).toNat + 726838724295606890549323807888004534353641360687318060281490199180639288113397923326191050713763565560762521606266177933534601628614656*(s.gpr .x9).toNat) < 13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by
-  have h0 := (s.gpr .x2).isLt
-  have h1 := (s.gpr .x3).isLt
-  have h2 := (s.gpr .x4).isLt
-  have h3 := (s.gpr .x5).isLt
-  have h4 := (s.gpr .x6).isLt
-  have h5 := (s.gpr .x7).isLt
-  have h6 := (s.gpr .x8).isLt
-  have h7 := (s.gpr .x9).isLt
-  -- This bound uses only the input words, not the product/carry equations above.
-  omega_using [h0, h1, h2, h3, h4, h5, h6, h7]
+  have bound := regsVal_lt s (aRegs.take 8)
+  have size : 2^(64*(aRegs.take 8).length)=13407807929942597099574024998205846127479365820592393377723561443721764030073546976801874298166903427690031858186486050853753882811946569946433649006084096 := by decide +kernel
+  rw [lowRegs_value,size] at bound
+  exact bound
  have hbb := Nat.mul_lt_mul'' hb hb
  rw [lowRegs_value]
  omega_using [e5,expand,hbb]
