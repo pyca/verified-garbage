@@ -113,8 +113,7 @@ theorem combSign_ok (hL : Weierstrass.Law Spec.Secp256k1.curve) (s : State) (hs 
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
   have hd : Region.Disjoint ⟨s.syms secp256k1Comb.tsym, 8 * secp256k1CombWords.length⟩ ⟨s.gpr .r7, 8192⟩ :=
-    (hk.2.2.1 _ (List.mem_map_of_mem (f := fun c => (⟨s.syms c.1, 8 * c.2.length⟩ : Region)) member)).2.1 _
-      (by rw [hpre.wr]; simp)
+    hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := signWith_ok secp256k1_ok (by decide) hL hpre fun s₁ S₁ sy =>
     Proof.Secp256k1.PPC64LE.comb_generator_ok hL S₁
       (ht.unch (by rw [S₁.rk.rd, S₁.rk.wr]) S₁.whole (fun w hw => by
@@ -147,7 +146,8 @@ theorem combSign_sat :
   have hl := Proof.Secp256k1.PPC64LE.comb_words_length
   have held := Proof.Secp256k1.PPC64LE.combSatMem_held
   rw [combConsts_eq]
-  generalize secp256k1CombWords = W at hl held ⊢
+  obtain ⟨W, eW⟩ : ∃ W, secp256k1CombWords = W := ⟨_, rfl⟩
+  rw [eW] at hl held ⊢
   generalize e : combSatC = s
   sig_pre [Spec.Ecdsa.Secp256k1.inst, Proof.Ecdsa.Instance.signContract, Proof.Ecdsa.Instance.signSig,
     Spec.Secp256k1.curve, Spec.Ecdsa.scratchWords, abi, argRegs, Abi.withConsts, Abi.constRegions, Abi.constsHeld,

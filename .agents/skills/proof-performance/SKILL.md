@@ -197,6 +197,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **`generalize` does not hide a value from the kernel:** the proof term
+  `generalize` (and `revert`) builds is an application of the new goal's
+  proof to the value, which `instantiateMVars` beta-reduces, so the kernel
+  checks every step after it with the value substituted back. A step the
+  kernel checks by evaluation (`sig_pre`'s `sig_reduce`, `change`, `rfl`)
+  then evaluates the value: each PPC64LE comb's satisfiability proof built
+  its whole table this way (about 3 GB). Abstract it where the term keeps
+  a binder: `obtain ⟨W, eW⟩ : ∃ W, words = W := ⟨_, rfl⟩` and
+  `rw [eW] at …` (the `Exists` case's lambda), or a lemma over any `W`.
 * **Concrete data under `rfl`:** never close a goal holding a large concrete
   value (a key schedule read from memory, a table) by `rfl`, `decide` or
   `change`, nor split a case on an index (`rcases … with rfl | rfl`) in a
@@ -204,7 +213,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   two sides (Blowfish's `step_run`: a minute in the kernel, after an
   unrelated upgrade of Lean). Prove the step once with the value a
   variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
-  `generalize` the value before `rfl`.
+  abstract the value with `obtain` (not `generalize`: see above).
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
@@ -212,7 +221,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
   and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
   `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
-  take the region apart. A definition the kernel unfolds (a witness's
+  take the region apart. State a table's own facts with the
+  `ConstsOk` lemmas (`fit`, `mem_rd`, `disjoint_wr`), whose words are a
+  variable, not as `h.2.2.1 _ (List.mem_map_of_mem …)` at a concrete table,
+  whose `8 * (name, words).2.length` the kernel compares with
+  `8 * words.length` by evaluating both. A definition the kernel unfolds (a witness's
   memory) states a table's size as a literal, not as `8 * words.length`. A
   table's shape (`<curve>Comb7_length`, `_rows`) is proven once, in
   `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
