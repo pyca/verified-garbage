@@ -2567,6 +2567,44 @@ theorem qcsubR_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {
 
 /-! ## Constants of 64 bits in registers -/
 
+theorem wp_movHi {s : State} {d : Reg} {x : BitVec 32} {is : List Instr} {Q : State → Prop}
+    (k : ∀ v : BitVec 64, v.toNat % 2 ^ 32 = x.toNat → WP isa (.block is) (s.write d v) Q) :
+    WP isa (.block (movHi d x ++ is)) s Q := by
+  unfold movHi
+  split
+  · rename_i h
+    refine wp_step (exec_li h) (k _ ?_)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  · exact wp_movImm k
+
+theorem wp_orisOpt {s : State} {d : Reg} {x : BitVec 64} {h : BitVec 16} {is : List Instr} {Q : State → Prop}
+    (k : WP isa (.block is) (s.write d (x ||| h.setWidth 64 <<< 16)) Q) :
+    WP isa (.block (orisOpt d h ++ is)) (s.write d x) Q := by
+  unfold orisOpt
+  split
+  · rename_i h0
+    subst h0
+    rw [List.nil_append]
+    rwa [show x ||| (0 : BitVec 16).setWidth 64 <<< 16 = x by simp] at k
+  · rw [List.singleton_append]
+    refine wp_step exec_oris ?_
+    rw [write_write]
+    simpa only [write_gpr, ite_true] using k
+
+theorem wp_oriOpt {s : State} {d : Reg} {x : BitVec 64} {h : BitVec 16} {is : List Instr} {Q : State → Prop}
+    (k : WP isa (.block is) (s.write d (x ||| h.setWidth 64)) Q) :
+    WP isa (.block (oriOpt d h ++ is)) (s.write d x) Q := by
+  unfold oriOpt
+  split
+  · rename_i h0
+    subst h0
+    rw [List.nil_append]
+    rwa [show x ||| (0 : BitVec 16).setWidth 64 = x by simp] at k
+  · rw [List.singleton_append]
+    refine wp_step exec_ori ?_
+    rw [write_write]
+    simpa only [write_gpr, ite_true] using k
+
 theorem movImm64_ok {s : State} {d : Reg} {w : Nat} (hw : w < 2 ^ 64) {is : List Instr} {Q : State → Prop}
     (k : WP isa (.block is) (s.write d (BitVec.ofNat 64 w)) Q) : WP isa (.block (movImm64 d w ++ is)) s Q := by
   unfold movImm64
@@ -2581,11 +2619,28 @@ theorem movImm64_ok {s : State} {d : Reg} {w : Nat} (hw : w < 2 ^ 64) {is : List
     simp only [write_gpr, ite_true]
     exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)) =
       BitVec.ofNat 64 (2 ^ 64 - 1)) ▸ k
-  · simp only [List.append_assoc, List.cons_append, List.nil_append]
-    refine wp_movImm fun v hv => ?_
-    refine wp_step (exec_lsl (by decide)) (wp_step exec_oris (wp_step exec_ori ?_))
-    rw [write_write, write_write, write_write]
+  split
+  · rename_i _ _ h
+    subst h
+    refine wp_step exec_lis (wp_step exec_ori (wp_step (exec_lsl (by decide)) ?_))
+    rw [write_write, write_write]
     simp only [write_gpr, ite_true]
+    exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)
+      <<< 32) = BitVec.ofNat 64 (2 ^ 64 - 2 ^ 32)) ▸ k
+  split
+  · rename_i _ _ _ h
+    subst h
+    refine wp_step exec_lis (wp_step exec_ori (wp_step (exec_lsr_d (by decide)) ?_))
+    rw [write_write, write_write]
+    simp only [write_gpr, ite_true]
+    exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)
+      >>> 32) = BitVec.ofNat 64 (2 ^ 32 - 1)) ▸ k
+  · simp only [List.append_assoc, List.cons_append, List.nil_append]
+    refine wp_movHi fun v hv => ?_
+    refine wp_step (exec_lsl (by decide)) ?_
+    rw [write_write]
+    simp only [write_gpr, ite_true]
+    refine wp_orisOpt (wp_oriOpt ?_)
     have e : (v <<< 32 ||| BitVec.setWidth 64 (BitVec.ofNat 16 (w >>> 16)) <<< 16 |||
         BitVec.setWidth 64 (BitVec.ofNat 16 w)) = BitVec.ofNat 64 w := by
       apply BitVec.eq_of_toNat_eq
@@ -3050,6 +3105,37 @@ theorem and_mask (x mk : BitVec 64) (h : mk = 0 ∨ mk = BitVec.allOnes 64) :
   · have : BitVec.allOnes 64 ≠ 0 := by decide
     simp only [this, ite_false, BitVec.and_allOnes]
 
+/-- `backAdd`: `vReg k` plus word `k` of `m` under the mask, with CA. -/
+theorem backAdd_ok {s : State} {m k : Nat} (hk : k < 4) (hmk : s.gpr .r11 = 0 ∨ s.gpr .r11 = BitVec.allOnes 64)
+    {rest : List Instr} {Q : State → Prop}
+    (cont : ∀ t : State, (t.gpr (vReg k)).toNat + 2 ^ 64 * t.ca.toNat =
+        (s.gpr (vReg k)).toNat + (if s.gpr .r11 = 0 then 0 else mword m k) + cOf false k s.ca →
+      t.mem = s.mem → Kp [.r12, vReg k] s t → WP isa (.block rest) t Q) :
+    WP isa (.block (backAdd m k ++ rest)) s Q := by
+  have hvk := vReg_ne hk
+  have h12 : vReg k ≠ .r12 := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hvk; rcases hvk with h | h | h | h <;> rw [h] <;> decide
+  have hc : cOf false k s.ca ≤ 1 := by unfold cOf; split <;> simp [Bool.toNat_le]
+  unfold backAdd
+  split
+  · rename_i hall
+    refine wp_step (exec_carryOp _ _ _ _ _ _) ?_
+    simp only [Bool.false_eq_true, ite_false]
+    have h11 : (s.gpr .r11).toNat = if s.gpr .r11 = 0 then 0 else mword m k := by
+      rw [hall]; rcases hmk with h | h <;> simp [h]
+    refine cont _ ?_ rfl (Kp.writeCarry _ _ (by simp))
+    rw [RegUpd.toNat_add_ca _ (by have := (s.gpr (vReg k)).isLt; have := (s.gpr .r11).isLt; omega), h11]
+  · simp only [List.append_assoc, List.cons_append, List.nil_append]
+    refine movImm64_ok (mword_lt m k) ?_
+    refine wp_step exec_logic (wp_step (exec_carryOp _ _ _ _ _ _) ?_)
+    simp only [write_gpr, ite_true, h12, ite_false, RegUpd.ca_write, reduceCtorEq, Bool.false_eq_true]
+    generalize hw : BitVec.ofNat 64 (mword m k) &&& s.gpr .r11 = w
+    have hwv : w.toNat = if s.gpr .r11 = 0 then 0 else mword m k := by
+      rw [← hw, and_mask _ _ hmk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (mword_lt m k)]
+    refine cont _ ?_ rfl (((Kp.write _ _ (List.mem_cons_self ..)).trans
+      (Kp.write _ _ (List.mem_cons_self ..))).trans (Kp.writeCarry _ _ (by simp)))
+    rw [RegUpd.toNat_add_ca _ (by have := (s.gpr (vReg k)).isLt; have := w.isLt; omega), hwv]
+
 /-- The low `k` words of `vReg + (m under the mask r11)` to `[r4]`, the carry
 to CA. -/
 theorem backs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {m O W : Nat} (hW : W ≤ 4)
@@ -3075,26 +3161,12 @@ theorem backs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {m
       · exact vReg_not_vregs (show k < 4 by omega) (Nat.le_refl _) e)
     have hs₁ := K₁.ws hs
     simp only [backStep]
-    refine movImm64_ok (mword_lt m k) ?_
-    refine wp_step exec_logic ?_
-    refine wp_step (exec_carryOp _ _ _ _ _ _) ?_
-    refine wp_gen fun t₂ ht₂ => ?_
+    refine backAdd_ok (show k < 4 by omega) (by rw [h11]; exact hmk) fun t₂ e hm₂ K₂' => ?_
+    rw [h11] at e
     have h4v : vReg k ≠ .r4 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hvk; rcases hvk with h | h | h | h <;> rw [h] <;> decide
-    simp only [write_gpr, ite_true, h12, ite_false, RegUpd.ca_write, reduceCtorEq, h11, Bool.false_eq_true] at ht₂
-    generalize hw : BitVec.ofNat 64 (mword m k) &&& s.gpr .r11 = w at ht₂
-    have hwv : w.toNat = if s.gpr .r11 = 0 then 0 else mword m k := by
-      rw [← hw, and_mask _ _ hmk, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (mword_lt m k)]
-    generalize hv : (s₁.gpr (vReg k)).toNat + w.toNat + cOf false k s₁.ca = v at ht₂
-    have hc : cOf false k s₁.ca ≤ 1 := by unfold cOf; split <;> simp [Bool.toNat_le]
-    have e := RegUpd.toNat_add_ca ((s₁.write .r12 (BitVec.ofNat 64 (mword m k))).write .r12 w) (r := vReg k) (v := v)
-      (by rw [← hv]; have := (s₁.gpr (vReg k)).isLt; have := w.isLt; omega)
-    rw [← ht₂] at e
-    have h4₂ : At t₂ base .r4 O := by
-      rw [At, ht₂, writeCarry_gpr, write_gpr, write_gpr]
-      simp only [h4v.symm, reduceCtorEq, ite_false]; exact h4₁
-    have hm₂ : t₂.mem = s₁.mem := by rw [ht₂]; rfl
-    have hws₂ : Ws t₂ base size := by rw [ht₂]; exact ((hs₁.write _ _).write _ _).writeCarry _ _
+    have h4₂ : At t₂ base .r4 O := K₂'.at h4₁ (by simp [h4v.symm])
+    have hws₂ : Ws t₂ base size := K₂'.ws hs₁
     refine wp_step (std_ok hws₂ h4₂ (by decide) (by omega) (d := 8 * k) (by omega)) (WP.block_nil ?_)
     have W' := writeW_outside s₁.mem base (d := O + 8 * k) (t₂.gpr (vReg k)) (by omega)
     refine ⟨?_, ?_, ?_⟩
@@ -3107,21 +3179,19 @@ theorem backs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {m
       generalize cOf false k s₁.ca = c at *
       generalize t₂.ca.toNat = c' at *
       generalize (t₂.gpr (vReg k)).toNat = x at *
-      rw [← hv] at e
       have e3 := congrArg (P * ·) e
       simp only [Nat.mul_add] at e3
       have hB' : P * (2 ^ 64 * c') = 2 ^ 64 * P * c' := by rw [Nat.mul_left_comm, Nat.mul_assoc]
       rw [hB'] at e3
       by_cases hz : s.gpr .r11 = 0
-      · simp only [hz, ite_true] at hwv V₁ ⊢
-        rw [hwv, Nat.mul_zero, Nat.add_zero] at e3
+      · simp only [hz, ite_true] at V₁ e3 ⊢
+        rw [Nat.mul_zero, Nat.add_zero] at e3
         generalize P * c = Pc at *
         generalize P * x = Px at *
         generalize P * (s.gpr (vReg k)).toNat = Ps at *
         generalize 2 ^ 64 * P * c' = D at *
         omega
-      · simp only [hz, ite_false] at hwv V₁ ⊢
-        rw [hwv] at e3
+      · simp only [hz, ite_false] at V₁ e3 ⊢
         generalize P * c = Pc at *
         generalize P * x = Px at *
         generalize P * (s.gpr (vReg k)).toNat = Ps at *
@@ -3130,9 +3200,9 @@ theorem backs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {m
         omega
     · rw [hm₂]
       exact (O₁.mono (Nat.le_refl _) (by omega)).trans (W'.mono (by omega) (by omega))
-    · have K₂ : Kp (.r12 :: vregs (k + 1)) s₁ t₂ := by
-        rw [ht₂]; exact ((Kp.write _ _ (List.mem_cons_self ..)).trans
-          (Kp.write _ _ (List.mem_cons_self ..))).trans (Kp.writeCarry _ _ (by simp [vregs_succ]))
+    · have K₂ : Kp (.r12 :: vregs (k + 1)) s₁ t₂ := K₂'.mono fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> simp [vregs_succ]
       refine (K₁.mono ?_).trans (K₂.trans (Kp.store _ _ _))
       intro r hr
       rcases List.mem_cons.mp hr with h | h

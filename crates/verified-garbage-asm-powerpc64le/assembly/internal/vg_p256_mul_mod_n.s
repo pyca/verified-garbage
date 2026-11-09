@@ -50,8 +50,6 @@ vg_p256_mul_mod_n:
 	lis %r0, -1
 	ori %r0, %r0, 65535
 	rldicr %r0, %r0, 32, 31
-	oris %r0, %r0, 0
-	ori %r0, %r0, 0
 	li %r8, 4
 20:
 	ld %r9, 0(%r5)

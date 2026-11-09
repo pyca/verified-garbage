@@ -40,11 +40,9 @@ vg_p224_add_mod_n:
 	lis %r12, -1
 	ori %r12, %r12, 65535
 	subfe %r9, %r12, %r9
-	lis %r12, 0
-	ori %r12, %r12, 0
-	rldicr %r12, %r12, 32, 31
-	oris %r12, %r12, 65535
+	lis %r12, -1
 	ori %r12, %r12, 65535
+	rldicl %r12, %r12, 32, 32
 	subfe %r10, %r12, %r10
 	addze %r11, %r0
 	addi %r11, %r11, -1
@@ -64,16 +62,11 @@ vg_p224_add_mod_n:
 	and %r12, %r12, %r11
 	adde %r8, %r8, %r12
 	std %r8, 8(%r4)
+	adde %r9, %r9, %r11
+	std %r9, 16(%r4)
 	lis %r12, -1
 	ori %r12, %r12, 65535
-	and %r12, %r12, %r11
-	adde %r9, %r9, %r12
-	std %r9, 16(%r4)
-	lis %r12, 0
-	ori %r12, %r12, 0
-	rldicr %r12, %r12, 32, 31
-	oris %r12, %r12, 65535
-	ori %r12, %r12, 65535
+	rldicl %r12, %r12, 32, 32
 	and %r12, %r12, %r11
 	adde %r10, %r10, %r12
 	std %r10, 24(%r4)

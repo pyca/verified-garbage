@@ -225,14 +225,27 @@ def rmul (M : Mod) (m acc : Nat) : Prog isa :=
 
 /-! ## Constants of 64 bits in registers -/
 
-/-- `d = w` for `w < 2⁶⁴`: `li` for a small `w`, `lis`/`ori` for all ones,
-else the high half (`lis`, `ori`), shifted up 32, then the low half's
-halves (`oris`, `ori`). -/
+/-- `d = x` for the high half of a constant: `li` for a small `x`, else
+`lis`, `ori`. -/
+def movHi (d : Reg) (x : BitVec 32) : List Instr :=
+  if x.toNat < 2 ^ 15 then [.li d x.toNat] else movImm d x
+
+/-- `oris d, d, h`, or nothing for `h = 0`. -/
+def orisOpt (d : Reg) (h : BitVec 16) : List Instr := if h = 0 then [] else [.oris d d h]
+
+/-- `ori d, d, h`, or nothing for `h = 0`. -/
+def oriOpt (d : Reg) (h : BitVec 16) : List Instr := if h = 0 then [] else [.ori d d h]
+
+/-- `d = w` for `w < 2⁶⁴`: `li` for a small `w`; all ones by `lis`/`ori`,
+and shifted for `2⁶⁴ - 2³²` and `2³² - 1`; else the high half (`movHi`),
+shifted up 32, then the low half's nonzero halves (`oris`, `ori`). -/
 def movImm64 (d : Reg) (w : Nat) : List Instr :=
   if w < 2 ^ 15 then [.li d w]
   else if w = 2 ^ 64 - 1 then [.lis d 0xffff, .ori d d 0xffff]
-  else movImm d (BitVec.ofNat 32 (w >>> 32)) ++
-    [.lsl d d 32, .oris d d (BitVec.ofNat 16 (w >>> 16)), .ori d d (BitVec.ofNat 16 w)]
+  else if w = 2 ^ 64 - 2 ^ 32 then [.lis d 0xffff, .ori d d 0xffff, .lsl d d 32]
+  else if w = 2 ^ 32 - 1 then [.lis d 0xffff, .ori d d 0xffff, .lsr .d d d 32]
+  else movHi d (BitVec.ofNat 32 (w >>> 32)) ++ [.lsl d d 32] ++
+    orisOpt d (BitVec.ofNat 16 (w >>> 16)) ++ oriOpt d (BitVec.ofNat 16 w)
 
 /-- Word `j` of `m`. -/
 def mword (m j : Nat) : Nat := (m >>> (64 * j)) % 2 ^ 64
@@ -359,12 +372,15 @@ def ldStep (sub : Bool) (j : Nat) : List Instr :=
 def subMStep (m j : Nat) : List Instr :=
   movImm64 .r12 (mword m j) ++ ([carryOp true (j == 0) (vReg j) (vReg j) .r12] : List Instr)
 
-/-- Word `j` of `m` under the mask `r11` added, with CA, to `vReg j`, and
-stored at `[r4 + 8j]`. -/
-def backStep (m j : Nat) : List Instr :=
-  movImm64 .r12 (mword m j) ++
-    ([.logic .and .r12 .r12 .r11, carryOp false (j == 0) (vReg j) (vReg j) .r12, .store .d (vReg j) .r4 (8 * j)] :
-      List Instr)
+/-- Word `j` of `m` under the mask `r11` added, with CA, to `vReg j`: the
+mask itself where the word is all ones. -/
+def backAdd (m j : Nat) : List Instr :=
+  if mword m j = 2 ^ 64 - 1 then [carryOp false (j == 0) (vReg j) (vReg j) .r11]
+  else movImm64 .r12 (mword m j) ++
+    ([.logic .and .r12 .r12 .r11, carryOp false (j == 0) (vReg j) (vReg j) .r12] : List Instr)
+
+/-- `backAdd`, and the word stored at `[r4 + 8j]`. -/
+def backStep (m j : Nat) : List Instr := backAdd m j ++ ([.store .d (vReg j) .r4 (8 * j)] : List Instr)
 
 /-- `[r4] = [r5] + [r6] mod m`, for `n ≤ 4`. -/
 def add4 (n m : Nat) : List Instr :=

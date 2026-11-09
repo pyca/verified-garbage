@@ -33,16 +33,13 @@ vg_p256_mul_mod_p:
 	ld %r23, 24(%r6)
 	lis %r6, -1
 	ori %r6, %r6, 65535
-	lis %r7, 0
-	ori %r7, %r7, 0
-	rldicr %r7, %r7, 32, 31
-	oris %r7, %r7, 65535
+	lis %r7, -1
 	ori %r7, %r7, 65535
+	rldicl %r7, %r7, 32, 32
 	li %r10, 0
 	lis %r0, -1
 	ori %r0, %r0, 65535
 	rldicr %r0, %r0, 32, 31
-	oris %r0, %r0, 0
 	ori %r0, %r0, 1
 	li %r8, 4
 20:
