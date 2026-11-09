@@ -35,57 +35,32 @@ public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
 @[expose] public section
 
--- Streaming AES-CMAC's `absorb` on x86-64
-namespace VG.Artifacts.CmacAes.X86_64.Absorb
-
-def artifactsFor (v : Proof.CmacAes.X86_64.UpdateImpl) : List Artifact := [
-  Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
-    stack := 2328
-    verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }]
-
-def artifacts : List Artifact :=
-  VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun v => artifactsFor v
-
-end VG.Artifacts.CmacAes.X86_64.Absorb
-
 namespace VG.Artifacts.CmacAes.X86_64
-
-def direct : List Artifact := [
-  ]
-
-end VG.Artifacts.CmacAes.X86_64
-
--- AES-CMAC (NIST SP 800-38B) on x86-64
-namespace VG.Artifacts.CmacAes.X86_64.AesCtr32
 
 open VG.Proof.CmacAes.X86_64
 
-def artifacts (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
-  Spec.Cmac.aesInitApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
-      (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
-    stack := 2328
-    verified := Proof.CmacAes.Stream.X86_64.init_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) },
-  Spec.Cmac.aesFinishApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
-      (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
-    stack := 2328
-    verified := Proof.CmacAes.Stream.X86_64.finish_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }]
-
-end VG.Artifacts.CmacAes.X86_64.AesCtr32
-
-namespace VG.Artifacts.CmacAes.X86_64
-
 def artifacts : List Artifact :=
-  Absorb.artifacts ++
-  direct ++
-  (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => AesCtr32.artifacts v)
+  (VG.Proof.Variants.CmacAesUpdate.X86_64.variants.flatMap fun (v : Proof.CmacAes.X86_64.UpdateImpl) => [
+    Spec.Cmac.aesAbsorbApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
+      stack := 2328
+      verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
+      spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }]) ++
+  (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
+    Spec.Cmac.aesInitApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
+        (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
+      stack := 2328
+      verified := Proof.CmacAes.Stream.X86_64.init_framed v
+      spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) },
+    Spec.Cmac.aesFinishApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
+        (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
+      stack := 2328
+      verified := Proof.CmacAes.Stream.X86_64.finish_framed v
+      spSafe := X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }])
 
 end VG.Artifacts.CmacAes.X86_64

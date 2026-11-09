@@ -170,25 +170,19 @@ def direct : List Artifact := [
 
 end VG.Artifacts.RsaPkcs1Sig.X86
 
--- PKCS #1 signing follows every i686 private CRT implementation
-namespace VG.Artifacts.RsaPkcs1Sig.X86.RsaPrivateCrt
+namespace VG.Artifacts.RsaPkcs1Sig.X86
+
 open VG.Proof.Rsa.X86.PrivChecked (CrtImpl privCode)
 open VG.Proof.RsaPkcs1Sig.X86.Sgn
 
-def artifacts (v : CrtImpl) : List Artifact := [
-  Spec.RsaPkcs1Sig.signApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
-    stack := sigStack
-    verified := sign_verified v
-    spSafe := code_sp v }]
-
-end VG.Artifacts.RsaPkcs1Sig.X86.RsaPrivateCrt
-
-namespace VG.Artifacts.RsaPkcs1Sig.X86
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun v => RsaPrivateCrt.artifacts v)
+  (VG.Proof.Variants.RsaPrivateCrt.X86.variants.flatMap fun (v : CrtImpl) => [
+    Spec.RsaPkcs1Sig.signApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
+      stack := sigStack
+      verified := sign_verified v
+      spSafe := code_sp v }])
 
 end VG.Artifacts.RsaPkcs1Sig.X86

@@ -20,25 +20,10 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.CombLit
 
 @[expose] public section
 
--- Deterministic ECDSA (RFC 6979) over brainpoolP256r1 on PPC64LE, with HMAC as a table
-namespace VG.Artifacts.EcdsaBrainpoolP256r1.PPC64LE.Rfc6979
+namespace VG.Artifacts.EcdsaBrainpoolP256r1.PPC64LE
 
-open VG.Proof.BrainpoolP256r1.PPC64LE (hasLaw)
 open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT stackT OK brainpoolp256r1R brainpoolp256r1T_verified)
 open VG.Proof.HmacTable.PPC64LE (vars tables names)
-
-def artifacts : List Artifact :=
-  if hv : OK vars ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vars then [
-    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact PPC64LE.target {
-      tables := [("hmac", tables vars)]
-      code := signCodeT (brainpoolp256r1R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
-      stack := stackT
-      verified := brainpoolp256r1T_verified hasLaw.law vars hv }]
-  else []
-
-end VG.Artifacts.EcdsaBrainpoolP256r1.PPC64LE.Rfc6979
-
-namespace VG.Artifacts.EcdsaBrainpoolP256r1.PPC64LE
 
 open VG.Proof.BrainpoolP256r1.PPC64LE (hasLaw)
 
@@ -48,6 +33,12 @@ def artifacts : List Artifact := [
       Impl.Ecdsa.Verify.PPC64LE.verifyBrainpoolP256r1
     stack := 112
     verified := Proof.Ecdsa.Verify.PPC64LE.BrainpoolP256r1.verifyHash_verified hasLaw.law }] ++
-  Rfc6979.artifacts
+  (if hv : OK vars ∧ "VG_BRAINPOOLP256R1_COMB" ∉ names vars then [
+    Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact PPC64LE.target {
+      tables := [("hmac", tables vars)]
+      code := signCodeT (brainpoolp256r1R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vars
+      stack := stackT
+      verified := brainpoolp256r1T_verified hasLaw.law vars hv }]
+  else [])
 
 end VG.Artifacts.EcdsaBrainpoolP256r1.PPC64LE

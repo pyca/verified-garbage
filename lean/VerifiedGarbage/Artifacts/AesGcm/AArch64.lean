@@ -63,20 +63,6 @@ public import VerifiedGarbage.Proof.Gcm.AArch64.KeyPowers
 
 @[expose] public section
 
--- The powers of AES-GCM's hash subkey on AArch64
-namespace VG.Artifacts.AesGcm.AArch64.Gcm
-
-def artifacts : List Artifact := [
-  Spec.Gcm.storePowersApi.artifact AArch64.target {
-    code := Impl.Gcm.AArch64.keyPowers
-    verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
-  Spec.Gcm.storePowersApi.artifact AArch64.target {
-    suffix := "_aes"
-    code := Impl.Gcm.AArch64.Pmull.keyPowers
-    verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified }]
-
-end VG.Artifacts.AesGcm.AArch64.Gcm
-
 namespace VG.Artifacts.AesGcm.AArch64
 
 open VG.Proof.AesGcm.AArch64
@@ -199,6 +185,13 @@ def artifactsFor (v : GcmVariant) : List Artifact :=
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v) ++
-  Gcm.artifacts
+  [
+    Spec.Gcm.storePowersApi.artifact AArch64.target {
+      code := Impl.Gcm.AArch64.keyPowers
+      verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
+    Spec.Gcm.storePowersApi.artifact AArch64.target {
+      suffix := "_aes"
+      code := Impl.Gcm.AArch64.Pmull.keyPowers
+      verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified }]
 
 end VG.Artifacts.AesGcm.AArch64

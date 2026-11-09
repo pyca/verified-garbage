@@ -44,21 +44,19 @@ namespace VG.Artifacts.AesCcm.X86
 
 open VG.Proof.AesCcm.X86
 
-def artifactsFor (v : Proof.Aes.X86.Ctr32Impl) : List Artifact := [
-  Spec.Ccm.sealApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
-    stack := 2668
-    verified := Proof.AesCcm.seal_keyed (seal_framed v)
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) },
-  Spec.Ccm.openApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
-    stack := 2668
-    verified := Proof.AesCcm.open_keyed (open_framed v)
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.AesCtr32.X86.variants.flatMap fun (v : Proof.Aes.X86.Ctr32Impl) => [
+    Spec.Ccm.sealApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.seal v.callee v.suffix)
+      stack := 2668
+      verified := Proof.AesCcm.seal_keyed (seal_framed v)
+      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) },
+    Spec.Ccm.openApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesCcm.X86.open v.callee v.suffix)
+      stack := 2668
+      verified := Proof.AesCcm.open_keyed (open_framed v)
+      spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }]
 
 end VG.Artifacts.AesCcm.X86

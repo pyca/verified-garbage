@@ -30,36 +30,6 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 
 @[expose] public section
 
--- GHASH on x86-64
-namespace VG.Artifacts.AesGcm.X86_64.Gcm
-
-def artifacts : List Artifact := [
-  Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := "_vpclmul_avx512"
-    code := Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare
-    verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified },
-  Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := "_vpclmul"
-    code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16
-    verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified },
-  Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := "_pclmul_avx"
-    code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16
-    verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified },
-  Spec.Gcm.prepareApi.artifact X86_64.target {
-    suffix := ""
-    code := Impl.Gcm.X86_64.Flag.prepareAbsent
-    verified := Proof.Gcm.X86_64.Prepare.absent_verified },
-  Spec.Gcm.wipePreparedApi.artifact X86_64.target {
-    suffix := "_avx"
-    code := Impl.Gcm.X86_64.Flag.wipe true
-    verified := Proof.Gcm.X86_64.Prepare.wipe_verified true },
-  Spec.Gcm.wipePreparedApi.artifact X86_64.target {
-    code := Impl.Gcm.X86_64.Flag.wipe false
-    verified := Proof.Gcm.X86_64.Prepare.wipe_verified false }]
-
-end VG.Artifacts.AesGcm.X86_64.Gcm
-
 namespace VG.Artifacts.AesGcm.X86_64.AesCtr32Ghash
 
 open VG.Proof.AesGcm.X86_64
@@ -305,6 +275,29 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => AesCtr32.artifacts v) ++
   (VG.Proof.Variants.AesGcm.X86_64.variants.flatMap fun v => AesGcm.artifacts v) ++
   (VG.Proof.Variants.Ghash.X86_64.variants.flatMap fun v => Ghash.artifacts v) ++
-  Gcm.artifacts
+  [
+    Spec.Gcm.prepareApi.artifact X86_64.target {
+      suffix := "_vpclmul_avx512"
+      code := Impl.Gcm.X86_64.Flag.prepareFlagged 48 Impl.Gcm.X86_64.PrepareZ.prepare
+      verified := Proof.Gcm.X86_64.PrepareZ.prepareFlagged_verified },
+    Spec.Gcm.prepareApi.artifact X86_64.target {
+      suffix := "_vpclmul"
+      code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.Prepare16.prepare16
+      verified := Proof.Gcm.X86_64.Prepare16.prepareFlagged_verified },
+    Spec.Gcm.prepareApi.artifact X86_64.target {
+      suffix := "_pclmul_avx"
+      code := Impl.Gcm.X86_64.Flag.prepareFlagged 16 Impl.Gcm.X86_64.PrepareAvx.prepare16
+      verified := Proof.Gcm.X86_64.PrepareAvx.prepareFlagged_verified },
+    Spec.Gcm.prepareApi.artifact X86_64.target {
+      suffix := ""
+      code := Impl.Gcm.X86_64.Flag.prepareAbsent
+      verified := Proof.Gcm.X86_64.Prepare.absent_verified },
+    Spec.Gcm.wipePreparedApi.artifact X86_64.target {
+      suffix := "_avx"
+      code := Impl.Gcm.X86_64.Flag.wipe true
+      verified := Proof.Gcm.X86_64.Prepare.wipe_verified true },
+    Spec.Gcm.wipePreparedApi.artifact X86_64.target {
+      code := Impl.Gcm.X86_64.Flag.wipe false
+      verified := Proof.Gcm.X86_64.Prepare.wipe_verified false }]
 
 end VG.Artifacts.AesGcm.X86_64

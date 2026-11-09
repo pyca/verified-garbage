@@ -21,17 +21,15 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 namespace VG.Artifacts.Pbkdf2Sha224.X86
 
-def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
-  Spec.Hmac.sha224I.pbkdf2Api.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
-    stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I
-    verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
-      Proof.Pbkdf2.Whole.X86.sha224_pbkFrameSat
-      (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
-    spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2_224Sp }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Sha256.X86.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha256.X86.variants.flatMap fun (v : Proof.Sha256.X86.Variants.Backend) => [
+    Spec.Hmac.sha224I.pbkdf2Api.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I) 7 v.F224.pbkdf2
+      stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha224I
+      verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha224_verified v)
+        Proof.Pbkdf2.Whole.X86.sha224_pbkFrameSat
+        (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2_224Sp) (Proof.Pbkdf2.Whole.X86.sha224_stack v)
+      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.pbkdf2_224Sp }]
 
 end VG.Artifacts.Pbkdf2Sha224.X86

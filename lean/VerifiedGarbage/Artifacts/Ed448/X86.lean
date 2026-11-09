@@ -60,50 +60,25 @@ public import VerifiedGarbage.Proof.X448.X86.Step
 
 @[expose] public section
 
--- Ed448 public-key derivation on x86 (32-bit)
-namespace VG.Artifacts.Ed448.X86.PublicKey
-
-open VG.X86
-
-def artifacts : List Artifact := [
-  Spec.Ed448.publicKeyApi.artifact X86.target {
-    code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
-    stack := 280
-    verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }]
-
-end VG.Artifacts.Ed448.X86.PublicKey
-
--- Ed448 signing with a cached public key on x86 (32-bit)
-namespace VG.Artifacts.Ed448.X86.SignCached
-
-open VG.X86
-
-def artifacts : List Artifact := [
-  Spec.Ed448.signCachedApi.artifact X86.target {
-    code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
-    stack := 280
-    verified := Proof.Ed448.X86.SignCached.signCached_verified Proof.Ed448.X86.scalarBase_calleeOk }]
-
-end VG.Artifacts.Ed448.X86.SignCached
-
--- Ed448 verification on x86 (32-bit)
-namespace VG.Artifacts.Ed448.X86.Verify
-
-open VG.X86
-
-def artifacts : List Artifact := [
-  Spec.Ed448.verifyApi.artifact X86.target {
-    code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
-    stack := 280
-    verified := Proof.Ed448.X86.Verify.verify_verified Proof.Ed448.X86.verifyEquation_calleeOk }]
-
-end VG.Artifacts.Ed448.X86.Verify
-
 namespace VG.Artifacts.Ed448.X86
 
+open VG.X86
+
 def artifacts : List Artifact :=
-  PublicKey.artifacts ++
-  SignCached.artifacts ++
-  Verify.artifacts
+  [
+    Spec.Ed448.publicKeyApi.artifact X86.target {
+      code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
+      stack := 280
+      verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
+  [
+    Spec.Ed448.signCachedApi.artifact X86.target {
+      code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
+      stack := 280
+      verified := Proof.Ed448.X86.SignCached.signCached_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
+  [
+    Spec.Ed448.verifyApi.artifact X86.target {
+      code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
+      stack := 280
+      verified := Proof.Ed448.X86.Verify.verify_verified Proof.Ed448.X86.verifyEquation_calleeOk }]
 
 end VG.Artifacts.Ed448.X86

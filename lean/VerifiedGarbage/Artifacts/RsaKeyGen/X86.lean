@@ -22,24 +22,18 @@ def direct : List Artifact := [
 
 end VG.Artifacts.RsaKeyGen.X86
 
--- RSA key generation on i686, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.X86.MillerRabin
-open VG VG.X86 VG.Proof.MillerRabin.X86
-
-def artifacts (v : RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact target {
-    suffix := v.suffix
-    code := Proof.RsaKeyGen.X86.Generate.genCode v
-    stack := 284
-    verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
-    spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }]
-
-end VG.Artifacts.RsaKeyGen.X86.MillerRabin
-
 namespace VG.Artifacts.RsaKeyGen.X86
+
+open VG VG.X86 VG.Proof.MillerRabin.X86
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.X86.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.X86.variants.flatMap fun (v : RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact target {
+      suffix := v.suffix
+      code := Proof.RsaKeyGen.X86.Generate.genCode v
+      stack := 284
+      verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
+      spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }])
 
 end VG.Artifacts.RsaKeyGen.X86

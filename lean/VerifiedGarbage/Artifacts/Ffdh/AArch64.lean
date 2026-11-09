@@ -63,24 +63,13 @@ def direct : List Artifact := [
     code := Impl.Ffdh.AArch64.KeyGeneration.init
     verified := Proof.Ffdh.AArch64.KeyGeneration.init_verified }]
 
-end VG.Artifacts.Ffdh.AArch64
-
--- FFDH parameter generation calls each shared Miller–Rabin implementation
-namespace VG.Artifacts.Ffdh.AArch64.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
-  Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
-    suffix := v.suffix
-    stack := 32
-    code := Proof.Ffdh.AArch64.Generation.searchCode v
-    verified := Proof.Ffdh.AArch64.Generation.search_verified v }]
-
-end VG.Artifacts.Ffdh.AArch64.MillerRabin
-
-namespace VG.Artifacts.Ffdh.AArch64
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
+    Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
+      suffix := v.suffix
+      stack := 32
+      code := Proof.Ffdh.AArch64.Generation.searchCode v
+      verified := Proof.Ffdh.AArch64.Generation.search_verified v }])
 
 end VG.Artifacts.Ffdh.AArch64

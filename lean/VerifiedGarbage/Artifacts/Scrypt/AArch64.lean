@@ -13,15 +13,12 @@ namespace VG.Artifacts.Scrypt.AArch64
 
 open VG.Proof.Scrypt.AArch64.Whole (pbkName pbkOf scrypt_verified)
 
-def artifactsFor (c : Proof.Sha256.AArch64.Compress) : List Artifact :=
-  [
-    Spec.Scrypt.scryptApi.artifact AArch64.target {
-      suffix := c.suffix
-      code := Impl.Scrypt.AArch64.scrypt (pbkName c) (pbkOf c)
-      stack := 96
-      verified := scrypt_verified c }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun (c : Proof.Sha256.AArch64.Compress) => [
+    Spec.Scrypt.scryptApi.artifact AArch64.target {
+        suffix := c.suffix
+        code := Impl.Scrypt.AArch64.scrypt (pbkName c) (pbkOf c)
+        stack := 96
+        verified := scrypt_verified c }]
 
 end VG.Artifacts.Scrypt.AArch64

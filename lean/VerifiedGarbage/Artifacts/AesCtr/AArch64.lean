@@ -14,18 +14,16 @@ namespace VG.Artifacts.AesCtr.AArch64
 
 open VG.Proof.AesCtr.AArch64
 
-def artifactsFor (v : Proof.Aes.AArch64.Ctr32Impl) : List Artifact := [
-  Spec.Ctr.aesApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.AesCtr.AArch64.crypt v.callee
-    verified := Proof.AesCtr.keyed (crypt_verified v) },
-  Spec.Ctr.aesFinalApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (Impl.AesCtr.AArch64.cryptFinal v.callee v.suffix)
-    stack := 80
-    verified := Proof.AesCtr.final_keyed (Final.cryptFinal_framed v) }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun (v : Proof.Aes.AArch64.Ctr32Impl) => [
+    Spec.Ctr.aesApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.AesCtr.AArch64.crypt v.callee
+      verified := Proof.AesCtr.keyed (crypt_verified v) },
+    Spec.Ctr.aesFinalApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratchWiped 80 .x6 10 (Impl.AesCtr.AArch64.cryptFinal v.callee v.suffix)
+      stack := 80
+      verified := Proof.AesCtr.final_keyed (Final.cryptFinal_framed v) }]
 
 end VG.Artifacts.AesCtr.AArch64

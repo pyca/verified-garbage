@@ -21,26 +21,19 @@ def direct : List Artifact := [
 
 end VG.Artifacts.TripleDesCbc.X86_64
 
--- Triple DES-CBC decryption (SP 800-38A §6.2) on x86-64
-namespace VG.Artifacts.TripleDesCbc.X86_64.TripleDesEcb
+namespace VG.Artifacts.TripleDesCbc.X86_64
 
 open VG.Proof.TripleDes.X86_64.Batch
 
-def artifacts (v : EcbImpl) : List Artifact := [
-  Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 265
-      (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))
-    stack := 3176
-    verified := cbc_framed v
-    spSafe := cbc_spSafe v }]
-
-end VG.Artifacts.TripleDesCbc.X86_64.TripleDesEcb
-
-namespace VG.Artifacts.TripleDesCbc.X86_64
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.TripleDesEcb.X86_64.variants.flatMap fun v => TripleDesEcb.artifacts v)
+  (VG.Proof.Variants.TripleDesEcb.X86_64.variants.flatMap fun (v : EcbImpl) => [
+    Spec.TripleDes.cbcDecryptChainedApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackScratchWiped 2128 .r8 265
+        (Impl.TripleDes.X86_64.Batch.decrypt false (v.name .decrypt) (v.code .decrypt))
+      stack := 3176
+      verified := cbc_framed v
+      spSafe := cbc_spSafe v }])
 
 end VG.Artifacts.TripleDesCbc.X86_64

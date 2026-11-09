@@ -13,37 +13,35 @@ public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.X86
 
 namespace VG.Artifacts.ChaCha20Poly1305.X86
 
-def artifactsFor (v : Proof.ChaCha20.X86.XorImpl) : List Artifact := [
-  Spec.ChaCha20Poly1305.sealApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
-    stack := 772
-    verified := Proof.ChaCha20Poly1305.X86.seal_framed v
-    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
-      (Proof.ChaCha20Poly1305.X86.seal_spSafe v) },
-  Spec.ChaCha20Poly1305.openZeroApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
-    stack := 772
-    verified := Proof.ChaCha20Poly1305.X86.open_framed v
-    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
-      (Proof.ChaCha20Poly1305.X86.open_spSafe v) },
-  Spec.ChaCha20Poly1305.openToApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86.withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)
-    stack := 780
-    verified := Proof.ChaCha20Poly1305.X86.openTo_framed v
-    spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
-      (Proof.ChaCha20Poly1305.X86.openTo_spSafe v) },
-  Spec.ChaCha20Poly1305.sealGatherApi.artifact X86.target {
-    suffix := v.suffix
-    code := Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name
-      (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).code
-    stack := 824
-    verified := Proof.ChaCha20Poly1305.X86.Gather.sealGather_verified (Proof.ChaCha20Poly1305.X86.Gather.sealFn v)
-    spSafe := Proof.ChaCha20Poly1305.X86.Gather.sealGather_spSafe v }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.ChaCha20Xor.X86.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.ChaCha20Xor.X86.variants.flatMap fun (v : Proof.ChaCha20.X86.XorImpl) => [
+    Spec.ChaCha20Poly1305.sealApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«seal» v.callee)
+      stack := 772
+      verified := Proof.ChaCha20Poly1305.X86.seal_framed v
+      spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+        (Proof.ChaCha20Poly1305.X86.seal_spSafe v) },
+    Spec.ChaCha20Poly1305.openZeroApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratchWiped 740 7 176 (Impl.ChaCha20Poly1305.X86.«open» v.callee)
+      stack := 772
+      verified := Proof.ChaCha20Poly1305.X86.open_framed v
+      spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+        (Proof.ChaCha20Poly1305.X86.open_spSafe v) },
+    Spec.ChaCha20Poly1305.openToApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86.withStackScratchWiped 748 9 176 (Impl.ChaCha20Poly1305.X86.openTo v.callee)
+      stack := 780
+      verified := Proof.ChaCha20Poly1305.X86.openTo_framed v
+      spSafe := Proof.ChaCha20Poly1305.X86.withStackScratchWiped_spSafe
+        (Proof.ChaCha20Poly1305.X86.openTo_spSafe v) },
+    Spec.ChaCha20Poly1305.sealGatherApi.artifact X86.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86.SealGather.sealGather (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).name
+        (Proof.ChaCha20Poly1305.X86.Gather.sealFn v).code
+      stack := 824
+      verified := Proof.ChaCha20Poly1305.X86.Gather.sealGather_verified (Proof.ChaCha20Poly1305.X86.Gather.sealFn v)
+      spSafe := Proof.ChaCha20Poly1305.X86.Gather.sealGather_spSafe v }]
 
 end VG.Artifacts.ChaCha20Poly1305.X86

@@ -14,21 +14,19 @@ namespace VG.Artifacts.AesCtr.X86_64
 
 open VG.Proof.AesCtr.X86_64
 
-def artifactsFor (v : Proof.Aes.X86_64.Ctr32Impl) : List Artifact := [
-  Spec.Ctr.aesApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.AesCtr.X86_64.crypt v.callee
-    stack := 8
-    verified := Proof.AesCtr.keyed (crypt_verified v)
-    spSafe := crypt_spSafe v },
-  Spec.Ctr.aesFinalApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratchWiped 80 0 8 (Impl.AesCtr.X86_64.cryptFinal v.callee v.suffix)
-    stack := 96
-    verified := Proof.AesCtr.final_keyed (cryptFinal_framed v)
-    spSafe := cryptFinal_framed_spSafe v }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.AesCtr32.X86_64.variants.flatMap fun (v : Proof.Aes.X86_64.Ctr32Impl) => [
+    Spec.Ctr.aesApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.AesCtr.X86_64.crypt v.callee
+      stack := 8
+      verified := Proof.AesCtr.keyed (crypt_verified v)
+      spSafe := crypt_spSafe v },
+    Spec.Ctr.aesFinalApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratchWiped 80 0 8 (Impl.AesCtr.X86_64.cryptFinal v.callee v.suffix)
+      stack := 96
+      verified := Proof.AesCtr.final_keyed (cryptFinal_framed v)
+      spSafe := cryptFinal_framed_spSafe v }]
 
 end VG.Artifacts.AesCtr.X86_64

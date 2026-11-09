@@ -43,27 +43,20 @@ def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
--- PKCS #1 v1.5 encryption over precomputed RSA public variants on AArch64
-namespace VG.Artifacts.RsaPkcs1Enc.AArch64.RsaPublicPrecomputed
+namespace VG.Artifacts.RsaPkcs1Enc.AArch64
 
 open VG.Proof.Rsa.AArch64 (PublicImpl)
 open VG.Proof.RsaPkcs1Sig.AArch64 (pdOf)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc
 open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.rndStack Rnd.code_verified Rnd.sat)
 
-def artifacts (v : PublicImpl) : List Artifact := [
-  Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))
-    stack := Rnd.rndStack (pdOf v).stack
-    verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat }]
-
-end VG.Artifacts.RsaPkcs1Enc.AArch64.RsaPublicPrecomputed
-
-namespace VG.Artifacts.RsaPkcs1Enc.AArch64
-
 def artifacts : List Artifact :=
   (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
-  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun v => RsaPublicPrecomputed.artifacts v)
+  (VG.Proof.Variants.RsaPublicPrecomputed.AArch64.variants.flatMap fun (v : PublicImpl) => [
+    Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))
+      stack := Rnd.rndStack (pdOf v).stack
+      verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat }])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

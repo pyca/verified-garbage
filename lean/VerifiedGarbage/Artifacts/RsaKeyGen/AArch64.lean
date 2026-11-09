@@ -197,24 +197,13 @@ def direct : List Artifact := [
     code := Impl.RsaKeyGen.AArch64.KeyInit.init
     verified := Proof.RsaKeyGen.AArch64.KeyInit.init_verified }]
 
-end VG.Artifacts.RsaKeyGen.AArch64
-
--- RSA key generation on AArch64, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.AArch64.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
-    suffix := v.suffix
-    stack := 416
-    code := Proof.RsaKeyGen.AArch64.Generate.genCode v
-    verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v }]
-
-end VG.Artifacts.RsaKeyGen.AArch64.MillerRabin
-
-namespace VG.Artifacts.RsaKeyGen.AArch64
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
+      suffix := v.suffix
+      stack := 416
+      code := Proof.RsaKeyGen.AArch64.Generate.genCode v
+      verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v }])
 
 end VG.Artifacts.RsaKeyGen.AArch64
