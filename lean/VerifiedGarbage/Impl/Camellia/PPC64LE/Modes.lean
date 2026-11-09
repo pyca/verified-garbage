@@ -25,8 +25,9 @@ subkeys, once; `crypt` calls `vg_camellia_crypt_prepared`, which transforms
 the eight blocks of the tail buffer in place: CBC and CFB decryption and
 CTR take eight blocks a step while eight are left, then one
 (`Impl/Modes/PPC64LE/Wide.lean`). Preparing the key costs about as much as
-a batch, so CFB decryption and CTR of fewer than eight blocks take them one
-a step by the single-block core instead (`Modes.PPC64LE.pick`). The serial
+a batch, so CBC and CFB decryption and CTR of fewer than eight blocks take
+them one a step by the single-block core instead (`Modes.PPC64LE.pick`;
+`Serial.decCore` for CBC decryption). The serial
 modes, CBC and CFB encryption and OFB, take one block a step, by the
 single-block core (`Serial.lean`),
 which takes the same scratch buffer.
@@ -108,9 +109,11 @@ argument: one block a step, by the single-block core. -/
 def cbcEncryptChained : Prog isa := wrap (Serial.core.seq (Modes.Mode.cbcEncChained 4))
 
 /-- `vg_camellia_cbc_decrypt_chained`, with its scratch buffer as the sixth
-argument: eight blocks a step, then one. -/
+argument: eight blocks a step, then one; fewer than eight blocks one a step
+by the single-block decryption core, without the bitsliced key. -/
 def cbcDecryptChained : Prog isa :=
-  wrap ((dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 8) (Modes.Mode.cbcDecChained 4) 3)
+  wrap (Modes.PPC64LE.pick 3 (Serial.decCore.seq (Modes.Mode.cbcDecChained 4))
+    ((dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 8) (Modes.Mode.cbcDecChained 4) 3))
 
 /-- `vg_camellia_ofb`, with its scratch buffer as the sixth argument: one
 block a step, by the single-block core. -/
