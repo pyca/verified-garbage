@@ -101,12 +101,6 @@ def ldSrc (o k : Nat) : List Instr := [.load .w .r7 .r6 (o + 4 * k)]
 /-- Limb `k` of `[o]`, with the carry folded in kept in `r10` added to limb 7, into `r7`. -/
 def foldSrc (o k : Nat) : List Instr := ldSrc o k ++ (if k = 7 then [.add .r7 .r7 .r10] else [])
 
-/-- The carry out of `[o]`, in `r8`, folded in as `r8 + 2²²⁴ r8`. -/
-def fold (o : Nat) : List Instr := .addi .r10 .r8 0 :: pass .r6 o (foldSrc o)
-
-/-- The carry out folded in twice. -/
-def tail (o : Nat) : List Instr := fold o ++ fold o
-
 /-! ## Field arithmetic -/
 
 /-- Limb `k` of `[a] + [b]`, a source for `pass` (Ed448's scalar arithmetic
@@ -174,12 +168,6 @@ def row (a b : Nat) : List Instr :=
   [.load .w .r4 .r9 a, .li .r8 0] ++ pass .r9 ACC (rowSrc b) ++
     [.store .w .r8 .r9 (ACC + 56), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
-/-- Limb `k` of `lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded once more, into `r7`. -/
-def mulSrc (k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (ACC + 4 * k), .load .w .r5 .r6 (ACC + 56 + 4 * k), .add .r7 .r7 .r5] ++
-  (if k < 7 then [.load .w .r5 .r6 (ACC + 56 + 4 * (k + 7)), .add .r7 .r7 .r5]
-   else [.add .r7 .r7 .r5, .load .w .r5 .r6 (ACC + 56 + 4 * (k - 7)), .add .r7 .r7 .r5])
-
 /-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
 carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
 word stored over `acc[i + j]` and its high word the next carry (`mulld`,
@@ -194,14 +182,47 @@ def row64 (a b : Nat) : List Instr :=
   [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
     [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
 
+/-- Doubleword `k` of the high half `H` of the product rotated by 224 bits,
+`(H₍ₖ₊₃₎ mod 7 >> 32) + (H₍ₖ₊₄₎ mod 7 << 32)`, into `r8`. -/
+def rotSrc (k : Nat) : List Instr :=
+  [.load .d .r5 .r6 (ACC + 56 + 8 * ((k + 3) % 7)), .load .d .r10 .r6 (ACC + 56 + 8 * ((k + 4) % 7)),
+    .lsr .d .r5 .r5 32, .lsl .r10 .r10 32, .add .r8 .r5 .r10]
+
+/-- Doubleword `k ≥ 3` of the high half `H` of the product with its low 224
+bits cleared, into `r8`. -/
+def hiSrc (k : Nat) : List Instr :=
+  if k = 3 then [.load .d .r8 .r6 (ACC + 56 + 24), .lsr .d .r8 .r8 32, .lsl .r8 .r8 32]
+  else [.load .d .r8 .r6 (ACC + 56 + 8 * k)]
+
+/-- Doubleword `k` of `[o]` plus what `src k` leaves in `r8`, by the carry chain. -/
+def accStep (src : Nat → List Instr) (o k : Nat) : List Instr :=
+  .load .d .r7 .r6 (o + 8 * k) :: src k ++ [chainOp false k .r8, .store .d .r7 .r6 (o + 8 * k)]
+
+/-- The sums of the reduction of the product `L + 2⁴⁴⁸ H` at `ACC` into `[o]`:
+with `H = Hₗ + 2²²⁴ Hₕ`, `2⁴⁴⁸ H ≡ H + 2²²⁴ Hₗ + Hₕ + 2²²⁴ Hₕ`, so `[o] = L + H`,
+then `+= 2²²⁴ Hₗ + Hₕ` (`H` rotated by 224 bits), then `+= 2²²⁴ Hₕ` (`H` with
+its low 224 bits cleared), three carry chains whose carries `c ≤ 3` are summed
+in `r4`; `2³² c` into `r5` and zero into `r8`, as `carryPrep` leaves them. -/
+def sums (o : Nat) : List Instr :=
+  (List.range 7).flatMap (chainStep false o ACC (ACC + 56)) ++ [.li .r4 0, .addze .r4 .r4] ++
+    (List.range 7).flatMap (accStep rotSrc o) ++ [.addze .r4 .r4] ++
+    (List.range 4).flatMap (fun j => accStep hiSrc o (j + 3)) ++
+    [.addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
+
+/-- The reduction of the product at `ACC` into `[o]`: the `sums`, then their
+carry folded in as `c + 2²²⁴ c` twice, as `add` does. -/
+def reduce (o : Nat) : List Instr :=
+  sums o ++ (List.range 7).flatMap (foldStep false o) ++ carryPrep ++
+    (List.range 7).flatMap (foldStep false o)
+
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
 fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
 products (a loop, so that the ladder's loop stays within the reach of its
-branch), then the reduction of its 28 limbs. -/
+branch), then its reduction (`reduce`). -/
 def mul (o a b : Nat) : Prog isa :=
   .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
     (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
-      (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o)))
+      (.block (reduce o)))
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/

@@ -29,30 +29,6 @@ open VG.Spec.X448 (P)
 section
 variable {b : Addr}
 
-/-- A `pass` of sums, then the `tail`, with no carry in `r8`. -/
-theorem passTail_ok {o : Nat} (ho : o + 56 ≤ 4096) {src : Nat → List Instr} {c : Nat → Nat}
-    (hc : ∀ k < 14, c k + 2 ^ 32 ≤ 2 ^ 64) (hv : val32 c 14 < 5 * (2 ^ 224 * 2 ^ 224)) {s1 : State}
-    (hc1 : Ctx b s1) (h8 : s1.gpr .r8 = 0)
-    (hsrc : ∀ k < 14, ∀ s', PassInv .r6 o s1 c 0 k s' → WP isa (.block (src k)) s' fun s'' =>
-        (s''.gpr .r7).toNat = c k ∧ Rest [.r5, .r7] s' s'' ∧ s''.mem = s'.mem) :
-    WP isa (.block (pass .r6 o src ++ tail o)) s1 fun s' =>
-      Rest [.r5, .r7, .r8, .r10] s1 s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩] s1.mem s'.mem ∧
-      V s'.mem b o % P = val32 c 14 % P := by
-  refine WP.append (pass_ok (s0 := s1) (c := c) (cin := 0) (by decide) (by decide) ho
-    (fun k hk => by rw [hc1.r6]; exact hc1.inW (by omega_using [ho, hk]))
-    (by rw [h8]; rfl) hc (by decide) hsrc) fun s2 hp => ?_
-  have hc2 : Ctx b s2 := hc1.of_rest hp.rest (by decide)
-  have hpo : ∀ j < 14, wd s2.mem b (o + 4 * j) = out c 0 j := fun j hj => by
-    have := hp.outs j hj; rwa [hc1.r6] at this
-  have hpf : Frame [⟨b + BitVec.ofNat 64 o, 56⟩] s1.mem s2.mem := by
-    have := hp.frame; rwa [hc1.r6] at this
-  have hcl := carry_le hv
-  refine WP.mono (tail_ok ho hc2 hp.r8 hcl) fun s3 ⟨hr3, hf3, hv3⟩ => ?_
-  refine ⟨(hp.rest.mono (by decide)).trans hr3, hpf.trans hf3, ?_⟩
-  have hcv := chain_val c 0 14
-  rw [pow448, Nat.add_zero] at hcv
-  rw [hv3, V, val32_congr (f := limb s2.mem b o) (g := out c 0) (fun k hk => hpo k hk), hcv]
-
 /-! ## Chains of doublewords through memory -/
 
 section
