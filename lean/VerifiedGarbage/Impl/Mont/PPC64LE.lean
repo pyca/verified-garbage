@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Impl.Mont.Mod
+public import VerifiedGarbage.Impl.Mont.PPC64LE.P256
 
 /-!
 # Montgomery arithmetic modulo an odd multiword modulus, on PPC64LE
@@ -297,13 +298,18 @@ def qhead (M : Mod) : List Instr :=
 `mpReg`): the low words into `treg 0`, …, the carry into `treg n` and
 `r12`, then the high words with the accumulator moved one register down,
 `r12` into `treg n`. -/
-def qrowM (M : Mod) : List Instr :=
+def qrowMG (M : Mod) : List Instr :=
   qhead M ++ pass false mReg 0 0 M.n ++
   ([.addze (treg M.n) (treg M.n), .addze .r12 .r12] : List Instr) ++
   pass true mReg 0 1 M.n ++ ([.addze (treg M.n) .r12] : List Instr)
 
+/-- The row `T = (T + q m) / 2⁶⁴`: for P-256's `p`, by shifts of `q = t₀`
+(`qrowP`, `Impl/Mont/PPC64LE/P256.lean`), else by products (`qrowMG`). -/
+def qrowM (M : Mod) (m : Nat) : List Instr := if M.n = 4 ∧ m = p256p then qrowP else qrowMG M
+
 /-- An iteration of `rmul4`. -/
-def qrow (M : Mod) : List Instr := qrowB M.n ++ qrowM M ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
+def qrow (M : Mod) (m : Nat) : List Instr :=
+  qrowB M.n ++ qrowM M m ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
 
 /-- Word `j` of `T - m` (both in registers), with CA, to `bReg n j` (free once
 the rows are done). -/
@@ -331,7 +337,7 @@ the modulus in registers (`[r4]` may be `[r5]` or `[r6]`). -/
 def rmul4 (M : Mod) (m acc : Nat) : Prog isa :=
   .seq (.block (rsave (2 * M.n) acc ++ [.store .d (mpReg M.n) wb M.tmp] ++ movImm64 (mpReg M.n) M.minv.toNat ++
       rzero M.n ++ qload M m ++ [.li .r8 M.n])) <|
-  .seq (.loop (.block (qrow M)) (.nonzero .d .r8)) <|
+  .seq (.loop (.block (qrow M m)) (.nonzero .d .r8)) <|
     .block (qcsubR M.n ++ rrestore (2 * M.n) acc ++ [.load .d (mpReg M.n) wb M.tmp])
 
 /-- `rmul4` for at most four words, `rmul` for more: the two have the same
@@ -342,7 +348,7 @@ def rmulSel (M : Mod) (m acc : Nat) : Prog isa :=
       rsave (2 * M.n) acc ++ [.store .d (mpReg M.n) wb M.tmp] ++ movImm64 (mpReg M.n) M.minv.toNat ++
         rzero M.n ++ qload M m ++ [.li .r8 M.n]
     else setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
-  .seq (.loop (.block (if M.n ≤ 4 then qrow M else rrow M m acc)) (.nonzero .d .r8)) <|
+  .seq (.loop (.block (if M.n ≤ 4 then qrow M m else rrow M m acc)) (.nonzero .d .r8)) <|
     .block (if M.n ≤ 4 then qcsubR M.n ++ rrestore (2 * M.n) acc ++ [.load .d (mpReg M.n) wb M.tmp] else rcsub M ++ rrestore M.n acc)
 
 theorem rmulSel_eq (M : Mod) (m acc : Nat) : rmulSel M m acc = if M.n ≤ 4 then rmul4 M m acc else rmul M m acc := by
