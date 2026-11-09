@@ -37,8 +37,8 @@ theorem ntt_eq_eight (P : Spec.MlDsa.Poly) :
   rw [ntt_eq_layers]
   simp only [nttLens, wideLens, List.foldl_cons, List.foldl_nil]
 
-theorem setup_env {s₀ : State} (hp : Pre s₀) {u t : State} (hu : FillInv s₀ 255 u) (ht : ConstsOut u t) :
-    Env s₀ t ∧ PolyIs t.mem (F s₀) (polyAt s₀.mem (F s₀)) := by
+theorem setup_env {K : Nat → Nat} {s₀ : State} (hp : Pre s₀) {u t : State} (hu : FillInv K s₀ 255 u)
+    (ht : ConstsOut u t) : EnvK K s₀ t ∧ PolyIs t.mem (F s₀) (polyAt s₀.mem (F s₀)) := by
   have fr : Frame [polyRegion (S s₀)] s₀.mem t.mem := by rw [ht.mem]; exact hu.frame
   refine ⟨⟨by rw [ht.gpr _ (by decide) (by decide), hu.gpr _ (by decide)], ht.q, ht.v5, ht.v16, ht.v17,
     ht.v18, ht.v19, fun r hr => ?_, by rw [ht.rd, hu.rd], by rw [ht.wr, hu.wr], by rw [ht.sp, hu.sp],
@@ -59,7 +59,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     exact ⟨polyRegion (S s₀), by simp, VG.Offset.contains_base (k := 1024) _ (by omega) (by omega)⟩
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (fill_ok hwr) fun u hu => WP.mono (consts_run u) fun t ht => ?_
+  refine WP.mono (fill_ok scrK hwr) fun u hu => WP.mono (consts_run u) fun t ht => ?_
   obtain ⟨env, hP⟩ := setup_env hp hu ht
   refine WP.seq (WP.mono (wide_ok hp env hP) fun s₁ h₁ => WP.mono (narrow_ok hp h₁) fun s₂ ⟨e₂, p₂⟩ => ?_)
   refine ⟨fun r hr => e₂.keep r (by revert r hr; decide), e₂.sp, e₂.lr, ?_⟩

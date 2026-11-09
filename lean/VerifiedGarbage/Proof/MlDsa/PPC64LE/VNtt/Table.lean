@@ -29,39 +29,6 @@ namespace VG.Proof.MlDsa.PPC64LE.VNtt
 
 open VG VG.PPC64LE VG.Impl.MlDsa.PPC64LE.VNtt
 
-/-! ## Lane operations -/
-
-def addV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i + vword y i
-def subV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i - vword y i
-def minV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => minu32 (vword x i) (vword y i)
-def loV (x y : BitVec 128) : BitVec 128 := ofVWords fun i => vword x i * vword y i
-def mulEV (x y : BitVec 128) : BitVec 128 :=
-  BitVec.ofNat 64 ((vword x 0).toNat * (vword y 0).toNat) ++ BitVec.ofNat 64 ((vword x 2).toNat * (vword y 2).toNat)
-def mulOV (x y : BitVec 128) : BitVec 128 :=
-  BitVec.ofNat 64 ((vword x 1).toNat * (vword y 1).toNat) ++ BitVec.ofNat 64 ((vword x 3).toNat * (vword y 3).toNat)
-
-theorem eval_add (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.add false d n m) = some (d, addV (v n) (v m)) := rfl
-theorem eval_sub (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.sub true d n m) = some (d, subV (v n) (v m)) := rfl
-theorem eval_min (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.minu true d n m) = some (d, minV (v n) (v m)) := rfl
-theorem eval_lo (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.muluwm d n m) = some (d, loV (v n) (v m)) := rfl
-theorem eval_mulE (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.mulu false true d n m) = some (d, mulEV (v n) (v m)) := rfl
-theorem eval_mulO (v : VReg → BitVec 128) (d n m : VReg) :
-    VOp.eval v (.mulu true true d n m) = some (d, mulOV (v n) (v m)) := rfl
-theorem eval_perm (v : VReg → BitVec 128) (d n m c : VReg) :
-    VOp.eval v (.perm d n m c) = some (d, permV (v n) (v m) (v c)) := rfl
-
-theorem syms_writeV (s : State) (d : VReg) (x : BitVec 128) : (s.writeV d x).syms = s.syms := rfl
-
-theorem wp_vop {op : VOp} {d : VReg} {x : BitVec 128} {is : List Instr} {s : State} {Q : State → Prop}
-    (h : VOp.eval s.vpr op = some (d, x)) (k : WP isa (.block is) (s.writeV d x) Q) :
-    WP isa (.block (.vop op :: is)) s Q :=
-  WP.block_cons_iff.2 ⟨_, show (VOp.eval s.vpr op).map _ = _ by rw [h]; rfl, k⟩
-
 /-! ## The butterfly's results -/
 
 /-- `t = z·b mod q`, as `bfly` computes it in `v7`. -/
@@ -111,34 +78,6 @@ theorem bfly_exec (s : State) {a b : VReg} (hp : Pair a b) :
     simp only [vpr_writeV, r1, r2, r3, r4, ite_false]
 
 /-! ## The butterfly's lanes -/
-
-theorem vword_addV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (addV x y) i = vword x i + vword y i :=
-  vword_ofVWords _ hi
-theorem vword_subV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (subV x y) i = vword x i - vword y i :=
-  vword_ofVWords _ hi
-theorem vword_minV (x y : BitVec 128) {i : Nat} (hi : i < 4) :
-    vword (minV x y) i = minu32 (vword x i) (vword y i) := vword_ofVWords _ hi
-theorem vword_loV (x y : BitVec 128) {i : Nat} (hi : i < 4) : vword (loV x y) i = vword x i * vword y i :=
-  vword_ofVWords _ hi
-
-/-- The control of the high words of the even and odd products: lanes 0, 4,
-2, 6 of `VA || VB`. -/
-def hiC : BitVec 128 := 0x000102031011121308090a0b18191a1b#128
-
-theorem prod_lt (x y : BitVec 32) : x.toNat * y.toNat < 2 ^ 64 :=
-  Nat.lt_of_lt_of_le (Nat.mul_lt_mul'' x.isLt y.isLt) (by decide)
-
-theorem vword_hi (b zp : BitVec 128) {i : Nat} (hi : i < 4) :
-    (vword (permV (mulEV b zp) (mulOV b zp) hiC) i).toNat = (vword b i).toNat * (vword zp i).toNat / 2 ^ 32 := by
-  rcases (by omega : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl
-  · rw [vword_permV _ _ _ (k := 0) (by decide) (by decide) (by decide), ite_eq_left (by decide), mulEV,
-      (vword_dw_hi _ _).1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 4) (by decide) (by decide) (by decide), ite_eq_right (by decide), mulOV,
-      show 4 - 4 = 0 from rfl, (vword_dw_hi _ _).1, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 2) (by decide) (by decide) (by decide), ite_eq_left (by decide), mulEV,
-      (vword_dw_hi _ _).2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
-  · rw [vword_permV _ _ _ (k := 6) (by decide) (by decide) (by decide), ite_eq_right (by decide), mulOV,
-      show 6 - 4 = 2 from rfl, (vword_dw_hi _ _).2, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (prod_lt _ _)]
 
 open VG.Spec.MlDsa (Zq)
 
@@ -240,7 +179,7 @@ theorem loadImm_lo {v : Nat} (hv : v < 2 ^ 32) :
 theorem scrV_lt (p : Nat) : scrV p < 2 ^ 32 := shoup_lt (zeta_lt _)
 
 /-- After positions `1 … k` of the table at `r4`. -/
-structure FillInv (s₀ : State) (k : Nat) (s : State) : Prop where
+structure FillInv (K : Nat → Nat) (s₀ : State) (k : Nat) (s : State) : Prop where
   gpr : ∀ r, r ≠ .r12 → s.gpr r = s₀.gpr r
   vpr : s.vpr = s₀.vpr
   rd : s.rd = s₀.rd
@@ -249,22 +188,22 @@ structure FillInv (s₀ : State) (k : Nat) (s : State) : Prop where
   lr : s.lr = s₀.lr
   syms : s.syms = s₀.syms
   frame : Frame [⟨s₀.gpr .r4, 1024⟩] s₀.mem s.mem
-  tab : ∀ p, 0 < p → p ≤ k → s.mem.readW (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (scrV p)
+  tab : ∀ p, 0 < p → p ≤ k → s.mem.readW (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 32 = BitVec.ofNat 32 (shoup (zeta (K p)))
 
-theorem fill_ok {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4) :
-    WP isa (.block fill) s₀ (FillInv s₀ 255) := by
-  refine wp_range_flatMap (M := isa) (FillInv s₀) (fun k s hk h => ?_) 255 (Nat.le_refl _) s₀
+theorem fill_ok (K : Nat → Nat) {s₀ : State} (hwr : ∀ p < 256, InRegions s₀.wr (s₀.gpr .r4 + BitVec.ofNat 64 (4 * p)) 4) :
+    WP isa (.block (fillK K)) s₀ (FillInv K s₀ 255) := by
+  refine wp_range_flatMap (M := isa) (FillInv K s₀) (fun k s hk h => ?_) 255 (Nat.le_refl _) s₀
     ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl, rfl, rfl, Frame.refl _ _, fun p hp hp' => absurd hp' (by omega)⟩
-  have hv := scrV_lt (k + 1)
-  let s₁ := s.write .r12 ((BitVec.ofNat 16 (scrV (k + 1) / 65536) ++ (0 : BitVec 16)).signExtend 64)
-  let s₂ := s₁.write .r12 (s₁.gpr .r12 ||| (BitVec.ofNat 16 (scrV (k + 1) % 65536)).setWidth 64)
-  have v2 : (s₂.gpr .r12).setWidth 32 = BitVec.ofNat 32 (scrV (k + 1)) := by
+  have hv := shoup_lt (zeta_lt (K (k + 1)))
+  let s₁ := s.write .r12 ((BitVec.ofNat 16 (shoup (zeta (K (k + 1))) / 65536) ++ (0 : BitVec 16)).signExtend 64)
+  let s₂ := s₁.write .r12 (s₁.gpr .r12 ||| (BitVec.ofNat 16 (shoup (zeta (K (k + 1))) % 65536)).setWidth 64)
+  have v2 : (s₂.gpr .r12).setWidth 32 = BitVec.ofNat 32 (shoup (zeta (K (k + 1)))) := by
     simp only [s₂, s₁, State.write, ite_true]; exact loadImm_lo hv
   have e : s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) = s₀.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1)) := by
     simp only [s₂, s₁, State.write, reduceCtorEq, ite_false, h.gpr .r4 (by decide)]
   refine WP.cons exec_lis (WP.cons exec_ori (WP.cons (exec_store_w (by decide) (show 4 * (k + 1) < 2 ^ 15 by omega)
     (by show InRegions s₂.wr _ 4; rw [e]; exact h.wr ▸ hwr (k + 1) (by omega))) (wp_nil ?_)))
-  show FillInv s₀ (k + 1)
+  show FillInv K s₀ (k + 1)
     { s₂ with mem := (s₂.mem.writeW (s₂.gpr .r4 + BitVec.ofNat 64 (4 * (k + 1))) ((s₂.gpr .r12).setWidth 32)) }
   rw [e, v2]
   refine ⟨fun r hr => ?_, h.vpr, h.rd, h.wr, h.sp, h.lr, h.syms, ?_, fun p hp hp' => ?_⟩

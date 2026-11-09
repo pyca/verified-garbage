@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Entry
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Sign.Inst
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
@@ -85,7 +85,7 @@ theorem zero_ne_one32 : (BitVec.setWidth 32 (0 : BitVec 64)) ≠ 1 := by decide
 /-- The primitives satisfy what the proofs of signing need of them. -/
 theorem prims_ok : SPrimsOk prims 96 where
   ntt := ⟨⟨96, by decide, VNtt.verified⟩, by decide +kernel⟩
-  invNtt := ⟨⟨96, by decide, Arith.NttInv.verified⟩, by decide +kernel⟩
+  invNtt := ⟨⟨96, by decide, VNtt.iverified⟩, by decide +kernel⟩
   mul := ⟨⟨0, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
   mulAdd := ⟨⟨0, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩
   add := ⟨⟨0, by decide, Arith.AddSub.add_verified⟩, by decide +kernel⟩
