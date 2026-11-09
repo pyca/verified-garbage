@@ -263,30 +263,18 @@ def cbcDecryptUpdateApi : Api where
     `pending_len`, `len` and `out_len` may affect timing, not the context or the data."
   safety := cbcUpdateSafety
 
-/-!
-## In-place CBC
+/-! ## In-place CBC
 
-**Trusted** (as every file in `Spec/`). CBC (NIST SP 800-38A §6.2,
-`Spec/Cbc.lean`) with RC2 (RFC 2268 §§3–4, `Spec/Rc2.lean`) on 8-byte
-blocks. This does not assert that RC2 is a NIST-approved cipher.
+The chained functions process whole blocks in place and replace `iv` with
+`Cbc.next`, so subsequent calls continue the message. Empty input leaves
+both buffers unchanged. Neither function buffers partial blocks or adds
+or removes padding.
 
-`vg_rc2_cbc_encrypt_chained` and `vg_rc2_cbc_decrypt_chained` transform
-`n` whole blocks in place, from the chaining value at `iv`, which they
-replace with the chaining value to continue from (`Cbc.next`, the last
-ciphertext block). A caller may process a message in pieces of whole
-blocks. Neither function buffers partial blocks or adds or removes padding.
-
-Both directions read the same 128-byte, little-endian RC2 key schedule
-(`scheduleAt`), as written at the start of the context by
-`vg_rc2_cbc_init`. That initialization chooses the effective key size;
-these functions neither change it nor assume it equals the key's bit length.
-
-The signature derives memory validity, non-overlap and permitted writes
-from `Sig.contract`: the schedule, IV and data are separate buffers. Only
-the pointers and `n` are public; the schedule, IV and data are secret.
-`stack` describes an implementation's frames and calls.
+Both directions read the same 128-byte schedule (`scheduleAt`), as written
+at the start of the context by `vg_rc2_cbc_init`, which chooses the effective
+key size. The schedule, IV and data are separate buffers. Only pointers
+and the block count are public; the schedule, IV and data remain secret.
 -/
-
 /-- The `n` 8-byte blocks at `p`, as lists of bytes. -/
 def cbcBlocksAt (m : Mem) (p : Addr) (n : Nat) : List (List Byte) :=
   (blocksAt m p n).map Vector.toList
