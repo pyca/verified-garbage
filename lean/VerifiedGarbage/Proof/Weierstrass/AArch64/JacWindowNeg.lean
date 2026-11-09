@@ -56,7 +56,7 @@ theorem selectField_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
 The bit table is framed across the temporary subtraction. -/
 theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     {Sl : Nat → Prop} (hL : Lay M size Sl) (hAl : Aligned M Sl)
-    (hm : UnitMod m (2^(64*M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
+    (_hm : UnitMod m (2^(64*M.n))) {V : List Nat} {E : Nat → Fin m} {s : State}
     (hI : Inv M base size m Sl V E s) {neg z y w bits k j N : Nat}
     (hneg : Sl neg) (hz : z ∈ V) (hy : y ∈ V) (hny : neg ≠ y) (hzero : E z=0)
     (hw1 : 1 ≤ w) (hw : w<65536) (hj : w*j+w ≤ N)
@@ -83,7 +83,7 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     intro x hx
     simp only [FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
     rcases hx with rfl | rfl <;> with_reducible assumption
-  refine WP.mono (fop_ok hL hAl hm hI hsl hr) fun a ⟨ka,ia⟩ => ?_
+  refine WP.mono (subRaw_ok hL hAl hI hsl hr) fun a ⟨ka,ia⟩ => ?_
   have hb : ∀ t<N, a.mem (off base (bits+t))=if k.testBit t then 1 else 0 := by
     intro t ht
     rw [ka.unch.byte (fun q hq => ?_) (by omega)]
@@ -100,7 +100,7 @@ theorem negFieldWindow_ok {M : Mod} {base : Addr} {size m : Nat} [NeZero m]
     refine ⟨fun r hr => kb.gpr r (fun hh => hr ?_),kb.rd,kb.wr,kb.sp,fun _ _ _ => congrFun kb.mem _⟩
     simp only [List.mem_cons,List.not_mem_nil,or_false] at hh
     rcases hh with rfl | rfl <;> simp [clob]
-  refine ⟨(progKeep_of_op ka (by simp [FOp.out])).trans (kpb.trans (progKeep_of_op kt (by simp))),?_⟩
+  refine ⟨(progKeep_of_op ka (by simp)).trans (kpb.trans (progKeep_of_op kt (by simp))),?_⟩
   simpa only [FOp.out,FOp.run,hzero,show (0 : Fin m)-E y = -E y by grind,
     Function.update_self,Function.update_of_ne (Ne.symm hny)] using it
 

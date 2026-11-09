@@ -13,7 +13,7 @@ open VG.Proof.Mont VG.Proof.Mont.AArch64 Spec.Weierstrass
 
 theorem jointSign_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j : Nat}
     {Q : Point C} {E : Nat → Fe C} (hL : JointFixedLayout c size)
-    (hm : UnitMod C.p (2^(64*c.K.M.n))) (hj : j<257) (hc : JointFixedChecks c) :
+    (_hm : UnitMod C.p (2^(64*c.K.M.n))) (hj : j<257) (hc : JointFixedChecks c) :
     RelCT isa (fun s t =>
       FieldPair c.K.M base size C.p (·∈jointSlots c) ([c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) E s t ∧
       JointStable c C base Q u v s ∧ JointStable c C base Q u v t ∧
@@ -50,16 +50,15 @@ theorem jointSign_relCT {c : Joint.Cfg} {C : Curve} {base : Addr} {size u v j : 
   · intro s t ⟨_,s3,t3⟩
     change some (s.read .x .x3 != 0)=some (t.read .x .x3 != 0)
     rw [VG.Proof.Ed25519.AArch64.read_x,VG.Proof.Ed25519.AArch64.read_x,s3,t3]
-  · have op := fprogB_relCT (base:=base) (V:=[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) (E:=E)
-      hL.layout.lay hL.layout.aligned (callOf_small (Nat.le_of_eq hL.layout.n)) hm [FOp.sub c.K.E.y c.K.zero c.K.E.y] hc.neg (by
-        intro o ho x hx
-        rw [List.mem_singleton.mp ho] at hx
+  · have op := subRaw_relCT (base:=base) (V:=[c.K.E.x,c.K.E.y,c.K.E.z]++jointLive c) (E:=E)
+      hL.layout.lay hL.layout.aligned hc.neg (o:=c.K.E.y) (a:=c.K.zero) (b:=c.K.E.y) (by
+        intro x hx
         simp only [FOp.out,FOp.ins,List.mem_cons,List.not_mem_nil,or_false] at hx
         rcases hx with rfl | rfl | rfl
         · exact jointEntry_slots c _ (by simp)
         · simp [jointSlots,jacWinSlots,winRo]
         · exact jointEntry_slots c _ (by simp)) (by
-        simp [readsOk,FOp.ins,jointLive,nafLive,winRo])
+        simp [FOp.ins,jointLive,nafLive,winRo])
     exact op.mono (fun _ _ h => h.1.1) (fun _ _ h => ⟨_,h.sub (fun _ hx => List.mem_cons_of_mem _ hx)⟩)
   · exact RelCT.block_nil (fun _ _ h => ⟨_,h.1.1⟩)
 

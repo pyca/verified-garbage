@@ -38,6 +38,26 @@ theorem input_regs (s : State) : inputValue (wordsAt s) = regsVal s uRegs := rfl
 
 theorem output_regs (s : State) : value (outputWords s) = regsVal s (uRegs.take 9) := rfl
 
+/-- The fold and correction also give the ordinary field residue, before
+the Montgomery representation's final cyclic rotation. -/
+theorem canonical_reduction_ok (s : State) (hz : s.gpr .x30 = 0)
+    (hu : regsVal s uRegs < fieldPrime*fieldPrime) :
+    WP isa (.block (foldCode ++ correctCode)) s fun t =>
+      regsVal t (uRegs.take 9) < fieldPrime ∧
+      regsVal t (uRegs.take 9) = regsVal s uRegs % fieldPrime ∧
+      Keeps reduceClob s t := by
+  rw [WP.block_append_iff]
+  refine WP.mono (fold_ok s hz) fun s₁ ⟨h₁,c₁,z₁,k₁⟩ => ?_
+  have hl : (folded (wordsAt s)).1.length = 9 := addWords_length _ _ _ rfl
+  have e₁ := output_eq hl h₁
+  refine WP.mono (correct_ok s₁ z₁) fun t ⟨h₂,k₂⟩ => ?_
+  have e₂ := output_eq (corrected_length (outputWords s₁) s₁.c rfl) h₂
+  rw [e₁,c₁] at e₂
+  have hv : value (outputWords t) = regsVal s uRegs % fieldPrime := by
+    rw [e₂,corrected_value (wordsAt s) (by simpa only [input_regs] using hu),input_regs]
+  rw [output_regs] at hv
+  exact ⟨by rw [hv]; exact Nat.mod_lt _ (by decide),hv,k₁.trans k₂⟩
+
 /-- Exact fold, conditional correction, and cyclic Montgomery rotation. -/
 theorem reduction_ok (s : State) (hz : s.gpr .x30 = 0)
     (hu : regsVal s uRegs < fieldPrime*fieldPrime) :

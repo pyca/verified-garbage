@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Frame
 public import VerifiedGarbage.Impl.EcKey.Compressed.AArch64.Decompress
 import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Parity
@@ -65,7 +66,7 @@ theorem selectRoot_ok {c : Cfg} (hc : BaseCfgOk c) {base : Addr} {s : State}
   have zero₁ : sv c base s₁ ZERO = 0 :=
     (sv_keep (MP'_n c) rfl h7 hn k₁ (by decide) (by decide) (by decide)).trans hZero
   rw [List.append_assoc, WP.block_append_iff]
-  refine WP.mono (sub_ok hs₁ hM₁ (MP'_A c) hW hZ hY (sl_mod8 c W0) (sl_mod8 c ZERO) (sl_mod8 c QY)
+  refine WP.mono (subOp_ok hs₁ hM₁ (MP'_A c) hW hZ hY (sl_mod8 c W0) (sl_mod8 c ZERO) (sl_mod8 c QY)
     (by change sv c base s₁ ZERO < c.C.p; rw [zero₁]; omega)
     lt₁) fun s₂ ⟨k₂, e₂⟩ => ?_
   change sv c base s₂ W0 = (sv c base s₁ ZERO + c.C.p - sv c base s₁ QY) % c.C.p at e₂
