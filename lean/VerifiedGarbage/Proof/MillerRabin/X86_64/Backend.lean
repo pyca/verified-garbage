@@ -115,13 +115,6 @@ structure RoundImpl extends RoundArith where
   ct : ConstantTime isa roundPre roundPub code
   suffix : String
   features : List String
-  /-- The CPU features of the arithmetic alone, for callers that never call
-  the round. -/
-  arithFeatures : List String
-  /-- Whether it differs from another only in its round, sharing that other's
-  arithmetic: the callers that never call the round are not instantiated for
-  it, as they would be that other's. -/
-  roundOnly : Bool := false
 
 /-- The backend whose round is `round mm`. -/
 def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa.writesSp i) = true)
@@ -134,8 +127,7 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     correct := a.round_correct
     ct := a.round_ct
     suffix := suffix
-    features := features
-    arithFeatures := features }
+    features := features }
 
 def RoundImpl.name (v : RoundImpl) : String :=
   "vg_miller_rabin_round" ++ v.suffix
