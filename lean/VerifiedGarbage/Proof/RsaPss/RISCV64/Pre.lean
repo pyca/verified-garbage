@@ -121,14 +121,12 @@ macro "ver_pre" " at " h:ident : tactic => `(tactic| (
   rw [e] at $h:ident
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq,
+    List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq,
+    List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 

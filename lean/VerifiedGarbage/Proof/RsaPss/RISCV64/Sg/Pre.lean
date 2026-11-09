@@ -161,16 +161,12 @@ macro "sign_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 3471 + 1 := rfl
   unfold signSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig,
-    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
-  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig,
-    Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.RsaPss.digestLenOk, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.RsaPss.digestLenOk, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, stackArgs_sixteen, List.append_eq, List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 

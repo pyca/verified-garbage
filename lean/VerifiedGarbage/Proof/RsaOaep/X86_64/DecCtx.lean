@@ -322,8 +322,8 @@ theorem dec_implies (hsat : ∃ s, (decC ts).pre s) : (decK ts).Implies (decC ts
     sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns] at h
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq] at h
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
+      Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
       a13, a14, a15, a16, a17, a18⟩ := h
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, h8]) hl

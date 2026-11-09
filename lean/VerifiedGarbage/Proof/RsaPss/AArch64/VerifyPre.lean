@@ -111,10 +111,8 @@ theorem preV_of {tsH tsG : List FnTable} {K : Nat} {s : State}
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    List.append_eq, _root_.List.range, _root_.List.range.loop] at h
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq, _root_.List.range, _root_.List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
     Option.some.injEq, exists_eq_left'] at h
   sig_split h

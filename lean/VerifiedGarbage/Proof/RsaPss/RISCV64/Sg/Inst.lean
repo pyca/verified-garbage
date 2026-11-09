@@ -198,7 +198,7 @@ theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : Sta
   have e : stackBytes = 3471 + 1 := rfl
   unfold signSpec
   rw [e]
-  sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.HashTable.param,
+  sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, 
     Abi.withTables, abi, argRegs, stackArgs_sixteen, List.append_eq]
   intro H' G' hH' hG'
   rw [hH] at hH'

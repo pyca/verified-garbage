@@ -167,15 +167,13 @@ theorem sign_sat16 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 16) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)
@@ -225,15 +223,13 @@ theorem sign_sat20 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 20) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)
@@ -283,15 +279,13 @@ theorem sign_sat28 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 28) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)
@@ -341,15 +335,13 @@ theorem sign_sat32 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 32) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)
@@ -399,15 +391,13 @@ theorem sign_sat48 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 48) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)
@@ -457,15 +447,13 @@ theorem sign_sat64 {vs : List MVar} {gs : List TVar} {w : MVar} {wg : TVar} (hw 
       symsOf32 (Proof.MdHashTable.X86.names vs ++ Proof.HashTable.X86.names gs) := rfl
   generalize withTabs (satState 64) vs gs w wg = S at *
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, e, esp, rd, wr, sy, satState]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-    stackBelow]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow]
   sig_and_intros
   all_goals try (exact Region.disjoint_of_sep (by decide))
   all_goals try (simp only [Spec.Rsa.lenValid]; decide)

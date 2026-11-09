@@ -73,13 +73,13 @@ theorem withTabs_heldH (s : State) :
     Abi.tableHeld 64 (withTabs s vs gs v w).mem 0x300000
       (FnTable.words isa (withTabs s vs gs v w) (MdHashTable.RISCV64.tableOf v)) := by
   have hl : (tw (allNames vs gs) (MdHashTable.RISCV64.tableOf v)).length = 11 := by
-    simp [tw, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]
+    simp [tw, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]
   have c1 : (0x300000 : Addr).toNat = 0x300000 := rfl
   have c2 : (0x300100 : Addr).toNat = 0x300100 := rfl
   refine tabMem_above (by rw [c1]) (by simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf,
     Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]) fun i hi => ?_
   have hi' : i < 11 := by
-    simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega
+    simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega
   rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega))
     (by simp [tw, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
     (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
@@ -249,9 +249,8 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
   unfold Sg.signSpec
   rw [e]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
     simp only [stackArgAddr, hsp]
@@ -262,9 +261,8 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
   sig_and_intros
   all_goals first
     | rfl

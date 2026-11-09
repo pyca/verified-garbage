@@ -189,13 +189,11 @@ abbrev spec (tsH ts : List FnTable) : Contract isa :=
 /-- Unfolds the contract's precondition at `h`. -/
 macro "sign_pre" " at " h:ident : tactic => `(tactic| (
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-      stackBelow] at $h:ident
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow] at $h:ident
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
-      stackBelow] at $h:ident
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argSlots, argVal, argBytes, stackBelow] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 

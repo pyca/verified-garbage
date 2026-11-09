@@ -50,7 +50,7 @@ theorem pubS_of {tsH tsG : List FnTable} {K : Nat} {s₁ s₂ : State}
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
   sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at h
@@ -94,7 +94,7 @@ theorem sign_correct (s : State) (h : (signCK vs K).pre s) :
   refine ⟨t, s', he, habi, ?_⟩
   sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
   intro H G hH' hG'
   cases hH'.symm.trans E.hH

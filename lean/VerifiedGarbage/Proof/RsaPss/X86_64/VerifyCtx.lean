@@ -111,21 +111,21 @@ abbrev verifyC : Contract isa :=
 theorem verify_implies (hsat : ∃ s, (verifyC tsH tsG).pre s) : (verifyK tsH tsG).Implies (verifyC tsH tsG) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns] at h
-    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns, Sig.tableRegion] at h
+    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns] at h
+    sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns, Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
-    sig_reduce [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
-      chkStack, stackArgs_ten, List.append_eq, tabFns, Sig.tableRegion]
+    sig_reduce [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+      Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack, chkStack, stackArgs_ten, List.append_eq,
+      tabFns, Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
@@ -139,8 +139,8 @@ theorem verify_implies (hsat : ∃ s, (verifyC tsH tsG).pre s) : (verifyK tsH ts
       Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
       Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, verifyK, verifyStack,
       chkStack, stackArgs_ten, List.append_eq, tabFns] at h
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq] at h
+    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
+      Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, -⟩ := h
     obtain ⟨hb, hp⟩ := List.append_inj hl (by simp [Spec.Rsa.bytesAt, hsi, hcx])
     have hp' := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 hp

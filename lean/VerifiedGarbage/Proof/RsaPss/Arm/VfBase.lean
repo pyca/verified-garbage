@@ -167,13 +167,11 @@ abbrev spec (hs ts : List FnTable) : Contract isa :=
 /-- Unfolds the contract's precondition at `h`. -/
 macro "verify_pre" " at " h:ident : tactic => `(tactic| (
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val] at $h:ident
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify, Loc.val] at $h:ident
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val] at $h:ident
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify, Loc.val] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 
