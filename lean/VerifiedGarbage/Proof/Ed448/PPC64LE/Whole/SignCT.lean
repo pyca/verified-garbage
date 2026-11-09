@@ -30,7 +30,9 @@ trace (`sign_ct`). Each piece of the body is related from the invariants the
 correctness proof gives each run (`S1`–`S4`): the hashes by `hash_ct`, the
 code between them by the taint analysis (`ct_prog`) from the registers the
 invariants give the same values in both runs, the callees' bodies included
-(the Ed448 functions save and restore other registers than these).
+(the Ed448 functions save and restore other registers than these, or, as
+`scalar_base` does with `r15`–`r31`, are called last in a piece, whose
+successor starts again from its run's invariant).
 -/
 
 @[expose] public section
@@ -82,6 +84,32 @@ theorem hash_then {sc f : Reg} {o : Nat} {ps : List Piece} {P : State → State 
   exact ct_prog rs (fun a b hab => hab.1.sp.trans (hsp.trans hab.2.sp.symm)) (fun a b hab r hr => by
     obtain ⟨hp, he⟩ := hrs _ _ hH r hr
     rw [hab.1.cs r hp, hab.2.cs r hp, he]) hc
+
+/-- `hash_then`, with the code after the hash related by any proof from the states the hash leaves. -/
+theorem hash_then_rel {sc f : Reg} {o : Nat} {ps : List Piece} {P : State → State → Prop} {c : Prog isa}
+    {hint : VG.Taint.Hint VG.PPC64LE.taint.T}
+    (hz : (VG.PPC64LE.taint.check (Taint.ofRegs [sc]) (.block (Impl.MlKem.PPC64LE.zeroState sc)) hint).isSome =
+      true)
+    (hP : ∀ a b, P a b → HashOk sc f o ps a ∧ HashOk sc f o ps b ∧ a.sp = b.sp ∧
+      ∀ r ∈ hashRegs sc f ps, a.gpr r = b.gpr r)
+    (hc : ∀ t₁ t₂, P t₁ t₂ → RelCT isa (fun a b => Rg t₁ a ∧ Rg t₂ b) c fun _ _ => True) :
+    RelCT isa P (.seq (hash sc ps f o) c) fun _ _ => True := by
+  refine RelCT.mono (P := fun a b => ∃ x : State × State, a = x.1 ∧ b = x.2 ∧ P x.1 x.2)
+    (RelCT.exists_ fun ⟨t₁, t₂⟩ => ?_) (fun a b h => ⟨(a, b), rfl, rfl, h⟩) (fun _ _ h => h)
+  by_cases hH : P t₁ t₂
+  swap
+  · exact RelCT.of_false fun a b h => hH h.2.2
+  obtain ⟨h₁, h₂, -, -⟩ := hP _ _ hH
+  refine RelCT.mono (P := fun a b => a = t₁ ∧ b = t₂) ?_ (fun a b h => ⟨h.1, h.2.1⟩) (fun _ _ h => h)
+  have hP' : ∀ a b, (a = t₁ ∧ b = t₂) → HashOk sc f o ps a ∧ HashOk sc f o ps b ∧ a.sp = b.sp ∧
+      ∀ r ∈ hashRegs sc f ps, a.gpr r = b.gpr r := fun a b h => by
+    obtain ⟨rfl, rfl⟩ := h; exact hP _ _ hH
+  have hw : ∀ t, HashOk sc f o ps t → WP isa (hash sc ps f o) t (Rg t) := fun t ht =>
+    WP.mono (hash_ok ht.psc ht.pf ht.po rfl rfl ht.env ht.ne ht.ins ht.w ht.dsc ht.dsp)
+      fun _ ⟨k, _⟩ => ⟨k.rd, k.wr, k.sp, k.cs⟩
+  exact RelCT.seq (R := fun a b => Rg t₁ a ∧ Rg t₂ b)
+    (RelCT.mono (relct_wp (hash_ct hz hP') fun a b hab => ⟨by rw [hab.1]; exact hw _ h₁, by rw [hab.2]; exact hw _ h₂⟩)
+      (fun _ _ h => h) (fun _ _ h => h)) (hc _ _ hH)
 
 /-! ## The runs' agreement -/
 
