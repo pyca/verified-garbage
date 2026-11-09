@@ -14,29 +14,23 @@ Barrett reduction `barrett32` (`VG.Proof.MlKem.barrett32`),
 congruent to `x`, and a subtraction of `q` and a `fixup` finish it.
 `r8 = 161270` and `r9 = q` throughout (`consts`).
 
-The tables of `ζ^BitRev7(k)` (`zetaTable`) and of the `γᵢ` of
-`MultiplyNTTs` (`gammaTable`) are stored in the first 512 bytes of
-`scratch`, as 128 `u32`s (`table`, through `r12`), and read in order
-through a pointer. The inverse NTT and `MultiplyNTTs` use `r14` and `r15`,
-which they save in `scratch[512..528)` and restore; the functions make no
-calls, so the link register is never written, and they use no stack.
+The table of the `γᵢ` of `MultiplyNTTs` (`gammaTable`) is stored in the
+first 512 bytes of `scratch`, as 128 `u32`s (`table`, through `r12`), and
+read in order through a pointer. `MultiplyNTTs` uses `r14` and `r15`, which
+it saves in `scratch[512..528)` and restores; the functions make no calls, so
+the link register is never written, and they use no stack.
 
-* `vg_mlkem_ntt(f = r3, scratch = r4)`: on vectors of four coefficients,
-  with its own table in `scratch` (below, "`ntt`, four butterflies at a
-  time"); it writes no nonvolatile register.
-* `vg_mlkem_inv_ntt(f = r3, scratch = r4)`: the seven layers of Algorithm 10
-  as three nested loops, with `r3 = f + 1024` (the end of `f`),
-  `r10 = 4 len` (from 8, doubled, until it is 1024), the zetas from
-  `zetas[127]` down; for each block, its zeta in `r7`, and `len` inverse
-  butterflies on `r5 = f + 4j` and `r6 = f + 4(j + len)`, counted by `r11`;
-  then every coefficient times 3303.
+* `vg_mlkem_ntt(f = r3, scratch = r4)` and
+  `vg_mlkem_inv_ntt(f = r3, scratch = r4)`: on vectors of four coefficients,
+  with their own table in `scratch` (below, "`ntt`, four butterflies at a
+  time" and "`nttInv`, four inverse butterflies at a time"); they write no
+  nonvolatile register.
 * `vg_mlkem_multiply_ntts(h = r3, f = r4, g = r5, scratch = r6)`: for each
   pair `i` (counted by `r11`), `h[2i] = f[2i] g[2i] + (f[2i+1] g[2i+1] mod q) γᵢ`
   and `h[2i+1] = f[2i] g[2i+1] + f[2i+1] g[2i]`, each reduced, with `γᵢ`
   read through `r6`.
 
-An inverse butterfly stores `f[j]` before `f[j + len]`, the order in which
-Algorithm 10 writes them. Every address and branch depends only on the pointers.
+Every address and branch depends only on the pointers.
 -/
 
 @[expose] public section
@@ -192,39 +186,66 @@ def ntt : Prog isa :=
     (.seq (.loop vlayerCode (.nonzero .d .r0))
       (.seq (.block [.li .r5 0, .li .r10 32]) (.loop (.block vbfly2Body) (.nonzero .d .r10))))
 
-/-! ## `nttInv` -/
+/-! ## `nttInv`, four inverse butterflies at a time
 
-/-- The inverse butterfly on `[r5]` and `[r6]` with the zeta `r7`:
-`f[j] = f[j] + f[j + len]`, then `f[j + len] = ζ·(f[j + len] - f[j])`. -/
-def ibflyBody : List Instr :=
-  [.load .w .r12 .r5 0, .load .w .r0 .r6 0, .add .r14 .r12 .r0, .sub .r14 .r14 .r9] ++
-  fixup .r14 .r15 .r9 ++ [.store .w .r14 .r5 0, .sub .r0 .r0 .r12] ++ fixup .r0 .r15 .r9 ++
-  [.mul .r0 .r7 .r0] ++ reduce .r0 .r14 ++
-  [.store .w .r0 .r6 0, .addi .r5 .r5 4, .addi .r6 .r6 4, .subi .r11 .r11 1]
+As `ntt`, on the same table and constant vectors, the zetas from `ζ₁₂₇`
+down: the last layer's step first (`len = 2`, two blocks at a time, the
+second block's coefficients in words `0, 1` so that the table's vector's
+words `1` and `3`, `ζₖ` and `ζₖ₊₁`, are the second and the first block's
+zetas), then the layers with `len ≥ 4` (`r9 = 4·len` doubled until it is
+1024), then every coefficient times `3303` by the same Shoup product, with
+`3303` in `v4` and `⌊3303 · 2³² / q⌋` in `v5`. An inverse butterfly is
+`x + y` reduced by `min`, and `ζ·(y + q - x)` (`mulZ`, whose input may be
+below `2q`). -/
 
-/-- A block: its zeta, then `len` inverse butterflies. -/
-def nttInvBlockCode : Prog isa :=
-  .seq (.block [.load .w .r7 .r4 0, .subi .r4 .r4 4, .add .r6 .r5 .r10, .lsr .d .r11 .r10 2])
-    (.seq (.loop (.block ibflyBody) (.nonzero .d .r11))
-      (.block [.addi .r5 .r6 0, .sub .r0 .r5 .r3]))
+/-- The inverse butterflies on `v6` and `v7` with the zeta in `v4` (`ζ'` in
+`v5`): `v6 := (v6 + v7) mod q`, `v8 := ζ·(v7 - v6) mod q`. -/
+def vibfly : List Instr :=
+  [.vop (.add false .v10 .v6 .v7), .vop (.add false .v7 .v7 .v0), .vop (.sub true .v7 .v7 .v6),
+   .vop (.sub true .v6 .v10 .v0), .vop (.minu true .v6 .v10 .v6)] ++ mulZ
 
-/-- A layer: its blocks. -/
-def nttInvLayerCode : Prog isa :=
-  .seq (.block [.subi .r5 .r3 1024])
-    (.seq (.loop nttInvBlockCode (.nonzero .d .r0))
-      (.block [.lsl .r10 .r10 1, .subi .r0 .r10 1024]))
+/-- A vector inverse butterfly of a layer with `len ≥ 4`, on `[r3 + r5]` and `[r3 + r6]`. -/
+def vibflyBody : List Instr :=
+  [.lxvd2x .v6 .r3 .r5, .lxvd2x .v7 .r3 .r6] ++ vibfly ++
+  [.stxvd2x .v6 .r3 .r5, .stxvd2x .v8 .r3 .r6, .addi .r5 .r5 16, .addi .r6 .r6 16, .subi .r10 .r10 1]
 
-/-- `[r5] ← [r5] · r7 mod q`, and on to the next coefficient. -/
-def scaleBody : List Instr :=
-  [.load .w .r12 .r5 0, .mul .r12 .r12 .r7] ++ reduce .r12 .r14 ++
-  [.store .w .r12 .r5 0, .addi .r5 .r5 4, .subi .r11 .r11 1]
+/-- A block: its zeta and `ζ'` splatted, then `len / 4` vector inverse butterflies. -/
+def viblockCode : Prog isa :=
+  .seq (.block [.lxvd2x .v11 .r4 .r7, .vop (.splat true .v4 .v11 1), .vop (.splat true .v5 .v11 0),
+      .subi .r7 .r7 8, .add .r6 .r5 .r9, .lsr .d .r10 .r9 4])
+    (.seq (.loop (.block vibflyBody) (.nonzero .d .r10))
+      (.block [.addi .r5 .r6 0, .subi .r0 .r5 1024]))
+
+/-- A layer with `len ≥ 4`: its blocks. -/
+def vilayerCode : Prog isa :=
+  .seq (.block [.li .r5 0])
+    (.seq (.loop viblockCode (.nonzero .d .r0)) (.block [.lsl .r9 .r9 1, .subi .r0 .r9 1024]))
+
+/-- Two blocks of the layer with `len = 2`, at `[r3 + r5]` and `[r3 + r6]`,
+with the zetas of the table's entries at `[r4 + r7]`. -/
+def vibfly2Body : List Instr :=
+  [.lxvd2x .v11 .r4 .r7, .vop (.perm .v4 .v11 .v11 .v12), .vop (.perm .v5 .v11 .v11 .v13),
+   .addi .r6 .r5 16, .lxvd2x .v8 .r3 .r5, .lxvd2x .v9 .r3 .r6,
+   .vop (.perm .v6 .v9 .v8 .v2), .vop (.perm .v7 .v9 .v8 .v3)] ++ vibfly ++
+  [.vop (.perm .v9 .v6 .v8 .v2), .vop (.perm .v10 .v6 .v8 .v3),
+   .stxvd2x .v9 .r3 .r6, .stxvd2x .v10 .r3 .r5, .addi .r5 .r5 32, .subi .r7 .r7 16, .subi .r10 .r10 1]
+
+/-- `[r3 + r5] ← [r3 + r5] · 3303 mod q`, four coefficients at a time. -/
+def vscaleBody : List Instr :=
+  [.lxvd2x .v7 .r3 .r5] ++ mulZ ++ [.stxvd2x .v8 .r3 .r5, .addi .r5 .r5 16, .subi .r10 .r10 1]
+
+/-- `3303` in every word, and `⌊3303 · 2³² / q⌋`. -/
+def fVec : BitVec 128 := 0x00000ce700000ce700000ce700000ce7
+def fpVec : BitVec 128 := 0xfe00275ffe00275ffe00275ffe00275f
 
 def nttInv : Prog isa :=
-  .seq (.block (saveRegs .r4 512 ++ table zetaTable .r4 ++ consts ++
-      ([.addi .r3 .r3 1024, .addi .r4 .r4 508, .li .r10 8] : List Instr)))
-    (.seq (.loop nttInvLayerCode (.nonzero .d .r0))
-    (.seq (.block [.li .r7 3303, .subi .r5 .r3 1024, .li .r11 256])
-    (.seq (.loop (.block scaleBody) (.nonzero .d .r11)) (.block (restoreRegs .r4 512)))))
+  .seq (.block (ztable .r4 ++ vconsts ++ ([.li .r7 1008, .li .r5 0, .li .r10 32] : List Instr)))
+    (.seq (.loop (.block vibfly2Body) (.nonzero .d .r10))
+    (.seq (.block [.li .r7 504, .li .r9 16])
+    (.seq (.loop vilayerCode (.nonzero .d .r0))
+    (.seq (.block ([.vop (.splatImm true .v14 0)] ++ vconst .v4 fVec ++ vconst .v5 fpVec ++
+        ([.li .r5 0, .li .r10 64] : List Instr)))
+      (.loop (.block vscaleBody) (.nonzero .d .r10))))))
 
 /-! ## `multiplyNTTs` -/
 
