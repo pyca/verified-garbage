@@ -1,6 +1,7 @@
 # x86-64 functions that do not yet prove they return without secret residue
 # (Artifact.residue). The emitter fails if a function without a proof is not listed
 # here, or if a listed one is gone or has a proof: remove its line when you convert it.
+# The list only shrinks: ci/check_residue_allowlist.py refuses a new line.
 x86_64 vg_aes_cbc_decrypt
 x86_64 vg_aes_cbc_decrypt_aesni
 x86_64 vg_aes_cbc_decrypt_aesni_avx
