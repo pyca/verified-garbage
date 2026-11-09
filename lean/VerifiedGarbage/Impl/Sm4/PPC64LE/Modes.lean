@@ -17,8 +17,9 @@ the masks and builds the table of bitsliced round keys, once; `crypt` calls
 buffer in place: CBC and CFB decryption and the counter modes (`Ctr.lean`,
 `Ctr32.lean`) take sixteen blocks a step while sixteen are left, then one
 (`Impl/Modes/PPC64LE/Wide.lean`). Preparing the keys costs about as much as
-a batch, so CFB decryption and the counter modes of fewer than sixteen blocks
-take them one a step by the single-block core instead (`Modes.PPC64LE.pick`).
+a batch, so CBC and CFB decryption and the counter modes of fewer than
+sixteen blocks take them one a step by the single-block core instead
+(`Modes.PPC64LE.pick`).
 The serial modes, CBC and CFB encryption and OFB, take one block a step, by
 the single-block core (`Serial.lean`), which takes the same scratch buffer.
 
@@ -66,26 +67,28 @@ def dirCore (d : Dir) : Modes.PPC64LE.Core where
 
 /-- `vg_sm4_cbc_encrypt_chained`, with its scratch buffer as the fifth
 argument: one block a step, by the single-block core. -/
-def cbcEncryptChained : Prog isa := Serial.core.seq (Modes.Mode.cbcEncChained 4)
+def cbcEncryptChained : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_sm4_cbc_decrypt_chained`, with its scratch buffer as the fifth
-argument: sixteen blocks a step, then one. -/
+argument: sixteen blocks a step, then one; fewer than sixteen blocks one a
+step by the single-block core, without the bitsliced key. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
+  Modes.PPC64LE.pick 4 ((Serial.core .decrypt).seq (Modes.Mode.cbcDecChained 4))
+    ((dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4)
 
 /-- `vg_sm4_ofb`, with its scratch buffer as the fifth argument: one block a
 step, by the single-block core. -/
-def ofb : Prog isa := Serial.core.seq (Modes.Mode.ofb 4)
+def ofb : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.ofb 4)
 
 /-- `vg_sm4_cfb128_encrypt`, with its scratch buffer as the fifth argument:
 one block a step, by the single-block core. -/
-def cfbEncrypt : Prog isa := Serial.core.seq (Modes.Mode.cfbEnc 4)
+def cfbEncrypt : Prog isa := (Serial.core .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_sm4_cfb128_decrypt`, with its scratch buffer as the fifth argument:
 sixteen blocks a step, then one; fewer than sixteen blocks one a step by the
 single-block core, without the bitsliced key. -/
 def cfbDecrypt : Prog isa :=
-  Modes.PPC64LE.pick 4 (Serial.core.seq (Modes.Mode.cfbDec 4))
+  Modes.PPC64LE.pick 4 ((Serial.core .encrypt).seq (Modes.Mode.cfbDec 4))
     ((dirCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 16) (Modes.Mode.cfbDecEarly 4) 4)
 
 end VG.Impl.Sm4.PPC64LE
