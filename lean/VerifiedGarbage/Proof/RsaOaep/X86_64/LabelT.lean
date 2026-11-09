@@ -55,8 +55,8 @@ theorem tabSlot_ok {G : Stream} {f : Fns} {j : Nat} {u : State} {F S p : Addr} (
 /-- The digest length of the table at `p`, whose address is in its slot, to
 `r11`. -/
 theorem lenLoad_ok {u : State} {F S p : Addr} (L : Lay u F S) {V : Nat → Byte} {W : Nat → BitVec 64}
-    (R : Rep u.mem F S V W) (h35 : W 35 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 32) 8) {D : Nat}
-    (hD : u.mem.readW (off p 32) 64 = BitVec.ofNat 64 D) :
+    (R : Rep u.mem F S V W) (h35 : W 35 = p) (hrd : InRegions (u.rd ++ u.wr) (off p 48) 8) {D : Nat}
+    (hD : u.mem.readW (off p 48) 64 = BitVec.ofNat 64 D) :
     WP isa (.block lenLoad) u fun u' => Keep [.r11] u u' ∧ u'.gpr .r11 = BitVec.ofNat 64 D ∧ u'.mem = u.mem ∧
       u'.syms = u.syms := by
   refine WP.mono (WP.keep [.r11] (Q := fun u' => u'.gpr .r11 = BitVec.ofNat 64 D ∧ u'.mem = u.mem ∧

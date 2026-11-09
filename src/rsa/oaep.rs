@@ -123,8 +123,8 @@ fn scratch_words(n_len: usize) -> usize {
 
 /// A hash function, as the verified functions take it, their last two
 /// arguments (the label's hash function's, then MGF1's): the words of one of
-/// the tables of `Hash` (`crate::arch::fn_tables`).
-type Table = *const [usize; 5];
+/// the tables of `MdHash` (`crate::arch::fn_tables`).
+type Table = *const [usize; 11];
 
 /// The tables of the label's hash function `hash` and of MGF1's `mgf1_hash`
 /// (`table::table`).

@@ -16,8 +16,9 @@ import VerifiedGarbage.Proof.Framework.Taint
 
 `vg_x25519` meets the shared contract of `Spec/X25519/Contract.lean`: the
 proof against `x25519PPC64LE`, which it implies, and a state satisfying it.
-The code writes no nonvolatile register and never writes the link register
-or calls a function, so the ABI's obligations hold of every execution.
+The code restores the nonvolatile registers it uses (`x25519_correct`),
+writes no other, and never writes the link register or calls a function, so
+the ABI's obligations hold of every execution.
 -/
 
 @[expose] public section
@@ -28,11 +29,15 @@ open VG VG.PPC64LE
 
 theorem x25519_ok (s : State) (hs : x25519PPC64LE.pre s) :
     ∃ t s', Exec isa Impl.X25519.PPC64LE.x25519 s t s' ∧ abiPreserved s s' ∧ x25519PPC64LE.post s s' := by
-  obtain ⟨t, s', he, h⟩ := x25519_correct (XPre.of hs)
-  have hd : ∀ r ∈ preserved, ∀ i ∈ instrs Impl.X25519.PPC64LE.x25519, dstOf i ≠ some r :=
+  obtain ⟨t, s', he, h, hnv⟩ := x25519_correct (XPre.of hs)
+  have hd : ∀ r ∈ [Reg.r2, .r31], ∀ i ∈ instrs Impl.X25519.PPC64LE.x25519, dstOf i ≠ some r :=
     nv_of_avoids (by decide +kernel)
-  exact ⟨t, s', he, ⟨fun r hr => Exec.gpr (hd r hr) he (.inl (by decide +kernel)), Exec.sp he,
+  have hpre : ∀ r ∈ preserved, r ∈ [Reg.r2, .r31] ∨ ∃ p ∈ nvL, p.1 = r := by decide
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he,
     Exec.lr he (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h⟩
+  rcases hpre r hr with h2 | ⟨p, hp, rfl⟩
+  · exact Exec.gpr (hd _ h2) he (.inl (by decide +kernel))
+  · exact hnv p hp
 
 theorem x25519_ct' : ConstantTime isa x25519PPC64LE.pre x25519PPC64LE.pub Impl.X25519.PPC64LE.x25519 :=
   x25519_ct fun _ _ _ _ ⟨h3, h4, h5, h6, hsp⟩ => ⟨hsp, fun r hr => by

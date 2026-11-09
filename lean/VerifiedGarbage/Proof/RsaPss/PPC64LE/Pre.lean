@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -14,7 +14,7 @@ public import VerifiedGarbage.Impl.RsaOaep.PPC64LE
 # RSASSA-PSS verification on PPC64LE: the precondition
 
 Untrusted: everything here is checked by Lean. `PreP D s`: the shared
-contract's precondition (`Spec.RsaPss.verifyPrecomputedTableContract`, with the
+contract's precondition (`Spec.RsaPss.verifyPrecomputedMdTableContract`, with the
 stack of the frame and of the streaming hash functions, 304 bytes), by name
 (`preP_of`); the working space and the values `Base` fixes (`Sp`, `vP`: the
 encoding's parameters `lo`, `c` and `dbLen` from the modulus' first byte),
@@ -43,10 +43,10 @@ abbrev gR (s : State) : Region := ⟨s.gpr .r9, (s.gpr .r10).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
 abbrev pR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 6) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 64⟩
 
-/-- What the code needs of `verifyPrecomputedTableContract.pre`, by name,
+/-- What the code needs of `verifyPrecomputedMdTableContract.pre`, by name,
 for a hash function of `D`-byte digests. -/
 structure PreP (D : Nat) (s : State) : Prop where
   sp1 : 304 ≤ s.sp.toNat
@@ -77,7 +77,7 @@ structure PreP (D : Nat) (s : State) : Prop where
   wsc : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
   wp : (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64
   wth : (stackArg s 6).toNat + 88 ≤ 2 ^ 64
-  wtg : (stackArg s 7).toNat + 40 ≤ 2 ^ 64
+  wtg : (stackArg s 7).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .r4).toNat
   k2 : (s.gpr .r4).toNat ≤ 1024
   e1 : 1 ≤ (s.gpr .r6).toNat
@@ -90,21 +90,21 @@ structure PreP (D : Nat) (s : State) : Prop where
 MGF1's one of `gs`, and the stack of the frame and of the streaming hash
 functions. -/
 abbrev verSpec (hs gs : List FnTable) : Contract isa :=
-  Spec.RsaPss.verifyPrecomputedTableContract
-    (abi.withTables Spec.RsaPss.verifyPrecomputedTableSig [("hash", hs), ("mgf1", gs)]) 304
+  Spec.RsaPss.verifyPrecomputedMdTableContract
+    (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", hs), ("mgf1", gs)]) 304
 
 /-- Unfolds the precondition at `h`. -/
 macro "ver_pre" " at " h:ident : tactic => `(tactic| (
   have e : (304 : Nat) = 303 + 1 := rfl
   unfold verSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables,
+    Spec.MdHashTable.dataWords, Abi.withTables,
     Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop] at $h:ident
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables,
+    Spec.MdHashTable.dataWords, Abi.withTables,
     Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))

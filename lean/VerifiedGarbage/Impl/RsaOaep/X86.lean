@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.ICall
 # RSAES-OAEP (RFC 8017 §7.1) on x86 (32-bit)
 
 `encryptPrecomputed` and `decrypt`, with the label's hash function and
-MGF1's those of two tables of the interface `Hash` (`Spec/HashTable.lean`),
+MGF1's those of two tables of the interface `MdHash` (`Spec/MdHashTable.lean`),
 the last two arguments, each a streaming hash function's `init`, `update`
 and `finalize` (`Impl.Pbkdf2.Stream.X86.Hash`), and, for the code that
 depends on it, branching on the label's hash function's digest length
@@ -36,7 +36,7 @@ working space is the first 512 bytes of `scratch`, at `ebp`.
 `mgfXor`: `dst ⊕= MGF1(src, dstLen)` with the hash function of the table
 that is our argument `j`, the addresses and lengths in the slots `sSrc`,
 `sSrcLen`, `sDst`, `sDstLen`, as on ARMv7. The table's address is copied to
-the slot `sTab`, and its digest length `hLen` (its word 4) to `sHl`; the
+the slot `sTab`, and its digest length `hLen` (its word 6) to `sHl`; the
 hash function's `init`, `update` and `finalize` are the table's functions
 0, 1 and 2, which it calls indirectly (`tcall`: their address, the table's
 word `j`, into `esi`, then the frame of their arguments around `call esi`,
@@ -206,8 +206,8 @@ def mgfRound : Prog isa :=
     .block finArgs, callFin f, .block xorSet, countLoop Impl.RsaPss.X86.xorBody, .block mgfNext]
 
 /-- The table that is our argument `j` to `sTab`, and its digest length (its
-word 4) to `sHl`. -/
-def tabArgs (j : Nat) : List Instr := [ld .eax (arg j), st .eax sTab, .mov .eax (.mem (at_ .eax 16)), st .eax sHl]
+word 6) to `sHl`. -/
+def tabArgs (j : Nat) : List Instr := [ld .eax (arg j), st .eax sTab, .mov .eax (.mem (at_ .eax 24)), st .eax sHl]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
 the table that is our argument `j`. -/
@@ -250,9 +250,9 @@ end Common
 /-- The table that is our argument `j` to `sTab` (through `edx`). -/
 def tabSlot (j : Nat) : List Instr := [ld .edx (arg j), st .edx sTab]
 
-/-- The digest length of the table that is our argument `j` (its word 4),
+/-- The digest length of the table that is our argument `j` (its word 6),
 to `edx`. -/
-def lenLoad (j : Nat) : List Instr := [ld .edx (arg j), .mov .edx (.mem (at_ .edx 16))]
+def lenLoad (j : Nat) : List Instr := [ld .edx (arg j), .mov .edx (.mem (at_ .edx 24))]
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,

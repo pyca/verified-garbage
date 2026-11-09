@@ -121,9 +121,9 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {m₀ : Mem} {t : State} (hc : Ctx L g vv m₀ t)
     (h9 : t.gpr .x9 = L.Q) (hpw : Prologued L (fun j => word t.mem L.Q (8 * j)))
     (okL : Table.TabOK Hl.stream f t.syms) (hmL : Table.TabMem Hl.stream t.syms L.tabL m₀)
-    (hDL : m₀.readW (L.tabL + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Hl.stream.D)
+    (hDL : m₀.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D)
     (ok : Table.TabOK Gm f t.syms) (hm : Table.TabMem Gm t.syms L.tab m₀)
-    (hD : m₀.readW (L.tab + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
+    (hD : m₀.readW (L.tab + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Gm.D) :
     WP isa (.block privArgs) t fun u => WP isa (.seq (.call pv.name pv.code)
       (.seq (.block (tabSlot 15)) (.seq (.block lenLoad) (byLen (fun d => decTail (ofLen d) f) lens)))) u
         (Fin Hs Gs L g vv m₀) := by
@@ -156,7 +156,7 @@ theorem rest_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
   have TL3 := hcl.ctx.tabL hL hP16 (sy03 ▸ okL) (sy03 ▸ hmL) hDL
   refine WP.seq (WP.mono (Table.wp_sy (tabSlot_ok (by decide) Ly3 hcl.rep TL3)) fun ua ⟨⟨La, Sa, Ra, x0a⟩, sya⟩ => ?_)
   have TLa := TL3.step Sa sya
-  have hDa : ua.mem.readW (L.tabL + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Hl.stream.D :=
+  have hDa : ua.mem.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D :=
     (TLa.mem _ (Frame.refl _ _)).2.1
   refine WP.seq (WP.mono (Table.wp_sy (lenLoad_ok La Ra (by simp [upd]) TLa.rdD hDa))
     fun ub ⟨⟨Sb, hmb, h16, x0b⟩, syb⟩ => ?_)
@@ -226,13 +226,13 @@ theorem spec_sp {ts : List FnTable} {P : Nat} {s : State} (h : (decSpec ts P).pr
 /-- The postcondition, from what the body wrote with `Hs` and `Gs`, the hash
 functions the tables name. -/
 theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} {t : State}
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some Hs)
-    (hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 16) = some Gs)
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 15) = some Hs)
+    (hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some Gs)
     (hw : Spec.RsaOaep.writtenDecrypt t.mem (lay P s).out (lay P s).ml (lay P s).k.toNat ((t.gpr .x0).setWidth 32)
       (decOut Hs Gs (Spec.Rsa.bytesAt s.mem (lay P s).lab (lay P s).labl.toNat) (privOut (lay P s) s.mem))) :
     (decSpec ts P).post s t := by
-  sig_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_post [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
   intro H' G' hH' hG'
   obtain rfl : Hs = H' := Option.some.inj (hH.symm.trans hH')

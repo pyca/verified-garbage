@@ -11,7 +11,7 @@ e_len = r8, p = r9, p_len = r10, q, q_len, dp, dp_len, dq, dq_len, qinv,
 qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash,
 mgf1)`, the last sixteen on the stack, with the hash function of the table
 `hash` (of the interface `MdHash`) and MGF1 over that of the table `mgf1`
-(of the interface `Hash`), which it calls through the tables, with
+(of the interface `MdHash`), which it calls through the tables, with
 `vg_rsa_private_checked`. As verification does, the index of `hash`'s hash
 function (its word 5) selects the code for that hash function's digest
 length (`byIdx`).

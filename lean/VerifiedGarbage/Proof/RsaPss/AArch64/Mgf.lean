@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Framework.TacticTemplate
 # RSASSA-PSS on AArch64: MGF1
 
 `mgfXor` XORs `MGF1(H, dbLen)` into `DB`, where `H` is the `hLen` bytes after
-`DB` (`mgfXor_ok`), with MGF1's hash function `G` that of the table of `Hash`
+`DB` (`mgfXor_ok`), with MGF1's hash function `G` that of the table of `MdHash`
 whose address is in the slot `sMgfT`: it is OAEP's MGF1 with a table
 (`Proof/RsaOaep/AArch64/MgfT.lean`), in a frame of its own of OAEP's layout
 (`mgfFrame`) below ours, with `scratch + mgfOff` as its working space
@@ -66,7 +66,7 @@ theorem byte_of_bytesAt {m : Mem} {p : Addr} {n : Nat} {xs : List Byte} (h : Spe
 /-- What MGF1 needs of where it runs, from the state `t` with our frame at
 `F` and our working space at `S`: its working space writable; its frame,
 and the stack below it, apart from its working space and above address 0;
-and the table of `Hash` at `p` (whose address is in the slot `sMgfT`),
+and the table of `MdHash` at `p` (whose address is in the slot `sMgfT`),
 readable, holding the addresses of `G`'s functions (which the calls of `g`
 reach) and its digest length in every memory MGF1 may leave. -/
 structure Env (G : Impl.Pbkdf2.Md.AArch64.Stream) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (t : State)
@@ -74,9 +74,9 @@ structure Env (G : Impl.Pbkdf2.Md.AArch64.Stream) (g : Impl.RsaOaep.AArch64.Mgf1
   slot : t.mem.readW (off F sMgfT) 64 = p
   ok : Proof.RsaOaep.AArch64.Table.TabOK G g t.syms
   rd : ∀ j < 3, InRegions (t.rd ++ t.wr) (off p (8 * j)) 8
-  rdD : InRegions (t.rd ++ t.wr) (off p 32) 8
+  rdD : InRegions (t.rd ++ t.wr) (off p 48) 8
   mem : ∀ m, Frame (mgfWr F S ++ [⟨off S mgfOff, 8192⟩, slotR F sPos]) t.mem m →
-    Proof.RsaOaep.AArch64.Table.TabMem G t.syms p m ∧ m.readW (off p 32) 64 = BitVec.ofNat 64 G.D
+    Proof.RsaOaep.AArch64.Table.TabMem G t.syms p m ∧ m.readW (off p 48) 64 = BitVec.ofNat 64 G.D
   sc : Covers [⟨off S mgfOff, 8192⟩] t.wr
   F288 : mgfFrame + 16 ≤ F.toNat
   dStk : Region.Disjoint (below F (mgfFrame + 16)) ⟨off S mgfOff, 8192⟩
@@ -430,7 +430,7 @@ end
 /-- What the code needs of the tables at `pH` (of `MdHash`) and `pG` (of
 `Hash`) in the entry state `s`: the table of `MdHash` holds the addresses
 of `H`'s `init`, compression function and digest (`dn`), which the calls of
-`f` reach, and the table of `Hash` those of `G`'s functions, which the
+`f` reach, and the table of `MdHash` those of `G`'s functions, which the
 calls of `g` reach, and `G`'s digest length. -/
 structure TabsAt (H : Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.AArch64.Stream)
     (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (pH pG : Addr) (s : State) : Prop where
@@ -442,18 +442,18 @@ structure TabsAt (H : Hash) (dn : String) (f : MdFns) (G : Impl.Pbkdf2.Md.AArch6
   fd : Finds f.dig s.syms (s.syms dn) dn (Impl.MdHashTable.AArch64.digest H.P)
   gok : Proof.RsaOaep.AArch64.Table.TabOK G g s.syms
   gm : Proof.RsaOaep.AArch64.Table.TabMem G s.syms pG s.mem
-  gD : s.mem.readW (off pG 32) 64 = BitVec.ofNat 64 G.D
+  gD : s.mem.readW (off pG 48) 64 = BitVec.ofNat 64 G.D
 
-/-- A word of the table of `Hash`, after writes apart from it. -/
+/-- A word of the table of `MdHash`, after writes apart from it. -/
 theorem tabG_keep {pG : Addr} {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) {d : Nat} (hd8 : d + 8 ≤ 40) :
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 88⟩ r) {d : Nat} (hd8 : d + 8 ≤ 88) :
     m'.readW (off pG d) 64 = m.readW (off pG d) 64 :=
-  hf.readW (r := ⟨pG, 40⟩) (Offset.contains_base _ hd8 (by omega)) hd (by decide)
+  hf.readW (r := ⟨pG, 88⟩) (Offset.contains_base _ hd8 (by omega)) hd (by decide)
 
-/-- The table of `Hash`, after writes apart from it. -/
+/-- The table of `MdHash`, after writes apart from it. -/
 theorem TabMem.keep {G : Impl.Pbkdf2.Md.AArch64.Stream} {sy : String → Addr} {pG : Addr} {rs : List Region}
     {m m' : Mem} (h : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m) (hf : Frame rs m m')
-    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m' :=
+    (hd : ∀ r ∈ rs, Region.Disjoint ⟨pG, 88⟩ r) : Proof.RsaOaep.AArch64.Table.TabMem G sy pG m' :=
   ⟨(tabG_keep hf hd (d := 8 * 0) (by decide)).trans h.1, (tabG_keep hf hd (d := 8 * 1) (by decide)).trans h.2.1,
     (tabG_keep hf hd (d := 8 * 2) (by decide)).trans h.2.2⟩
 
@@ -468,7 +468,7 @@ theorem held_frame {m m' : Mem} {rs : List Region} (hf : Frame rs m m') {p : Add
 theorem TabsAt.frame {H : Hash} {dn : String} {f : MdFns} {G : Impl.Pbkdf2.Md.AArch64.Stream}
     {g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns} {pH pG : Addr} {s t : State} (h : TabsAt H dn f G g pH pG s)
     {rs : List Region} (hf : Frame rs s.mem t.mem) (hdH : ∀ r ∈ rs, Region.Disjoint ⟨pH, 88⟩ r)
-    (hdG : ∀ r ∈ rs, Region.Disjoint ⟨pG, 40⟩ r) (hsy : t.syms = s.syms) : TabsAt H dn f G g pH pG t := by
+    (hdG : ∀ r ∈ rs, Region.Disjoint ⟨pG, 88⟩ r) (hsy : t.syms = s.syms) : TabsAt H dn f G g pH pG t := by
   have kH : ∀ d, d + 8 ≤ 88 → t.mem.readW (pH + BitVec.ofNat 64 d) 64 = s.mem.readW (pH + BitVec.ofNat 64 d) 64 :=
     fun d hd => hf.readW (r := ⟨pH, 88⟩) (Offset.contains_base _ hd (by omega)) hdH (by decide)
   have k0 : t.mem.readW pH 64 = s.mem.readW pH 64 := by

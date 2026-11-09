@@ -308,11 +308,11 @@ structure ESel (f : MdFns) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (tsH tsG : 
   eG : T.tsG = tsG
   selH : ∃ TH ∈ tsH, (FnTable.words isa s TH).length = 11 ∧
     Abi.tableHeld 64 s.mem (stackArg s 14) (FnTable.words isa s TH)
-  selG : ∃ TG ∈ tsG, (FnTable.words isa s TG).length = 5 ∧
+  selG : ∃ TG ∈ tsG, (FnTable.words isa s TG).length = 11 ∧
     Abi.tableHeld 64 s.mem (stackArg s 15) (FnTable.words isa s TG)
   tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 14) (stackArg s 15) s
   hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some Hs
-  hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 15) = some Gs
+  hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 15) = some Gs
   hD : T.H.D = (stackArg s 9).toNat
   hl : Hs.len = T.H.D
   ok : ∀ s', (Enc.encK T Hs Gs).pre s' → ∃ t s'', Exec isa (encode f (ofIdx i) g) s' t s'' ∧
@@ -322,12 +322,12 @@ structure ESel (f : MdFns) (g : Impl.RsaOaep.AArch64.Mgf1.Table.Fns) (tsH tsG : 
 /-- The regions a call of `encode` reads and writes. -/
 abbrev encRdT (D : Nat) (t : State) : List Region :=
   [⟨t.gpr .x2, D⟩, ⟨t.gpr .x3, (t.gpr .x4).toNat⟩, Sig.tableRegion 64 (stackArg t 0) 11,
-    Sig.tableRegion 64 (stackArg t 1) 5, ⟨stackArgAddr t 0, 16⟩]
+    Sig.tableRegion 64 (stackArg t 1) 11, ⟨stackArgAddr t 0, 16⟩]
 abbrev encWrT (t : State) : List Region := [⟨t.gpr .x0, (t.gpr .x1).toNat⟩, ⟨t.gpr .x6, (t.gpr .x7).toNat * 8⟩]
 
 /-- The tables, after writes only to our frame, our working space and the stack below. -/
 theorem tabs_wrS {tsH tsG : List FnTable} {K : Nat} {s : State} (hp : PreS tsH tsG K s) :
-    (∀ r ∈ wrS K s, Region.Disjoint ⟨stackArg s 14, 88⟩ r) ∧ (∀ r ∈ wrS K s, Region.Disjoint ⟨stackArg s 15, 40⟩ r) :=
+    (∀ r ∈ wrS K s, Region.Disjoint ⟨stackArg s 14, 88⟩ r) ∧ (∀ r ∈ wrS K s, Region.Disjoint ⟨stackArg s 15, 88⟩ r) :=
   ⟨fun r hr => wrS_disj hp.ktH hp.stH.symm r hr, fun r hr => wrS_disj hp.ktG hp.stG.symm r hr⟩
 
 /-- The call's arguments meet `encode`'s contract. -/

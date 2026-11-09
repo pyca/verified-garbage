@@ -31,7 +31,7 @@ variable (T : Tabs)
 structure Pre (s : State) : Prop where
   sp1 : chkStack ≤ (s.gpr .rsp).toNat
   sp2 : (s.gpr .rsp).toNat + 40 ≤ 2 ^ 64
-  hrd : s.rd = [⟨s.gpr .rdi, T.H.D⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨stackArg s 2, 40⟩, ⟨stackArg s 3, 40⟩,
+  hrd : s.rd = [⟨s.gpr .rdi, T.H.D⟩, ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩, ⟨stackArg s 2, 56⟩, ⟨stackArg s 3, 56⟩,
     ⟨stackArgAddr s 0, 32⟩]
   hwr : s.wr = [⟨stackArg s 0, (stackArg s 1).toNat * 8⟩]
   ddgs : (⟨s.gpr .rdi, T.H.D⟩ : Region).Disjoint ⟨stackArg s 0, (stackArg s 1).toNat * 8⟩
@@ -54,14 +54,14 @@ structure Pre (s : State) : Prop where
   b2 : (s.gpr .rcx).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .rdx).toNat = Spec.RsaPss.emLength (s.gpr .rcx).toNat
   hsl : 1024 ≤ (stackArg s 1).toNat
-  dstH : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
-  dstG : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
-  dRtH : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
-  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
-  dKtH : (⟨s.gpr .rsp - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨stackArg s 2, 40⟩
-  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨stackArg s 3, 40⟩
-  wTH : (stackArg s 2).toNat + 40 ≤ 2 ^ 64
-  wTG : (stackArg s 3).toNat + 40 ≤ 2 ^ 64
+  dstH : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 2, 56⟩
+  dstG : (⟨stackArg s 0, (stackArg s 1).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 3, 56⟩
+  dRtH : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 2, 56⟩
+  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 3, 56⟩
+  dKtH : (⟨s.gpr .rsp - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨stackArg s 2, 56⟩
+  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 chkStack, chkStack⟩ : Region).Disjoint ⟨stackArg s 3, 56⟩
+  wTH : (stackArg s 2).toNat + 56 ≤ 2 ^ 64
+  wTG : (stackArg s 3).toNat + 56 ≤ 2 ^ 64
   tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 2) (stackArg s 3) s
 
 theorem Pre.of {Hs Gs : Spec.Mgf1.Hash} {s : State} (h : (chkK T Hs Gs).pre s) : Pre T s := by
@@ -263,17 +263,17 @@ theorem chkPro_ok {s : State} (hp : Pre T s) :
 /-! ## The tables' words -/
 
 theorem tab_sub {s : State} (hp : Pre T s) {i : Nat} (hi : i = 2 ∨ i = 3) :
-    (⟨stackArg s i, 40⟩ : Region) ∈ s.rd ∧ (stkR s).Disjoint ⟨stackArg s i, 40⟩ ∧
-      (stackArg s i).toNat + 40 ≤ 2 ^ 64 := by
+    (⟨stackArg s i, 56⟩ : Region) ∈ s.rd ∧ (stkR s).Disjoint ⟨stackArg s i, 56⟩ ∧
+      (stackArg s i).toNat + 56 ≤ 2 ^ 64 := by
   rcases hi with rfl | rfl
   · exact ⟨by rw [hp.hrd]; simp, hp.dKtH, hp.wTH⟩
   · exact ⟨by rw [hp.hrd]; simp, hp.dKtG, hp.wTG⟩
 
 /-- A word of a table, read from memory changed only in the frame. -/
 theorem tab_rd {s : State} (hp : Pre T s) {m : Mem} (hf : Frame [frR s] s.mem m) {i j : Nat} (hi : i = 2 ∨ i = 3)
-    (hj : j + 8 ≤ 40) : m.readW (off (stackArg s i) j) 64 = s.mem.readW (off (stackArg s i) j) 64 := by
+    (hj : j + 8 ≤ 56) : m.readW (off (stackArg s i) j) 64 = s.mem.readW (off (stackArg s i) j) 64 := by
   obtain ⟨-, hK, hw⟩ := tab_sub hp hi
-  refine hf.readW (r := ⟨stackArg s i, 40⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r' hr' => ?_)
+  refine hf.readW (r := ⟨stackArg s i, 56⟩) (Offset.contains_base _ (by omega) (by omega)) (fun r' hr' => ?_)
     (by decide)
   simp only [List.mem_singleton] at hr'; subst hr'
   exact (hK.sub_left (frame_sub s)).symm
@@ -281,7 +281,7 @@ theorem tab_rd {s : State} (hp : Pre T s) {m : Mem} (hf : Frame [frR s] s.mem m)
 /-- One word of the table at `r11` copied to a slot. -/
 theorem tabCopy_ok {s : State} (hp : Pre T s) {u : State} (hsp : u.gpr .rsp = fb s) (hfr : frR s ∈ u.wr)
     (hrd : u.rd = s.rd) (hf : Frame [frR s] s.mem u.mem) {i j d : Nat} (hi : i = 2 ∨ i = 3)
-    (h11 : u.gpr .r11 = stackArg s i) (hj : j + 8 ≤ 40) (hd : d + 8 ≤ frameBytes) :
+    (h11 : u.gpr .r11 = stackArg s i) (hj : j + 8 ≤ 56) (hd : d + 8 ≤ frameBytes) :
     WP isa (.block [.mov .rax (.mem (at_ .r11 j)), .store (sp d) .rax]) u fun u' => Keep [.rax] u u' ∧
       u'.mem = u.mem.writeW (off (fb s) d) (s.mem.readW (off (stackArg s i) j) 64) ∧ Frame [frR s] s.mem u'.mem := by
   have hF := fb_toNat hp
@@ -318,7 +318,7 @@ theorem hSlots_eq : hSlots = ([.mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) 
 theorem gSlots_eq : gSlots = ([.mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax] : List Instr) ++
     ([.mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax] : List Instr) ++
     ([.mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax] : List Instr) ++
-    ([.mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax] : List Instr) := rfl
+    ([.mov .rax (.mem (at_ .r11 48)), .store (sp sDG) .rax] : List Instr) := rfl
 
 /-- The `MdHash` table's words to their slots, and `mgf1` to `r11`. -/
 theorem hSl_ok {s : State} (hp : Pre T s) {u : State} {V : Nat → Byte} {W : Nat → BitVec 64}
@@ -357,7 +357,7 @@ theorem gSl_ok {s : State} (hp : Pre T s) {u : State} {V : Nat → Byte} {W : Na
       Frame [frR s] s.mem u'.mem ∧
       Rep u'.mem (fb s) (stackArg s 0) V (upd (upd (upd (upd W 11 (s.mem.readW (off (stackArg s 3) 0) 64))
         12 (s.mem.readW (off (stackArg s 3) 8) 64)) 13 (s.mem.readW (off (stackArg s 3) 16) 64))
-        14 (s.mem.readW (off (stackArg s 3) 32) 64)) := by
+        14 (s.mem.readW (off (stackArg s 3) 48) 64)) := by
   have G' := hp.geo
   have hsp := L.rsp
   have hfr := L.fr
@@ -371,10 +371,10 @@ theorem gSl_ok {s : State} (hp : Pre T s) {u : State} {V : Nat → Byte} {W : Na
     ((k12.gpr (by decide)).trans h11) (j := 16) (d := sFinG) (by decide) (by decide)) fun u3 ⟨k3, hm3, f3⟩ => ?_
   have k13 := k12.trans k3
   refine WP.mono (tabCopy_ok hp ((k13.gpr (by decide)).trans hsp) (k13.2.2 ▸ hfr) (k13.2.1.trans hrd) f3 (.inr rfl)
-    ((k13.gpr (by decide)).trans h11) (j := 32) (d := sDG) (by decide) (by decide)) fun u4 ⟨k4, hm4, f4⟩ => ?_
+    ((k13.gpr (by decide)).trans h11) (j := 48) (d := sDG) (by decide) (by decide)) fun u4 ⟨k4, hm4, f4⟩ => ?_
   have R4 : Rep u4.mem (fb s) (stackArg s 0) V (upd (upd (upd (upd W 11 (s.mem.readW (off (stackArg s 3) 0) 64))
       12 (s.mem.readW (off (stackArg s 3) 8) 64)) 13 (s.mem.readW (off (stackArg s 3) 16) 64))
-      14 (s.mem.readW (off (stackArg s 3) 32) 64)) := by
+      14 (s.mem.readW (off (stackArg s 3) 48) 64)) := by
     rw [hm4, hm3, hm2, hm1]
     exact (((R.wf G' (k := 11) (by decide) _).wf G' (k := 12) (by decide) _).wf G' (k := 13) (by decide) _).wf G'
       (k := 14) (by decide) _

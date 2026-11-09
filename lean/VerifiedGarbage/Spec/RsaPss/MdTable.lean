@@ -5,13 +5,13 @@ public import VerifiedGarbage.Spec.RsaPss.Contract
 public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
-# RSASSA-PSS with its hash functions given as tables
+# RSASSA-PSS with both of its hash functions given as tables of `MdHash`
 
 **Trusted** (as every file in `Spec/`). In the module `rsa_pss`, each with
-two last parameters, `hash`, a table of the interface `MdHash`
-(`Spec/MdHashTable.lean`), naming the hash function `H` of the digest and
-of EMSA-PSS (`MdHashTable.hashAt`), and `mgf1`, a table of the interface
-`Hash` (`Spec/HashTable.lean`), naming MGF1's `G` (`HashTable.hashAt`):
+two last parameters, tables of the interface `MdHash`
+(`Spec/MdHashTable.lean`): `hash`, naming the hash function `H` of the
+digest and of EMSA-PSS, and `mgf1`, naming MGF1's `G`
+(`MdHashTable.hashAt`):
 
 * `vg_rsa_pss_sign`: `RSASSA-PSS-SIGN` of a digest with a salt, with the
   private key checked against the public exponent (`RsaPss.sign H G`);
@@ -96,24 +96,24 @@ n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize,
 q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8,
 dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8,
 digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64,
-scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5])
--> u32`, with `hash` a table of `MdHash` and `mgf1` one of `Hash`. -/
-def signTableSig : Sig where
+scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11])
+-> u32`, with `hash` and `mgf1` tables of `MdHash`. -/
+def signMdTableSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("p", .slice false .u8 "p_len"),
     ("q", .slice false .u8 "q_len"), ("dp", .slice false .u8 "dp_len"),
     ("dq", .slice false .u8 "dq_len"), ("qinv", .slice false .u8 "qinv_len"),
     ("digest", .slice false .u8 "digest_len"), ("salt", .slice false .u8 "salt_len"),
     ("scratch", .slice true .u64 "scratch_len"), ("hash", MdHashTable.param),
-    ("mgf1", HashTable.param)]
+    ("mgf1", MdHashTable.param)]
   ret := some .u32
 
 /-- `RSASSA-PSS-SIGN` of the digest with the salt, with the private key
 `(p, q, dP, dQ, qInv)` of the modulus `n` checked against the public exponent
 `e` (`sign H G`), for `H` and `G` the hash functions `hash` and `mgf1` name.
 Constant time but for the public key. -/
-def signTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  signTableSig.contract A
+def signMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  signMdTableSig.contract A
     (pre := fun _out outLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv qinvLen
         _digest digestLen _salt _saltLen _scratch scratchLen hash _mgf1 m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧
@@ -124,7 +124,7 @@ def signTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
     (post := fun out _outLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv _qinvLen
         digest _digestLen salt saltLen _scratch _scratchLen hash mgf1 m m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        HashTable.hashAt A.ptrBits m mgf1 = some G →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         writtenOutcome m' out nLen.toNat r
           (sign H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat) (bytesAt m p pLen.toNat)
             (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat) (bytesAt m dq qLen.toNat)
@@ -136,12 +136,12 @@ def signTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
 /-- `vg_rsa_pss_sign` on every target. -/
-def signTableApi : Api where
+def signMdTableApi : Api where
   module := "rsa_pss"
   name := "vg_rsa_pss_sign"
-  sig := signTableSig
+  sig := signMdTableSig
   writeArgs := true
-  contracts := some fun A stack => signTableContract A stack
+  contracts := some fun A stack => signMdTableContract A stack
   summary := "RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of \
     the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with \
     the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as \
@@ -156,7 +156,7 @@ def signTableApi : Api where
     the result fails the check against `e`, which it does for no digest if \
     `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh \
     random bytes for each signature (or empty).\n\n\
-    Contract: `VG.Spec.RsaPss.signTableContract`. Constant time but for the public key: \
+    Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: \
     timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which \
     tables `hash` and `mgf1` are, not on the private key, the digest or the salt."
   safety := ["`n_len` must be in 64..=1024.", "`out_len` must be `n_len`.",
@@ -170,15 +170,15 @@ def signTableApi : Api where
 e: *const u8, e_len: usize, digest: *const u8, digest_len: usize,
 sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32,
 scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize,
-hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32`, with `pre` the
-modulus' precomputed `u64` words, `hash` a table of `MdHash` and `mgf1` one
-of `Hash`. -/
-def verifyPrecomputedTableSig : Sig where
+hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32`, with `pre` the
+modulus' precomputed `u64` words, `hash` and `mgf1` tables
+of `MdHash`. -/
+def verifyPrecomputedMdTableSig : Sig where
   params := [("n", .slice false .u8 "n_len"), ("e", .slice false .u8 "e_len"),
     ("digest", .slice false .u8 "digest_len"), ("sig", .slice false .u8 "sig_len"),
     ("salt_len", .int .usize true), ("any_salt_len", .int .u32 true),
     ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", MdHashTable.param), ("mgf1", HashTable.param)]
+    ("hash", MdHashTable.param), ("mgf1", MdHashTable.param)]
   ret := some .u32
 
 /-- `RSASSA-PSS-VERIFY` of the signature for the digest with the public key
@@ -187,8 +187,8 @@ def verifyPrecomputedTableSig : Sig where
 given precomputed values `pre` for the modulus: returns 1 if it is valid and
 0 otherwise, if `pre` holds `Rsa.publicPrecompute n`. Constant time but for
 the public key and `pre`. -/
-def verifyPrecomputedTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  verifyPrecomputedTableSig.contract A
+def verifyPrecomputedMdTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  verifyPrecomputedMdTableSig.contract A
     (pre := fun _n nLen _e eLen _digest digestLen _sig sigLen _saltLen _anySaltLen _scratch
         scratchLen _pre preLen hash _mgf1 m =>
       lenValid nLen.toNat ∧ 1 ≤ eLen.toNat ∧ eLen.toNat ≤ nLen.toNat ∧
@@ -197,7 +197,7 @@ def verifyPrecomputedTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
     (post := fun n nLen e eLen digest _digestLen sig _sigLen saltLen anySaltLen _scratch
         _scratchLen pre preLen hash mgf1 m _m' r =>
       ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
-        HashTable.hashAt A.ptrBits m mgf1 = some G →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
           r = if verify H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
               (bytesAt m digest H.len) (bytesAt m sig nLen.toNat)
@@ -209,12 +209,12 @@ def verifyPrecomputedTableContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Co
         (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
 
 /-- `vg_rsa_pss_verify_precomputed` on every target. -/
-def verifyPrecomputedTableApi : Api where
+def verifyPrecomputedMdTableApi : Api where
   module := "rsa_pss"
   name := "vg_rsa_pss_verify_precomputed"
-  sig := verifyPrecomputedTableSig
+  sig := verifyPrecomputedMdTableSig
   writeArgs := true
-  contracts := some fun A stack => verifyPrecomputedTableContract A stack
+  contracts := some fun A stack => verifyPrecomputedMdTableContract A stack
   summary := "RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function \
     of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest \
     of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from \
@@ -226,7 +226,7 @@ def verifyPrecomputedTableApi : Api where
     if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If \
     `pre` does not hold those values, the result is unspecified; memory safety and the \
     timing guarantee still apply.\n\n\
-    Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the \
+    Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the \
     public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, \
     the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the \
     digest, the signature or anything computed from them but the result."

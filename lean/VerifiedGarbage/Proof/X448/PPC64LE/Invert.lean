@@ -15,7 +15,10 @@ implementation does: runs of squarings (`sqn_ok`, a loop on `r12` after the
 first), the chain as far as `z^(2²²³ - 1)` in `R` and `z^(2²²² - 1)` in `T6`
 (`chain223_ok`), then its two final factors. The chain's slots `T0`–`T6` are
 separate from the slots `qs` the caller keeps (`TempsOk`), whose elements it
-keeps. Also the helpers of the ladders' and Ed448's loops (`cmp_ok`, …).
+keeps. The proofs take the multiplication and the registers that may
+change as parameters (`invertQW_ok`, `invertW_ok`): `invertQ_ok` and
+`invert_ok`, Ed448's and X448's, are those of `mul` and `work`. Also the helpers
+of the ladders' and Ed448's loops (`cmp_ok`, …).
 -/
 
 @[expose] public section
@@ -37,7 +40,7 @@ theorem shr_step (x t : Nat) : x >>> t = 2 * (x >>> (t + 1)) + x >>> t % 2 := by
   rw [Nat.shiftRight_succ]; omega_using []
 
 section
-variable {b : Addr} {s0 : State} {a : BitVec 64}
+variable {b : Addr} {s0 : State} {a : BitVec 64} {W : List Reg} {mf : Nat → Nat → Nat → Prog isa}
 
 /-! ## The inversion -/
 
@@ -57,16 +60,16 @@ theorem sub_beq {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
     have := congrArg BitVec.toNat e
     rwa [toNat_imm hx, toNat_imm hy] at this
 
-theorem Cur.congr {s0 s : State} {a c : BitVec 64} {qs qs' : List Nat} {v w : Nat → Fe}
-    (h : Cur b s0 a c qs v s) (hq : ∀ q ∈ qs', q ∈ qs) (hv : ∀ q ∈ qs', v q = w q) : Cur b s0 a c qs' w s :=
+theorem CurW.congr {s0 s : State} {a c : BitVec 64} {qs qs' : List Nat} {v w : Nat → Fe}
+    (h : CurW W b s0 a c qs v s) (hq : ∀ q ∈ qs', q ∈ qs) (hv : ∀ q ∈ qs', v q = w q) : CurW W b s0 a c qs' w s :=
   ⟨h.ctx, h.stp, h.r0, h.r12, (h.slots.mono hq).congr hv⟩
 
 /-- `subi r5, r12, d`, and the branch on `r5 = 0`. -/
-theorem cmp_ok {s0 s : State} {a : BitVec 64} {qs : List Nat} {v : Nat → Fe} {m d : Nat}
-    (hm : m < 448) (hd : d < 448) (h : Cur b s0 a (BitVec.ofNat 64 m) qs v s) :
-    WP isa (.block [.subi .r5 .r12 d]) s fun s' => Cur b s0 a (BitVec.ofNat 64 m) qs v s' ∧
+theorem cmpW_ok (hW : ∀ r ∈ work, r ∈ W) {s0 s : State} {a : BitVec 64} {qs : List Nat} {v : Nat → Fe}
+    {m d : Nat} (hm : m < 448) (hd : d < 448) (h : CurW W b s0 a (BitVec.ofNat 64 m) qs v s) :
+    WP isa (.block [.subi .r5 .r12 d]) s fun s' => CurW W b s0 a (BitVec.ofNat 64 m) qs v s' ∧
       isa.eval (.zero .d .r5) s' = some (decide (m = d)) := by
-  refine wp_subi (by decide) (by omega_using [hd]) fun s1 u1 => WP.block_nil ⟨h.next (u1.rest (by decide))
+  refine wp_subi (by decide) (by omega_using [hd]) fun s1 u1 => WP.block_nil ⟨h.next (fun r hr => hW r (by revert r; decide)) (u1.rest (by decide))
     (by rw [u1.mem]; exact Frame.refl _ _) (by rw [u1.mem]; exact h.slots), ?_⟩
   rw [eval_zero, u1.gpr, h.r12, sub_beq (by omega_using [hm]) (by omega_using [hd])]
 
@@ -103,23 +106,24 @@ theorem upd_upd (v : Nat → Fe) (o : Nat) (x y : Fe) : upd (upd v o x) o y = up
   · rw [upd_of_ne _ _ h, upd_of_ne _ _ h, upd_of_ne _ _ h]
 
 /-- `Cur` with any counter in `r12`. -/
-abbrev CurE (b : Addr) (s0 : State) (a : BitVec 64) (qs : List Nat) (v : Nat → Fe) (s : State) : Prop :=
-  ∃ c, Cur b s0 a c qs v s
+abbrev CurE (W : List Reg) (b : Addr) (s0 : State) (a : BitVec 64) (qs : List Nat) (v : Nat → Fe)
+    (s : State) : Prop :=
+  ∃ c, CurW W b s0 a c qs v s
 
-theorem opMulE {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
+theorem opMulE (hmf : MulCur W mf) {o x y : Nat} {qs : List Nat} {v : Nat → Fe} (hq : Sep1 o qs = true)
     (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs) (hx4 : x % 4 = 0) (hy4 : y % 4 = 0)
-    (ho4 : o % 4 = 0) {s : State} (h : CurE b s0 a qs v s) :
-    WP isa (mul o x y) s (CurE b s0 a (o :: qs) (upd v o (v x * v y))) :=
+    (ho4 : o % 4 = 0) {s : State} (h : CurE W b s0 a qs v s) :
+    WP isa (mf o x y) s (CurE W b s0 a (o :: qs) (upd v o (v x * v y))) :=
   let ⟨c, h⟩ := h
-  WP.mono (opMul hq ho hx hy hx4 hy4 ho4 h) fun _ h' => ⟨c, h'⟩
+  WP.mono (hmf hq ho hx hy hx4 hy4 ho4 h) fun _ h' => ⟨c, h'⟩
 
 /-! ## Runs of squarings -/
 
 /-- The loop of `sqn o x n` from `sL`, before the iteration that leaves `m - 1`
 squarings to do. -/
-abbrev SqInv (b : Addr) (s0 : State) (a : BitVec 64) (o n : Nat) (qs : List Nat) (v : Nat → Fe) (y : Fe)
-    (m : Nat) (s : State) : Prop :=
-  Cur b s0 a (BitVec.ofNat 64 m) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s
+abbrev SqInv (W : List Reg) (b : Addr) (s0 : State) (a : BitVec 64) (o n : Nat) (qs : List Nat)
+    (v : Nat → Fe) (y : Fe) (k : Nat) (s : State) : Prop :=
+  CurW W b s0 a (BitVec.ofNat 64 k) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - k))) s
 
 theorem sep1_self {o : Nat} {qs : List Nat} (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) :
     Sep1 o (o :: qs) = true := by
@@ -128,47 +132,47 @@ theorem sep1_self {o : Nat} {qs : List Nat} (hq : Sep1 o qs = true) (ho : o + 56
     Bool.true_or, Bool.true_and, decide_eq_true_eq]
   exact ho
 
-theorem sqStep_ok {o n : Nat} {qs : List Nat} {v : Nat → Fe} {y : Fe} (hq : Sep1 o qs = true)
+theorem sqStep_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {o n : Nat} {qs : List Nat} {v : Nat → Fe} {y : Fe} (hq : Sep1 o qs = true)
     (ho : o + 56 ≤ ACC) (ho4 : o % 4 = 0) {m : Nat} (hm : 1 ≤ m) (hmn : m < n) (hn : n ≤ 2048)
-    {s : State} (h : SqInv b s0 a o n qs v y m s) :
-    WP isa (sqStep o) s fun s' => SqInv b s0 a o n qs v y (m - 1) s' ∧
+    {s : State} (h : SqInv W b s0 a o n qs v y m s) :
+    WP isa (sqStepW mf o) s fun s' => SqInv W b s0 a o n qs v y (m - 1) s' ∧
       (s'.gpr .r12 != 0) = decide (m - 1 ≠ 0) := by
-  unfold sqStep
+  unfold sqStepW
   refine WP.seq (wp_subi (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have h1 : Cur b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
+  have h1 : CurW W b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
     ⟨h.ctx.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide),
-      h.stp.trans (Stp.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide) u1.mem),
+      h.stp.trans (StpW.of_rest (u1.rest (ws := [.r12]) (by decide)) (fun r hr => hW r (by rw [List.mem_singleton.mp hr]; decide)) u1.mem),
       by rw [u1.other _ (by decide), h.r0],
       by rw [u1.gpr, h.r12, ofNat_sub_one hm (by omega)],
       by rw [u1.mem]; exact h.slots⟩
-  refine WP.mono (opMul (o := o) (x := o) (y := o) (sep1_self hq ho) ho List.mem_cons_self
+  refine WP.mono (hmf (o := o) (x := o) (y := o) (sep1_self hq ho) ho List.mem_cons_self
     List.mem_cons_self ho4 ho4 ho4 h1) fun s2 h2 => ⟨h2.congr (fun q hq => List.mem_cons_of_mem _ hq) fun q _ => ?_, ?_⟩
   · rw [upd_upd, upd_self, show n - (m - 1) = n - m + 1 by omega]; rfl
   · rw [h2.r12, ofNat_ne_zero (by omega)]
 
 /-- `[o] = [x]^(2^n)`. -/
-theorem sqn_ok {o x n : Nat} {qs : List Nat} {v : Nat → Fe} (hn1 : 1 ≤ n) (hn : n ≤ 2048)
+theorem sqn_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {o x n : Nat} {qs : List Nat} {v : Nat → Fe} (hn1 : 1 ≤ n) (hn : n ≤ 2048)
     (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0)
-    {s : State} (h : CurE b s0 a qs v s) :
-    WP isa (Impl.X448.PPC64LE.sqn o x n) s (CurE b s0 a (o :: qs) (upd v o (VG.Proof.X448.sqn (v x) n))) := by
-  unfold Impl.X448.PPC64LE.sqn
+    {s : State} (h : CurE W b s0 a qs v s) :
+    WP isa (sqnW mf o x n) s (CurE W b s0 a (o :: qs) (upd v o (VG.Proof.X448.sqn (v x) n))) := by
+  unfold sqnW
   by_cases h1 : n = 1
   · subst h1
-    exact opMulE hq ho hx hx hx4 hx4 ho4 h
+    exact opMulE hmf hq ho hx hx hx4 hx4 ho4 h
   · simp only [h1, ↓reduceIte]
-    refine WP.seq (WP.mono (opMulE hq ho hx hx hx4 hx4 ho4 h) fun s1 ⟨c1, h1'⟩ => ?_)
+    refine WP.seq (WP.mono (opMulE hmf hq ho hx hx hx4 hx4 ho4 h) fun s1 ⟨c1, h1'⟩ => ?_)
     refine WP.seq (wp_li (by omega) fun s2 u2 => WP.block_nil ?_)
-    have h2 : SqInv b s0 a o n qs v (v x) (n - 1) s2 :=
+    have h2 : SqInv W b s0 a o n qs v (v x) (n - 1) s2 :=
       ⟨h1'.ctx.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide),
-        h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide) u2.mem),
+        h1'.stp.trans (StpW.of_rest (u2.rest (ws := [.r12]) (by decide)) (fun r hr => hW r (by rw [List.mem_singleton.mp hr]; decide)) u2.mem),
         by rw [u2.other _ (by decide), h1'.r0], by rw [u2.gpr],
         by rw [u2.mem, show n - (n - 1) = 1 by omega]; exact h1'.slots⟩
-    refine WP.mono (Q := SqInv b s0 a o n qs v (v x) 0) (WP.loop (M := isa)
-      (fun m s' => 1 ≤ m ∧ m < n ∧ SqInv b s0 a o n qs v (v x) m s') ?_ (n - 1) s2
+    refine WP.mono (Q := SqInv W b s0 a o n qs v (v x) 0) (WP.loop (M := isa)
+      (fun m s' => 1 ≤ m ∧ m < n ∧ SqInv W b s0 a o n qs v (v x) m s') ?_ (n - 1) s2
         ⟨by omega, by omega, h2⟩) fun s' h' => ⟨_, by
           have := h'.slots; rw [Nat.sub_zero] at this; exact ⟨h'.ctx, h'.stp, h'.r0, h'.r12, this⟩⟩
     rintro m s' ⟨hm1, hm2, hl⟩
-    refine WP.mono (sqStep_ok hq ho ho4 hm1 hm2 hn hl) fun s'' ⟨hl', hz⟩ => ?_
+    refine WP.mono (sqStep_ok hW hmf hq ho ho4 hm1 hm2 hn hl) fun s'' ⟨hl', hz⟩ => ?_
     by_cases hm : m - 1 = 0
     · exact .inl ⟨by rw [eval_nonzero, hz]; simp [hm], by rw [hm] at hl'; exact hl'⟩
     · exact .inr ⟨by rw [eval_nonzero, hz]; simp [hm], m - 1, by omega, by omega, by omega, hl'⟩
@@ -180,22 +184,22 @@ expression, so that each step reads its operands' exponents off the
 previous slots (`look`) and the exponents are checked by `decide`. -/
 
 /-- `[o] = [x] · [y]` for powers of `z`. -/
-theorem opMulP {o x y : Nat} {qs : List Nat} {F : Nat → Fe} {z : Fe} {ea eb ee : Nat}
+theorem opMulP (hmf : MulCur W mf) {o x y : Nat} {qs : List Nat} {F : Nat → Fe} {z : Fe} {ea eb ee : Nat}
     (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs) (hy : y ∈ qs)
     (hFx : F x = VG.Proof.X448.pw z ea) (hFy : F y = VG.Proof.X448.pw z eb) (he : ea + eb = ee)
-    (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State} (h : CurE b s0 a qs F s) :
-    WP isa (mul o x y) s (CurE b s0 a (o :: qs) (upd F o (VG.Proof.X448.pw z ee))) :=
-  WP.mono (opMulE hq ho hx hy hx4 hy4 ho4 h) fun _ ⟨c, h'⟩ => ⟨c, h'.congr (fun _ hq => hq) fun _ _ => by
+    (hx4 : x % 4 = 0) (hy4 : y % 4 = 0) (ho4 : o % 4 = 0) {s : State} (h : CurE W b s0 a qs F s) :
+    WP isa (mf o x y) s (CurE W b s0 a (o :: qs) (upd F o (VG.Proof.X448.pw z ee))) :=
+  WP.mono (opMulE hmf hq ho hx hy hx4 hy4 ho4 h) fun _ ⟨c, h'⟩ => ⟨c, h'.congr (fun _ hq => hq) fun _ _ => by
     rw [hFx, hFy, VG.Proof.X448.pw_mul, he]⟩
 
 /-- `[o] = [x]^(2^n)` for a power of `z`. -/
-theorem sqnP {o x n : Nat} {qs : List Nat} {F : Nat → Fe} {z : Fe} {ea : Nat} (hn1 : 1 ≤ n)
+theorem sqnP (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {o x n : Nat} {qs : List Nat} {F : Nat → Fe} {z : Fe} {ea : Nat} (hn1 : 1 ≤ n)
     (hn : n ≤ 2048) (hq : Sep1 o qs = true) (ho : o + 56 ≤ ACC) (hx : x ∈ qs)
     (hFx : F x = VG.Proof.X448.pw z ea) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State}
-    (h : CurE b s0 a qs F s) :
-    WP isa (Impl.X448.PPC64LE.sqn o x n) s
-      (CurE b s0 a (o :: qs) (upd F o (VG.Proof.X448.pw z (ea * 2 ^ n)))) :=
-  WP.mono (sqn_ok hn1 hn hq ho hx ho4 hx4 h) fun _ ⟨c, h'⟩ => ⟨c, h'.congr (fun _ hq => hq) fun _ _ => by
+    (h : CurE W b s0 a qs F s) :
+    WP isa (sqnW mf o x n) s
+      (CurE W b s0 a (o :: qs) (upd F o (VG.Proof.X448.pw z (ea * 2 ^ n)))) :=
+  WP.mono (sqn_ok hW hmf hn1 hn hq ho hx ho4 hx4 h) fun _ ⟨c, h'⟩ => ⟨c, h'.congr (fun _ hq => hq) fun _ _ => by
     rw [hFx, VG.Proof.X448.sqn_pw]⟩
 
 /-- The elements after `chain223 Z2`: `z^(2²²³ - 1)` in `R` and
@@ -206,9 +210,9 @@ def chainV (v : Nat → Fe) : Nat → Fe :=
 /-- A slot's element, read through the updates of literal slots. -/
 macro "look" : tactic => `(tactic| simp (disch := decide) only [chainV, upd_self, upd_of_ne])
 
-theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep1 R qs = true) (hZ : Z2 ∈ qs)
-    (hT : TempsOk qs = true) {s : State} (h : CurE b s0 a qs v s) :
-    WP isa (chain223 Z2) s (CurE b s0 a (R :: T6 :: qs) (chainV v)) := by
+theorem chain223_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : List Nat} {v : Nat → Fe} (hR : Sep1 R qs = true) (hZ : Z2 ∈ qs)
+    (hT : TempsOk qs = true) {s : State} (h : CurE W b s0 a qs v s) :
+    WP isa (chain223W mf Z2) s (CurE W b s0 a (R :: T6 :: qs) (chainV v)) := by
   obtain ⟨q0, n0⟩ := temps_get hT (t := T0) (by decide)
   obtain ⟨q1, n1⟩ := temps_get hT (t := T1) (by decide)
   obtain ⟨q2, n2⟩ := temps_get hT (t := T2) (by decide)
@@ -218,7 +222,7 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep1 R qs = true) (hZ
   obtain ⟨q6, n6⟩ := temps_get hT (t := T6) (by decide)
   -- `z` as the power `z^1` in its slot.
   have hZ0 : Z2 ∈ Z2 :: qs := List.mem_cons_self
-  have h0 : CurE b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
+  have h0 : CurE W b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
     let ⟨c, h⟩ := h
     ⟨c, h.congr (fun q hq => by
       simp only [List.mem_cons] at hq; rcases hq with rfl | hq
@@ -235,45 +239,45 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep1 R qs = true) (hZ
   have g4 : Sep1 T4 (Z2 :: qs) = true := sep1_cons (by decide) q4
   have g5 : Sep1 T5 (Z2 :: qs) = true := sep1_cons (by decide) q5
   have g6 : Sep1 T6 (Z2 :: qs) = true := sep1_cons (by decide) q6
-  unfold chain223
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 1) (by decide) (by decide) (by sep1) (by decide) hZ0 (by look) (by decide) (by decide) h0) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := 1 * 2 ^ 1) (eb := 1) (ee := 2 ^ 2 - 1) (by sep1) (by decide) (by simp) (by simp [hZ0])
+  unfold chain223W
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 1) (by decide) (by decide) (by sep1) (by decide) hZ0 (by look) (by decide) (by decide) h0) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := 1 * 2 ^ 1) (eb := 1) (ee := 2 ^ 2 - 1) (by sep1) (by decide) (by simp) (by simp [hZ0])
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h1) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 2 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h2) fun s3 h3 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 2 - 1) * 2 ^ 2) (eb := 2 ^ 2 - 1) (ee := 2 ^ 4 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 2 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h2) fun s3 h3 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 2 - 1) * 2 ^ 2) (eb := 2 ^ 2 - 1) (ee := 2 ^ 4 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h3) fun s4 h4 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 4 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h4) fun s5 h5 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 4 - 1) * 2 ^ 4) (eb := 2 ^ 4 - 1) (ee := 2 ^ 8 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 4 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h4) fun s5 h5 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 4 - 1) * 2 ^ 4) (eb := 2 ^ 4 - 1) (ee := 2 ^ 8 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h5) fun s6 h6 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 8 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h6) fun s7 h7 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 8 - 1) * 2 ^ 8) (eb := 2 ^ 8 - 1) (ee := 2 ^ 16 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 8 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h6) fun s7 h7 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 8 - 1) * 2 ^ 8) (eb := 2 ^ 8 - 1) (ee := 2 ^ 16 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h7) fun s8 h8 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 16 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h8) fun s9 h9 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 16 - 1) * 2 ^ 16) (eb := 2 ^ 16 - 1) (ee := 2 ^ 32 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 16 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h8) fun s9 h9 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 16 - 1) * 2 ^ 16) (eb := 2 ^ 16 - 1) (ee := 2 ^ 32 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h9) fun s10 h10 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 32 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h10) fun s11 h11 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 32 - 1) * 2 ^ 32) (eb := 2 ^ 32 - 1) (ee := 2 ^ 64 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 32 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h10) fun s11 h11 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 32 - 1) * 2 ^ 32) (eb := 2 ^ 32 - 1) (ee := 2 ^ 64 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h11) fun s12 h12 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 64 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h12) fun s13 h13 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 64 - 1) * 2 ^ 64) (eb := 2 ^ 64 - 1) (ee := 2 ^ 128 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 64 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h12) fun s13 h13 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 64 - 1) * 2 ^ 64) (eb := 2 ^ 64 - 1) (ee := 2 ^ 128 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h13) fun s14 h14 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 128 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h14) fun s15 h15 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 128 - 1) * 2 ^ 64) (eb := 2 ^ 64 - 1) (ee := 2 ^ 192 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 128 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h14) fun s15 h15 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 128 - 1) * 2 ^ 64) (eb := 2 ^ 64 - 1) (ee := 2 ^ 192 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h15) fun s16 h16 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 192 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h16) fun s17 h17 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 192 - 1) * 2 ^ 16) (eb := 2 ^ 16 - 1) (ee := 2 ^ 208 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 192 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h16) fun s17 h17 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 192 - 1) * 2 ^ 16) (eb := 2 ^ 16 - 1) (ee := 2 ^ 208 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h17) fun s18 h18 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 208 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h18) fun s19 h19 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 208 - 1) * 2 ^ 8) (eb := 2 ^ 8 - 1) (ee := 2 ^ 216 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 208 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h18) fun s19 h19 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 208 - 1) * 2 ^ 8) (eb := 2 ^ 8 - 1) (ee := 2 ^ 216 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h19) fun s20 h20 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 216 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h20) fun s21 h21 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 216 - 1) * 2 ^ 4) (eb := 2 ^ 4 - 1) (ee := 2 ^ 220 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 216 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h20) fun s21 h21 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 216 - 1) * 2 ^ 4) (eb := 2 ^ 4 - 1) (ee := 2 ^ 220 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h21) fun s22 h22 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 220 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h22) fun s23 h23 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 220 - 1) * 2 ^ 2) (eb := 2 ^ 2 - 1) (ee := 2 ^ 222 - 1) (by sep1) (by decide) (by simp) (by simp)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 220 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h22) fun s23 h23 => ?_)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 220 - 1) * 2 ^ 2) (eb := 2 ^ 2 - 1) (ee := 2 ^ 222 - 1) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h23) fun s24 h24 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 222 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h24) fun s25 h25 => ?_)
-  refine WP.mono (opMulP (z := v Z2) (ea := (2 ^ 222 - 1) * 2 ^ 1) (eb := 1) (ee := 2 ^ 223 - 1) (by sep1) (by decide) (by simp) (by simp [hZ0])
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 222 - 1) (by decide) (by decide) (by sep1) (by decide) (by simp) (by look) (by decide) (by decide) h24) fun s25 h25 => ?_)
+  refine WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 222 - 1) * 2 ^ 1) (eb := 1) (ee := 2 ^ 223 - 1) (by sep1) (by decide) (by simp) (by simp [hZ0])
     (by look) (by look) (by decide) (by decide) (by decide) (by decide) h25) fun s26 ⟨c26, h26⟩ => ⟨c26,
     h26.congr (fun q hq => ?_) fun q hq => ?_⟩
   · simp only [List.mem_cons] at hq ⊢
@@ -309,10 +313,10 @@ theorem drop_R {qs : List Nat} (hq : Sep1 R qs = true) (hT : TempsOk qs = true) 
     {v : Nat → Fe} {s : State} (hc : Ctx b s) (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q)
     (h0 : s.gpr .r0 = a) :
     Sep1 R (qs.filter (· ≠ R)) = true ∧ TempsOk (qs.filter (· ≠ R)) = true ∧
-      CurE b s a (qs.filter (· ≠ R)) v s := by
+      CurE W b s a (qs.filter (· ≠ R)) v s := by
   -- `R`'s element is whatever is there; the chain overwrites it.
-  have hC : CurE b s a (qs.filter (· ≠ R)) v s :=
-    ⟨_, hc, Stp.refl _ _, h0, rfl, fun q hq => by
+  have hC : CurE W b s a (qs.filter (· ≠ R)) v s :=
+    ⟨_, hc, StpW.refl _ _ _, h0, rfl, fun q hq => by
       simp only [List.mem_filter, decide_eq_true_eq] at hq; exact hS q hq.1 hq.2⟩
   have hfR : Sep1 R (qs.filter (· ≠ R)) = true := by
     exact List.all_eq_true.mpr fun q hq' => List.all_eq_true.mp hq q (List.mem_filter.mp hq').1
@@ -330,26 +334,26 @@ theorem drop_R {qs : List Nat} (hq : Sep1 R qs = true) (hT : TempsOk qs = true) 
 /-- The inversion of the element at `Z2` into `R`, keeping the slots `qs`
 other than `R` (which may be any slots separate from `R` and the chain's
 temporaries). -/
-theorem invertQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (_hR : R ∈ qs) (hZ : Z2 ∈ qs)
+theorem invertQW_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : List Nat} (hq : Sep1 R qs = true) (_hR : R ∈ qs) (hZ : Z2 ∈ qs)
     (hT : TempsOk qs = true) {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .r0 = a) :
-    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+    WP isa (invertW mf) s fun s' => StpW W b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) := by
   have hZR : Z2 ≠ R := by decide
-  obtain ⟨hfR, hfT, hC⟩ := drop_R hq hT hc hS h0
+  obtain ⟨hfR, hfT, hC⟩ := drop_R (W := W) hq hT hc hS h0
   have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   obtain ⟨f6, _⟩ := temps_get hfT (t := T6) (by decide)
-  unfold Impl.X448.PPC64LE.invert invTail
-  refine WP.seq (WP.mono (chain223_ok hfR hZf hfT hC) fun s1 h1 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 223 - 1) (by decide) (by decide) (by sep1)
+  unfold invertW invTailW
+  refine WP.seq (WP.mono (chain223_ok hW hmf hfR hZf hfT hC) fun s1 h1 => ?_)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 223 - 1) (by decide) (by decide) (by sep1)
     (by decide) (by simp) (by look) (by decide) (by decide) h1) fun s2 h2 => ?_)
-  refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 2 ^ 222 - 1) (by decide) (by decide) (by sep1)
+  refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 2 ^ 222 - 1) (by decide) (by decide) (by sep1)
     (by decide) (by simp) (by look) (by decide) (by decide) h2) fun s3 h3 => ?_)
-  refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := (2 ^ 222 - 1) * 2 ^ 2) (eb := 1)
+  refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 222 - 1) * 2 ^ 2) (eb := 1)
     (ee := (2 ^ 222 - 1) * 2 ^ 2 + 1) (by sep1) (by decide) (by simp)
     (by repeat (first | exact hZf | apply List.mem_cons_of_mem))
     (by look) (by look; exact (VG.Proof.X448.pw_one _).symm) rfl (by decide) (by decide) (by decide) h3) fun s4 h4 => ?_)
-  refine WP.mono (opMulP (z := v Z2) (ea := (2 ^ 223 - 1) * 2 ^ 225)
+  refine WP.mono (opMulP hmf (z := v Z2) (ea := (2 ^ 223 - 1) * 2 ^ 225)
     (eb := (2 ^ 222 - 1) * 2 ^ 2 + 1) (ee := P - 2) (by sep1) (by decide) (by simp) (by simp)
     (by look) (by look) inv_exp (by decide) (by decide) (by decide) h4) fun s5 ⟨c5, h5⟩ => ⟨h5.stp, h5.ctx, fun q hq => ?_⟩
   by_cases eR : q = R
@@ -360,17 +364,49 @@ theorem invertQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (_hR : R ∈ qs) (hZ 
     rw [h5.slots q (by repeat (first | exact hq' | apply List.mem_cons_of_mem)), upd_of_ne _ _ eR]
     simp only [chainV, upd_of_ne _ _ e6, upd_of_ne _ _ eR]
 
+
 /-- The inversion in X448: `z` at `Z2`, and `x2` at `X2` kept. -/
-theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
-    (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
-    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+theorem invertW_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {a : BitVec 64} {v : Nat → Fe} {s : State}
+    (hc : Ctx b s) (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
+    WP isa (invertW mf) s fun s' => StpW W b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
-  invertQ_ok (by decide) (by decide) (by decide) (by decide) hc (fun q hq hqR => hS q (by
+  invertQW_ok hW hmf (by decide) (by decide) (by decide) (by decide) hc (fun q hq hqR => hS q (by
     simp only [IQ, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl
     · decide
     · exact absurd rfl hqR
     · decide)) h0
+
+end
+
+section
+variable {b : Addr} {s0 : State} {a : BitVec 64}
+
+theorem Cur.congr {s0 s : State} {a c : BitVec 64} {qs qs' : List Nat} {v w : Nat → Fe}
+    (h : Cur b s0 a c qs v s) (hq : ∀ q ∈ qs', q ∈ qs) (hv : ∀ q ∈ qs', v q = w q) : Cur b s0 a c qs' w s :=
+  CurW.congr h hq hv
+
+/-- `subi r5, r12, d`, and the branch on `r5 = 0`. -/
+theorem cmp_ok {s0 s : State} {a : BitVec 64} {qs : List Nat} {v : Nat → Fe} {m d : Nat}
+    (hm : m < 448) (hd : d < 448) (h : Cur b s0 a (BitVec.ofNat 64 m) qs v s) :
+    WP isa (.block [.subi .r5 .r12 d]) s fun s' => Cur b s0 a (BitVec.ofNat 64 m) qs v s' ∧
+      isa.eval (.zero .d .r5) s' = some (decide (m = d)) :=
+  cmpW_ok (by decide) hm hd h
+
+/-- `invertQW_ok` with `mul`, which Ed448 uses. -/
+theorem invertQ_ok {qs : List Nat} (hq : Sep1 R qs = true) (hR : R ∈ qs) (hZ : Z2 ∈ qs)
+    (hT : TempsOk qs = true) {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
+    (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .r0 = a) :
+    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+      SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
+  invertQW_ok (by decide) mulCur_mul hq hR hZ hT hc hS h0
+
+/-- The inversion in X448. -/
+theorem invert_ok {a : BitVec 64} {v : Nat → Fe} {s : State} (hc : Ctx b s)
+    (hS : SlotsOk s.mem b [Z2, X2] v) (h0 : s.gpr .r0 = a) :
+    WP isa Impl.X448.PPC64LE.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
+      SlotsOk s'.mem b IQ (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) :=
+  invertW_ok (by decide) mulCur_mul hc hS h0
 
 end
 

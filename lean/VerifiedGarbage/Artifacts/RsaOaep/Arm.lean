@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.Arm.Inst
 public import VerifiedGarbage.Proof.Rsa.Arm.PublicOfCrt
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
@@ -20,13 +20,13 @@ open VG.Proof.HashTable.Arm (vars tables)
 def artifacts : List Artifact :=
   VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) =>
     if h : OK vars then [
-      Spec.RsaOaep.decryptTablesApi.artifact Arm.target {
+      Spec.RsaOaep.decryptMdTablesApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", tables vars), ("mgf1", tables vars)]
         code := Proof.RsaOaep.Arm.Dec.decCode vars v
         stack := 3624
         verified := dec_ok vars h v },
-      Spec.RsaOaep.encryptTablesApi.artifact Arm.target {
+      Spec.RsaOaep.encryptMdTablesApi.artifact Arm.target {
         suffix := v.suffix
         tables := [("hash", tables vars), ("mgf1", tables vars)]
         code := Proof.RsaOaep.Arm.Enc.encryptCode vars (Proof.Rsa.Arm.pdOfCrt v)

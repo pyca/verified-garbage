@@ -64,7 +64,7 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
   obtain ⟨σ₀, hi₀⟩ := hP
   obtain ⟨tR, tRo, tC⟩ := tblL_of hi₀
   show VP _ (.block ([Impl.RsaPss.X86.ld .edx (Impl.RsaPss.X86.arg 16)] ++
-    [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 16))])) _
+    [.mov .edx (.mem (Impl.RsaPkcs1Sig.X86.at_ .edx 24))])) _
   refine VP.block_append (G := fun σ s => S h P σ s ∧ s.gpr .edx = P.tabL)
     (VP.taint [.esp] lenArg16_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s hs => ?_)
     (VP.taint [.esp, .edx] lenWord_taint (fun _ _ _ _ h₁ h₂ r hr => ?_) fun σ s hs => ?_)
@@ -79,9 +79,9 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
     · rw [h₁.2, h₂.2]
   · obtain ⟨⟨hi, hs⟩, hdx⟩ := hs
     have T := hTL σ hi.tabTL
-    have hin : InRegions (s.rd ++ s.wr) (VG.X86.addr P.tabL 16) 4 := ⟨tR, hs.inRo tRo, tC 16 (by decide)⟩
+    have hin : InRegions (s.rd ++ s.wr) (VG.X86.addr P.tabL 24) 4 := ⟨tR, hs.inRo tRo, tC 24 (by decide)⟩
     refine wp_ldm (B := P.tabL) hdx hin fun t2 u2 => WP.block_nil ⟨⟨hi, hs.upd u2 (by decide)⟩, ?_⟩
-    rw [u2.gpr, St_roW hs tRo (tC 16 (by decide)), T.d]
+    rw [u2.gpr, St_roW hs tRo (tC 24 (by decide)), T.d]
 
 /-- The tail for a digest length, which is all it uses of the hash
 function's shape. -/
@@ -218,8 +218,8 @@ theorem code_ok (hc : Coh vs) (c : Ver.PublicImpl) {s : State} (hs : (espec vs).
   · have ok := hin.ok
     rw [ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (epw (vs := vs) s s w w₁).ro w₁.g.H.D) => entered_ro hsp ok hR
-    sig_post [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    sig_post [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argSlots, argVal, argBytes]
     intro H G hH hG
     rw [hashAt_tableOf hfitL hidxL, Option.some.injEq] at hH
@@ -248,8 +248,8 @@ theorem code_ct (hc : Coh vs) (c : Ver.PublicImpl) :
   obtain ⟨⟨T₁, hT₁, hhL₁⟩, ⟨T, hT, hh₁⟩, -, -, -⟩ := spec_tab h₁
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     abi, argSlots, argVal, argBytes] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp

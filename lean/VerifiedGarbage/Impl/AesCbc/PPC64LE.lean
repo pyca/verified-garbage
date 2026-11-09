@@ -157,16 +157,18 @@ def xorSlots : List Instr := (List.range 8).flatMap xorSlot
 def countG : List Instr := [.lsr .d .r9 .r18 3]
 
 /-- `group` while at least eight blocks are left, then `one` for each block
-left. -/
-def groups (group one : Prog isa) : Prog isa :=
+left; `pre` (none by default) once before the first group, if there is one. -/
+def groups (group one : Prog isa) (pre : List Instr := []) : Prog isa :=
   .seq (.block countG)
-    (.seq (.ite (.zero .d .r9) (.block []) (.loop (.seq group (.block countG)) (.nonzero .d .r9)))
+    (.seq (.ite (.zero .d .r9) (.block [])
+        (.seq (.block pre) (.loop (.seq group (.block countG)) (.nonzero .d .r9))))
       (.ite (.zero .d .r18) (.block []) (.loop one (.nonzero .d .r18))))
 
-/-- The registers saved and the arguments set up, `groups group one`, and
-the registers restored. -/
-def batched (group one : Prog isa) : Prog isa :=
-  .seq (.block (save ++ setup)) (.seq (.ite (.zero .d .r18) (.block []) (groups group one)) (.block restore))
+/-- The registers saved and the arguments set up, `groups group one pre`,
+and the registers restored. -/
+def batched (group one : Prog isa) (pre : List Instr := []) : Prog isa :=
+  .seq (.block (save ++ setup))
+    (.seq (.ite (.zero .d .r18) (.block []) (groups group one pre)) (.block restore))
 
 /-- Eight blocks: `Cⱼ₋₁` saved in slot `j` (the chaining value for the
 first), and the last `Cⱼ` in slot 8; the eight read into `v0`–`v7`,

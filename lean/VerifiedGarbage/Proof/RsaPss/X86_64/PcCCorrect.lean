@@ -56,7 +56,7 @@ structure CDone (s t : State) : Prop where
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
   out : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some G → validCache s →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G → validCache s →
     (t.gpr .rax).setWidth 32 = if verifyOut H G s then 1 else 0
 
 theorem restoreC_ok {s t : State} (D : CDone s t) :
@@ -96,7 +96,7 @@ structure KSel (f : MdFns) (g : Impl.Mgf1.X86_64.Table.Fns) (s : State) (i : Nat
   idx : s.mem.readW (off (stackArg s 8) 40) 64 = BitVec.ofNat 64 i
   tabs : TabsAt T.H T.dn T.f T.G T.g (stackArg s 8) (stackArg s 9) s
   hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some Hs
-  hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some Gs
+  hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some Gs
   hD : T.H.D = (s.gpr .r9).toNat
   ok : ∀ s', (chkK T Hs Gs).pre s' → ∃ t s'', Exec isa (checkEncoding f (ofIdx i) g) s' t s'' ∧
     abiPreserved s' s'' ∧ (chkK T Hs Gs).post s' s''
@@ -206,7 +206,7 @@ theorem codeC_ok {f : MdFns} {g : Impl.Mgf1.X86_64.Table.Fns}
   have hk1 := hp.k1; have hk2 := hp.k2
   have hHl : Hs.len = T.H.D := ((hp.hdl Hs E.hH).symm.trans E.hD.symm)
   have hHs : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H →
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some G → H = Hs ∧ G = Gs := fun H G a b =>
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some G → H = Hs ∧ G = Gs := fun H G a b =>
     ⟨Option.some.inj (a.symm.trans E.hH), Option.some.inj (b.symm.trans E.hG)⟩
   refine wp_frame (by have := hp.sp1; unfold verifyStack chkStack frameBytes at *; omega_arith) ?_
   rw [verifyCBody]

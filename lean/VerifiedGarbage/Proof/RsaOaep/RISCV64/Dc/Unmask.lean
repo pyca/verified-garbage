@@ -39,7 +39,7 @@ what the function only reads, as on entry, in a state with the entry's
 stack pointer, regions and statics' addresses, and memory as on entry
 apart from the stack and `scratch`. -/
 theorem tabS_toJ {G : Hash} {f : Fns} {j : Nat} {R : Region} (T : TabS G f j (SD s) s (stackArg s j))
-    (hj : j < 17) (hR : ∀ k < 5, Region.Sub ⟨stackArg s j + BitVec.ofNat 64 (8 * k), 8⟩ R)
+    (hj : j < 17) (hR : ∀ k < 7, Region.Sub ⟨stackArg s j + BitVec.ofNat 64 (8 * k), 8⟩ R)
     (hkR : (kD s).Disjoint R) (hsR : (scR s).Disjoint R) {S' : State → Addr} {s' : State}
     (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
     (hS : SC S' s' = SC (SD s) s) : TabS G f j S' s' (stackArg s j) := by
@@ -59,14 +59,14 @@ theorem tabS_toJ {G : Hash} {f : Fns} {j : Nat} {R : Region} (T : TabS G f j (SD
 theorem tabS_to {G : Hash} {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16)) {S' : State → Addr} {s' : State}
     (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
     (hS : SC S' s' = SC (SD s) s) : TabS G f 16 S' s' (stackArg s 16) :=
-  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)) P.kt P.st hm hsp
+  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 11 * (64 / 8); omega)) P.kt P.st hm hsp
     hrd hsy hS
 
 /-- The label's hash function's table, as on entry. -/
 theorem tabS_toL {G : Hash} {f : Fns} (T : TabS G f 15 (SD s) s (stackArg s 15)) {S' : State → Addr} {s' : State}
     (hm : Frame [kD s, scR s] s.mem s'.mem) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
     (hS : SC S' s' = SC (SD s) s) : TabS G f 15 S' s' (stackArg s 15) :=
-  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 5 * (64 / 8); omega)) P.ktl P.stl hm
+  tabS_toJ P T (by decide) (fun k hk => Offset.sub_base _ (by show 8 * k + 8 ≤ 11 * (64 / 8); omega)) P.ktl P.stl hm
     hsp hrd hsy hS
 
 theorem tabS_wm {G : Hash} {f : Fns} (T : TabS G f 16 (SD s) s (stackArg s 16))

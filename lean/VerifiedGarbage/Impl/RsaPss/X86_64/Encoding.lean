@@ -63,7 +63,7 @@ def ret0 : Prog isa := .block [.mov32 .rax (.imm 0)]
 `encode(em = rdi, em_len = rsi, digest = rdx, salt = rcx, salt_len = r8,
 em_bits = r9, scratch, scratch_len, hash, mgf1)`, the last four on the
 stack, for the hash function `H` that the table of `MdHash` `hash` names and
-MGF1's `G` that the table of `Hash` `mgf1` names. -/
+MGF1's `G` that the table of `MdHash` `mgf1` names. -/
 
 /-- The arguments into their slots, and the mask. -/
 def encPrologue : List Instr :=

@@ -39,7 +39,7 @@ vg_rsa_pss_sha384_encode:
 	mov QWORD PTR [rsp+96], rax
 	mov rax, QWORD PTR [r11+16]
 	mov QWORD PTR [rsp+104], rax
-	mov rax, QWORD PTR [r11+32]
+	mov rax, QWORD PTR [r11+48]
 	mov QWORD PTR [rsp+112], rax
 	mov rax, QWORD PTR [rsp+136]
 	cmp rax, 50

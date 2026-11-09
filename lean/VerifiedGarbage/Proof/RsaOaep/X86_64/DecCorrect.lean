@@ -111,8 +111,8 @@ theorem dec_correct (v : PrivImpl) (s : State) (h : (decK (tables vs)).pre s) :
   have okL := tabOK_of hc hd hw₁
   have ok := tabOK_of hc hd hw
   obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
-  have hHa : Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some w₁.mgf.G := hashAt_tableOf hidxL
-  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 18) = some w.mgf.G := hashAt_tableOf hidx
+  have hHa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some w₁.mgf.G := hashAt_tableOf hidxL
+  have hGa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 18) = some w.mgf.G := hashAt_tableOf hidx
   have hk1 := hp.lv.1; have hk2 := hp.lv.2
   have hD := w₁.ok.hD0; have hDN := w₁.ok.hDN; have hN := w₁.ok.N_le
   have hlen : w₁.mgf.G.len = w₁.H.D := w₁.mgf.len
@@ -144,7 +144,7 @@ theorem dec_correct (v : PrivImpl) (s : State) (h : (decK (tables vs)).pre s) :
   refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L1 R1 TL))
     fun ta ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
   have hea : EnvD s ta := he1.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa
-  have hDa : ta.mem.readW (off (stackArg s 17) 32) 64 = BitVec.ofNat 64 w₁.H.stream.D :=
+  have hDa : ta.mem.readW (off (stackArg s 17) 48) 64 = BitVec.ofNat 64 w₁.H.stream.D :=
     (TL.mem ta.mem (by have := fa; rwa [L1.rsp] at this)).2.1
   refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (lenLoad_ok La Ra (by simp [upd])
       (by rw [ka.2.1, ka.2.2]; exact TL.rdD) hDa))

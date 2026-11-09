@@ -57,11 +57,11 @@ structure TabS (G : Hash) (f : Fns) (j : Nat) (S : State → Addr) (s : State) (
   argR : InRegions s.rd (stackArgAddr s j) 8
   argK : Region.Disjoint ⟨stackArgAddr s j, 8⟩ (kR s)
   argS : Region.Disjoint ⟨stackArgAddr s j, 8⟩ (SC S s)
-  tR : ∀ k < 5, InRegions s.rd (p + BitVec.ofNat 64 (8 * k)) 8
-  tK : ∀ k < 5, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (kR s)
-  tS : ∀ k < 5, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (SC S s)
+  tR : ∀ k < 7, InRegions s.rd (p + BitVec.ofNat 64 (8 * k)) 8
+  tK : ∀ k < 7, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (kR s)
+  tS : ∀ k < 7, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ (SC S s)
   mem : TabMem G s.syms p s.mem
-  d : s.mem.readW (p + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D
+  d : s.mem.readW (p + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D
   ok : TabOK G f s.syms
 
 /-- `TabS` of a state with `s`'s stack pointer, regions, statics' addresses
@@ -71,10 +71,10 @@ theorem TabS.transfer {G : Hash} {f : Fns} {j : Nat} {S S' : State → Addr} {s 
     (T : TabS G f j S s p) (hsp : s'.sp = s.sp) (hrd : s'.rd = s.rd) (hsy : s'.syms = s.syms)
     (hS : SC S' s' = SC S s) {rs : List Region} (hm : Frame rs s.mem s'.mem)
     (ha : ∀ r ∈ rs, Region.Disjoint ⟨stackArgAddr s j, 8⟩ r)
-    (ht : ∀ k < 5, ∀ r ∈ rs, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ r) : TabS G f j S' s' p := by
+    (ht : ∀ k < 7, ∀ r ∈ rs, Region.Disjoint ⟨p + BitVec.ofNat 64 (8 * k), 8⟩ r) : TabS G f j S' s' p := by
   have eA : stackArgAddr s' j = stackArgAddr s j := by simp only [stackArgAddr, hsp]
   have eK : kR s' = kR s := by simp only [kR, hsp]
-  have rd : ∀ k < 5, s'.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 :=
+  have rd : ∀ k < 7, s'.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 :=
     fun k hk => hm.readW (w := 64) (Region.contains_self _ _) (ht k hk) (by decide)
   obtain ⟨m0, m1, m2⟩ := T.mem
   have r0 := rd 0 (by decide)
@@ -86,7 +86,7 @@ theorem TabS.transfer {G : Hash} {f : Fns} {j : Nat} {S S' : State → Addr} {s 
   · rw [hsy, r0]; exact m0
   · rw [hsy, rd 1 (by decide)]; exact m1
   · rw [hsy, rd 2 (by decide)]; exact m2
-  · rw [rd 4 (by decide)]; exact T.d
+  · rw [rd 6 (by decide)]; exact T.d
 
 /-- A word of memory apart from what `Base` lets us write is as on entry. -/
 theorem Base.readW_apart {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State} (h : Base S vf s t)
@@ -100,7 +100,7 @@ theorem Base.readW_apart {S : State → Addr} {vf : State → Reg → BitVec 64}
 
 /-- The table's word `k` into `d`, through our stack argument `j`. -/
 theorem wp_tword {G : Hash} {f : Fns} {j : Nat} {S : State → Addr} {vf : State → Reg → BitVec 64} {s t : State}
-    {p : Addr} (T : TabS G f j S s p) (h : Base S vf s t) {k : Nat} (hk : k < 5) {d : Reg} (hd : d ≠ .r0)
+    {p : Addr} (T : TabS G f j S s p) (h : Base S vf s t) {k : Nat} (hk : k < 7) {d : Reg} (hd : d ≠ .r0)
     {is : List Instr} {Q : State → Prop}
     (kk : ∀ t', Only [d] t t' → t'.gpr d = s.mem.readW (p + BitVec.ofNat 64 (8 * k)) 64 → WP isa (.block is) t' Q) :
     WP isa (.block (tword d j k ++ is)) t Q := by
@@ -123,7 +123,7 @@ include P
 end
 
 /-- How many bytes of the digest go into `dst`: `min(hLen, dstLen - done)`,
-`hLen` the table's word 4. -/
+`hLen` the table's word 6. -/
 theorem xorHeadT_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : State → Reg → BitVec 64} {s₀ : State}
     {p : Addr} (T : TabS G f j S' s₀ p) {t : State} (hb : Base S' vf s₀ t) {S : Addr}
     {dst dstLen done : Nat}
@@ -133,8 +133,8 @@ theorem xorHeadT_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : S
       t'.gpr .r11 = off S oDig ∧ t'.gpr .r12 = off S (dst + done) ∧
       t'.gpr .r9 = BitVec.ofNat 64 (min G.D (dstLen - done)) := by
   simp only [xorHeadT]
-  refine wp_tword T hb (k := 4) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
-  rw [show 8 * 4 = 32 from rfl, T.d] at e₀
+  refine wp_tword T hb (k := 6) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
+  rw [show 8 * 6 = 48 from rfl, T.d] at e₀
   refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => ?_
   refine wp_sub fun u₅ o₅ e₅ => wp_lsr fun u₆ o₆ e₆ => wp_li (by decide) fun u₇ o₇ e₇ => wp_sub fun u₈ o₈ e₈ =>
     wp_and fun u₉ o₉ e₉ => wp_add fun u₁₀ o₁₀ e₁₀ => wp_nil ?_
@@ -165,8 +165,8 @@ theorem nextCtrT_ok {G : Hash} {f : Fns} {j : Nat} {S' : State → Addr} {vf : S
       t'.gpr .r28 = BitVec.ofNat 64 (c + 1) ∧ t'.gpr .r29 = BitVec.ofNat 64 (done + G.D) ∧
       (t'.gpr .r12 != 0) = decide (done + G.D < dstLen) := by
   simp only [nextCtrT]
-  refine wp_tword T hb (k := 4) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
-  rw [show 8 * 4 = 32 from rfl, T.d] at e₀
+  refine wp_tword T hb (k := 6) (by decide) (by decide) fun u₀ o₀ e₀ => ?_
+  rw [show 8 * 6 = 48 from rfl, T.d] at e₀
   refine wp_addi fun u₁ o₁ e₁ => wp_add fun u₂ o₂ e₂ => wp_sub fun u₃ o₃ e₃ => wp_lsr fun u₄ o₄ e₄ =>
     wp_nil ⟨(o₀.trans (o₁.trans (o₂.trans (o₃.trans o₄)))).mono, ?_, ?_, ?_⟩
   · rw [o₄.get .r28, o₃.get .r28, o₂.get .r28, e₁, o₀.get .r28, h28, BitVec.ofNat_add]

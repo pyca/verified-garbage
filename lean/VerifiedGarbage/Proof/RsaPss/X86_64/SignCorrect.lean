@@ -93,7 +93,7 @@ structure SDone (s t : State) : Prop where
   rbp : t.mem.readW (off (fb s) sRbp) 64 = s.gpr .rbp
   r12 : t.mem.readW (off (fb s) sR12) 64 = s.gpr .r12
   out : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G →
     Spec.Rsa.writtenOutcome t.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((t.gpr .rax).setWidth 32) (signOut H G s)
   /-- MXCSR's control bits. -/
   mx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
@@ -103,7 +103,7 @@ theorem fail_done {s t : State} (hp : SPre tsH tsG s) {V : Nat → Byte} {W : Na
     (hcs : ∀ r ∈ [Reg.r13, .r14, .r15], t.gpr r = s.gpr r)
     (h16 : W 16 = s.gpr .rdi) (h17 : W 17 = s.gpr .rcx) (h41 : W 41 = s.gpr .rbx) (h42 : W 42 = s.gpr .rbp)
     (h43 : W 43 = s.gpr .r12) (hinv : ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-      Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G → signOut H G s = .invalid)
+      Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G → signOut H G s = .invalid)
     (hmx : t.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10) :
     WP isa signFail t (SDone s) := by
   have hk1 := hp.k1; have hk2 := hp.k2

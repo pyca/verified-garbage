@@ -118,8 +118,8 @@ theorem bl_after {a s t : State} (P : PreT Z Gs.len s) (p : PubT Z a s) (c : Aft
   have Tg' : TabS Z.G Z.g gArg Sp (reE s t.mem) (stackArg s 7) := P.2.1.transfer rfl rfl rfl hSC c.mem (hA 7 (by decide)) fun k hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (P.1.ktg.sub_right (tab_sub (n := 5) hk)).symm
-    · exact (P.1.stg.sub_right (tab_sub (n := 5) hk)).symm
+    · exact (P.1.ktg.sub_right (tab_sub (n := 11) (by omega))).symm
+    · exact (P.1.stg.sub_right (tab_sub (n := 11) (by omega))).symm
   have T' : MdTabS Z.H Z.cn Z.cc Z.dn Z.dc Z.f hArg Sp (reE s t.mem) (stackArg s 6) := P.2.2.transfer rfl rfl rfl hSC c.mem (hA 6 (by decide)) fun k hk r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl

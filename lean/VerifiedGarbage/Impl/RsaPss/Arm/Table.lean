@@ -12,8 +12,8 @@ public import VerifiedGarbage.Impl.Sha512.Arm.Stream
 `sign` and `verifyPrecomputed` (`vg_rsa_pss_sign`,
 `vg_rsa_pss_verify_precomputed`) with the pieces of `Impl/RsaPss/Arm.lean`,
 the hash function `H` given as a table of the interface `MdHash`
-(`Spec/MdHashTable.lean`) and MGF1's as a table of `Hash`
-(`Spec/HashTable.lean`), their last two arguments.
+(`Spec/MdHashTable.lean`) and MGF1's as a table of `MdHash`
+(`Spec/MdHashTable.lean`), their last two arguments.
 
 `ctHash` calls `H`'s streaming `init`, compression function and digest of a
 hash value, the table's functions 0, 3 and 4, through the table

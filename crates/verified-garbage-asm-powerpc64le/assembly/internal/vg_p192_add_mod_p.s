@@ -36,10 +36,7 @@ vg_p192_add_mod_p:
 	subfe %r9, %r12, %r9
 	addze %r11, %r0
 	addi %r11, %r11, -1
-	lis %r12, -1
-	ori %r12, %r12, 65535
-	and %r12, %r12, %r11
-	addc %r7, %r7, %r12
+	addc %r7, %r7, %r11
 	std %r7, 0(%r4)
 	lis %r12, -1
 	ori %r12, %r12, 65535
@@ -49,9 +46,6 @@ vg_p192_add_mod_p:
 	and %r12, %r12, %r11
 	adde %r8, %r8, %r12
 	std %r8, 8(%r4)
-	lis %r12, -1
-	ori %r12, %r12, 65535
-	and %r12, %r12, %r11
-	adde %r9, %r9, %r12
+	adde %r9, %r9, %r11
 	std %r9, 16(%r4)
 	blr

@@ -14,18 +14,24 @@ public import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
+import VerifiedGarbage.Proof.X448.PPC64LE.Mul
+import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
+import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-!
 # Ed448's base-point multiplication on PPC64LE: the whole function
 
 `vg_ed448_scalar_base` writes the encoding of `[s]B` to `out`, and returns
-with the link register it was called with (`scalarBase_correct`): the
-return address and the caller's `r14` kept at `LRS` and `R14S`, and `out` in `r14`, `R = (0 : 1 : 1)` and
-`d` (`combInit_ok`), the comb's table (`Comb.tabBuild_ok`), the scalar's
-bits, the 114 rows of the comb, after which `R` represents `[s]B`
-(`Comb.loop_ok`, `Proof.Ed448.Comb.accScalar_total`), the return address and
-`r14` loaded back (and `out` into `r3`), and the encoding of `R`. (The hypothesis `BaseLadder2Ok`
-of the earlier ladder is kept for the registration, unused.)
+with the link register, `r14` and `r15`–`r31` it was called with
+(`scalarBase_correct`): the return address and the caller's `r14` kept at
+`LRS` and `R14S`, `r15`–`r31` (which the multiplication uses) at `SNV`, and
+`out` in `r14`, `R = (0 : 1 : 1)` and `d` (`combInit_ok`), the comb's table
+(`Comb.tabBuild_ok`), the scalar's bits, the 114 rows of the comb, after which
+`R` represents `[s]B` (`Comb.loop_ok`, `Proof.Ed448.Comb.accScalar_total`), the
+return address and `r14` loaded back (and `out` into `r3`), the encoding of
+`R`, which keeps the doublewords from `LRS` on (`HiKept`), and `r15`–`r31`
+loaded back. (The hypothesis `BaseLadder2Ok` of the earlier ladder is kept for
+the registration, unused.)
 -/
 
 @[expose] public section
@@ -34,7 +40,8 @@ namespace VG.Proof.Ed448.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ed448.PPC64LE VG.Proof.X448.PPC64LE
 open VG.Proof.X25519.PPC64LE hiding V FS V_lt pass_ok limb_frame
-open VG.Impl.X448.PPC64LE (BITS X2 Z2 ACC)
+open VG.Impl.X448.PPC64LE (BITS X2 Z2 ACC nvR slotsOf stdsAt ldsAt)
+open VG.PPC64LE.Spill (saveMem Saved saveMem_saved saveMem_frame_base)
 open VG.Spec.X448 (Fe)
 open VG.Spec.Ed448 (Point basePoint identity)
 
@@ -112,6 +119,15 @@ theorem wp_keep_lr {c : Prog isa} (h : WP isa c s Q) (hc : c.noCalls = true)
   have := List.all_eq_true.mp h14 i hi
   simpa using this
 
+/-- `wp_keep_lr` for `r15`–`r31`: code that writes none of them keeps them. -/
+theorem wp_keep_nv {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q) (hc : c.noCalls = true)
+    (hn : (instrs c).all (fun i => (List.range 17).all fun k => dstOf i != some (nvR k)) = true) :
+    WP isa c s fun t => Q t ∧ ∀ k < 17, t.gpr (nvR k) = s.gpr (nvR k) := by
+  obtain ⟨tr, t, he, hq⟩ := h
+  refine ⟨tr, t, he, hq, fun k hk => Exec.gpr (fun i hi => ?_) he (.inl hc)⟩
+  have := List.all_eq_true.mp (List.all_eq_true.mp hn i hi) k (List.mem_range.mpr hk)
+  simpa using this
+
 /-- The elements of `combInit`. -/
 def cVal (q : Nat) : Fe :=
   if q = RX then identity.X else if q = RY then identity.Y
@@ -178,13 +194,15 @@ theorem dw_keep_fa {m m' : Mem} (hf : Frame [FA b] m m') {o : Nat} (ho : ACC + 1
 end
 
 theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : basePPC.pre s) :
-    WP isa scalarBase s fun s' => basePPC.post s s' ∧ s'.lr = s.lr ∧ s'.gpr .r14 = s.gpr .r14 := by
+    WP isa scalarBase s fun s' => basePPC.post s s' ∧ s'.lr = s.lr ∧ s'.gpr .r14 = s.gpr .r14 ∧
+      ∀ i < 17, s'.gpr (nvR i) = s.gpr (nvR i) := by
   obtain ⟨hrd, hwr, hos, how, hsw⟩ := hp
   have hB : BITS = 1064 := rfl
   have hA : ACC = 952 := rfl
   have hT : CTAB = 2048 := rfl
   have hL : LRS = 3840 := rfl
   have hO : R14S = 3848 := rfl
+  have hSNV : SNV = 3856 := rfl
   obtain ⟨b, hb⟩ : ∃ b, s.gpr .r5 = b := ⟨_, rfl⟩
   have hws : Region.Disjoint ⟨s.gpr .r4, 57⟩ ⟨b, 4096⟩ := hb ▸ hsw.sub_right (Region.sub_prefix (by decide))
   have hwo : Region.Disjoint ⟨b, 4096⟩ ⟨s.gpr .r3, 57⟩ :=
@@ -221,6 +239,33 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
         (Offset.contains _ (by omega) (by omega) (by omega))
     exact bytesAt_ws fw hws fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega)
+  -- `r15`–`r31` saved at `SNV`.
+  refine stdsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) hc4
+    fun s4' g4' rd4' wr4' sp4' mem4' => ?_
+  have hfS : Frame [⟨b + BitVec.ofNat 64 SNV, 136⟩] s4.mem s4'.mem := by
+    rw [mem4']; exact saveMem_frame_base (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+      (by decide) _ _ _
+  have hsv : Saved (b + BitVec.ofNat 64 SNV) s4.gpr (slotsOf nvR 17) s4'.mem := by
+    rw [mem4']; exact saveMem_saved (by decide) _ _ _
+  have hn : ∀ i < 17, nvR i ∉ [Reg.r6, .r7, .r14] := by decide
+  have hsv4 : ∀ i < 17, s4'.mem.readW (b + BitVec.ofNat 64 (SNV + 8 * i)) 64 = s.gpr (nvR i) :=
+    fun i hi => by
+      have h := hsv (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)
+      rw [Offset.add_add] at h
+      rw [h, hr4.gpr _ (hn i hi)]
+  have keepS : ∀ q, q + 8 ≤ SNV →
+      s4'.mem.readW (b + BitVec.ofNat 64 q) 64 = s4.mem.readW (b + BitVec.ofNat 64 q) 64 := fun q hq =>
+    hfS.readW (Region.contains_self _ _) (fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint b (.inl hq) (by omega) (by omega)) (by decide)
+  have lr4 : s4'.mem.readW (b + BitVec.ofNat 64 LRS) 64 = s.lr := by rw [keepS _ (by omega), lr4]
+  have out4 : s4'.mem.readW (b + BitVec.ofNat 64 R14S) 64 = s.gpr .r14 := by rw [keepS _ (by omega), out4]
+  have hk4 : Spec.Ed448.bytesAt s4'.mem (s.gpr .r4) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r4) 57 := by
+    rw [bytesAt_ws hfS hws fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.sub_base _ (by omega), hk4]
+  have hc4 : Ctx b s4' := ⟨by rw [g4']; exact hc4.r6, by rw [wr4']; exact hc4.wr⟩
+  have hr4 : Rest [.r6, .r7, .r14] s s4' := ⟨fun r hr => by rw [congrFun g4']; exact hr4.gpr r hr,
+    by rw [rd4', hr4.rd], by rw [wr4', hr4.wr], by rw [sp4', hr4.sp]⟩
+  have h14 : s4'.gpr .r14 = s.gpr .r3 := by rw [g4']; exact h14
   -- `R`, `d` and the table.
   refine WP.append (combInit_ok hc4) fun s5 ⟨hr5, hf5, hv5⟩ => ?_
   have hc5 : Ctx b s5 := hc4.of_rest hr5 (by decide)
@@ -313,25 +358,45 @@ theorem scalarBase_correct (_hl : Proof.Ed448.BaseLadder2Ok) {s : State} (hp : b
     · rfl
     · rfl
     · exact h9.d
-  refine WP.mono (wp_keep_lr (baseEncode_ok hc12 e12 (by
-      rw [hr12.wr, h9.stp.rest.wr, u8.wr, hr7.wr, hr6'.wr, hwr]; simp) (hb ▸ hwo) hS)
+  -- `r15`–`r31`, still saved before the encoding.
+  have sv12 : ∀ i < 17, s12.mem.readW (b + BitVec.ofNat 64 (SNV + 8 * i)) 64 = s.gpr (nvR i) :=
+    fun i hi => by
+      rw [m12, keep9 _ (by omega) (by omega),
+        dw_keep hf7 (by omega) (by omega) fun r hr => ⟨_, _, List.mem_singleton.mp hr, by omega⟩,
+        dw_keep hf6 (by omega) (by omega) fun r hr => ⟨_, _, List.mem_singleton.mp hr, by omega⟩,
+        dw_keep_fa hf5 (by omega) (by omega), hsv4 i hi]
+  have enc : ∀ s13 : State, Spec.Ed448.bytesAt s13.mem (s.gpr .r3) 57 =
+      Spec.Ed448.encodePoint (Comb.ptOf (FS s9.mem b)) → basePPC.post s s13 := by
+    intro s13 h13
+    show Spec.Ed448.bytesAt s13.mem (s.gpr .r3) 57 = _
+    have hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 57).length = 57 := by
+      simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]
+    have hk := Proof.Ed448.decodeLE_below hlen
+    rw [hK] at hk
+    unfold Proof.Ed448.Below456 at hk
+    have r9 := h9.rep
+    -- `Proof/Ed448/Comb.lean` states the bound with `Monoid.npow`: the same, without evaluating it.
+    have lt_npow : ∀ {k a n : Nat},
+        k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) a n →
+        k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@NPow.toPow Nat (@Monoid.toNPow Nat Nat.instMonoid))) a n :=
+      fun h => h
+    have eK : Proof.Ed448.Comb.accScalar K 0 = K := Proof.Ed448.Comb.accScalar_total K (lt_npow hk)
+    rw [eK] at r9
+    rw [h13, Proof.Ed448.encodePoint_rep r9, Spec.Ed448.scalarBase, hK,
+      Proof.Ed448.encodePoint_rep (Proof.Ed448.pointMul_rep K Proof.Ed448.basePoint_rep)]
+  -- The encoding, then `r15`–`r31` loaded back.
+  refine WP.mono (wp_keep_lr (Q := fun t => Spec.Ed448.bytesAt t.mem (s.gpr .r3) 57 =
+        Spec.Ed448.encodePoint (Comb.ptOf (FS s9.mem b)) ∧ ∀ i < 17, t.gpr (nvR i) = s.gpr (nvR i))
+      (WP.seq (WP.mono (baseEncode_ok hc12 e12 (by
+        rw [hr12.wr, h9.stp.rest.wr, u8.wr, hr7.wr, hr6'.wr, hwr]; simp) (hb ▸ hwo) hS)
+        fun s13 ⟨h13, hi13, hc13⟩ => ?_))
     (by decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel))
-    fun s13 ⟨h13, l13, r13⟩ => ⟨?_, by rw [l13, lr12], by rw [r13, r14_12]⟩
-  show Spec.Ed448.bytesAt s13.mem (s.gpr .r3) 57 = _
-  have hlen : (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 57).length = 57 := by
-    simp only [Spec.Ed448.bytesAt, List.length_map, List.length_range]
-  have hk := Proof.Ed448.decodeLE_below hlen
-  rw [hK] at hk
-  unfold Proof.Ed448.Below456 at hk
-  have r9 := h9.rep
-  -- `Proof/Ed448/Comb.lean` states the bound with `Monoid.npow`: the same, without evaluating it.
-  have lt_npow : ∀ {k a n : Nat},
-      k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@instPowNat Nat instNatPowNat)) a n →
-      k < @HPow.hPow Nat Nat Nat (@instHPow Nat Nat (@NPow.toPow Nat (@Monoid.toNPow Nat Nat.instMonoid))) a n :=
-    fun h => h
-  have eK : Proof.Ed448.Comb.accScalar K 0 = K := Proof.Ed448.Comb.accScalar_total K (lt_npow hk)
-  rw [eK] at r9
-  rw [h13, Proof.Ed448.encodePoint_rep r9, Spec.Ed448.scalarBase, hK,
-    Proof.Ed448.encodePoint_rep (Proof.Ed448.pointMul_rep K Proof.Ed448.basePoint_rep)]
+    fun s14 ⟨⟨h14b, nv14⟩, l14, r14'⟩ => ⟨enc s14 h14b, by rw [l14, lr12], by rw [r14', r14_12], nv14⟩
+  rw [← List.append_nil (ldsAt SNV (slotsOf nvR 17))]
+  refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
+    (by decide) hc13 fun s14 _ _ m14 _ v14 => WP.block_nil ⟨by rw [m14]; exact h13, fun i hi => ?_⟩
+  rw [v14 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)]
+  show s13.mem.readW (b + BitVec.ofNat 64 SNV + BitVec.ofNat 64 (8 * i)) 64 = _
+  rw [Offset.add_add, hi13 _ (by omega) (by omega), sv12 i hi]
 
 end VG.Proof.Ed448.PPC64LE

@@ -77,9 +77,9 @@ abbrev FR : Region := ⟨L.Q, frameBytes⟩
 abbrev LR : Region := ⟨L.Q + BitVec.ofNat 64 272, 16⟩
 abbrev ARGS : Region := ⟨L.Q + BitVec.ofNat 64 288, 136⟩
 /-- MGF1's table: its five words. -/
-abbrev TAB : Region := Sig.tableRegion 64 L.tab 5
+abbrev TAB : Region := Sig.tableRegion 64 L.tab 11
 /-- The table of the label's hash function: its five words. -/
-abbrev TABL : Region := Sig.tableRegion 64 L.tabL 5
+abbrev TABL : Region := Sig.tableRegion 64 L.tabL 11
 abbrev LOW : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P⟩
 abbrev STK : Region := ⟨L.Q - BitVec.ofNat 64 L.P, L.P + 288⟩
 
@@ -118,8 +118,8 @@ structure Ok : Prop where
   bM : L.ml.toNat + 8 ≤ 2 ^ 64
   bS : L.scr.toNat + L.sl.toNat * 8 ≤ 2 ^ 64
   bR : ∀ R ∈ L.ro, R.base.toNat + R.len ≤ 2 ^ 64
-  bT : L.tab.toNat + 40 ≤ 2 ^ 64
-  bTL : L.tabL.toNat + 40 ≤ 2 ^ 64
+  bT : L.tab.toNat + 88 ≤ 2 ^ 64
+  bTL : L.tabL.toNat + 88 ≤ 2 ^ 64
   nQ : L.Q.toNat + 424 ≤ 2 ^ 64
   pQ : L.P ≤ L.Q.toNat
   /-- The lengths. -/
@@ -378,10 +378,10 @@ holds there: the table and that argument are apart from everything the
 function writes. -/
 theorem tab (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
     (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms L.tab m₀)
-    (hD : m₀.readW (L.tab + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    (hD : m₀.readW (L.tab + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D) :
     Table.Tab G f L.Q L.scr L.tab (arg 16) t := by
-  have cT : ∀ d, d + 8 ≤ 40 → L.TAB.Contains (L.tab + BitVec.ofNat 64 d) 8 := fun d hd => by
-    show (⟨L.tab, 40⟩ : Region).Contains _ _
+  have cT : ∀ d, d + 8 ≤ 88 → L.TAB.Contains (L.tab + BitVec.ofNat 64 d) 8 := fun d hd => by
+    show (⟨L.tab, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by omega)
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 16)) 8 :=
     Offset.contains _ (by decide) (by decide) (by decide)
@@ -404,11 +404,11 @@ theorem tab (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaO
     · exact hL.mT.symm
     · exact hL.sT.symm
     · exact hL.kT.symm
-  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 32 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
-  have rt : ∀ d, d + 8 ≤ 40 → m.readW (L.tab + BitVec.ofNat 64 d) 64 = m₀.readW (L.tab + BitVec.ofNat 64 d) 64 :=
+  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
+  have rt : ∀ d, d + 8 ≤ 88 → m.readW (L.tab + BitVec.ofNat 64 d) 64 = m₀.readW (L.tab + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
-    (rt 32 (by decide)).trans hD, ?_⟩
+    (rt 48 (by decide)).trans hD, ?_⟩
   have ka := kept_apart hL hP (ws := []) (fun _ h => absurd h List.not_mem_nil) (d := 416) (by decide)
     (by decide) (by decide)
   show m.readW (L.Q + BitVec.ofNat 64 (288 + 8 * 16)) 64 = L.tab
@@ -420,10 +420,10 @@ holds there: the table and that argument are apart from everything the
 function writes. -/
 theorem tabL (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.RsaOaep.AArch64.Mgf1.Table.Fns}
     (ok : Table.TabOK G f t.syms) (hm : Table.TabMem G t.syms L.tabL m₀)
-    (hD : m₀.readW (L.tabL + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 G.D) :
+    (hD : m₀.readW (L.tabL + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 G.D) :
     Table.Tab G f L.Q L.scr L.tabL (arg 15) t := by
-  have cT : ∀ d, d + 8 ≤ 40 → L.TABL.Contains (L.tabL + BitVec.ofNat 64 d) 8 := fun d hd => by
-    show (⟨L.tabL, 40⟩ : Region).Contains _ _
+  have cT : ∀ d, d + 8 ≤ 88 → L.TABL.Contains (L.tabL + BitVec.ofNat 64 d) 8 := fun d hd => by
+    show (⟨L.tabL, 88⟩ : Region).Contains _ _
     exact Offset.contains_base _ hd (by omega)
   have cA : L.ARGS.Contains (L.Q + BitVec.ofNat 64 (arg 15)) 8 :=
     Offset.contains _ (by decide) (by decide) (by decide)
@@ -446,11 +446,11 @@ theorem tabL (hP : 16 ≤ L.P) {G : Impl.Pbkdf2.Md.AArch64.Stream} {f : Impl.Rsa
     · exact hL.mTL.symm
     · exact hL.sTL.symm
     · exact hL.kTL.symm
-  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 32 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
-  have rt : ∀ d, d + 8 ≤ 40 → m.readW (L.tabL + BitVec.ofNat 64 d) 64 = m₀.readW (L.tabL + BitVec.ofNat 64 d) 64 :=
+  refine ⟨ok, fun j hj => ⟨_, mT, cT _ (by omega)⟩, ⟨_, mT, cT 48 (by decide)⟩, ⟨_, mA, cA⟩, fun m hf => ?_⟩
+  have rt : ∀ d, d + 8 ≤ 88 → m.readW (L.tabL + BitVec.ofNat 64 d) 64 = m₀.readW (L.tabL + BitVec.ofNat 64 d) 64 :=
     fun d hd => (hf.readW (cT d hd) dT (by decide)).trans (hc.frame.readW (cT d hd) dT0 (by decide))
   refine ⟨⟨(rt _ (by decide)).trans hm.1, (rt _ (by decide)).trans hm.2.1, (rt _ (by decide)).trans hm.2.2⟩,
-    (rt 32 (by decide)).trans hD, ?_⟩
+    (rt 48 (by decide)).trans hD, ?_⟩
   have ka := kept_apart hL hP (ws := []) (fun _ h => absurd h List.not_mem_nil) (d := 408) (by decide)
     (by decide) (by decide)
   show m.readW (L.Q + BitVec.ofNat 64 (288 + 8 * 15)) 64 = L.tabL

@@ -38,7 +38,7 @@ vg_rsa_pss_sha512_256_check_encoding:
 	mov QWORD PTR [rsp+96], rax
 	mov rax, QWORD PTR [r11+16]
 	mov QWORD PTR [rsp+104], rax
-	mov rax, QWORD PTR [r11+32]
+	mov rax, QWORD PTR [r11+48]
 	mov QWORD PTR [rsp+112], rax
 	mov rcx, QWORD PTR [rsp+168]
 	add rcx, 2560

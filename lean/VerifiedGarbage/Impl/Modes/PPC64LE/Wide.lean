@@ -28,6 +28,12 @@ narrow steps: each takes the groups of `2 ^ lg` of the blocks the ones
 before it left, all on the same core (`2 ^ lg ≤ G`), so that fewer blocks
 than the core's `G` still take one call of its code a group rather than
 one a block. `seq2With` is the case of one level.
+
+`pick lg short long`: `short` if fewer than `2 ^ lg` steps are to be taken
+(the count in `r6`, shifted right by `lg`, is zero), `long` otherwise: for a
+function whose batched code costs a fixed amount per call (a key schedule to
+prepare), with a cheaper function for messages shorter than a batch. The
+branch is on the count, which is public; `r8` is scratch, as in the modes.
 -/
 
 @[expose] public section
@@ -76,5 +82,9 @@ def seqLevelsWith (one : Prog isa) (wide : Nat → Mode) (lgs : List Nat) (narro
   c.seqWith (c.levels wide lgs ((c.withOne one).steps narrow)) narrow.ivOut
 
 end Core
+
+/-- `short` for fewer than `2 ^ lg` steps, `long` otherwise. -/
+def pick (lg : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block [.lsr .d .r8 .r6 lg]) (.ite (.zero .d .r8) short long)
 
 end VG.Impl.Modes.PPC64LE

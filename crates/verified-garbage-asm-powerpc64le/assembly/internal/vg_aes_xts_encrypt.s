@@ -24,6 +24,49 @@ vg_aes_xts_encrypt:
 	rldicl %r9, %r18, 61, 3
 	cmpldi %cr0, %r9, 0
 	beq %cr0, 22f
+	li %r0, 0
+	vxor %v0, %v0, %v0
+	lis %r11, 1798
+	ori %r11, %r11, 1284
+	rldicr %r11, %r11, 32, 31
+	oris %r11, %r11, 770
+	ori %r11, %r11, 256
+	lis %r12, 3854
+	ori %r12, %r12, 3340
+	rldicr %r12, %r12, 32, 31
+	oris %r12, %r12, 2826
+	ori %r12, %r12, 2312
+	mtvsrd 51, %r11
+	mtvsrd 33, %r12
+	vsldoi %v19, %v0, %v19, 8
+	vsldoi %v19, %v19, %v1, 8
+	addi %r9, %r14, 16
+	lxvd2x 42, %r9, %r0
+	vperm %v10, %v10, %v10, %v19
+	addi %r9, %r14, 32
+	lxvd2x 43, %r9, %r0
+	vperm %v11, %v11, %v11, %v19
+	addi %r9, %r14, 48
+	lxvd2x 44, %r9, %r0
+	vperm %v12, %v12, %v12, %v19
+	addi %r9, %r14, 64
+	lxvd2x 45, %r9, %r0
+	vperm %v13, %v13, %v13, %v19
+	addi %r9, %r14, 80
+	lxvd2x 46, %r9, %r0
+	vperm %v14, %v14, %v14, %v19
+	addi %r9, %r14, 96
+	lxvd2x 47, %r9, %r0
+	vperm %v15, %v15, %v15, %v19
+	addi %r9, %r14, 112
+	lxvd2x 48, %r9, %r0
+	vperm %v16, %v16, %v16, %v19
+	addi %r9, %r14, 128
+	lxvd2x 49, %r9, %r0
+	vperm %v17, %v17, %v17, %v19
+	addi %r9, %r14, 144
+	lxvd2x 50, %r9, %r0
+	vperm %v18, %v18, %v18, %v19
 24:
 	ld %r9, 0(%r16)
 	ld %r10, 8(%r16)
@@ -214,7 +257,82 @@ vg_aes_xts_encrypt:
 	vxor %v7, %v7, %v8
 	addi %r9, %r9, 16
 	addi %r10, %r4, -1
-25:
+	vcipher %v0, %v0, %v10
+	vcipher %v1, %v1, %v10
+	vcipher %v2, %v2, %v10
+	vcipher %v3, %v3, %v10
+	vcipher %v4, %v4, %v10
+	vcipher %v5, %v5, %v10
+	vcipher %v6, %v6, %v10
+	vcipher %v7, %v7, %v10
+	vcipher %v0, %v0, %v11
+	vcipher %v1, %v1, %v11
+	vcipher %v2, %v2, %v11
+	vcipher %v3, %v3, %v11
+	vcipher %v4, %v4, %v11
+	vcipher %v5, %v5, %v11
+	vcipher %v6, %v6, %v11
+	vcipher %v7, %v7, %v11
+	vcipher %v0, %v0, %v12
+	vcipher %v1, %v1, %v12
+	vcipher %v2, %v2, %v12
+	vcipher %v3, %v3, %v12
+	vcipher %v4, %v4, %v12
+	vcipher %v5, %v5, %v12
+	vcipher %v6, %v6, %v12
+	vcipher %v7, %v7, %v12
+	vcipher %v0, %v0, %v13
+	vcipher %v1, %v1, %v13
+	vcipher %v2, %v2, %v13
+	vcipher %v3, %v3, %v13
+	vcipher %v4, %v4, %v13
+	vcipher %v5, %v5, %v13
+	vcipher %v6, %v6, %v13
+	vcipher %v7, %v7, %v13
+	vcipher %v0, %v0, %v14
+	vcipher %v1, %v1, %v14
+	vcipher %v2, %v2, %v14
+	vcipher %v3, %v3, %v14
+	vcipher %v4, %v4, %v14
+	vcipher %v5, %v5, %v14
+	vcipher %v6, %v6, %v14
+	vcipher %v7, %v7, %v14
+	vcipher %v0, %v0, %v15
+	vcipher %v1, %v1, %v15
+	vcipher %v2, %v2, %v15
+	vcipher %v3, %v3, %v15
+	vcipher %v4, %v4, %v15
+	vcipher %v5, %v5, %v15
+	vcipher %v6, %v6, %v15
+	vcipher %v7, %v7, %v15
+	vcipher %v0, %v0, %v16
+	vcipher %v1, %v1, %v16
+	vcipher %v2, %v2, %v16
+	vcipher %v3, %v3, %v16
+	vcipher %v4, %v4, %v16
+	vcipher %v5, %v5, %v16
+	vcipher %v6, %v6, %v16
+	vcipher %v7, %v7, %v16
+	vcipher %v0, %v0, %v17
+	vcipher %v1, %v1, %v17
+	vcipher %v2, %v2, %v17
+	vcipher %v3, %v3, %v17
+	vcipher %v4, %v4, %v17
+	vcipher %v5, %v5, %v17
+	vcipher %v6, %v6, %v17
+	vcipher %v7, %v7, %v17
+	vcipher %v0, %v0, %v18
+	vcipher %v1, %v1, %v18
+	vcipher %v2, %v2, %v18
+	vcipher %v3, %v3, %v18
+	vcipher %v4, %v4, %v18
+	vcipher %v5, %v5, %v18
+	vcipher %v6, %v6, %v18
+	vcipher %v7, %v7, %v18
+	addi %r12, %r4, -10
+	cmpldi %cr0, %r12, 0
+	beq %cr0, 25f
+	addi %r9, %r3, 160
 	lxvd2x 40, %r9, %r0
 	vperm %v8, %v8, %v8, %v19
 	vcipher %v0, %v0, %v8
@@ -225,10 +343,50 @@ vg_aes_xts_encrypt:
 	vcipher %v5, %v5, %v8
 	vcipher %v6, %v6, %v8
 	vcipher %v7, %v7, %v8
-	addi %r9, %r9, 16
-	addi %r10, %r10, -1
-	cmpldi %cr0, %r10, 0
-	bne %cr0, 25b
+	addi %r9, %r3, 176
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipher %v0, %v0, %v8
+	vcipher %v1, %v1, %v8
+	vcipher %v2, %v2, %v8
+	vcipher %v3, %v3, %v8
+	vcipher %v4, %v4, %v8
+	vcipher %v5, %v5, %v8
+	vcipher %v6, %v6, %v8
+	vcipher %v7, %v7, %v8
+	addi %r12, %r4, -12
+	cmpldi %cr0, %r12, 0
+	beq %cr0, 27f
+	addi %r9, %r3, 192
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipher %v0, %v0, %v8
+	vcipher %v1, %v1, %v8
+	vcipher %v2, %v2, %v8
+	vcipher %v3, %v3, %v8
+	vcipher %v4, %v4, %v8
+	vcipher %v5, %v5, %v8
+	vcipher %v6, %v6, %v8
+	vcipher %v7, %v7, %v8
+	addi %r9, %r3, 208
+	lxvd2x 40, %r9, %r0
+	vperm %v8, %v8, %v8, %v19
+	vcipher %v0, %v0, %v8
+	vcipher %v1, %v1, %v8
+	vcipher %v2, %v2, %v8
+	vcipher %v3, %v3, %v8
+	vcipher %v4, %v4, %v8
+	vcipher %v5, %v5, %v8
+	vcipher %v6, %v6, %v8
+	vcipher %v7, %v7, %v8
+	b 28f
+27:
+28:
+	b 26f
+25:
+26:
+	rldicr %r9, %r4, 4, 59
+	add %r9, %r3, %r9
 	lxvd2x 40, %r9, %r0
 	vperm %v8, %v8, %v8, %v19
 	vcipherlast %v0, %v0, %v8
@@ -304,8 +462,8 @@ vg_aes_xts_encrypt:
 22:
 23:
 	cmpldi %cr0, %r18, 0
-	beq %cr0, 26f
-28:
+	beq %cr0, 29f
+211:
 	ld %r9, 0(%r17)
 	ld %r10, 0(%r16)
 	xor %r9, %r9, %r10
@@ -345,10 +503,10 @@ vg_aes_xts_encrypt:
 	addi %r17, %r17, 16
 	addi %r18, %r18, -1
 	cmpldi %cr0, %r18, 0
-	bne %cr0, 28b
-	b 27f
-26:
-27:
+	bne %cr0, 211b
+	b 210f
+29:
+210:
 	b 21f
 20:
 21:

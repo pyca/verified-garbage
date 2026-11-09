@@ -20,6 +20,8 @@ public import VerifiedGarbage.Spec.Ed448.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 import VerifiedGarbage.Proof.Ed448.PPC64LE.VDecodeY
 import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
+import VerifiedGarbage.Proof.X448.PPC64LE.Mul
+import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 
 /-!
 # Ed448's verification equation on PPC64LE: the whole function
@@ -31,8 +33,8 @@ registration): with `-A` and `-R` decoded, `S` checked, the digits of `S`
 and `k` recoded and the two tables built, the joint loop leaves `Q`
 representing `[S]B + [k](-A)` (`joint_ok`); `[4](Q + (-R))` is the neutral
 point exactly when `[4]Q = [4]R`, the equation (`neutral_eq`). The return
-address and `r14`, kept at `VLRS` and `VR14S`, which nothing else writes, are
-loaded back.
+address, `r14` and `r15`–`r31`, kept at `VLRS`, `VR14S` and `VNV`, which nothing
+else writes, are loaded back.
 -/
 
 @[expose] public section
@@ -42,7 +44,8 @@ namespace VG.Proof.Ed448.PPC64LE
 open VG VG.PPC64LE VG.Impl.Ed448.PPC64LE VG.Proof.X448.PPC64LE
 open VG.Proof.X25519.PPC64LE hiding V FS V_lt pass_ok limb_frame
 open VG.Proof.X25519
-open VG.Impl.X448.PPC64LE (ACC BITS)
+open VG.Impl.X448.PPC64LE (ACC BITS nvR slotsOf stdsAt ldsAt)
+open VG.PPC64LE.Spill (Saved saveMem_saved saveMem_frame_base)
 open VG.Spec.X448 (P Fe)
 open VG.Spec.Ed448 (Point)
 open VG.Proof.Ed448 (Rep baseAff dZ)
@@ -225,17 +228,20 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
       Spec.Ed448.bytesAt t.mem (s.gpr .r6 + BitVec.ofNat 64 CH) 57 = Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57 ∧
       bad t.mem (s.gpr .r6) = 0 ∧ FS t.mem (s.gpr .r6) DK = Spec.Ed448.d ∧ FS t.mem (s.gpr .r6) ONE = 1 ∧
       t.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VLRS) 64 = s.lr ∧
-      t.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VR14S) 64 = s.gpr .r14 := by
+      t.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VR14S) 64 = s.gpr .r14 ∧
+      ∀ i < 17, t.mem.readW (s.gpr .r6 + BitVec.ofNat 64 (VNV + 8 * i)) 64 = s.gpr (nvR i) := by
   obtain ⟨b, hb⟩ : ∃ b, b = s.gpr .r6 := ⟨_, rfl⟩
   rw [← hb]
   have hL : VLRS = 3536 := rfl
   have hR : VR14S = 3544 := rfl
+  have hV : VNV = 3552 := rfl
   have hws : (⟨b, 8192⟩ : Region) ∈ s.wr := by rw [hp.wr, hb]; simp
   have hc : Ctx b s := ⟨hb.symm, ⟨8192, by decide, hws⟩⟩
   rw [show vSetup = .mflr .r7 :: .store .d .r7 .r6 VLRS :: .store .d .r14 .r6 VR14S ::
-      (copyBytes .r3 PK 57 ++ copyBytes .r4 SG 114 ++ copyBytes .r5 CH 57 ++
+      (stdsAt VNV (slotsOf nvR 17) ++ (copyBytes .r3 PK 57 ++ copyBytes .r4 SG 114 ++ copyBytes .r5 CH 57 ++
         [.addi .r3 .r6 OUT, .li .r7 0, .store .d .r7 .r6 BAD] ++
-        constField DK Spec.Ed448.d.val ++ constField ONE 1) from rfl]
+        constField DK Spec.Ed448.d.val ++ constField ONE 1)) by
+      simp only [vSetup, List.cons_append, List.nil_append, List.append_assoc]]
   refine wp_mflr fun s1 u1 => ?_
   have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := [.r7]) (by decide)) (by decide)
   refine Comb.wp_std (by decide) ⟨by omega, by omega⟩ (by rw [hc1.r6]) (hc1.inW (by omega)) fun s2 u2 => ?_
@@ -250,22 +256,43 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
     by rw [hr3.wr, g .r6 (by decide), hp.wr], by rw [g .r3 (by decide), g .r6 (by decide)]; exact hp.pk_ws,
     by rw [g .r4 (by decide), g .r6 (by decide)]; exact hp.sig_ws,
     by rw [g .r5 (by decide), g .r6 (by decide)]; exact hp.ch_ws⟩
-  refine WP.mono (vCopy_ok hp3) fun t ⟨hct, hrt, _, hf2, e1, e2, e3, hbad, hd, hone⟩ => ?_
+  -- `r15`–`r31` saved at `VNV`.
+  have hc3 : Ctx b s3 := hc2.of_rest (u3.rest []) (by decide)
+  refine stdsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) hc3
+    fun s3' g' rd' wr' sp' mem' => ?_
+  have hfS : Frame [⟨b + BitVec.ofNat 64 VNV, 136⟩] s3.mem s3'.mem := by
+    rw [mem']; exact saveMem_frame_base (fun p hp => by obtain ⟨i, hi, rfl⟩ := slotsOf_mem hp; omega)
+      (by decide) _ _ _
+  have hsv : Saved (b + BitVec.ofNat 64 VNV) s3.gpr (slotsOf nvR 17) s3'.mem := by
+    rw [mem']; exact saveMem_saved (by decide) _ _ _
+  have hp3' : VPre s3' := ⟨by rw [rd', g']; exact hp3.rd, by rw [wr', g']; exact hp3.wr,
+    by rw [g']; exact hp3.pk_ws, by rw [g']; exact hp3.sig_ws, by rw [g']; exact hp3.ch_ws⟩
+  refine WP.mono (vCopy_ok hp3') fun t ⟨hct, hrt, _, hf2, e1, e2, e3, hbad, hd, hone⟩ => ?_
+  rw [g'] at hct hf2 e1 e2 e3 hbad hd hone
   rw [g .r6 (by decide), ← hb] at hct hf2 e1 e2 e3 hbad hd hone
   rw [g .r3 (by decide)] at e1
   rw [g .r4 (by decide)] at e2
   rw [g .r5 (by decide)] at e3
-  have fw : Frame [⟨b + BitVec.ofNat 64 VLRS, 16⟩] s.mem s3.mem := by
+  have fw0 : Frame [⟨b + BitVec.ofNat 64 VLRS, 16⟩] s.mem s3.mem := by
     rw [hm3]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega))).writeW (List.mem_singleton_self _) _
       (Offset.contains _ (by omega) (by omega) (by omega))
-  have sub16 : Region.Sub ⟨b + BitVec.ofNat 64 VLRS, 16⟩ ⟨s.gpr .r6, 8192⟩ := by
+  have fw : Frame [⟨b + BitVec.ofNat 64 VLRS, 152⟩] s.mem s3'.mem :=
+    (fw0.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)⟩).trans
+    (hfS.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact Offset.sub b (by omega) (by omega)⟩)
+  have sub16 : Region.Sub ⟨b + BitVec.ofNat 64 VLRS, 152⟩ ⟨s.gpr .r6, 8192⟩ := by
     rw [← hb]; exact Offset.sub_base _ (by omega)
   have kb : ∀ {p : Addr} {n : Nat}, Region.Disjoint ⟨p, n⟩ ⟨s.gpr .r6, 8192⟩ → n < 2 ^ 64 →
-      Spec.Ed448.bytesAt s3.mem p n = Spec.Ed448.bytesAt s.mem p n := fun h hn =>
+      Spec.Ed448.bytesAt s3'.mem p n = Spec.Ed448.bytesAt s.mem p n := fun h hn =>
     bytes_keep fw (fun r hr => by rw [List.mem_singleton.mp hr]; exact h.sub_right sub16) hn
-  have dS : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3552 →
+  have keepS : ∀ {o : Nat}, o + 8 ≤ VNV →
+      s3'.mem.readW (b + BitVec.ofNat 64 o) 64 = s3.mem.readW (b + BitVec.ofNat 64 o) 64 := fun ho =>
+    dw_disj hfS fun r hr => by
+      rw [List.mem_singleton.mp hr]; exact Offset.disjoint b (.inl ho) (by omega) (by omega)
+  have dS : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3688 →
       ∀ r ∈ (⟨b + BitVec.ofNat 64 PK, 57⟩ :: setW b), Region.Disjoint ⟨b + BitVec.ofNat 64 o, 8⟩ r := by
     intro o h1 h2 r hr
     have hPK : PK = 3288 := rfl
@@ -277,11 +304,15 @@ theorem vSetup_ok {s : State} (hp : VPre s) :
     simp only [setW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;>
       exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-  refine ⟨hct, by rw [hrt.sp, hr3.sp], by rw [e1, kb hp.pk_ws (by decide)], by rw [e2, kb hp.sig_ws (by decide)],
-    by rw [e3, kb hp.ch_ws (by decide)], hbad, hd, hone, ?_, ?_⟩
-  · rw [dw_disj hf2 (dS (by omega) (by omega)), hm3,
+  have hn7 : ∀ i < 17, nvR i ≠ .r7 := by decide
+  refine ⟨hct, by rw [hrt.sp, sp', hr3.sp], by rw [e1, kb hp.pk_ws (by decide)], by rw [e2, kb hp.sig_ws (by decide)],
+    by rw [e3, kb hp.ch_ws (by decide)], hbad, hd, hone, ?_, ?_, fun i hi => ?_⟩
+  · rw [dw_disj hf2 (dS (by omega) (by omega)), keepS (by omega), hm3,
       Mem.readW_writeW_sep (Offset.sep _ (by omega) (by omega) (by omega)) (by decide), Mem.readW_writeW_self64]
-  · rw [dw_disj hf2 (dS (by omega) (by omega)), hm3, Mem.readW_writeW_self64]
+  · rw [dw_disj hf2 (dS (by omega) (by omega)), keepS (by omega), hm3, Mem.readW_writeW_self64]
+  · have h := hsv (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)
+    rw [Offset.add_add] at h
+    rw [dw_disj hf2 (dS (by omega) (by omega)), h, g _ (hn7 i hi)]
 
 /-! ## Before the joint loop -/
 
@@ -300,7 +331,8 @@ def PreOk (s u : State) : Prop :=
     (∀ r, Spec.Ed448.decodePoint ((Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).take 57) = some r →
       FS u.mem (s.gpr .r6) NRX = 0 - r.X ∧ FS u.mem (s.gpr .r6) NRY = r.Y ∧ r.Z = 1) ∧
     u.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VLRS) 64 = s.lr ∧
-    u.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VR14S) 64 = s.gpr .r14
+    u.mem.readW (s.gpr .r6 + BitVec.ofNat 64 VR14S) 64 = s.gpr .r14 ∧
+    ∀ i < 17, u.mem.readW (s.gpr .r6 + BitVec.ofNat 64 (VNV + 8 * i)) 64 = s.gpr (nvR i)
 
 theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa vPrefix s (PreOk s) := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
@@ -318,11 +350,12 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
   have hDK : DK = 336 := rfl
   have hL : VLRS = 3536 := rfl
   have hR14 : VR14S = 3544 := rfl
+  have hV : VNV = 3552 := rfl
   unfold PreOk
   generalize hb : s.gpr .r6 = b
   unfold vPrefix
-  refine WP.seq (WP.mono (vSetup_ok hp) fun s1 ⟨hc1, sp1, ePK, eSG, eCH, hb1, hd1, hone, lr1, r141⟩ => ?_)
-  rw [hb] at hc1 ePK eSG eCH hb1 hd1 hone lr1 r141
+  refine WP.seq (WP.mono (vSetup_ok hp) fun s1 ⟨hc1, sp1, ePK, eSG, eCH, hb1, hd1, hone, lr1, r141, nv1⟩ => ?_)
+  rw [hb] at hc1 ePK eSG eCH hb1 hd1 hone lr1 r141 nv1
   refine WP.seq (WP.mono (decode_ok hR hc1 (p := SG) (by decide) (by decide) (xo := NRX) (yo := NRY)
     ⟨by decide, by decide, by decide, by decide, by decide⟩ hd1) fun s2 ⟨hc2, hr2, hf2, hd2, hb2, hv2⟩ => ?_)
   refine WP.seq (WP.mono (decode_ok hR hc2 (p := PK) (by decide) (by decide) (xo := NAX) (yo := NAY)
@@ -395,7 +428,7 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
     rcases h with rfl | rfl <;>
       exact fs_disj hf3 (disj_decW (by decide) (by decide) (by decide) (by decide) (by decide) (by decide))
   -- The saved doublewords, from the setup to the digits.
-  have w19 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3552 →
+  have w19 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3688 →
       s9.mem.readW (b + BitVec.ofNat 64 o) 64 = s1.mem.readW (b + BitVec.ofNat 64 o) 64 := fun h1 h2 => by
     rw [dw_disj hf9 (dTB (by omega) (by omega)), dw_disj hf8 (dTB (by omega) (by omega)),
       dw_disj hf7 (dTB (by omega) (by omega)), dw_disj hf6 (dTB (by omega) (by omega)),
@@ -428,10 +461,10 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
     rw [fs_disj hf11 (dBT (by omega))]; exact hdk10
   have k911 : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 4160 → FS s11.mem b q = FS s9.mem b q := fun h1 h2 => by
     rw [fs_disj hf11 (dBT (by omega)), fs_disj hf10 (disj_FAK (by omega) (by omega))]
-  have w911 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3552 →
+  have w911 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3688 →
       s11.mem.readW (b + BitVec.ofNat 64 o) 64 = s9.mem.readW (b + BitVec.ofNat 64 o) 64 := fun h1 h2 => by
     rw [dw_disj hf11 (dBT (by omega)), dw_disj hf10 (disj_FAK (by omega) (by omega))]
-  refine ⟨hc11, ?_, hfx, hd11, ?_, fun a hA => ?_, fun r hRr => ?_, ?_, ?_⟩
+  refine ⟨hc11, ?_, hfx, hd11, ?_, fun a hA => ?_, fun r hRr => ?_, ?_, ?_, fun i hi => ?_⟩
   · rw [hr11.sp, hr10.sp, hr9.sp, hr8.sp, hr7.sp, hr6.sp, hr5.sp, hr4.sp, hr3.sp, hr2.sp, sp1]
   · rw [bad_keep hf11 (dBT (by omega)), bad_keep hf10 (disj_FAK (by omega) (by omega)),
       bad_keep hf9 (dTB (by omega) (by omega)), bad_keep hf8 (dTB (by omega) (by omega)),
@@ -455,6 +488,7 @@ theorem pre_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VPre s) : WP isa v
     exact ⟨rfl, rfl, rfl⟩
   · rw [w911 (by omega) (by omega), w19 (by omega) (by omega), lr1]
   · rw [w911 (by omega) (by omega), w19 (by omega) (by omega), r141]
+  · rw [w911 (by omega) (by omega), w19 (by omega) (by omega), nv1 i hi]
 
 /-! ## The whole function -/
 
@@ -462,24 +496,25 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VP
     WP isa verifyEquation s fun t => ((t.gpr .r3).setWidth 32 =
       if Spec.Ed448.verifyEquation (Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57)
         (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114) (Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57) then 1 else 0) ∧
-      t.lr = s.lr ∧ t.gpr .r14 = s.gpr .r14 := by
+      t.lr = s.lr ∧ t.gpr .r14 = s.gpr .r14 ∧ ∀ i < 17, t.gpr (nvR i) = s.gpr (nvR i) := by
   obtain ⟨o1, o2, o3, o4⟩ := offs
   have hL : VLRS = 3536 := rfl
   have hR14 : VR14S = 3544 := rfl
+  have hV : VNV = 3552 := rfl
   have hl3 : (Spec.Ed448.bytesAt s.mem (s.gpr .r3) 57).length = 57 := by simp [Spec.Ed448.bytesAt]
   have hl4 : (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).length = 114 := by simp [Spec.Ed448.bytesAt]
   have hl5 : (Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57).length = 57 := by simp [Spec.Ed448.bytesAt]
   have hSl := limit_of (bs := (Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57) (by rw [List.length_drop, hl4])
   have hKl := limit_of hl5
   unfold verifyEquation
-  refine WP.seq (WP.mono (pre_ok hR hp) fun u ⟨hcu, _, hfx, hdu, hbad, hkey, hnr, lru, r14u⟩ => ?_)
-  generalize hb : s.gpr .r6 = b at hcu hfx hdu hbad hkey hnr lru r14u
+  refine WP.seq (WP.mono (pre_ok hR hp) fun u ⟨hcu, _, hfx, hdu, hbad, hkey, hnr, lru, r14u, nvu⟩ => ?_)
+  generalize hb : s.gpr .r6 = b at hcu hfx hdu hbad hkey hnr lru r14u nvu
   generalize hS : Spec.Ed448.decodeLE ((Spec.Ed448.bytesAt s.mem (s.gpr .r4) 114).drop 57) = S at *
   generalize hK : Spec.Ed448.decodeLE (Spec.Ed448.bytesAt s.mem (s.gpr .r5) 57) = K at *
   refine WP.seq (WP.mono (joint_ok hSl hKl hcu hfx hdu) fun s12 ⟨sL, _, fL, _, ⟨C12, d12, rep12⟩⟩ => ?_)
   refine WP.seq (WP.mono (addNegR_ok C12 d12) fun s13 ⟨C13, sl13⟩ => ?_)
   have hc13 : VCtx b s13 := C13.ctx
-  have w13 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3552 →
+  have w13 : ∀ {o : Nat}, 3536 ≤ o → o + 8 ≤ 3688 →
       s13.mem.readW (b + BitVec.ofNat 64 o) 64 = u.mem.readW (b + BitVec.ofNat 64 o) 64 := fun h1 h2 => by
     rw [dw_keep_fa C13.frame (by unfold ACC; omega) (by omega), dw_keep_fa fL (by unfold ACC; omega) (by omega)]
   simp only [vRestore, List.cons_append, List.nil_append]
@@ -497,15 +532,25 @@ theorem verifyEquation_correct (hR : Proof.Ed448.RecoverOk) {s : State} (hp : VP
     rw [l16, l15, u14.gpr, w13 (by omega) (by omega), lru]
   have r14_16 : s16.gpr .r14 = s.gpr .r14 := by
     rw [u16.gpr, m15, u14.mem, w13 (by omega) (by omega), r14u]
-  have sl16 := sl13
-  rw [← m16] at sl16
-  refine WP.mono (wp_keep_lr (vFinish_ok hc16 sl16) (by decide +kernel)
+  -- `r15`–`r31` loaded back.
+  refine ldsAt_ok (l := slotsOf nvR 17) (by decide) (slotsOf_fit (by decide) (by decide)) (by decide)
+    (by decide) hc16.ctx fun s17 _ r17 m17 l17 v17 => ?_
+  have hc17 : VCtx b s17 := hc16.of_rest r17 (by decide) (by decide)
+  have nv17 : ∀ i < 17, s17.gpr (nvR i) = s.gpr (nvR i) := fun i hi => by
+    rw [v17 (nvR i, 8 * i) (List.mem_map.mpr ⟨i, List.mem_range.mpr hi, rfl⟩)]
+    show s16.mem.readW (b + BitVec.ofNat 64 VNV + BitVec.ofNat 64 (8 * i)) 64 = _
+    rw [Offset.add_add, m16, w13 (by omega) (by omega), nvu i hi]
+  have sl17 := sl13
+  rw [← m16, ← m17] at sl17
+  refine WP.mono (wp_keep_lr (wp_keep_nv (vFinish_ok hc17 sl17) (by decide +kernel)
+      (by rw [← Code.allInstrs_eq]; decide +kernel)) (by decide +kernel)
     (by rw [← Code.allInstrs_eq]; decide +kernel) (by rw [← Code.allInstrs_eq]; decide +kernel))
-    fun t ⟨ht, lt, rt⟩ => ⟨?_, by rw [lt, lr16], by rw [rt, r14_16]⟩
+    fun t ⟨⟨ht, nt⟩, lt, rt⟩ => ⟨?_, by rw [lt, l17, lr16], by rw [rt, r17.gpr _ (by decide), r14_16],
+      fun i hi => by rw [nt i hi, nv17 i hi]⟩
   rw [ht]
   have dF := disj_FA (b := b) (d := BAD) (n := 8) (by omega) (by omega)
-  have hb16 : bad s16.mem b = bad u.mem b := by
-    rw [m16, bad_keep C13.frame dF, bad_keep fL dF]
+  have hb16 : bad s17.mem b = bad u.mem b := by
+    rw [m17, m16, bad_keep C13.frame dF, bad_keep fL dF]
   have kU : ∀ {q : Nat}, 1064 ≤ q → q + 56 ≤ 3520 → FS s12.mem b q = FS u.mem b q := fun h1 h2 => by
     rw [fs_hi C12.frame (by unfold ACC; omega) (by omega), fs_hi fL (by unfold ACC; omega) (by omega)]
   rw [hb16]

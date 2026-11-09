@@ -1,15 +1,15 @@
 module
 
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.HashTable
+public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
-# RSAES-OAEP with both of its hash functions given as tables
+# RSAES-OAEP with both of its hash functions given as tables of `MdHash`
 
 **Trusted** (as every file in `Spec/`). In the module `rsa_oaep`, each
 with the parameters `hash` and `mgf1`, its last two, tables of the
-interface `Hash` (`Spec/HashTable.lean`) naming the hash function `H` of the
-label and the seed and MGF1's `G` (`HashTable.hashAt`):
+interface `MdHash` (`Spec/MdHashTable.lean`) naming the hash function `H` of
+the label and the seed and MGF1's `G` (`MdHashTable.hashAt`):
 
 * `vg_rsa_oaep_encrypt_precomputed`: `RSAES-OAEP-ENCRYPT` of a message with
   a label and a seed (`RsaOaep.encrypt H G`), given the modulus'
@@ -78,8 +78,8 @@ def hashSafety : String :=
 
 /-- The seed's length is that of the hash function the table at `hash`
 names, if it names one. -/
-def seedLenOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (seedLen : BitVec w) : Prop :=
-  ∀ H, HashTable.hashAt ptrBits m hash = some H → seedLen.toNat = H.len
+def seedLenMdOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (seedLen : BitVec w) : Prop :=
+  ∀ H, MdHashTable.hashAt ptrBits m hash = some H → seedLen.toNat = H.len
 
 /-! ## `vg_rsa_oaep_encrypt_precomputed` -/
 
@@ -87,30 +87,30 @@ def seedLenOk {w : Nat} (ptrBits : Nat) (m : Mem) (hash : Addr) (seedLen : BitVe
 n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8,
 label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8,
 seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64,
-pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32`,
+pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32`,
 with `pre` the modulus' precomputed `u64` words and `hash` and `mgf1` tables
-of `Hash`. -/
-def encryptTablesSig : Sig where
+of `MdHash`. -/
+def encryptMdTablesSig : Sig where
   params := [("out", .slice true .u8 "out_len"), ("n", .slice false .u8 "n_len"),
     ("e", .slice false .u8 "e_len"), ("label", .slice false .u8 "label_len"),
     ("msg", .slice false .u8 "msg_len"), ("seed", .slice false .u8 "seed_len"),
     ("scratch", .slice true .u64 "scratch_len"), ("pre", .slice false .u64 "pre_len"),
-    ("hash", HashTable.param), ("mgf1", HashTable.param)]
+    ("hash", MdHashTable.param), ("mgf1", MdHashTable.param)]
   ret := some .u32
 
 /-- RSAES-OAEP-ENCRYPT with the hash function `H` the table `hash` names
 and MGF1 with `G`, the one `mgf1` names. -/
-def encryptTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  encryptTablesSig.contract A
+def encryptMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  encryptMdTablesSig.contract A
     (pre := fun _out outLen _n nLen _e eLen _label _labelLen _msg _msgLen _seed seedLen _scratch
         scratchLen _pre preLen hash _mgf1 m =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ 1 ≤ eLen.toNat ∧
         eLen.toNat ≤ nLen.toNat ∧ publicScratchWords nLen.toNat ≤ scratchLen.toNat ∧
-        preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ seedLenOk A.ptrBits m hash seedLen)
+        preLen.toNat = Rsa.precomputedWords nLen.toNat ∧ seedLenMdOk A.ptrBits m hash seedLen)
     (post := fun out _outLen n nLen e eLen label labelLen msg msgLen seed _seedLen _scratch
         _scratchLen pre preLen hash mgf1 m m' r =>
-      ∀ H G, HashTable.hashAt A.ptrBits m hash = some H →
-        HashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         Rsa.publicPrecompute (bytesAt m n nLen.toNat) = some (Rsa.wordsAt m pre preLen.toNat) →
           written m' out nLen.toNat r
             (encrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
@@ -123,12 +123,12 @@ def encryptTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
         (Rsa.wordsAt m pre preLen.toNat).map (·.toNat))
 
 /-- `vg_rsa_oaep_encrypt_precomputed` on every target. -/
-def encryptTablesApi : Api where
+def encryptMdTablesApi : Api where
   module := "rsa_oaep"
   name := "vg_rsa_oaep_encrypt_precomputed"
-  sig := encryptTablesSig
+  sig := encryptMdTablesSig
   writeArgs := true
-  contracts := some fun A stack => encryptTablesContract A stack
+  contracts := some fun A stack => encryptMdTablesContract A stack
   summary := "RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table \
     `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most \
     significant first, odd, from 512 to 8192 bits, its first byte not zero), the public \
@@ -140,7 +140,7 @@ def encryptTablesApi : Api where
     must be fresh random bytes for each encryption. If `pre` does not hold those values, what \
     it writes and returns is unspecified; memory safety and the timing guarantee still \
     apply.\n\n\
-    Contract: `VG.Spec.RsaOaep.encryptTablesContract`. Constant time but for the public key: \
+    Contract: `VG.Spec.RsaOaep.encryptMdTablesContract`. Constant time but for the public key: \
     timing may depend on the pointers, the lengths, the contents of `n`, `e` and `pre`, and \
     which tables `hash` and `mgf1` are, not on the message, the label or the seed."
   safety := encryptSafety ++
@@ -152,15 +152,15 @@ def encryptTablesApi : Api where
 /-! ## `vg_rsa_oaep_decrypt` -/
 
 /-- The parameters of decryption (`decryptSig`), then `hash` and `mgf1`,
-tables of `Hash`. -/
-def decryptTablesSig : Sig where
-  params := decryptSig.params ++ [("hash", HashTable.param), ("mgf1", HashTable.param)]
+tables of `MdHash`. -/
+def decryptMdTablesSig : Sig where
+  params := decryptSig.params ++ [("hash", MdHashTable.param), ("mgf1", MdHashTable.param)]
   ret := some .u32
 
 /-- RSAES-OAEP-DECRYPT with the hash function `H` the table `hash` names
 and MGF1 with `G`, the one `mgf1` names. -/
-def decryptTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
-  decryptTablesSig.contract A
+def decryptMdTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  decryptMdTablesSig.contract A
     (pre := fun _out outLen _msgLen _n nLen _e eLen _p pLen _q qLen _dp dpLen _dq dqLen _qinv
         qinvLen _label _labelLen _ct ctLen _scratch scratchLen _hash _mgf1 _ =>
       lenValid nLen.toNat ∧ outLen.toNat = nLen.toNat ∧ ctLen.toNat = nLen.toNat ∧
@@ -170,8 +170,8 @@ def decryptTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
         scratchWords nLen.toNat ≤ scratchLen.toNat)
     (post := fun out _outLen msgLen n nLen e eLen p pLen q qLen dp _dpLen dq _dqLen qinv
         _qinvLen label labelLen ct _ctLen _scratch _scratchLen hash mgf1 m m' r =>
-      ∀ H G, HashTable.hashAt A.ptrBits m hash = some H →
-        HashTable.hashAt A.ptrBits m mgf1 = some G →
+      ∀ H G, MdHashTable.hashAt A.ptrBits m hash = some H →
+        MdHashTable.hashAt A.ptrBits m mgf1 = some G →
         writtenDecrypt m' out msgLen nLen.toNat r
           (decrypt H G (bytesAt m n nLen.toNat) (bytesAt m e eLen.toNat)
             (bytesAt m p pLen.toNat) (bytesAt m q qLen.toNat) (bytesAt m dp pLen.toNat)
@@ -183,12 +183,12 @@ def decryptTablesContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M 
       (bytesAt m n nLen.toNat ++ bytesAt m e eLen.toNat).map (·.toNat))
 
 /-- `vg_rsa_oaep_decrypt` on every target. -/
-def decryptTablesApi : Api where
+def decryptMdTablesApi : Api where
   module := "rsa_oaep"
   name := "vg_rsa_oaep_decrypt"
-  sig := decryptTablesSig
+  sig := decryptMdTablesSig
   writeArgs := true
-  contracts := some fun A stack => decryptTablesContract A stack
+  contracts := some fun A stack => decryptMdTablesContract A stack
   summary := "RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table \
     `hash` and MGF1 with that of the table `mgf1`, with the private key \
     `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` \
@@ -201,7 +201,7 @@ def decryptTablesApi : Api where
     ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal \
     error) if RSADP's result fails the check against `e`, which it does for no ciphertext if \
     `vg_rsa_check_key` accepts the key and `p` and `q` are prime.\n\n\
-    Contract: `VG.Spec.RsaOaep.decryptTablesContract`. Constant time but for the public key: \
+    Contract: `VG.Spec.RsaOaep.decryptMdTablesContract`. Constant time but for the public key: \
     timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which \
     tables `hash` and `mgf1` are, not on the private key, the label, the ciphertext, whether \
     its decoding is valid or the message's length."

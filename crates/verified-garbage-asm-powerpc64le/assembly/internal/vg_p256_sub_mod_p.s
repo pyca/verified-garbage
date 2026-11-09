@@ -24,16 +24,11 @@ vg_p256_sub_mod_p:
 	ld %r12, 24(%r6)
 	subfe %r10, %r12, %r11
 	subfe %r11, %r11, %r11
+	addc %r7, %r7, %r11
+	std %r7, 0(%r4)
 	lis %r12, -1
 	ori %r12, %r12, 65535
-	and %r12, %r12, %r11
-	addc %r7, %r7, %r12
-	std %r7, 0(%r4)
-	lis %r12, 0
-	ori %r12, %r12, 0
-	rldicr %r12, %r12, 32, 31
-	oris %r12, %r12, 65535
-	ori %r12, %r12, 65535
+	rldicl %r12, %r12, 32, 32
 	and %r12, %r12, %r11
 	adde %r8, %r8, %r12
 	std %r8, 8(%r4)
@@ -44,7 +39,6 @@ vg_p256_sub_mod_p:
 	lis %r12, -1
 	ori %r12, %r12, 65535
 	rldicr %r12, %r12, 32, 31
-	oris %r12, %r12, 0
 	ori %r12, %r12, 1
 	and %r12, %r12, %r11
 	adde %r10, %r10, %r12

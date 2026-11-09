@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -19,7 +19,7 @@ import all Init.Data.Nat.Bitwise.Basic
 
 Untrusted: everything here is checked by Lean. As on PPC64LE
 (`Proof/RsaPss/PPC64LE/Pre.lean`, `Params.lean`, `ShiftV.lean`): `PreP D s`,
-the shared contract's precondition (`Spec.RsaPss.verifyPrecomputedTableContract`,
+the shared contract's precondition (`Spec.RsaPss.verifyPrecomputedMdTableContract`,
 with the stack of the frame and of the streaming hash functions,
 `stackBytes`), by name (`preP_of`); the working space and the values `Base`
 fixes in `s1`–`s4` (`Sp`, `vP`: `k`, the digest, and the encoding's
@@ -59,10 +59,10 @@ abbrev gR (s : State) : Region := ⟨s.gpr .a6, (s.gpr .a7).toNat⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 2, (stackArg s 3).toNat * 8⟩
 abbrev pR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 6) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 7) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 64⟩
 
-/-- What the code needs of `verifyPrecomputedTableContract.pre`, by name,
+/-- What the code needs of `verifyPrecomputedMdTableContract.pre`, by name,
 for a hash function of `D`-byte digests (the table `hash`'s). -/
 structure PreP (D : Nat) (s : State) : Prop where
   spal : s.sp.toNat % 16 = 0
@@ -94,7 +94,7 @@ structure PreP (D : Nat) (s : State) : Prop where
   wsc : (stackArg s 2).toNat + (stackArg s 3).toNat * 8 ≤ 2 ^ 64
   wp : (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64
   wth : (stackArg s 6).toNat + 88 ≤ 2 ^ 64
-  wtg : (stackArg s 7).toNat + 40 ≤ 2 ^ 64
+  wtg : (stackArg s 7).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .a1).toNat
   k2 : (s.gpr .a1).toNat ≤ 1024
   e1 : 1 ≤ (s.gpr .a3).toNat
@@ -108,27 +108,25 @@ structure PreP (D : Nat) (s : State) : Prop where
   al7 : (stackArg s 7).toNat % 8 = 0
 
 /-- The contract, with the hash function one of the tables `tsH` of `MdHash`
-and MGF1's one of the tables `tsG` of `Hash`, and the stack of the frame and
+and MGF1's one of the tables `tsG` of `MdHash`, and the stack of the frame and
 of the streaming hash functions. -/
 abbrev verSpec (tsH tsG : List FnTable) : Contract isa :=
-  Spec.RsaPss.verifyPrecomputedTableContract
-    (abi.withTables Spec.RsaPss.verifyPrecomputedTableSig [("hash", tsH), ("mgf1", tsG)]) stackBytes
+  Spec.RsaPss.verifyPrecomputedMdTableContract
+    (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stackBytes
 
 /-- Unfolds the precondition at `h`. -/
 macro "ver_pre" " at " h:ident : tactic => `(tactic| (
   have e : stackBytes = 335 + 1 := rfl
   unfold verSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq,
+    List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq, List.range, List.range.loop,
-    Spec.Rsa.lenValid] at $h:ident
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eight, List.append_eq,
+    List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 
