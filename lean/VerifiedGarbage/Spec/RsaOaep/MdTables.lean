@@ -1,20 +1,57 @@
 module
 
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.Contract
 public import VerifiedGarbage.Spec.MdHashTable
 
 /-!
 # RSAES-OAEP with both of its hash functions given as tables of `MdHash`
 
-**Trusted** (as every file in `Spec/`). The functions of
-`Spec/RsaOaep/Tables.lean`, `vg_rsa_oaep_encrypt_precomputed` and
-`vg_rsa_oaep_decrypt`, with the same contracts but for the tables they take:
-`hash` and `mgf1` are tables of the interface `MdHash`
-(`Spec/MdHashTable.lean`), naming `H` and `G` by `MdHashTable.hashAt`,
-rather than of `Hash`. So the tables of `MdHash`, which the other functions
-taking hash functions as tables take, serve RSAES-OAEP too, and the
-interface `Hash` can go once nothing implements those of
-`Spec/RsaOaep/Tables.lean`.
+**Trusted** (as every file in `Spec/`). In the module `rsa_oaep`, each
+with the parameters `hash` and `mgf1`, its last two, tables of the
+interface `MdHash` (`Spec/MdHashTable.lean`) naming the hash function `H` of
+the label and the seed and MGF1's `G` (`MdHashTable.hashAt`):
+
+* `vg_rsa_oaep_encrypt_precomputed`: `RSAES-OAEP-ENCRYPT` of a message with
+  a label and a seed (`RsaOaep.encrypt H G`), given the modulus'
+  `Rsa.publicPrecompute` values `pre`;
+* `vg_rsa_oaep_decrypt`: `RSAES-OAEP-DECRYPT` of a ciphertext with a label,
+  with the private key checked against the public exponent
+  (`RsaOaep.decrypt H G`).
+
+So one function serves every pair of hash functions, with every
+implementation of each, rather than a function for each.
+
+Numbers are as in `Spec/Rsa/Contract.lean`: slices of octets, most
+significant first, with the modulus `n` of `n_len` octets, from 64 to 1024,
+and `e` of at most `n_len`; the private key is as `vg_rsa_private_checked`
+takes it. The seed is a slice of `seed_len` octets, which must be `H`'s
+length. These are preconditions, on the public lengths; everything about
+the values is checked. Encryption returns 1 and writes the ciphertext, or
+returns 0 and writes zeros; with a `pre` that does not hold the values for
+`n`, what it writes and returns is unspecified, as in
+`Proof.Rsa.publicPrecomputedCheckedContract`. Decryption returns 1 and writes the
+message, padded with zeros to `n_len` octets, and its length; or writes
+zeros and returns 0, the single error for every failure of the key, the
+ciphertext or its decoding, or 2 (the internal error: RSADP's result failed
+its check against `e`).
+
+The signature determines memory validity, separation and that the pointers
+and lengths (among them the message's and the label's) are public, through
+`Sig.contract`; which tables `hash` and `mgf1` are, is public too
+(`Abi.withTables`), and the tables' own memory is read-only. The public
+key, `n` and `e`, and `pre` are public, and may affect timing (`leak`).
+Nothing else is: the message, the label, the seed, the private key, the
+ciphertext and everything computed from them, among them whether the
+decoding is valid, where the message starts and its length: only the
+returned value says whether decryption succeeded, and the message and its
+length are its output.
+
+`scratch` is working space of at least `RsaPss.publicScratchWords n_len`
+`u64`s when encrypting and `RsaPss.scratchWords n_len` when decrypting,
+whose contents on return are unspecified. `stack` is the number of bytes
+below the stack pointer that an implementation's calls and frames use. The
+functions may overwrite their arguments passed in memory, where the calling
+convention allows it (`writeArgs`).
 -/
 
 @[expose] public section
@@ -24,6 +61,20 @@ namespace VG.Spec.RsaOaep
 open Mgf1 (Hash)
 open Rsa (bytesAt lenValid written exponentDoc)
 open RsaPss (scratchWords scratchSafety publicScratchWords)
+
+/-- The `# Safety` item of `mgf1`, but for what the emitter adds (which
+tables it may be, `Rust.fnTablesDoc`). -/
+def mgf1Safety : String :=
+  "`mgf1` names MGF1's hash function: the one of `VG.Spec.Mgf1.hashes` at the index in its \
+    first word of data (the hash functions' tables of this crate, `fn_tables`, say which they \
+    name)."
+
+/-- The `# Safety` item of `hash`, but for what the emitter adds (which
+tables it may be, `Rust.fnTablesDoc`). -/
+def hashSafety : String :=
+  "`hash` names the hash function of the label and of the encoding: the one of \
+    `VG.Spec.Mgf1.hashes` at the index in its first word of data (the hash functions' tables \
+    of this crate, `fn_tables`, say which they name)."
 
 /-- The seed's length is that of the hash function the table at `hash`
 names, if it names one. -/
