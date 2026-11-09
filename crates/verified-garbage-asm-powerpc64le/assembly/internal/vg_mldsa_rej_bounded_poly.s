@@ -116,7 +116,10 @@ vg_mldsa_rej_bounded_poly:
 26:
 	addi %r3, %r3, 1
 	addi %r6, %r6, -1
-	cmpldi %cr0, %r6, 0
+	addi %r11, %r5, -256
+	rldicl %r11, %r11, 1, 63
+	mulld %r12, %r6, %r11
+	cmpldi %cr0, %r12, 0
 	bne %cr0, 22b
 	b 21f
 20:
@@ -191,7 +194,10 @@ vg_mldsa_rej_bounded_poly:
 211:
 	addi %r3, %r3, 1
 	addi %r6, %r6, -1
-	cmpldi %cr0, %r6, 0
+	addi %r11, %r5, -256
+	rldicl %r11, %r11, 1, 63
+	mulld %r12, %r6, %r11
+	cmpldi %cr0, %r12, 0
 	bne %cr0, 27b
 21:
 	addi %r12, %r5, -256
@@ -295,7 +301,10 @@ vg_mldsa_rej_bounded_poly:
 220:
 	addi %r3, %r3, 1
 	addi %r6, %r6, -1
-	cmpldi %cr0, %r6, 0
+	addi %r11, %r5, -256
+	rldicl %r11, %r11, 1, 63
+	mulld %r12, %r6, %r11
+	cmpldi %cr0, %r12, 0
 	bne %cr0, 216b
 	b 215f
 214:
@@ -370,7 +379,10 @@ vg_mldsa_rej_bounded_poly:
 225:
 	addi %r3, %r3, 1
 	addi %r6, %r6, -1
-	cmpldi %cr0, %r6, 0
+	addi %r11, %r5, -256
+	rldicl %r11, %r11, 1, 63
+	mulld %r12, %r6, %r11
+	cmpldi %cr0, %r12, 0
 	bne %cr0, 221b
 215:
 	b 213f

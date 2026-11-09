@@ -89,7 +89,7 @@ theorem oks (n : Nat) (hn : n ≤ 544) : (X n σ₁).map (hbOks (etaOf σ₁)) =
 theorem rbLoop_ct {η : Nat} (hη : η = 2 ∨ η = 4) {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544)
     (ho : (X n σ₁).map (hbOks η) = (X n σ₂).map (hbOks η)) :
     RelCT isa (fun a b => SJ n σ₁ a ∧ SJ n σ₂ b) (rbLoop η n)
-      fun a b => Base σ₁ (X n σ₁) n (Lf η (X n σ₁) n) a ∧ Base σ₂ (X n σ₂) n (Lf η (X n σ₂) n) b := by
+      fun a b => ∃ t, Base σ₁ (X n σ₁) t (Lf η (X n σ₁) n) a ∧ Base σ₂ (X n σ₂) t (Lf η (X n σ₂) n) b := by
   refine RelCT.seq (R := fun (a b : State) => Base σ₁ (X n σ₁) 0 (Lf η (X n σ₁) 0) a ∧
       Base σ₂ (X n σ₂) 0 (Lf η (X n σ₂) 0) b)
     (relct_wp (relct_noMem rfl) fun a b ⟨ha, hb⟩ => ⟨?_, ?_⟩)
@@ -101,8 +101,8 @@ theorem rbLoop_ct {η : Nat} (hη : η = 2 ∨ η = 4) {n : Nat} (hn0 : 0 < n) (
 theorem rbTry_ct {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) :
     RelCT isa (fun a b => (J0 (spOf σ₁) σ₁ a ∧ a.gpr .r27 = zx (σ₁.gpr .r4)) ∧
       (J0 (spOf σ₁) σ₂ b ∧ b.gpr .r27 = zx (σ₁.gpr .r4))) (rbTry n)
-      fun a b => Base σ₁ (X n σ₁) n (Lf (etaOf σ₁) (X n σ₁) n) a ∧
-        Base σ₂ (X n σ₂) n (Lf (etaOf σ₁) (X n σ₂) n) b := by
+      fun a b => ∃ t, Base σ₁ (X n σ₁) t (Lf (etaOf σ₁) (X n σ₁) n) a ∧
+        Base σ₂ (X n σ₂) t (Lf (etaOf σ₁) (X n σ₂) n) b := by
   have hp₁ := h.hp₁
   have hp₂ := h.hp₂
   have eP := sp_eq h
@@ -156,20 +156,20 @@ theorem all_ct : RelCT isa (fun a b => a = σ₁ ∧ b = σ₂) Impl.MlDsa.PPC64
   · rw [hab.1]; exact pro_rb hp₁ rfl rfl rfl rfl
   · rw [hab.2]; exact WP.mono (pro_rb hp₂' h.r3.symm h.r5.symm h.r6.symm rfl) fun _ x => ⟨x.1, x.2.trans ez⟩
   -- the try with 272 bytes
-  refine RelCT.seq (rbTry_ct h (n := 272) (by decide) (by decide)) ?_
+  refine RelCT.seq (rbTry_ct h (n := 272) (by decide) (by decide)) (RelCT.exists_ fun t => ?_)
   -- the test of `j = 256`, and the try with 544 bytes if it fails
   refine RelCT.seq (R := fun (a b : State) => (∃ X t L, Base σ₁ X t L a) ∧ (∃ X t L, Base σ₂ X t L b)) ?_ ?_
   · refine RelCT.seq (R := fun (a b : State) =>
-        (Base σ₁ (X 272 σ₁) 272 (Lf (etaOf σ₁) (X 272 σ₁) 272) a ∧
+        (Base σ₁ (X 272 σ₁) t (Lf (etaOf σ₁) (X 272 σ₁) 272) a ∧
           isa.eval (.zero .d .r12) a = some (decide ((Lf (etaOf σ₁) (X 272 σ₁) 272).length = 256))) ∧
-        (Base σ₂ (X 272 σ₂) 272 (Lf (etaOf σ₁) (X 272 σ₂) 272) b ∧
+        (Base σ₂ (X 272 σ₂) t (Lf (etaOf σ₁) (X 272 σ₂) 272) b ∧
           isa.eval (.zero .d .r12) b = some (decide ((Lf (etaOf σ₁) (X 272 σ₂) 272).length = 256))))
       (relct_wp (relct_noMem rfl) fun a b hab => ⟨jtest_ok hp₁ hab.1, jtest_ok hp₂ hab.2⟩) ?_
     have hl := len_eq (oks h 272 (by decide)) 272
     refine RelCT.ite (fun a b hab => by rw [hab.1.2, hab.2.2, hl]) ?_ ?_
     · exact RelCT.mono relct_nil (fun _ _ h => h) fun a b hab => ⟨⟨_, _, _, hab.1.1.1⟩, ⟨_, _, _, hab.1.2.1⟩⟩
     · refine RelCT.mono (rbTry_ct h (n := 544) (by decide) (by decide)) (fun a b hab => ⟨?_, ?_⟩)
-        fun a b hab => ⟨⟨_, _, _, hab.1⟩, ⟨_, _, _, hab.2⟩⟩
+        fun a b ⟨_, hab⟩ => ⟨⟨_, _, _, hab.1⟩, ⟨_, _, _, hab.2⟩⟩
       · exact ⟨⟨hab.1.1.1.env, hab.1.1.1.r29, hab.1.1.1.r28⟩, hab.1.1.1.r27⟩
       · have b₂ := hab.1.2.1
         exact ⟨eP ▸ ⟨b₂.env, b₂.r29, b₂.r28⟩, b₂.r27.trans ez⟩

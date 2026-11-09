@@ -33,7 +33,7 @@ beq %cr0, 25f
 b 26f
 25:
 26:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 22b
 b 21f
 20:
@@ -51,7 +51,7 @@ beq %cr0, 210f
 b 211f
 210:
 211:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 27b
 21:
 .base64 "AP+FOQAALCg="
@@ -78,7 +78,7 @@ beq %cr0, 219f
 b 220f
 219:
 220:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 216b
 b 215f
 214:
@@ -96,7 +96,7 @@ beq %cr0, 224f
 b 225f
 224:
 225:
-.base64 "AQBjOP//xjgAACYo"
+.base64 "AQBjOP//xjgA/2U54A9redJZhn0AACwo"
 bne %cr0, 221b
 215:
 b 213f
