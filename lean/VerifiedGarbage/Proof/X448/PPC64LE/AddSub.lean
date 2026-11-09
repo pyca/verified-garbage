@@ -382,6 +382,197 @@ theorem sub_ok {o x y : Nat} (ho : o + 56 ≤ 4096) (hx : x + 56 ≤ 4096) (hy :
       omega
     rw [P_eq, key, Nat.add_mul_mod_self_left]
 
+
+/-! ## The multiplication by `a24` -/
+
+/-- A register write that keeps CA. -/
+theorem wp_wr64 {i : Instr} {d : Reg} {v : BitVec 64} {is : List Instr} {s : State}
+    {Q : State → Prop} (he : exec i s = some (s.write d v))
+    (k : ∀ s', Upd s s' d v → s'.ca = s.ca → WP isa (.block is) s' Q) :
+    WP isa (.block (i :: is)) s Q :=
+  WP.cons he (k _ (Upd.write _ _ _) rfl)
+
+/-- After `k` steps of `mulA24 o a` from `s0`: `o[0, k)`, the high word in
+`r7` and CA hold `a24 · a_{<k}`. -/
+structure AInv (o a : Nat) (s0 : State) (k : Nat) (s : State) : Prop where
+  ctx : Ctx b s
+  rest : Rest [.r7, .r8, .r9] s0 s
+  frame : Frame [⟨b + BitVec.ofNat 64 o, 8 * k⟩] s0.mem s.mem
+  val : colsV (ew s.mem b o) k + (2 ^ 64) ^ k * ((s.gpr .r7).toNat + (if k = 0 then 0 else s.ca.toNat)) =
+    39081 * colsV (ew s0.mem b a) k
+
+/-- A step's carrying addition of `r7` into `r9`. -/
+theorem a24Op_ok (k : Nat) {is : List Instr} {s : State} {Q : State → Prop}
+    (hk : ∀ t, UpdC s t .r9 ((s.gpr .r9).toNat + (s.gpr .r7).toNat + (if k = 0 then 0 else s.ca.toNat)) →
+      WP isa (.block is) t Q) :
+    WP isa (.block ((if k = 0 then Instr.addc .r9 .r9 .r7 else .adde .r9 .r9 .r7) :: is)) s Q := by
+  by_cases h0 : k = 0
+  · simp only [h0, ↓reduceIte]
+    exact wp_addc fun t u => hk t (updC_congr u (by simp [h0]))
+  · simp only [h0, ↓reduceIte]
+    exact wp_adde fun t u => hk t (updC_congr u (by simp [h0]))
+
+/-- Step `k` of `mulA24 o a`. -/
+theorem a24Step_ok {o a : Nat} (ho : o + 56 ≤ 4096) (ha : a + 56 ≤ 4096) (ho4 : o % 4 = 0)
+    (ha4 : a % 4 = 0) (hoa : a = o ∨ a + 56 ≤ o ∨ o + 56 ≤ a) {s0 : State}
+    (h5 : s0.gpr .r5 = BitVec.ofNat 64 39081) {k : Nat} (hk : k < 7) {s : State}
+    (h : AInv (b := b) o a s0 k s) :
+    WP isa (.block (a24Step o a k)) s (AInv (b := b) o a s0 (k + 1)) := by
+  have hc := h.ctx
+  have eA : dw s.mem b (a + 8 * k) = dw s0.mem b (a + 8 * k) := dw_frame h.frame fun r hr => by
+    rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by omega) (by omega) (by omega)
+  have g5 : s.gpr .r5 = BitVec.ofNat 64 39081 := by rw [h.rest.gpr _ (by decide), h5]
+  unfold a24Step
+  refine ldw_ok hc (by omega) (by omega) ?_
+  generalize hs1 : s.write .r8 (s.mem.readW (b + BitVec.ofNat 64 (a + 8 * k)) 64) = s1
+  have u1 : Upd s s1 .r8 (s.mem.readW (b + BitVec.ofNat 64 (a + 8 * k)) 64) := hs1 ▸ Upd.write _ _ _
+  have c1 : s1.ca = s.ca := by rw [← hs1, RegUpd.ca_write]
+  have w1 : (s1.gpr .r8).toNat = dw s0.mem b (a + 8 * k) := by rw [u1.gpr, ← eA]; rfl
+  have g51 : s1.gpr .r5 = BitVec.ofNat 64 39081 := by rw [u1.other _ (by decide), g5]
+  refine wp_wr64 exec_mul fun s2 u2 c2 => a24Op_ok k fun s3 u3 => wp_wr64 exec_mulhu fun s4 u4 c4 => ?_
+  have hw := dw_lt s0.mem b (a + 8 * k)
+  have lo : (s2.gpr .r9).toNat = dw s0.mem b (a + 8 * k) * 39081 % 2 ^ 64 := by
+    rw [u2.gpr, BitVec.toNat_mul, w1, g51]; rfl
+  have r72 : s2.gpr .r7 = s.gpr .r7 := by rw [u2.other _ (by decide), u1.other _ (by decide)]
+  have c2' : s2.ca = s.ca := by rw [c2, c1]
+  have v3 := u3.val
+  rw [lo, r72, c2'] at v3
+  have g83 : s3.gpr .r8 = s1.gpr .r8 := by rw [u3.other _ (by decide), u2.other _ (by decide)]
+  have g53 : s3.gpr .r5 = s1.gpr .r5 := by rw [u3.other _ (by decide), u2.other _ (by decide)]
+  have hi : (s4.gpr .r7).toNat = dw s0.mem b (a + 8 * k) * 39081 / 2 ^ 64 := by
+    rw [u4.gpr, g83, g53, w1, g51, show (BitVec.ofNat 64 39081).toNat = 39081 from rfl,
+      toNat_imm (Nat.div_lt_of_lt_mul (by omega))]
+  have g94 : s4.gpr .r9 = s3.gpr .r9 := u4.other _ (by decide)
+  have r4' : Rest [.r7, .r8, .r9] s s4 :=
+    (u1.rest (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
+  have hc4 : Ctx b s4 := hc.of_rest r4' (by decide)
+  have m4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+  refine sdC_ok hc4 (by omega) (by omega) fun t ut ct => WP.block_nil
+    ⟨hc4.of_rest (ut.rest []) (by decide), h.rest.trans (r4'.trans (ut.rest _)), ?_, ?_⟩
+  · rw [ut.mem, m4]
+    exact (h.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      rw [List.mem_singleton.mp hr]; exact Region.sub_prefix (by omega)⟩).writeW
+      (List.mem_singleton_self _) _ (Offset.contains _ (by omega) (by omega) (by omega))
+  · have ew1 : ∀ j < k, ew t.mem b o j = ew s.mem b o j := fun j hj => by
+      show dw _ _ _ = dw _ _ _
+      rw [ut.mem, m4, dw_write_other _ _ _ (by omega) (by omega) (by omega)]
+    have es : ew t.mem b o k = (s3.gpr .r9).toNat := by
+      show dw _ _ _ = _
+      rw [ut.mem, dw_write_self, g94]
+    have g7 : (t.gpr .r7).toNat = dw s0.mem b (a + 8 * k) * 39081 / 2 ^ 64 := by rw [ut.gpr, hi]
+    have ct' : t.ca = s3.ca := by rw [ct, c4]
+    have hv := h.val
+    simp only [colsV]
+    rw [colsV_congr ew1, es, g7, ct']
+    simp only [Nat.add_one_ne_zero, ↓reduceIte]
+    have ewk : ew s0.mem b a k = dw s0.mem b (a + 8 * k) := rfl
+    rw [ewk]
+    have dm := Nat.mod_add_div (dw s0.mem b (a + 8 * k) * 39081) (2 ^ 64)
+    rw [show ((2 : Nat) ^ 64) ^ (k + 1) = (2 ^ 64) ^ k * 2 ^ 64 from Nat.pow_succ _ _]
+    generalize (2 ^ 64) ^ k = K at *
+    generalize colsV (ew s.mem b o) k = S at *
+    generalize colsV (ew s0.mem b a) k = A at *
+    generalize dw s0.mem b (a + 8 * k) = w at *
+    generalize w * 39081 % 2 ^ 64 = l at *
+    generalize w * 39081 / 2 ^ 64 = hh at *
+    generalize (s3.gpr .r9).toNat = R at *
+    generalize s3.ca.toNat = C' at *
+    generalize (s.gpr .r7).toNat = H at *
+    generalize (if k = 0 then 0 else s.ca.toNat) = Ci at *
+    have e1 : K * R + K * 2 ^ 64 * C' = K * l + K * H + K * Ci := by
+      rw [Nat.mul_assoc, ← Nat.mul_add, v3, Nat.mul_add, Nat.mul_add]
+    have e2 : K * l + K * (2 ^ 64 * hh) = 39081 * (K * w) := by
+      rw [← Nat.mul_add, dm, Nat.mul_comm w, Nat.mul_left_comm]
+    have e3 : K * (2 ^ 64) * (hh + C') = K * (2 ^ 64 * hh) + K * 2 ^ 64 * C' := by
+      rw [Nat.mul_add, Nat.mul_assoc K (2 ^ 64) hh]
+    have e4 : K * (H + Ci) = K * H + K * Ci := Nat.mul_add _ _ _
+    rw [e3, Nat.mul_add 39081, Nat.mul_comm K w]
+    rw [e4] at hv
+    rw [Nat.mul_comm K w] at e2
+    generalize K * R = KR at *
+    generalize K * 2 ^ 64 * C' = KC at *
+    generalize K * l = KL at *
+    generalize K * H = KH at *
+    generalize K * Ci = KCi at *
+    generalize K * (2 ^ 64 * hh) = KHH at *
+    generalize w * K = WK at *
+    omega
+
+/-- The value of `mulA24`'s folds: `S + 2⁴⁴⁸ t`, its top word `t` folded twice. -/
+theorem fold2_arith {S t S9 c9 S11 c11 : Nat} (ht : t < 2 ^ 32) (hS : S < 2 ^ 224 * 2 ^ 224)
+    (hS9 : S9 < 2 ^ 224 * 2 ^ 224) (h11 : c11 ≤ 1)
+    (v9 : S9 + (2 ^ 64) ^ 7 * c9 = S + (t + 2 ^ 224 * t) + 0)
+    (v11 : S11 + (2 ^ 64) ^ 7 * c11 = S9 + (c9 + 2 ^ 224 * c9) + 0) :
+    S11 % P = (S + (2 ^ 64) ^ 7 * t) % P := by
+  have z : c11 = 0 := by omega
+  have key : S11 + (2 ^ 224 * 2 ^ 224 - 2 ^ 224 - 1) * (t + c9) = S + (2 ^ 64) ^ 7 * t := by
+    omega
+  rw [P_eq, ← key, Nat.add_mul_mod_self_left]
+
+theorem ori_a24 : (BitVec.ofNat 64 0 ||| (0x98a9 : BitVec 16).setWidth 64) = BitVec.ofNat 64 39081 := by
+  decide
+
+/-- `mulA24 o x`: a number congruent to `39081 [x]` at `o`. -/
+theorem mulA24_ok {o x : Nat} (ho : o + 56 ≤ 4096) (hx : x + 56 ≤ 4096)
+    (hox : x = o ∨ x + 56 ≤ o ∨ o + 56 ≤ x) (ho4 : o % 4 = 0) (hx4 : x % 4 = 0) {s : State}
+    (hc : Ctx b s) :
+    WP isa (.block (mulA24 o x)) s fun s' =>
+      Rest clob s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 56⟩] s.mem s'.mem ∧
+      V s'.mem b o % P = (39081 * V s.mem b x) % P := by
+  unfold mulA24
+  simp only [List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_wr64 (exec_li (by decide)) fun s1 u1 _ => wp_wr64 exec_ori fun s2 u2 _ =>
+    wp_wr64 (exec_li (by decide)) fun s3 u3 _ => ?_
+  have r3 : Rest [.r5, .r7] s s3 := (u1.rest (by simp)).trans ((u2.rest (by simp)).trans (u3.rest (by simp)))
+  have hc3 : Ctx b s3 := hc.of_rest r3 (by decide)
+  have m3 : s3.mem = s.mem := by rw [u3.mem, u2.mem, u1.mem]
+  have h5 : s3.gpr .r5 = BitVec.ofNat 64 39081 := by
+    rw [u3.other _ (by decide), u2.gpr, u1.gpr]; exact ori_a24
+  refine WP.append (wp_range_flatMap (M := isa) (N := 7) (AInv (b := b) o x s3)
+    (fun _ _ hk ht => a24Step_ok ho hx ho4 hx4 hox h5 hk ht) 7 (Nat.le_refl _) s3
+    ⟨hc3, Rest.refl _ _, Frame.refl _ _, by rw [u3.gpr]; rfl⟩) fun s4 h4 => ?_
+  refine wp_addze fun s5 u5 => wp_lsl (by decide) fun s6 u6 => wp_li (by decide) fun s7 u7 => ?_
+  have hc4 := h4.ctx
+  have v4 : colsV (ew s4.mem b o) 7 + (2 ^ 64) ^ 7 * ((s4.gpr .r7).toNat + s4.ca.toNat) =
+      39081 * colsV (ew s3.mem b x) 7 := h4.val
+  rw [m3] at v4
+  have bX := V_cols_lt (b := b) s.mem x
+  have v5 := u5.val
+  have l5 := (s5.gpr .r4).isLt
+  have c5 : s5.ca.toNat ≤ 1 := Bool.toNat_le _
+  have e5 : (s5.gpr .r4).toNat = (s4.gpr .r7).toNat + s4.ca.toNat := by omega
+  have ht : (s5.gpr .r4).toNat < 2 ^ 32 := by omega
+  have r7' : Rest [.r4, .r5, .r8] s4 s7 :=
+    (u5.rest (by simp)).trans ((u6.rest (by simp)).trans (u7.rest (by simp)))
+  have hc7 : Ctx b s7 := hc4.of_rest r7' (by decide)
+  have m7 : s7.mem = s4.mem := by rw [u7.mem, u6.mem, u5.mem]
+  have f4 : (s7.gpr .r4).toNat = (s5.gpr .r4).toNat := by rw [u7.other _ (by decide), u6.other _ (by decide)]
+  have f5 : (s7.gpr .r5).toNat = 2 ^ 32 * (s5.gpr .r4).toNat := by
+    rw [u7.other _ (by decide), u6.gpr, toNat_shl, Nat.mod_eq_of_lt (by omega)]; omega
+  have f8 : (s7.gpr .r8).toNat = 0 := by rw [u7.gpr]; rfl
+  refine WP.append (foldRun_ok (sub := false) ho ho4 hc7) fun s9 h9 => ?_
+  refine carryPrep_ok h9.ctx fun s10 hc10 r10 m10 e4' e5' e8' => ?_
+  refine WP.mono (foldRun_ok (sub := false) ho ho4 hc10) fun s11 h11 => ⟨?_, ?_, ?_⟩
+  · exact (r3.mono (by decide)).trans ((h4.rest.mono (by decide)).trans ((r7'.mono (by decide)).trans
+      ((h9.rest.mono (by decide)).trans ((r10.mono (by decide)).trans (h11.rest.mono (by decide))))))
+  · have f11 := h11.frame
+    have f9 := h9.frame
+    rw [m10] at f11
+    rw [m7] at f9
+    rw [← m3]
+    exact h4.frame.trans (f9.trans f11)
+  · have v9 : colsV (ew s9.mem b o) 7 + (2 ^ 64) ^ 7 * s9.ca.toNat =
+        colsV (ew s7.mem b o) 7 + colsV (fun j => cvD false ((s7.gpr (foldSrc64 j)).toNat)) 7 + 0 :=
+      h9.val (by decide)
+    have v11 : colsV (ew s11.mem b o) 7 + (2 ^ 64) ^ 7 * s11.ca.toNat =
+        colsV (ew s10.mem b o) 7 + colsV (fun j => cvD false ((s10.gpr (foldSrc64 j)).toNat)) 7 + 0 :=
+      h11.val (by decide)
+    rw [colsV_cvD_false, foldW_val s7 f4 f5 f8, m7] at v9
+    rw [colsV_cvD_false, foldW_val s10 e4' e5' e8', m10] at v11
+    have key := fold2_arith ht (V_cols_lt s4.mem o) (V_cols_lt s9.mem o) (Bool.toNat_le _) v9 v11
+    rw [V_eq_cols, V_eq_cols, key, e5, v4]
+
+
 end
 
 end VG.Proof.X448.PPC64LE

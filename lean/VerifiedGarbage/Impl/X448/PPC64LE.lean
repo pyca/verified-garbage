@@ -43,8 +43,8 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   exactly when `x ≥ p` (`x < 2⁴⁴⁸`), and is then `x - p` modulo `2⁴⁴⁸`,
   selected with a mask.
 
-The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the constant element `A24`), over the bits of the scalar
+The ladder follows RFC 7748 §5 operation by operation (with `a24 · E`
+by the one-word multiplication `mulA24`), over the bits of the scalar
 from 447 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
@@ -77,7 +77,6 @@ def BB : Nat := 560
 def E : Nat := 616
 def DA : Nat := 672
 def CB : Nat := 728
-def A24 : Nat := 784
 def R : Nat := 840
 def Y : Nat := 896
 def ACC : Nat := 952
@@ -150,6 +149,22 @@ def sub (o a b : Nat) : List Instr :=
   (List.range 7).flatMap (chainStep true o a b) ++
     borrowPrep ++ (List.range 7).flatMap (foldStep true o) ++
     borrowPrep ++ (List.range 7).flatMap (foldStep true o)
+
+/-- Doubleword `k` of `a24 · [a]` (`a24 = 39081` in `r5`, the previous
+step's high word in `r7`): `mulld` plus the previous `mulhdu` by the carry
+chain, stored at `o + 8k`, and this step's `mulhdu` into `r7`. -/
+def a24Step (o a k : Nat) : List Instr :=
+  [.load .d .r8 .r6 (a + 8 * k), .mul .r9 .r8 .r5,
+    if k = 0 then .addc .r9 .r9 .r7 else .adde .r9 .r9 .r7, .mulhu .r7 .r8 .r5,
+    .store .d .r9 .r6 (o + 8 * k)]
+
+/-- `[o] = a24 · [a]` (`a24 = 39081`; `o` may be `a`): the seven doublewords
+of the product, each stored as it is made, and its top word `t < 2¹⁶`
+folded in as `t + 2²²⁴ t` twice, as `add` folds its carry. -/
+def mulA24 (o a : Nat) : List Instr :=
+  [.li .r5 0, .ori .r5 .r5 0x98a9, .li .r7 0] ++ (List.range 7).flatMap (a24Step o a) ++
+    [.addze .r4 .r7, .lsl .r5 .r4 32, .li .r8 0] ++ (List.range 7).flatMap (foldStep false o) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o)
 
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
@@ -252,7 +267,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 448 iterations, for `t` from 447 down to 0, with `swap = 0`. -/
@@ -333,11 +348,10 @@ def freeze : List Instr :=
 def decodeStep (k : Nat) : List Instr :=
   [.load .w .r7 .r5 (4 * k), .store .w .r7 .r6 (X1 + 4 * k), .store .w .r7 .r6 (X3 + 4 * k)]
 
-/-- `x2 = 1`, `z2 = 0`, `z3 = 1` and `A24 = 39081 = 0x98a9`. -/
+/-- `x2 = 1`, `z2 = 0` and `z3 = 1`. -/
 def consts : List Instr :=
-  [.li .r7 1, .li .r8 0, .li .r5 0, .ori .r5 .r5 0x98a9, .store .w .r7 .r6 X2,
-    .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3, .store .w .r5 .r6 A24] ++
-  storeN .r8 (X2 + 4) 13 ++ storeN .r8 (Z2 + 4) 13 ++ storeN .r8 (Z3 + 4) 13 ++ storeN .r8 (A24 + 4) 13
+  [.li .r7 1, .li .r8 0, .store .w .r7 .r6 X2, .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3] ++
+  storeN .r8 (X2 + 4) 13 ++ storeN .r8 (Z2 + 4) 13 ++ storeN .r8 (Z3 + 4) 13
 
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts
