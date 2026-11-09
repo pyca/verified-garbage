@@ -12,8 +12,8 @@ bytes of the seed (2 blocks), which the first 272 iterations of
 that fewer than 256 coefficients are accepted, it starts again with 544 bytes
 (`rbTry 544`, 4 blocks; the least bound of FIPS 204 Appendix C is 481 bytes),
 which the 544 iterations of the loop take, as on 32-bit ARM. Starting again
-squeezes the first 272 bytes again, but keeps the code that continues a
-squeeze out of the function, and is all but never taken: 544 half-bytes have
+squeezes the first 272 bytes again, but needs no code to continue a
+squeeze, and is all but never taken: 544 half-bytes have
 fewer than 256 accepted with probability below 2⁻¹⁶ for `η = 4`, and far
 less for `η = 2`. The loop (`rbLoop η n`, one for each `η`, chosen by a
 branch on the public `η`) runs with `r3` at the byte of the iteration,
