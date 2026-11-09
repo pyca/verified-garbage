@@ -29,6 +29,9 @@ public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.P224.AArch64.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P224Decompress
+public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
 /-! # P-224 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -39,6 +42,12 @@ namespace VG.Artifacts.EcP224.AArch64
 open VG.Proof.P224.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P224.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P224.code
+    verified := Proof.EcKey.Compressed.AArch64.P224.verified hasLaw.inv },
+  Spec.EcKey.P224.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P224Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.P224Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.P224.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeyP224
     verified := Proof.EcKey.AArch64.P224.pk_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }]

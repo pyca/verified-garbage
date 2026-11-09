@@ -9,6 +9,7 @@ public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86.DecVerified
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSAES-PKCS1-v1_5 encryption with a precomputed public key, and from a random tape, on x86 -/
 
@@ -34,12 +35,11 @@ open VG.Proof.Rsa.X86.PrivChecked (CrtImpl)
 
 def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
   Spec.RsaPkcs1Enc.decryptApi.artifact X86.target {
-    suffix := Emit.qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
+    suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCode v c
     stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Dec.code_verified v c
-    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c
-    features := v.features ++ c.features.filter (!v.features.contains ·) }]
+    spSafe := Proof.RsaPkcs1Enc.X86.Dec.code_sp v c }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86.Sha256RsaPrivateCrt
 

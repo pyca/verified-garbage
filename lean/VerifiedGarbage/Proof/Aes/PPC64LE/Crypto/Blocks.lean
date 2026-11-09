@@ -55,7 +55,7 @@ theorem blocks_ok (inverse : Bool) (s : State)
         exact List.mem_append_right _ List.mem_cons_self
     have hi : LoopInv inverse false base nr n D D 0 0 base := by
       refine ⟨by omega, Keep.refl _ _, ?_, ?_, Processed.refl _ _ _ _, Frame.refl _ _, hm,
-        by simp, by simp, by simp⟩
+        by simp, by simp⟩
       · simpa only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, BitVec.add_zero] using hp
       · simpa only [Nat.sub_zero, n, BitVec.ofNat_toNat, BitVec.setWidth_eq] using hl
     refine WP.mono (batches_ok hc hi) fun t ht => ⟨?_, ?_, ?_⟩

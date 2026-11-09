@@ -556,12 +556,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 226:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -576,9 +583,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -595,21 +599,21 @@ vg_ffdh_check_public:
 	beq %cr0, 228f
 230:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -626,69 +630,69 @@ vg_ffdh_check_public:
 	beq %cr0, 231f
 233:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -706,9 +710,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 227b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -762,12 +769,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 236:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -782,9 +796,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -801,21 +812,21 @@ vg_ffdh_check_public:
 	beq %cr0, 238f
 240:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -832,69 +843,69 @@ vg_ffdh_check_public:
 	beq %cr0, 241f
 243:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -912,9 +923,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 237b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -968,12 +982,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 246:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -988,9 +1009,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -1007,21 +1025,21 @@ vg_ffdh_check_public:
 	beq %cr0, 248f
 250:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -1038,69 +1056,69 @@ vg_ffdh_check_public:
 	beq %cr0, 251f
 253:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -1118,9 +1136,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 247b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -1174,12 +1195,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 256:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -1194,9 +1222,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -1213,21 +1238,21 @@ vg_ffdh_check_public:
 	beq %cr0, 258f
 260:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -1244,69 +1269,69 @@ vg_ffdh_check_public:
 	beq %cr0, 261f
 263:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -1324,9 +1349,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 257b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -1380,12 +1408,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 266:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -1400,9 +1435,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -1419,21 +1451,21 @@ vg_ffdh_check_public:
 	beq %cr0, 268f
 270:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -1450,69 +1482,69 @@ vg_ffdh_check_public:
 	beq %cr0, 271f
 273:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -1530,9 +1562,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 267b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -1586,12 +1621,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 276:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -1606,9 +1648,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -1625,21 +1664,21 @@ vg_ffdh_check_public:
 	beq %cr0, 278f
 280:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -1656,69 +1695,69 @@ vg_ffdh_check_public:
 	beq %cr0, 281f
 283:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -1736,9 +1775,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 277b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -1832,12 +1874,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 287:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -1852,9 +1901,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -1871,21 +1917,21 @@ vg_ffdh_check_public:
 	beq %cr0, 289f
 291:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -1902,69 +1948,69 @@ vg_ffdh_check_public:
 	beq %cr0, 292f
 294:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -1982,9 +2028,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 288b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -2047,12 +2096,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 297:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -2067,9 +2123,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -2086,21 +2139,21 @@ vg_ffdh_check_public:
 	beq %cr0, 299f
 2101:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -2117,69 +2170,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2102f
 2104:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -2197,9 +2250,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 298b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -2317,12 +2373,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2109:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -2337,9 +2400,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -2356,21 +2416,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2111f
 2113:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -2387,69 +2447,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2114f
 2116:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -2467,9 +2527,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2110b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -2626,12 +2689,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2122:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -2646,9 +2716,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -2665,21 +2732,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2124f
 2126:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -2696,69 +2763,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2127f
 2129:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -2776,9 +2843,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2123b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -2845,12 +2915,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2132:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -2865,9 +2942,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -2884,21 +2958,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2134f
 2136:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -2915,69 +2989,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2137f
 2139:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -2995,9 +3069,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2133b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -3064,12 +3141,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2142:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -3084,9 +3168,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -3103,21 +3184,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2144f
 2146:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -3134,69 +3215,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2147f
 2149:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -3214,9 +3295,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2143b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -3283,12 +3367,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2152:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -3303,9 +3394,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -3322,21 +3410,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2154f
 2156:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -3353,69 +3441,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2157f
 2159:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -3433,9 +3521,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2153b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -3579,12 +3670,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2165:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -3599,9 +3697,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -3618,21 +3713,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2167f
 2169:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -3649,69 +3744,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2170f
 2172:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -3729,9 +3824,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2166b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -3799,12 +3897,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2175:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -3819,9 +3924,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -3838,21 +3940,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2177f
 2179:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -3869,69 +3971,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2180f
 2182:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -3949,9 +4051,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2176b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -4018,12 +4123,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2185:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -4038,9 +4150,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -4057,21 +4166,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2187f
 2189:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -4088,69 +4197,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2190f
 2192:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -4168,9 +4277,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2186b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -4237,12 +4349,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2195:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -4257,9 +4376,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -4276,21 +4392,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2197f
 2199:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -4307,69 +4423,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2200f
 2202:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -4387,9 +4503,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2196b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -4456,12 +4575,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2205:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -4476,9 +4602,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -4495,21 +4618,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2207f
 2209:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -4526,69 +4649,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2210f
 2212:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -4606,9 +4729,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2206b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -4752,12 +4878,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2218:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -4772,9 +4905,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -4791,21 +4921,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2220f
 2222:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -4822,69 +4952,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2223f
 2225:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -4902,9 +5032,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2219b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -4974,12 +5107,19 @@ vg_ffdh_check_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2228:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -4994,9 +5134,6 @@ vg_ffdh_check_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -5013,21 +5150,21 @@ vg_ffdh_check_public:
 	beq %cr0, 2230f
 2232:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -5044,69 +5181,69 @@ vg_ffdh_check_public:
 	beq %cr0, 2233f
 2235:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -5124,9 +5261,12 @@ vg_ffdh_check_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2229b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -6710,12 +6850,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2112:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -6730,9 +6877,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -6749,21 +6893,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2114f
 2116:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -6780,69 +6924,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2117f
 2119:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -6860,9 +7004,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2113b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -6916,12 +7063,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2122:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -6936,9 +7090,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -6955,21 +7106,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2124f
 2126:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -6986,69 +7137,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2127f
 2129:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -7066,9 +7217,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2123b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -7122,12 +7276,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2132:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -7142,9 +7303,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -7161,21 +7319,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2134f
 2136:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -7192,69 +7350,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2137f
 2139:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -7272,9 +7430,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2133b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -7328,12 +7489,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2142:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -7348,9 +7516,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -7367,21 +7532,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2144f
 2146:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -7398,69 +7563,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2147f
 2149:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -7478,9 +7643,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2143b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -7534,12 +7702,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2152:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -7554,9 +7729,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -7573,21 +7745,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2154f
 2156:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -7604,69 +7776,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2157f
 2159:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -7684,9 +7856,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2153b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -7740,12 +7915,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2162:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -7760,9 +7942,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -7779,21 +7958,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2164f
 2166:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -7810,69 +7989,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2167f
 2169:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -7890,9 +8069,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2163b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -7986,12 +8168,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2173:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -8006,9 +8195,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -8025,21 +8211,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2175f
 2177:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -8056,69 +8242,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2178f
 2180:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -8136,9 +8322,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2174b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -8201,12 +8390,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2183:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -8221,9 +8417,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -8240,21 +8433,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2185f
 2187:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -8271,69 +8464,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2188f
 2190:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -8351,9 +8544,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2184b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -8471,12 +8667,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2195:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -8491,9 +8694,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -8510,21 +8710,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2197f
 2199:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -8541,69 +8741,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2200f
 2202:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -8621,9 +8821,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2196b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -8780,12 +8983,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2208:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -8800,9 +9010,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -8819,21 +9026,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2210f
 2212:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -8850,69 +9057,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2213f
 2215:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -8930,9 +9137,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2209b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -8999,12 +9209,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2218:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -9019,9 +9236,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -9038,21 +9252,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2220f
 2222:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -9069,69 +9283,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2223f
 2225:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -9149,9 +9363,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2219b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -9218,12 +9435,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2228:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -9238,9 +9462,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -9257,21 +9478,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2230f
 2232:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -9288,69 +9509,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2233f
 2235:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -9368,9 +9589,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2229b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -9437,12 +9661,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2238:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -9457,9 +9688,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -9476,21 +9704,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2240f
 2242:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -9507,69 +9735,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2243f
 2245:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -9587,9 +9815,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2239b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -9733,12 +9964,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2251:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -9753,9 +9991,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -9772,21 +10007,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2253f
 2255:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -9803,69 +10038,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2256f
 2258:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -9883,9 +10118,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2252b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -9953,12 +10191,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2261:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -9973,9 +10218,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -9992,21 +10234,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2263f
 2265:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -10023,69 +10265,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2266f
 2268:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -10103,9 +10345,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2262b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -10172,12 +10417,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2271:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -10192,9 +10444,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -10211,21 +10460,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2273f
 2275:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -10242,69 +10491,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2276f
 2278:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -10322,9 +10571,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2272b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -10391,12 +10643,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2281:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -10411,9 +10670,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -10430,21 +10686,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2283f
 2285:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -10461,69 +10717,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2286f
 2288:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -10541,9 +10797,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2282b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -10610,12 +10869,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2291:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -10630,9 +10896,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -10649,21 +10912,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2293f
 2295:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -10680,69 +10943,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2296f
 2298:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -10760,9 +11023,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2292b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -10906,12 +11172,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2304:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -10926,9 +11199,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -10945,21 +11215,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2306f
 2308:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -10976,69 +11246,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2309f
 2311:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -11056,9 +11326,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2305b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -11128,12 +11401,19 @@ vg_ffdh_check_domain:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2314:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -11148,9 +11428,6 @@ vg_ffdh_check_domain:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -11167,21 +11444,21 @@ vg_ffdh_check_domain:
 	beq %cr0, 2316f
 2318:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -11198,69 +11475,69 @@ vg_ffdh_check_domain:
 	beq %cr0, 2319f
 2321:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -11278,9 +11555,12 @@ vg_ffdh_check_domain:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2315b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -11655,12 +11935,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 215:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -11675,9 +11962,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -11694,21 +11978,21 @@ vg_ffdh_exchange:
 	beq %cr0, 217f
 219:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -11725,69 +12009,69 @@ vg_ffdh_exchange:
 	beq %cr0, 220f
 222:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -11805,9 +12089,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 216b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -11861,12 +12148,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 225:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -11881,9 +12175,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -11900,21 +12191,21 @@ vg_ffdh_exchange:
 	beq %cr0, 227f
 229:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -11931,69 +12222,69 @@ vg_ffdh_exchange:
 	beq %cr0, 230f
 232:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -12011,9 +12302,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 226b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -12067,12 +12361,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 235:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -12087,9 +12388,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -12106,21 +12404,21 @@ vg_ffdh_exchange:
 	beq %cr0, 237f
 239:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -12137,69 +12435,69 @@ vg_ffdh_exchange:
 	beq %cr0, 240f
 242:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -12217,9 +12515,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 236b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -12273,12 +12574,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 245:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -12293,9 +12601,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -12312,21 +12617,21 @@ vg_ffdh_exchange:
 	beq %cr0, 247f
 249:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -12343,69 +12648,69 @@ vg_ffdh_exchange:
 	beq %cr0, 250f
 252:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -12423,9 +12728,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 246b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -12479,12 +12787,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 255:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -12499,9 +12814,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -12518,21 +12830,21 @@ vg_ffdh_exchange:
 	beq %cr0, 257f
 259:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -12549,69 +12861,69 @@ vg_ffdh_exchange:
 	beq %cr0, 260f
 262:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -12629,9 +12941,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 256b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -12685,12 +13000,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 265:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -12705,9 +13027,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -12724,21 +13043,21 @@ vg_ffdh_exchange:
 	beq %cr0, 267f
 269:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -12755,69 +13074,69 @@ vg_ffdh_exchange:
 	beq %cr0, 270f
 272:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -12835,9 +13154,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 266b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -12930,12 +13252,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 276:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -12950,9 +13279,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -12969,21 +13295,21 @@ vg_ffdh_exchange:
 	beq %cr0, 278f
 280:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -13000,69 +13326,69 @@ vg_ffdh_exchange:
 	beq %cr0, 281f
 283:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -13080,9 +13406,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 277b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -13145,12 +13474,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 286:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -13165,9 +13501,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -13184,21 +13517,21 @@ vg_ffdh_exchange:
 	beq %cr0, 288f
 290:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -13215,69 +13548,69 @@ vg_ffdh_exchange:
 	beq %cr0, 291f
 293:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -13295,9 +13628,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 287b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -13415,12 +13751,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 298:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -13435,9 +13778,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -13454,21 +13794,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2100f
 2102:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -13485,69 +13825,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2103f
 2105:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -13565,9 +13905,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 299b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -13724,12 +14067,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2111:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -13744,9 +14094,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -13763,21 +14110,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2113f
 2115:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -13794,69 +14141,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2116f
 2118:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -13874,9 +14221,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2112b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -13943,12 +14293,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2121:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -13963,9 +14320,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -13982,21 +14336,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2123f
 2125:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -14013,69 +14367,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2126f
 2128:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -14093,9 +14447,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2122b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -14162,12 +14519,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2131:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -14182,9 +14546,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -14201,21 +14562,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2133f
 2135:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -14232,69 +14593,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2136f
 2138:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -14312,9 +14673,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2132b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -14381,12 +14745,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2141:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -14401,9 +14772,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -14420,21 +14788,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2143f
 2145:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -14451,69 +14819,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2146f
 2148:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -14531,9 +14899,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2142b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -14677,12 +15048,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2154:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -14697,9 +15075,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -14716,21 +15091,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2156f
 2158:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -14747,69 +15122,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2159f
 2161:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -14827,9 +15202,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2155b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -14897,12 +15275,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2164:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -14917,9 +15302,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -14936,21 +15318,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2166f
 2168:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -14967,69 +15349,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2169f
 2171:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -15047,9 +15429,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2165b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -15116,12 +15501,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2174:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -15136,9 +15528,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -15155,21 +15544,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2176f
 2178:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -15186,69 +15575,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2179f
 2181:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -15266,9 +15655,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2175b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -15335,12 +15727,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2184:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -15355,9 +15754,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -15374,21 +15770,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2186f
 2188:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -15405,69 +15801,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2189f
 2191:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -15485,9 +15881,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2185b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -15554,12 +15953,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2194:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -15574,9 +15980,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -15593,21 +15996,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2196f
 2198:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -15624,69 +16027,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2199f
 2201:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -15704,9 +16107,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2195b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -15850,12 +16256,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2207:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -15870,9 +16283,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -15889,21 +16299,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2209f
 2211:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -15920,69 +16330,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2212f
 2214:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -16000,9 +16410,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2208b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -16072,12 +16485,19 @@ vg_ffdh_exchange:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2217:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -16092,9 +16512,6 @@ vg_ffdh_exchange:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -16111,21 +16528,21 @@ vg_ffdh_exchange:
 	beq %cr0, 2219f
 2221:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -16142,69 +16559,69 @@ vg_ffdh_exchange:
 	beq %cr0, 2222f
 2224:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -16222,9 +16639,12 @@ vg_ffdh_exchange:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2218b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -16940,12 +17360,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 228:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -16960,9 +17387,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -16979,21 +17403,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 230f
 232:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -17010,69 +17434,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 233f
 235:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -17090,9 +17514,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 229b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -17146,12 +17573,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 238:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -17166,9 +17600,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -17185,21 +17616,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 240f
 242:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -17216,69 +17647,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 243f
 245:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -17296,9 +17727,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 239b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -17352,12 +17786,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 248:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -17372,9 +17813,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -17391,21 +17829,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 250f
 252:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -17422,69 +17860,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 253f
 255:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -17502,9 +17940,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 249b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -17558,12 +17999,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 258:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -17578,9 +18026,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -17597,21 +18042,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 260f
 262:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -17628,69 +18073,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 263f
 265:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -17708,9 +18153,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 259b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -17764,12 +18212,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 268:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -17784,9 +18239,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -17803,21 +18255,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 270f
 272:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -17834,69 +18286,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 273f
 275:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -17914,9 +18366,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 269b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -17970,12 +18425,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 278:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -17990,9 +18452,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -18009,21 +18468,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 280f
 282:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -18040,69 +18499,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 283f
 285:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -18120,9 +18579,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 279b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -18215,12 +18677,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 289:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -18235,9 +18704,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -18254,21 +18720,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 291f
 293:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -18285,69 +18751,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 294f
 296:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -18365,9 +18831,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 290b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -18430,12 +18899,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 299:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -18450,9 +18926,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -18469,21 +18942,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2101f
 2103:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -18500,69 +18973,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2104f
 2106:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -18580,9 +19053,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2100b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -18700,12 +19176,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2111:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -18720,9 +19203,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -18739,21 +19219,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2113f
 2115:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -18770,69 +19250,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2116f
 2118:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -18850,9 +19330,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2112b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -19009,12 +19492,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2124:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -19029,9 +19519,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -19048,21 +19535,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2126f
 2128:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -19079,69 +19566,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2129f
 2131:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -19159,9 +19646,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2125b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -19228,12 +19718,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2134:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -19248,9 +19745,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -19267,21 +19761,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2136f
 2138:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -19298,69 +19792,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2139f
 2141:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -19378,9 +19872,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2135b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -19447,12 +19944,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2144:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -19467,9 +19971,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -19486,21 +19987,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2146f
 2148:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -19517,69 +20018,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2149f
 2151:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -19597,9 +20098,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2145b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -19666,12 +20170,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2154:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -19686,9 +20197,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -19705,21 +20213,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2156f
 2158:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -19736,69 +20244,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2159f
 2161:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -19816,9 +20324,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2155b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -19962,12 +20473,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2167:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -19982,9 +20500,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -20001,21 +20516,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2169f
 2171:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -20032,69 +20547,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2172f
 2174:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -20112,9 +20627,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2168b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -20182,12 +20700,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2177:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -20202,9 +20727,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -20221,21 +20743,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2179f
 2181:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -20252,69 +20774,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2182f
 2184:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -20332,9 +20854,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2178b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -20401,12 +20926,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2187:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -20421,9 +20953,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -20440,21 +20969,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2189f
 2191:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -20471,69 +21000,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2192f
 2194:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -20551,9 +21080,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2188b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -20620,12 +21152,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2197:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -20640,9 +21179,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -20659,21 +21195,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2199f
 2201:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -20690,69 +21226,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2202f
 2204:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -20770,9 +21306,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2198b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -20839,12 +21378,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2207:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -20859,9 +21405,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -20878,21 +21421,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2209f
 2211:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -20909,69 +21452,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2212f
 2214:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -20989,9 +21532,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2208b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -21135,12 +21681,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2220:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -21155,9 +21708,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -21174,21 +21724,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2222f
 2224:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -21205,69 +21755,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2225f
 2227:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -21285,9 +21835,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2221b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -21357,12 +21910,19 @@ vg_ffdh_derive_public:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2230:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -21377,9 +21937,6 @@ vg_ffdh_derive_public:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -21396,21 +21953,21 @@ vg_ffdh_derive_public:
 	beq %cr0, 2232f
 2234:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -21427,69 +21984,69 @@ vg_ffdh_derive_public:
 	beq %cr0, 2235f
 2237:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -21507,9 +22064,12 @@ vg_ffdh_derive_public:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2231b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -22250,12 +22810,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 228:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -22270,9 +22837,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -22289,21 +22853,21 @@ vg_ffdh_check_private:
 	beq %cr0, 230f
 232:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -22320,69 +22884,69 @@ vg_ffdh_check_private:
 	beq %cr0, 233f
 235:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -22400,9 +22964,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 229b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -22456,12 +23023,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 238:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -22476,9 +23050,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -22495,21 +23066,21 @@ vg_ffdh_check_private:
 	beq %cr0, 240f
 242:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -22526,69 +23097,69 @@ vg_ffdh_check_private:
 	beq %cr0, 243f
 245:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -22606,9 +23177,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 239b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -22662,12 +23236,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 248:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -22682,9 +23263,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -22701,21 +23279,21 @@ vg_ffdh_check_private:
 	beq %cr0, 250f
 252:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -22732,69 +23310,69 @@ vg_ffdh_check_private:
 	beq %cr0, 253f
 255:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -22812,9 +23390,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 249b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -22868,12 +23449,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 258:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -22888,9 +23476,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -22907,21 +23492,21 @@ vg_ffdh_check_private:
 	beq %cr0, 260f
 262:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -22938,69 +23523,69 @@ vg_ffdh_check_private:
 	beq %cr0, 263f
 265:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -23018,9 +23603,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 259b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -23074,12 +23662,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 268:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -23094,9 +23689,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -23113,21 +23705,21 @@ vg_ffdh_check_private:
 	beq %cr0, 270f
 272:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -23144,69 +23736,69 @@ vg_ffdh_check_private:
 	beq %cr0, 273f
 275:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -23224,9 +23816,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 269b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -23280,12 +23875,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r3
 	add %r9, %r9, %r3
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 278:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -23300,9 +23902,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -23319,21 +23918,21 @@ vg_ffdh_check_private:
 	beq %cr0, 280f
 282:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -23350,69 +23949,69 @@ vg_ffdh_check_private:
 	beq %cr0, 283f
 285:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -23430,9 +24029,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 279b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -23525,12 +24127,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 289:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -23545,9 +24154,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -23564,21 +24170,21 @@ vg_ffdh_check_private:
 	beq %cr0, 291f
 293:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -23595,69 +24201,69 @@ vg_ffdh_check_private:
 	beq %cr0, 294f
 296:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -23675,9 +24281,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 290b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -23740,12 +24349,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 299:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -23760,9 +24376,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -23779,21 +24392,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2101f
 2103:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -23810,69 +24423,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2104f
 2106:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -23890,9 +24503,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2100b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -24010,12 +24626,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2111:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -24030,9 +24653,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -24049,21 +24669,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2113f
 2115:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -24080,69 +24700,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2116f
 2118:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -24160,9 +24780,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2112b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -24319,12 +24942,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2124:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -24339,9 +24969,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -24358,21 +24985,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2126f
 2128:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -24389,69 +25016,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2129f
 2131:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -24469,9 +25096,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2125b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -24538,12 +25168,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2134:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -24558,9 +25195,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -24577,21 +25211,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2136f
 2138:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -24608,69 +25242,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2139f
 2141:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -24688,9 +25322,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2135b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -24757,12 +25394,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2144:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -24777,9 +25421,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -24796,21 +25437,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2146f
 2148:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -24827,69 +25468,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2149f
 2151:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -24907,9 +25548,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2145b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -24976,12 +25620,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2154:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -24996,9 +25647,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -25015,21 +25663,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2156f
 2158:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -25046,69 +25694,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2159f
 2161:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -25126,9 +25774,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2155b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -25272,12 +25923,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2167:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -25292,9 +25950,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -25311,21 +25966,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2169f
 2171:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -25342,69 +25997,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2172f
 2174:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -25422,9 +26077,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2168b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -25492,12 +26150,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2177:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -25512,9 +26177,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -25531,21 +26193,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2179f
 2181:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -25562,69 +26224,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2182f
 2184:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -25642,9 +26304,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2178b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -25711,12 +26376,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2187:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -25731,9 +26403,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -25750,21 +26419,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2189f
 2191:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -25781,69 +26450,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2192f
 2194:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -25861,9 +26530,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2188b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -25930,12 +26602,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2197:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -25950,9 +26629,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -25969,21 +26645,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2199f
 2201:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -26000,69 +26676,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2202f
 2204:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -26080,9 +26756,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2198b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -26149,12 +26828,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2207:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -26169,9 +26855,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -26188,21 +26871,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2209f
 2211:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -26219,69 +26902,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2212f
 2214:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -26299,9 +26982,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2208b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -26445,12 +27131,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2220:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -26465,9 +27158,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -26484,21 +27174,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2222f
 2224:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -26515,69 +27205,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2225f
 2227:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -26595,9 +27285,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2221b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -26667,12 +27360,19 @@ vg_ffdh_check_private:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2230:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -26687,9 +27387,6 @@ vg_ffdh_check_private:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -26706,21 +27403,21 @@ vg_ffdh_check_private:
 	beq %cr0, 2232f
 2234:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -26737,69 +27434,69 @@ vg_ffdh_check_private:
 	beq %cr0, 2235f
 2237:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -26817,9 +27514,12 @@ vg_ffdh_check_private:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2231b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -27796,12 +28496,19 @@ vg_ffdh_generate_key_precompute:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 275:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -27816,9 +28523,6 @@ vg_ffdh_generate_key_precompute:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -27835,21 +28539,21 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 277f
 279:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -27866,69 +28570,69 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 280f
 282:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -27946,9 +28650,12 @@ vg_ffdh_generate_key_precompute:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 276b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -28081,12 +28788,19 @@ vg_ffdh_generate_key_precompute:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 288:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -28101,9 +28815,6 @@ vg_ffdh_generate_key_precompute:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -28120,21 +28831,21 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 290f
 292:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -28151,69 +28862,69 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 293f
 295:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -28231,9 +28942,12 @@ vg_ffdh_generate_key_precompute:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 289b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -28364,12 +29078,19 @@ vg_ffdh_generate_key_precompute:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2102:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -28384,9 +29105,6 @@ vg_ffdh_generate_key_precompute:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -28403,21 +29121,21 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 2104f
 2106:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -28434,69 +29152,69 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 2107f
 2109:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -28514,9 +29232,12 @@ vg_ffdh_generate_key_precompute:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2103b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -28631,12 +29352,19 @@ vg_ffdh_generate_key_precompute:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 2115:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -28651,9 +29379,6 @@ vg_ffdh_generate_key_precompute:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -28670,21 +29395,21 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 2117f
 2119:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -28701,69 +29426,69 @@ vg_ffdh_generate_key_precompute:
 	beq %cr0, 2120f
 2122:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -28781,9 +29506,12 @@ vg_ffdh_generate_key_precompute:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 2116b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -29330,12 +30058,19 @@ vg_ffdh_generate_key_cached:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 227:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -29350,9 +30085,6 @@ vg_ffdh_generate_key_cached:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -29369,21 +30101,21 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 229f
 231:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -29400,69 +30132,69 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 232f
 234:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -29480,9 +30212,12 @@ vg_ffdh_generate_key_cached:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 228b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -29551,12 +30286,19 @@ vg_ffdh_generate_key_cached:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 238:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -29571,9 +30313,6 @@ vg_ffdh_generate_key_cached:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -29590,21 +30329,21 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 240f
 242:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -29621,69 +30360,69 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 243f
 245:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -29701,9 +30440,12 @@ vg_ffdh_generate_key_cached:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 239b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -30073,12 +30815,19 @@ vg_ffdh_generate_key_cached:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 279:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -30093,9 +30842,6 @@ vg_ffdh_generate_key_cached:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -30112,21 +30858,21 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 281f
 283:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -30143,69 +30889,69 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 284f
 286:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -30223,9 +30969,12 @@ vg_ffdh_generate_key_cached:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 280b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0
@@ -30294,12 +31043,19 @@ vg_ffdh_generate_key_cached:
 	add %r9, %r9, %r29
 	add %r9, %r9, %r29
 	addi %r4, %r11, 0
+	ld %r3, 0(%r10)
+	mulld %r22, %r3, %r12
+	addi %r22, %r22, 2
+	mulld %r22, %r22, %r12
+	rldicr %r14, %r11, 2, 61
+	add %r14, %r14, %r8
+	std %r22, 8(%r14)
 	rldicl %r4, %r11, 63, 1
 	addi %r14, %r8, 0
 	addi %r17, %r4, 1
-	li %r22, 0
+	li %r3, 0
 289:
-	std %r22, 0(%r14)
+	std %r3, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r17, %r17, -1
 	cmpldi %cr0, %r17, 0
@@ -30314,9 +31070,6 @@ vg_ffdh_generate_key_cached:
 	addc %r20, %r20, %r18
 	addze %r18, %r19
 	ld %r3, 0(%r10)
-	mulld %r22, %r3, %r12
-	addi %r22, %r22, 2
-	mulld %r22, %r22, %r12
 	mulld %r0, %r20, %r22
 	mulld %r22, %r0, %r3
 	mulhdu %r19, %r0, %r3
@@ -30333,21 +31086,21 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 291f
 293:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	addi %r14, %r14, 8
 	addi %r15, %r15, 8
 	addi %r3, %r3, 8
@@ -30364,69 +31117,69 @@ vg_ffdh_generate_key_cached:
 	beq %cr0, 294f
 296:
 	ld %r19, 8(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 8(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 8(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 0(%r14)
+	ld %r20, 8(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 8(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 0(%r14)
 	ld %r19, 16(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 16(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 16(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 8(%r14)
+	ld %r20, 16(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 16(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 8(%r14)
 	ld %r19, 24(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 24(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 24(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 16(%r14)
+	ld %r20, 24(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 24(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 16(%r14)
 	ld %r19, 32(%r14)
-	addc %r18, %r18, %r19
-	ld %r19, 32(%r15)
-	mulld %r20, %r17, %r19
-	mulhdu %r19, %r17, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r18
-	addze %r18, %r19
-	ld %r19, 32(%r3)
-	addc %r22, %r22, %r20
-	mulld %r20, %r0, %r19
-	mulhdu %r19, %r0, %r19
-	addze %r19, %r19
-	addc %r20, %r20, %r22
-	addze %r22, %r19
-	std %r20, 24(%r14)
+	ld %r20, 32(%r15)
+	mulld %r12, %r17, %r20
+	mulhdu %r20, %r17, %r20
+	addc %r19, %r19, %r12
+	addze %r20, %r20
+	addc %r19, %r19, %r18
+	addze %r18, %r20
+	ld %r20, 32(%r3)
+	mulld %r12, %r0, %r20
+	mulhdu %r20, %r0, %r20
+	addc %r12, %r12, %r19
+	addze %r20, %r20
+	addc %r12, %r12, %r22
+	addze %r22, %r20
+	std %r12, 24(%r14)
 	addi %r14, %r14, 32
 	addi %r15, %r15, 32
 	addi %r3, %r3, 32
@@ -30444,9 +31197,12 @@ vg_ffdh_generate_key_cached:
 	addze %r19, %r19
 	std %r18, 0(%r14)
 	std %r19, 8(%r14)
+	ld %r22, 16(%r14)
 	addi %r4, %r4, -1
 	cmpldi %cr0, %r4, 0
 	bne %cr0, 290b
+	rldicr %r12, %r22, 32, 31
+	rldicl %r12, %r12, 32, 32
 	addi %r14, %r8, 0
 	addi %r15, %r9, 0
 	addi %r16, %r10, 0

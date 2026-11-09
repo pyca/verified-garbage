@@ -14,7 +14,7 @@ streaming state of `VG.Spec.ChaCha20.restAt` (768 bytes):
   `[128, 136)`: the number of bytes of keystream left;
 * `[192, 256)`: the copy of the 16-word state that `vg_chacha20_xor` is
   given (it leaves its state unspecified), `[256, 576)`: its working space;
-* `[576, 600)`: our caller's `rbx, rbp, r12`; `[600, 608)`: the number of
+* `[576, 600)`: our caller's `rbx, r14, r15`; `[600, 608)`: the number of
   bytes left after `apply`, stored there first since the block function
   overwrites `[64, 320)`.
 
@@ -28,8 +28,13 @@ XORs the bytes left in the buffered block (the last `left % 64`, as many as
 (an implementation `x` of it: `apply` is generic over them), advancing the
 counter, and finally, if bytes remain, computes the next block into the
 buffer with `vg_chacha20_block`, advances the counter and XORs its first
-bytes. `rbx` holds the state, `rbp` the data not yet processed and `r12` its
-length throughout, which the callees preserve.
+bytes. `rbx` holds the state, `r14` the data not yet processed and `r15` its
+length throughout, which the callees preserve. The implementations of
+`vg_chacha20_xor` keep their caller's `rbx`, `rbp`, `r12` and `r13` in memory
+while they store into the data at offsets the residue analysis (`RTaint`)
+cannot bound, after which it no longer knows them to be public: so the data
+and its length are in `r14` and `r15`, which they leave alone, and the state
+is taken again from the buffer they return in `rsi` (`stateBack`).
 
 The branches are on the length and the number of bytes left only, and every
 address is a pointer plus a constant, those two or a count: only the
@@ -75,27 +80,27 @@ def check : List Instr := [.mov .rax (.mem (at_ .rdi 128)), .alu .cmp .rax (.reg
 computes `rax` = the bytes left in the buffered block; `rdx` = `len`, and
 the carry is set iff `rax < len`. -/
 def start : List Instr :=
-  [.store (at_ .rdi 576) .rbx, .store (at_ .rdi 584) .rbp, .store (at_ .rdi 592) .r12,
-   .mov .rbx (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r12 (.reg .rdx),
+  [.store (at_ .rdi 576) .rbx, .store (at_ .rdi 584) .r14, .store (at_ .rdi 592) .r15,
+   .mov .rbx (.reg .rdi), .mov .r14 (.reg .rsi), .mov .r15 (.reg .rdx),
    .mov .rcx (.reg .rax), .alu .sub .rcx (.reg .rdx), .store (at_ .rbx 600) .rcx,
    .alu .and .rax (.imm 63), .alu .cmp .rax (.reg .rdx)]
 
-/-- XORs the `rdx` bytes at `rsi` into the data (`rbp`), eight at a time and
+/-- XORs the `rdx` bytes at `rsi` into the data (`r14`), eight at a time and
 then one at a time (`XorBuf.xorBuf`), and moves past them. -/
 def xorBytes : Prog isa :=
-  .seq (XorBuf.xorBuf .rbp .rsi)
-    (.block [.alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)])
+  .seq (XorBuf.xorBuf .r14 .rsi)
+    (.block [.alu .add .r14 (.reg .rdx), .alu .sub .r15 (.reg .rdx)])
 
 /-- Everything up to the call of `vg_chacha20_xor`: the bytes left in the
 buffered block, `rdx = min(rax, len)` of them, from `rbx + 128 - rax`; then
-`rdx` = the bytes of the whole blocks that follow (`r12` rounded down to a
+`rdx` = the bytes of the whole blocks that follow (`r15` rounded down to a
 multiple of 64), with the zero flag set iff there are none. -/
 def part1 : Prog isa :=
   .seq (.block start)
   (.seq (.ite .b (.block [.mov .rdx (.reg .rax)]) (.block []))
   (.seq (.block [.mov .rsi (.reg .rbx), .alu .add .rsi (.imm 128), .alu .sub .rsi (.reg .rax)])
   (.seq xorBytes
-    (.block [.mov .rdx (.reg .r12), .alu .and .rdx (.imm 0xffffffc0)]))))
+    (.block [.mov .rdx (.reg .r15), .alu .and .rdx (.imm 0xffffffc0)]))))
 
 /-- The whole blocks: the state copied and the counter advanced, then
 `vg_chacha20_xor` (`x`) on the copy. -/
@@ -108,35 +113,39 @@ def blocksArgs : List Instr :=
    .store (at_ .rbx 240) .r10, .store (at_ .rbx 248) .r11,
    .mov32 .rax (.reg .r10), .mov .rcx (.reg .rdx), .shift .shr .rcx 6, .alu32 .add .rax (.reg .rcx),
    .store32 (at_ .rbx 48) .rax,
-   .mov .rdi (.reg .rbx), .alu .add .rdi (.imm 192), .mov .rsi (.reg .rbp),
+   .mov .rdi (.reg .rbx), .alu .add .rdi (.imm 192), .mov .rsi (.reg .r14),
    .mov .rcx (.reg .rbx), .alu .add .rcx (.imm 256),
-   .alu .add .rbp (.reg .rdx), .alu .sub .r12 (.reg .rdx)]
+   .alu .add .r14 (.reg .rdx), .alu .sub .r15 (.reg .rdx)]
+
+/-- After `vg_chacha20_xor`, which returns with `rsi` at its buffer, the
+state 256 bytes before it. -/
+def stateBack : List Instr := [.mov .rbx (.reg .rsi), .alu .sub .rbx (.imm 256)]
 
 def part2 (x : Callee) : Prog isa :=
-  .ite .e (.block []) (.seq (.block blocksArgs) x.inPlace)
+  .ite .e (.block []) (.seq (.block blocksArgs) (.seq x.inPlace (.block stateBack)))
 
 /-- The arguments of the block function: the state and the buffer. -/
 def tailArgs : List Instr := [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 64)]
 
-/-- After the block function: the counter advanced, and `r12` bytes of the
+/-- After the block function: the counter advanced, and `r15` bytes of the
 block XORed. -/
 def tailXor : Prog isa :=
   .seq (.block [.mov32 .rax (.mem (at_ .rbx 48)), .alu32 .add .rax (.imm 1),
     .store32 (at_ .rbx 48) .rax, .mov .rsi (.reg .rbx), .alu .add .rsi (.imm 64),
-    .mov .rdx (.reg .r12)])
+    .mov .rdx (.reg .r15)])
     xorBytes
 
 /-- The last bytes, if any: the next block into the buffer, the counter
-advanced, and `r12` bytes of the block XORed. -/
+advanced, and `r15` bytes of the block XORed. -/
 def part3 : Prog isa :=
-  .seq (.block [.alu .test .r12 (.reg .r12)])
+  .seq (.block [.alu .test .r15 (.reg .r15)])
   (.ite .e (.block [])
     (.seq (.block tailArgs) (.seq (.call "vg_chacha20_block" block) tailXor)))
 
 /-- The bytes left stored, our caller's registers restored, and 1 returned. -/
 def finish : List Instr :=
   [.mov .rax (.mem (at_ .rbx 600)), .store (at_ .rbx 128) .rax,
-   .mov .rbp (.mem (at_ .rbx 584)), .mov .r12 (.mem (at_ .rbx 592)), .mov .rbx (.mem (at_ .rbx 576)),
+   .mov .r14 (.mem (at_ .rbx 584)), .mov .r15 (.mem (at_ .rbx 592)), .mov .rbx (.mem (at_ .rbx 576)),
    .mov32 .rax (.imm 1)]
 
 def apply (x : Callee) : Prog isa :=

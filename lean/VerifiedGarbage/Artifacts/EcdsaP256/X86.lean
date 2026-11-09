@@ -1,6 +1,6 @@
 module
-import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 
+import VerifiedGarbage.Proof.Ecdsa.X86.CombLit
 import VerifiedGarbage.Proof.Ecdsa.X86.Lit
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86.CombVerified
 import Mathlib.Data.Finset.Card
@@ -93,10 +93,36 @@ import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P256.X86.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
+public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 /-! # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit) -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-256 on x86 (32-bit), with HMAC as a table
+namespace VG.Artifacts.EcdsaP256.X86.Rfc6979
+
+open VG.Proof.P256.X86 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT stackT OK p256 p256T_verified signCode_sp)
+open VG.Proof.HmacTable.X86 (tables names vars)
+
+def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
+    (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
+  if hv : OK (vars vs1 vs256) ∧ "VG_P256_COMB" ∉ names (vars vs1 vs256) then [
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact X86.target {
+      tables := [("hmac", tables (vars vs1 vs256))]
+      code := signCodeT (p256 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p256.tries (vars vs1 vs256)
+      stack := stackT
+      verified := p256T_verified hasLaw.law hasLaw.inv (vars vs1 vs256) hv
+      spSafe := signCode_sp _ _ _ }]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
+
+end VG.Artifacts.EcdsaP256.X86.Rfc6979
 
 namespace VG.Artifacts.EcdsaP256.X86
 
@@ -107,6 +133,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Proof.Ecdsa.Verify.X86.vCombCode
     stack := 128
-    verified := Proof.Ecdsa.Verify.X86.vCombHash_verified hasLaw.law hasLaw.inv }]
+    verified := Proof.Ecdsa.Verify.X86.vCombHash_verified hasLaw.law hasLaw.inv }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.X86

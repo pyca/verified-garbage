@@ -21,7 +21,9 @@ modules private to the crate, and the callers naming them there.
 namespace VG.Test.Internal
 open VG
 
-def arts : List Artifact := Artifacts.Rc2.AArch64.artifacts
+-- Keep this fixture scoped to the streaming functions in `rc2`, whose
+-- internal calls it checks, independently of the public `rc2_cbc` functions.
+def arts : List Artifact := Artifacts.Rc2.AArch64.artifacts.filter (·.module == "rc2")
 
 def out : List (String × String) := match Rust.files arts with
   | .ok fs => fs

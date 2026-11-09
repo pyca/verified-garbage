@@ -1839,6 +1839,18 @@ vg_mldsa44_sign:
 	mtlr %r0
 	blr
 
+vg_mldsa44_sign_prepared:
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	addi %r8, %r3, 2560
+	li %r9, 12288
+	bl {vg_mldsa44_sign_with_cache}
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	blr
+
 vg_mldsa44_sign_message:
 	rldicl %r11, %r7, 56, 8
 	cmpldi %cr0, %r11, 0
@@ -2085,6 +2097,18 @@ vg_mldsa44_verify:
 	std %r0, 32(%r1)
 	addi %r7, %r3, 0
 	li %r8, 0
+	bl {vg_mldsa44_verify_with_cache}
+	ld %r0, 32(%r1)
+	addi %r1, %r1, 48
+	mtlr %r0
+	blr
+
+vg_mldsa44_verify_prepared:
+	mflr %r0
+	stdu %r1, -48(%r1)
+	std %r0, 32(%r1)
+	addi %r7, %r3, 1312
+	li %r8, 4096
 	bl {vg_mldsa44_verify_with_cache}
 	ld %r0, 32(%r1)
 	addi %r1, %r1, 48

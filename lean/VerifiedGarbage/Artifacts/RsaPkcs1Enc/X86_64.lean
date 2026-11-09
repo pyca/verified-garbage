@@ -26,7 +26,7 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtRedc
 import VerifiedGarbage.Proof.Bignum.X86_64.FoldedPublic
 import VerifiedGarbage.Proof.Framework.X86_64.Avx
 import VerifiedGarbage.Proof.Poly1305.Limbs64
-public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
+public import VerifiedGarbage.Proof.Variants.Sha256Compress.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86_64
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.PcCT
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.RndCT
@@ -64,29 +64,27 @@ public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Rsa.X86_64.ExpCheck
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64 -/
 
 @[expose] public section
 
-namespace VG.Artifacts.RsaPkcs1Enc.X86_64.MdHashRsaPrivateCrt
+namespace VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 
 open VG.Proof.RsaPkcs1Enc.X86_64 (privOf decStack)
 open VG.Proof.RsaPkcs1Enc.X86_64.Dec (HH dec_verified dec_spSafe)
 
-def artifacts (v : Proof.Pbkdf2.Md.X86_64.MdHash) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
-  match v.sha256 with
-  | none => []
-  | some h => [
+def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) : List Artifact :=
+  [
     Spec.RsaPkcs1Enc.decryptApi.artifact X86_64.target {
-      suffix := Emit.qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
+      suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.code (HH h) (privOf c).name (privOf c).code
       stack := decStack
       verified := dec_verified h (privOf c)
-      spSafe := dec_spSafe h (privOf c)
-      features := h.features ++ c.features.filter (!h.features.contains ·) }]
+      spSafe := dec_spSafe h (privOf c) }]
 
-end VG.Artifacts.RsaPkcs1Enc.X86_64.MdHashRsaPrivateCrt
+end VG.Artifacts.RsaPkcs1Enc.X86_64.Sha256RsaPrivateCrt
 
 -- PKCS #1 v1.5 encryption over precomputed RSA public variants
 namespace VG.Artifacts.RsaPkcs1Enc.X86_64.RsaPublicPrecomputed
@@ -100,15 +98,14 @@ def artifacts (v : PublicImpl) : List Artifact := [
     code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
     stack := Rnd.rndStack
     verified := Rnd.code_verified v
-    spSafe := Rnd.code_spSafe v
-    features := v.features }]
+    spSafe := Rnd.code_spSafe v }]
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64.RsaPublicPrecomputed
 
 namespace VG.Artifacts.RsaPkcs1Enc.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v2 => MdHashRsaPrivateCrt.artifacts v v2) ++
+  (VG.Proof.Variants.Sha256Compress.X86_64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun v => RsaPublicPrecomputed.artifacts v)
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64

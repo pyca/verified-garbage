@@ -33,7 +33,10 @@ vg_md5_update_scratch:
 	jb 25f
 27:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+16], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+16], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -46,7 +49,10 @@ vg_md5_update_scratch:
 	je 28f
 210:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1
@@ -81,7 +87,10 @@ vg_md5_update_scratch:
 	jb 217f
 219:
 	mov r9, QWORD PTR [rbp]
-	mov QWORD PTR [rbx+r13*1+16], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+16], r9
 	add rbp, 8
 	add r13, 8
 	sub rax, 8
@@ -94,7 +103,10 @@ vg_md5_update_scratch:
 	je 220f
 222:
 	movzx r9d, BYTE PTR [rbp]
-	mov BYTE PTR [rbx+r13*1+16], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+16], r9b
 	add rbp, 1
 	add r13, 1
 	sub rax, 1

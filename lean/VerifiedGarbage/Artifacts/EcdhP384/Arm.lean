@@ -54,7 +54,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.P384.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeP384U
-    verified := Proof.Ecdh.Arm.P384.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.P384.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhP384.Arm

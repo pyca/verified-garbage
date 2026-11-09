@@ -56,22 +56,19 @@ def artifactsFor (v : Proof.Aes.X86.BlocksImpl) : List Artifact := [
     code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesOcb.X86.init (callees v))
     stack := 2604
     verified := init_framed v
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v)
-    features := v.features },
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v) },
   Spec.Ocb.sealApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.seal (callees v))
     stack := 2632
     verified := Proof.AesOcb.seal_keyed (seal_framed v)
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v)
-    features := v.features },
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (seal_spSafe v) },
   Spec.Ocb.openApi.artifact X86.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86.withStackScratch 2608 10 (Impl.AesOcb.X86.open (callees v))
     stack := 2632
     verified := Proof.AesOcb.open_keyed (open_framed v)
-    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v)
-    features := v.features }]
+    spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (open_spSafe v) }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86.variants.flatMap fun v => artifactsFor v

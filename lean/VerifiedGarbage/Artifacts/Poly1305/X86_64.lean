@@ -56,8 +56,7 @@ def artifacts (v : BlocksImpl) : List Artifact := [
       (Impl.Poly1305.X86_64.update v.name v.code)
     stack := 160
     verified := Proof.Poly1305.X86_64.update_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v)
-    features := v.features }]
+    spSafe := X86_64.withStackScratch_spSafe_of (Proof.Poly1305.X86_64.update_spSafe v) }]
 
 end VG.Artifacts.Poly1305.X86_64.Poly1305Blocks
 

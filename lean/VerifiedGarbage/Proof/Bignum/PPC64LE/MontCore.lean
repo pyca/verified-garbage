@@ -28,6 +28,27 @@ theorem w32_eq_mod (m : Mem) (B : Addr) (d : Nat) : w32 m B d = (word m B d).toN
   have h2 : w32 m B d < 2 ^ 32 := (m.readW (off B d) 32).isLt
   rw [word_eq_w32, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt h2]
 
+/-- `m' mod 2³² = y` for `m' = y (2 + m y)` and `m y ≡ -1 (mod 2³²)`. -/
+theorem minv_restore_nat (A Y : Nat) (hy : Y < 2 ^ 32) (h : (A % 2 ^ 32 * Y + 1) % 2 ^ 32 = 0) :
+    (A * Y % 2 ^ 64 + 2) % 2 ^ 64 * Y % 2 ^ 64 % 2 ^ 32 = Y := by
+  have d : 2 ^ 32 ∣ 2 ^ 64 := Nat.pow_dvd_pow 2 (by decide)
+  have hAY : A * Y % 2 ^ 32 = 2 ^ 32 - 1 := by
+    rw [Nat.mul_mod, Nat.mod_eq_of_lt hy]; omega_arith
+  rw [Nat.mod_mod_of_dvd _ d, Nat.mul_mod, Nat.mod_mod_of_dvd _ d, Nat.add_mod, Nat.mod_mod_of_dvd _ d, hAY,
+    Nat.mod_eq_of_lt hy]
+  simp only [Nat.reducePow, Nat.reduceSub, Nat.reduceMod, Nat.reduceAdd, Nat.one_mul]
+  exact Nat.mod_eq_of_lt hy
+
+/-- `restoreMinv`'s arithmetic: the low 32 bits of `m' = (m y + 2) y` are `y`. -/
+theorem minv_restore (m y : BitVec 64) (hy : y.toNat < 2 ^ 32) (h : (m.toNat % 2 ^ 32 * y.toNat + 1) % 2 ^ 32 = 0) :
+    ((m * y + BitVec.ofNat 64 2) * y) <<< 32 >>> 32 = y := by
+  apply BitVec.eq_of_toNat_eq
+  have e : ∀ x : Nat, x * 2 ^ 32 % 2 ^ 64 / 2 ^ 32 = x % 2 ^ 32 := fun x => by omega_arith
+  rw [BitVec.toNat_ushiftRight, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow, e,
+    BitVec.toNat_mul, BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ofNat,
+    show 2 % 2 ^ 64 = 2 from rfl]
+  exact minv_restore_nat m.toNat y.toNat hy h
+
 /-- The registers `tail` writes. -/
 def tailRegs : List Reg :=
   [.r0, .r3, .r4, .r6, .r14, .r15, .r16, .r17, .r18, .r19, .r20, .r22]
@@ -78,8 +99,9 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
   have hM := val32_lt s.mem B (slot w 0) (2 * w)
   have pw : 2 ^ (32 * (2 * w)) = 2 ^ (64 * w) := by rw [← Nat.mul_assoc]
   unfold tail
-  -- The accumulator := 0, and the rounds' count.
-  refine WP.seq (WP.mono (zeroAcc_ok (w := w) hs i8 i11 hw' (by omega_arith)) fun s₂' ⟨hz, out₂, j4, k₂'⟩ => ?_)
+  -- `m'`, the accumulator := 0, and the rounds' count.
+  refine WP.seq (WP.mono (zeroAcc_ok (w := w) (dM := slot w 0) hs i8 i10 i11 hw' (by omega_arith) (by omega_arith))
+    fun s₂' ⟨hz, out₂, j4, e22', w22, k₂'⟩ => ?_)
   have hs₂' := hs.congr k₂'.wr
   have g₂' : ∀ r ∈ [Reg.r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12], s₂'.gpr r = s.gpr r := fun r hr =>
     k₂'.gpr r (by revert r hr; decide)
@@ -89,14 +111,25 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     fun hj hne => out₂.wordsVal (by have := sp hne; omega_arith) (by have := sl _ hj; omega_arith)
   have m0₂ : Mont.word s₂'.mem B (slot w 0) = Mont.word s.mem B (slot w 0) :=
     out₂.word (by omega_arith) (by omega_arith)
+  have hinv' : ((Mont.word s.mem B (slot w 0)).toNat % 2 ^ 32 * (s.gpr .r12).toNat + 1) % 2 ^ 32 = 0 := by
+    rw [w32_eq_mod] at hinv; exact hinv
+  have e22 : s₂'.gpr .r22 = (Mont.word s.mem B (slot w 0) * s.gpr .r12 + BitVec.ofNat 64 2) * s.gpr .r12 := e22'
   -- The rounds.
   refine WP.seq (WP.mono (rounds_ok (w := w) (da := slot w a) (dA := slot w 2) (dB := slot w b) (dM := slot w 0) hs₂'
     (by rw [g₂' .r6 (by decide), i6]) (by rw [g₂' .r8 (by decide), i8]) (by rw [g₂' .r7 (by decide), i7])
     (by rw [g₂' .r10 (by decide), i10]) (by rw [g₂' .r11 (by decide), i11]) j4
-    (by rw [m0₂, g₂' .r12 (by decide)]; rw [w32_eq_mod] at hinv; exact hinv) hw2 hw' (by omega_arith)
+    (by rw [m0₂, e22]; exact mont_newton64 _ _ hinv') w22.symm hw2 hw' (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) hz
     (by rw [v₂ hb hb2, v₂ (by omega) (by decide), wv, wv]; exact hB))
-    fun s₃ ⟨⟨tlt, teq, out₃⟩, k₃⟩ => ?_)
+    fun s₃' ⟨⟨tlt, teq, out₃, r22₃⟩, k₃'⟩ => ?_)
+  -- `r12` back, at the start of `T - m`.
+  show WP isa (.seq (.seq (.block (restoreMinv ++ _)) _) _) s₃' _
+  rw [WP.seq_iff, WP.seq_iff, WP.block_append_iff]
+  refine WP.mono (WP.keep [.r12] (Q := fun t => t.gpr .r12 = s.gpr .r12 ∧ t.mem = s₃'.mem) (by
+      unfold restoreMinv; prun [r22₃, e22, minv_restore _ _ _i12 hinv']) (by decide)) fun s₃ ⟨⟨r12₃, m₃⟩, k₃''⟩ => ?_
+  rw [← WP.seq_iff, ← WP.seq_iff]
+  have k₃ := k₃'.trans k₃''
+  rw [← m₃] at tlt teq out₃
   rw [v₂ (by omega) (by decide)] at tlt teq
   rw [v₂ ha ha2, v₂ hb hb2] at teq
   rw [wordsVal_succ_top] at tlt teq
@@ -146,6 +179,12 @@ theorem tailN_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     refine Outs.trans (Outs.of_outside (o := slot w 3) (n := 8 * (w + 2))
       (out₄.mono (Nat.le_refl _) (by omega_arith)) (by simp)) ?_
     exact Outs.of_outside (o := slot w o) (n := 8 * (w + 2)) (out₅.mono (Nat.le_refl _) (by omega_arith)) (by simp)
-  · exact (((k₂'.trans k₃).trans k₄).trans k₅).mono
+  · have K : Keep (.r12 :: tailRegs) s t := (((k₂'.trans k₃).trans k₄).trans k₅).mono (by decide)
+    have t12 : t.gpr .r12 = s.gpr .r12 := by
+      rw [k₅.gpr .r12 (by decide), k₄.gpr .r12 (by decide), r12₃]
+    refine ⟨fun r hr => ?_, K.rd, K.wr, K.sp, K.lr⟩
+    by_cases e : r = .r12
+    · subst e; exact t12
+    · exact K.gpr r (by simp only [List.mem_cons, not_or]; exact ⟨e, hr⟩)
 
 end VG.Proof.Bignum.PPC64LE

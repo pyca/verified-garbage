@@ -253,10 +253,9 @@ theorem keys_wp {c : Cx} (L : Lay c) {σ : State} (E : Env c σ) : WP isa keys �
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)
   have f₂ : Frame (keyR c.W) σ.mem t₂.mem := I.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl
+    rcases hr with rfl | rfl | rfl
     · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨_, k0, Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨_, k1, fun _ h => h⟩
+    · exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨_, k2, Offset.sub _ (by decide) (by decide)⟩
   refine WP.seq (WP.mono (expand_wp L I.env) fun t₃ X => ?_)
   have E₃ := I.env.of_pk X.pk

@@ -3,15 +3,17 @@ module
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 public import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 public import VerifiedGarbage.Proof.Weierstrass.Law
-public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LE
+public import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LEComb
 public import VerifiedGarbage.Spec.Ecdsa.Secp256k1
-public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Verified
+public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Comb
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.CombLit
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Table
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
 meta import VerifiedGarbage.Proof.Weierstrass.Law
-meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LE
+meta import VerifiedGarbage.Impl.Ecdsa.Secp256k1.PPC64LEComb
 meta import VerifiedGarbage.Spec.Ecdsa.Secp256k1
-meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.Comb
+meta import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.CombLit
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-! # Deterministic ECDSA on PPC64LE: secp256k1
@@ -26,14 +28,15 @@ namespace VG.Proof.Ecdsa.Rfc6979.PPC64LE
 
 open VG VG.PPC64LE
 
-/-- `vg_ecdsa_secp256k1_sign`, with secp256k1's group law `hL`. -/
+/-- `vg_ecdsa_secp256k1_sign`, with `[k]G` by the comb, and secp256k1's group law `hL`. -/
 def secp256k1Core (hL : Weierstrass.Law Spec.Secp256k1.curve) : Core where
   E := Spec.Ecdsa.Secp256k1.inst
-  C := Impl.Ecdsa.PPC64LE.signSecp256k1
+  cs := Impl.Weierstrass.PPC64LE.secp256k1CombConsts
+  C := Impl.Ecdsa.PPC64LE.signSecp256k1Comb
   N := "vg_ecdsa_secp256k1_sign_k"
-  V := (Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified hL).1
-  ct := (Proof.Ecdsa.PPC64LE.Secp256k1.sign_verified hL).2.1
-  d := by decide +kernel
+  V := (Proof.Ecdsa.PPC64LE.Secp256k1.combSign_verified hL).1
+  ct := (Proof.Ecdsa.PPC64LE.Secp256k1.combSign_verified hL).2.1
+  d := by lit_decide
 
 theorem secp256k1_nBits : Spec.Ecdsa.nBits Spec.Secp256k1.curve = 256 := by
   show Spec.Secp256k1.curve.n.log2 + 1 = 256
@@ -62,9 +65,11 @@ def secp256k1R (hL : Weierstrass.Law Spec.Secp256k1.curve) : RfcCurve where
 
 /-- `vg_ecdsa_secp256k1_sign`, with the tables of `vs`, meets `TableInstance.signContract`. -/
 theorem secp256k1T_verified (hL : Weierstrass.Law Spec.Secp256k1.curve) (vs : List Proof.HmacTable.PPC64LE.HVar)
-    (hv : OK vs) :
+    (hv : OK vs ∧ "VG_SECP256K1_COMB" ∉ Proof.HmacTable.PPC64LE.names vs) :
     Verified PPC64LE.target (signCodeT (secp256k1R hL) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs)
-      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 vs) :=
-  signT_verified ⟨rfl, by decide, by decide⟩ secp256k1_blk rfl hv (by decide)
+      (specK Spec.Ecdsa.Rfc6979.Curves.secp256k1 Impl.Weierstrass.PPC64LE.secp256k1CombConsts vs) :=
+  signT_verified ⟨rfl, by decide, by decide⟩ secp256k1_blk rfl hv.1
+    (sat_one hv.1 Proof.Secp256k1.PPC64LE.combSatMem hv.2
+      (by rw [Proof.Secp256k1.PPC64LE.comb_words_length]; decide) Proof.Secp256k1.PPC64LE.combSatMem_held (by decide) rfl)
 
 end VG.Proof.Ecdsa.Rfc6979.PPC64LE

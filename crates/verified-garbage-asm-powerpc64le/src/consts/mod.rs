@@ -7,6 +7,22 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_brainpoolp256r1_comb;
+pub use vg_brainpoolp256r1_comb::VG_BRAINPOOLP256R1_COMB;
+
+#[rustfmt::skip]
+mod vg_brainpoolp384r1_comb;
+pub use vg_brainpoolp384r1_comb::VG_BRAINPOOLP384R1_COMB;
+
+#[rustfmt::skip]
+mod vg_brainpoolp512r1_comb;
+pub use vg_brainpoolp512r1_comb::VG_BRAINPOOLP512R1_COMB;
+
+#[rustfmt::skip]
+mod vg_camellia_ppc64le_affine;
+pub use vg_camellia_ppc64le_affine::VG_CAMELLIA_PPC64LE_AFFINE;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 
@@ -31,8 +47,32 @@ mod vg_ffdh_vetted_groups_ppc;
 pub use vg_ffdh_vetted_groups_ppc::VG_FFDH_VETTED_GROUPS_PPC;
 
 #[rustfmt::skip]
+mod vg_p224_comb;
+pub use vg_p224_comb::VG_P224_COMB;
+
+#[rustfmt::skip]
+mod vg_p256_comb;
+pub use vg_p256_comb::VG_P256_COMB;
+
+#[rustfmt::skip]
+mod vg_p384_comb;
+pub use vg_p384_comb::VG_P384_COMB;
+
+#[rustfmt::skip]
+mod vg_p521_comb;
+pub use vg_p521_comb::VG_P521_COMB;
+
+#[rustfmt::skip]
 mod vg_rsa_keygen_trial32;
 pub use vg_rsa_keygen_trial32::VG_RSA_KEYGEN_TRIAL32;
+
+#[rustfmt::skip]
+mod vg_secp256k1_comb;
+pub use vg_secp256k1_comb::VG_SECP256K1_COMB;
+
+#[rustfmt::skip]
+mod vg_seed_ppc64le_affine;
+pub use vg_seed_ppc64le_affine::VG_SEED_PPC64LE_AFFINE;
 
 #[rustfmt::skip]
 mod vg_sha256_ppc64le_k;
@@ -41,3 +81,7 @@ pub use vg_sha256_ppc64le_k::VG_SHA256_PPC64LE_K;
 #[rustfmt::skip]
 mod vg_sha512_ppc64le_k;
 pub use vg_sha512_ppc64le_k::VG_SHA512_PPC64LE_K;
+
+#[rustfmt::skip]
+mod vg_sm4_ppc64le_affine;
+pub use vg_sm4_ppc64le_affine::VG_SM4_PPC64LE_AFFINE;

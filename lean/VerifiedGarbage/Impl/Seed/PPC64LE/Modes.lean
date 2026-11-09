@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Impl.Modes.PPC64LE.Wide
 public import VerifiedGarbage.Impl.Modes.CbcChained
 public import VerifiedGarbage.Impl.Seed.PPC64LE.Ecb
+public import VerifiedGarbage.Impl.Seed.PPC64LE.Serial
 
 /-!
 # SEED's modes on PPC64LE
@@ -20,10 +21,12 @@ blocks. Its slots are the blocks function's working space (136, as
 `Proof.Seed.blocksSig` has it) and the buffer's `g` blocks (from `bufSlot`),
 then the modes' six. The blocks function computes the rounds of sixteen
 blocks whatever their number, so a call on one block costs about as much as
-on sixteen: the serial modes take one block a step with `dirCore d`, of one
-block (144 slots in all, `[u64; 144]`), and CBC and CFB decryption take
-sixteen a step while sixteen are left, then one, with `wideCore d`, of
-sixteen (174 slots, `[u64; 174]`; `Impl/Modes/PPC64LE/Wide.lean`).
+on sixteen: CBC and CFB decryption take sixteen a step while sixteen are
+left, then one, with `wideCore d`, of sixteen (174 slots, `[u64; 174]`;
+`Impl/Modes/PPC64LE/Wide.lean`). The serial modes, CBC and CFB encryption and
+OFB, take one block a step, by the single-block core (`Serial.lean`), whose
+slots are those of `dirCore d`, of one block (144 slots in all,
+`[u64; 144]`).
 
 The blocks function writes every general-purpose register but `r2`, and
 restores the callee-saved ones (`r14`–`r31`, the modes' state `r29`–`r31`
@@ -59,9 +62,6 @@ direction `d`, the link register saved in a frame. -/
 def ecbCall (d : Direction) : Prog isa :=
   .seq (.block [.mflr .r0]) (.seq (.frame (.push .r0) (blockCall d) (.pop .r0)) (.block [.mtlr .r0]))
 
-/-- The buffer's block, after the blocks function's working space. -/
-def bufSlot : Nat := 136
-
 /-- Before the call, the arguments: the schedule (in `r3` already), the
 buffer, its `g` blocks, and the working space, the scratch buffer's first 136
 slots. -/
@@ -89,19 +89,22 @@ abbrev dirCore (d : Direction) : Modes.PPC64LE.Core := core d 1
 /-- The core on sixteen blocks, for CBC and CFB decryption. -/
 abbrev wideCore (d : Direction) : Modes.PPC64LE.Core := core d 16
 
-/-- `vg_seed_cbc_encrypt_chained`, with its scratch buffer as the fifth argument. -/
-def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
+/-- `vg_seed_cbc_encrypt_chained`, with its scratch buffer as the fifth
+argument: one block a step, by the single-block core. -/
+def cbcEncryptChained : Prog isa := Serial.core.seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_seed_cbc_decrypt_chained`, with its scratch buffer as the fifth
 argument: sixteen blocks a step, then one. -/
 def cbcDecryptChained : Prog isa :=
   (wideCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
 
-/-- `vg_seed_ofb`, with its scratch buffer as the fifth argument. -/
-def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
+/-- `vg_seed_ofb`, with its scratch buffer as the fifth argument: one block a
+step, by the single-block core. -/
+def ofb : Prog isa := Serial.core.seq (Modes.Mode.ofb 4)
 
-/-- `vg_seed_cfb128_encrypt`, with its scratch buffer as the fifth argument. -/
-def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
+/-- `vg_seed_cfb128_encrypt`, with its scratch buffer as the fifth argument:
+one block a step, by the single-block core. -/
+def cfbEncrypt : Prog isa := Serial.core.seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_seed_cfb128_decrypt`, with its scratch buffer as the fifth argument:
 sixteen blocks a step, then one. -/

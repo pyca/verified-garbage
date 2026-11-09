@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_aes_cbc_decrypt_vaes_avx512` requires (`Artifact.features`).
-pub const VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX512F);
+pub const VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AES | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::VAES | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
 ///
@@ -20,7 +20,7 @@ pub const VG_AES_CBC_DECRYPT_VAES_AVX512_FEATURES: verified_garbage_cpu::Feature
 /// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 32 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `aes`, `avx`, `avx2`, `vaes` and `avx512f` target features.
+/// * The CPU must support the `aes`, `avx512f`, `vaes`, `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_decrypt_vaes_avx512(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(

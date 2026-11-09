@@ -18,8 +18,7 @@ def direct : List Artifact := [
     code := Proof.AesCbc.X86_64.Wiped.decryptVaes512
     stack := 32
     spSafe := Proof.AesCbc.X86_64.Wiped.decryptVaes512_spSafe
-    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_verified
-    features := ["aes","avx","avx2","vaes","avx512f"] }]
+    verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_verified }]
 
 end VG.Artifacts.AesCbc.X86_64
 
@@ -38,31 +37,27 @@ def artifacts (v : Proof.Aes.X86_64.BlocksImpl) (z : Proof.Zeroize.X86_64.Zeroiz
       verified := Wiped.encrypt_free_scrubbed v h
       spSafe := Caller.spSafe v
       written := Caller.written v
-      writtenOk := Caller.written_ok v
-      features := Caller.encFeatures v }] else []) else [
+      writtenOk := Caller.written_ok v }] else []) else [
     Spec.Cbc.aesEncryptApi.artifact X86_64.target {
       suffix := v.suffix ++ z.suffix
       code := Wiped.encrypt v z
       stack := 32
       verified := Wiped.encrypt_verified v z
-      spSafe := Wiped.encrypt_spSafe v z
-      features := Caller.encFeatures v ++ z.features }]) ++
+      spSafe := Wiped.encrypt_spSafe v z }]) ++
   if Caller.vaes v then (if z.suffix = "" then [] else [
     Spec.Cbc.aesDecryptApi.artifact X86_64.target {
       suffix := v.suffix
       code := Wiped.decrypt v z
       stack := 32
       verified := Wiped.decrypt_verified v z
-      spSafe := Wiped.decrypt_spSafe v z
-      features := Caller.decFeatures v }])
+      spSafe := Wiped.decrypt_spSafe v z }])
   else [
     Spec.Cbc.aesDecryptApi.artifact X86_64.target {
       suffix := v.suffix ++ z.suffix
       code := Wiped.decrypt v z
       stack := 32
       verified := Wiped.decrypt_verified v z
-      spSafe := Wiped.decrypt_spSafe v z
-      features := Caller.decFeatures v ++ z.features }]
+      spSafe := Wiped.decrypt_spSafe v z }]
 
 end VG.Artifacts.AesCbc.X86_64.AesBlocksZeroize
 

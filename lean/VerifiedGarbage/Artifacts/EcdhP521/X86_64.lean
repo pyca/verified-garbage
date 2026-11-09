@@ -58,8 +58,7 @@ def exchange (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 8
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    spSafe := hsp }
 
 def artifacts : List Artifact := [
   exchange false Impl.Ecdh.X86_64.exchangeP521

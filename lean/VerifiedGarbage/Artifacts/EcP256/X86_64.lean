@@ -61,10 +61,51 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P256.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.P256
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P256
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.P256Decompress
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
+
+-- Standalone P256 public-point compression on x86-64
+namespace VG.Artifacts.EcP256.X86_64.Compressed
+
+open VG.Proof.P256.X86_64 (hasLaw)
+open VG.Proof.EcKey.Compressed.X86_64.P256
+
+def artifacts : List Artifact :=
+  [false, true].flatMap fun adx =>
+    [
+    Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86_64.target {
+      suffix := if adx then "_adx" else ""
+      code := code adx
+      verified := verified hasLaw.inv adx
+      stack := 8 },
+    Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86_64.target {
+      suffix := if adx then "_adx" else ""
+      code := Proof.EcKey.Compressed.X86_64.P256Decompress.code adx
+      verified := Proof.EcKey.Compressed.X86_64.P256Decompress.verified hasLaw.law hasLaw.inv adx
+      stack := 8 }]
+
+end VG.Artifacts.EcP256.X86_64.Compressed
+
+-- Standalone P256 public-key validation on x86-64
+namespace VG.Artifacts.EcP256.X86_64.Validate
+
+open VG.Proof.P256.X86_64 (hasLaw)
+open VG.Proof.EcKey.Validate.X86_64.P256
+
+def artifacts : List Artifact :=
+  [false, true].map fun adx =>
+    Spec.EcKey.P256.inst.validatePublicKeyApi.artifact X86_64.target {
+      suffix := if adx then "_adx" else ""
+      code := code adx
+      verified := verified hasLaw.inv adx
+      stack := 8 }
+
+end VG.Artifacts.EcP256.X86_64.Validate
 
 namespace VG.Artifacts.EcP256.X86_64
 
@@ -82,13 +123,15 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 8
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
+    spSafe := hsp }
 
-def artifacts : List Artifact := [
+def artifacts : List Artifact :=
+  Compressed.artifacts ++
+  [
   publicKey false Impl.EcKey.X86_64.publicKeyP256
     (Proof.EcKey.X86_64.pk_verified hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv),
   publicKey true Impl.EcKey.X86_64.publicKeyP256Adx
-    (Proof.EcKey.X86_64.pk_verified_adx hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)]
+    (Proof.EcKey.X86_64.pk_verified_adx hasLaw.law (Proof.P256.combOk7 hasLaw.law) hasLaw.inv)] ++
+  Validate.artifacts
 
 end VG.Artifacts.EcP256.X86_64

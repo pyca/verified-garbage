@@ -11,6 +11,9 @@ public import VerifiedGarbage.Proof.AesGcmSiv.PPC64LE.Env
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Keep
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Run
 public import VerifiedGarbage.Impl.AesGcm.PPC64LE
+public import VerifiedGarbage.Impl.AesGcmSiv.PPC64LE
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Callee
+import VerifiedGarbage.Proof.Aes.PPC64LE.Blocks
 
 /-!
 # AES-GCM-SIV on PPC64LE: relating two runs
@@ -109,5 +112,16 @@ theorem ctr_runs {c : Cx} {s : State} {K C D S : Addr} {R n : Nat} (E : Env c s)
 theorem gh_runs [VG.Proof.Gcm.PPC64LE.GhashLaw] {c : Cx} {s : State} {H Y D S : Addr} {n : Nat} (E : Env c s) (h : GhCall s H Y D S n) :
     Runs Impl.AesGcm.PPC64LE.ghCall s (Kept c s) :=
   Runs.of_wp (WP.mono (Proof.AesGcm.PPC64LE.gh_call h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
+
+theorem rel_enc {σ₁ σ₂ : State} {K D S : Addr} {R n : Nat} (h₁ : Proof.AesOcb.PPC64LE.BCall σ₁ K D S R n)
+    (h₂ : Proof.AesOcb.PPC64LE.BCall σ₂ K D S R n) (hsp : σ₁.sp = σ₂.sp) :
+    RelCT isa (Eq2 σ₁ σ₂) Impl.AesGcmSiv.PPC64LE.encCall TT :=
+  Proof.AesOcb.PPC64LE.blk_rel Proof.Aes.PPC64LE.encryptBlocks_correct Proof.Aes.PPC64LE.encryptBlocks_ct
+    fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, D, S, R, n, h₁, h₂, hsp⟩
+
+theorem enc_runs {c : Cx} {s : State} {K D S : Addr} {R n : Nat} (E : Env c s)
+    (h : Proof.AesOcb.PPC64LE.BCall s K D S R n) : Runs Impl.AesGcmSiv.PPC64LE.encCall s (Kept c s) :=
+  Runs.of_wp (WP.mono (Proof.AesOcb.PPC64LE.blk_call Proof.Aes.PPC64LE.encryptBlocks_correct
+    Proof.AesOcb.PPC64LE.encryptBlocks_noFrames h) fun _ U => kept_saved E U.rd U.wr U.sp U.saved)
 
 end VG.Proof.AesGcmSiv.PPC64LE

@@ -41,6 +41,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP384r1
 
 /-! # ECDSA over brainpoolP384r1 (FIPS 186-5) on 32-bit ARM -/
 
@@ -49,6 +50,8 @@ public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
 namespace VG.Artifacts.EcdsaBrainpoolP384r1.Arm
 
 open VG.Proof.BrainpoolP384r1.Arm (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT stackT brainpoolp384r1 brainpoolp384r1T_verified brainpoolp384r1U brainpoolp384r1UT_verified)
+open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact Arm.target {
@@ -61,7 +64,17 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
       Impl.Ecdsa.Verify.Arm.verifyBrainpoolP384r1U
     stack := 96
-    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verifyHashU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdsa.Verify.Arm.BrainpoolP384r1.verifyHashU_verified hasLaw.law },
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact Arm.target {
+    tables := [("hmac", tables vars)]
+    code := signCodeT (brainpoolp384r1 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vars
+    stack := stackT
+    verified := brainpoolp384r1T_verified hasLaw.law },
+  Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1SignApi.artifact Arm.target {
+    suffix := "_umaal"
+    tables := [("hmac", tables vars)]
+    code := signCodeT (brainpoolp384r1U hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vars
+    stack := stackT
+    verified := brainpoolp384r1UT_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaBrainpoolP384r1.Arm

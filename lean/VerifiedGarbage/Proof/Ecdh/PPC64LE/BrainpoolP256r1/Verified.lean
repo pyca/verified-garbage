@@ -9,6 +9,11 @@ public import VerifiedGarbage.Spec.Ecdh.Generic
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Lit
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.BrainpoolP256r1.Window
+import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Stages
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
+import VerifiedGarbage.Proof.Weierstrass.BytesLen
+import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.Main
 meta import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP256r1.Contract
 meta import VerifiedGarbage.Impl.Ecdh.BrainpoolP256r1.PPC64LE
@@ -22,7 +27,10 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # ECDH over brainpoolP256r1 on PPC64LE: `Verified`
 
-`ecdh_ppc`: from `exchange_ok`, for brainpoolP256r1's configuration; `ecdh_ct`: the
+`win_mulPowOk`: `[d]P` by the four-bit windows
+for any `a` (`Proof/Ecdsa/PPC64LE/BrainpoolP256r1/Window.lean`), then `Z^(p-2)` by its addition chain, leaves
+what ECDH's last stage needs (`LadPost`). `ecdh_ppc`: from `exchangeWith_ok`,
+for brainpoolP256r1's configuration; `ecdh_ct`: the
 time depends only on `out`, `d`, `peer` and `scratch` (`taint_decide` on the
 code's literal).
 -/
@@ -48,9 +56,84 @@ theorem post_of {s s' : State} (h : EPost brainpoolp256r1 s s') : ecdhPPC.post s
       (Spec.Ecdsa.bytesAt s.mem (s.gpr .r5) (1 + 2 * brainpoolp256r1.C.len)) = ex s.mem (s.gpr .r4) (s.gpr .r5) from rfl, hq]
   rcases q with _ | z <;> exact id
 
+open VG.Impl.Mont VG.Impl.Weierstrass.PPC64LE VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass
+  VG.Proof.Weierstrass.PPC64LE in
+/-- The windows, then the addition chain, meet `MulPowOk`. -/
+theorem win_mulPowOk (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s₀ : State) :
+    MulPowOk brainpoolp256r1 s₀ (WindowA.Cfg.mul brainpoolp256r1 PX PY B3P) := by
+  intro base s K hrx hry hrz _ ht₀ _ _ P hP hG hlx hly rest Q h
+  have h7 : brainpoolp256r1.n < 10 := by decide
+  have hn := K.ws.nowrap
+  have hpR := unitMod_pow_two brainpoolp256r1_ok.p_odd (64 * brainpoolp256r1.n)
+  have F' := K.fixed
+  have hpre : Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.MPre base s P (dk brainpoolp256r1 s₀) :=
+    ⟨K.ws, ⟨F'.ap, F'.b3p, F'.zero, F'.onep⟩,
+      ⟨hG, hlx, hly, lt_of_eq_of_lt F'.onep (Nat.mod_lt _ (by decide))⟩, hP,
+      fun t ht => ht₀ t ht, ofBytes_bytesAt_lt _ _ _⟩
+  refine WP.seq (WP.mono (Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mul_ok hL hpre) fun s₅ ⟨K₅, U₅, R₅⟩ => ?_)
+  have hW₅ : FixedOk brainpoolp256r1 Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mulW := fun w hw => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl <;> exact Or.inr (by decide)
+  have hWs₅ : ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mulW, w.1 + w.2 ≤ size := by decide
+  have K₅' : Keep brainpoolp256r1 s₀ base s₅ := K.step h7 K₅ (hU := U₅) (hW := hW₅) (hWs := hWs₅)
+  have apS : ∀ i < 45, i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mulW,
+      brainpoolp256r1.sl i + 8 * brainpoolp256r1.n ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp256r1.sl i := by
+    intro i hi hr w hw
+    have hi' : i < 14 ∨ 29 ≤ i := by
+      refine Classical.byContradiction fun hc => hr ?_
+      have : i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨
+        i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 := by omega
+      rcases this with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        decide
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl <;> simp only [Cfg.sl, slot, brainpoolp256r1] <;> omega
+  have e₅ : ∀ {i}, i < 45 → i ∉ ACC :: PT :: Proof.Ecdsa.PPC64LE.ladIx → sv brainpoolp256r1 base s₅ i = sv brainpoolp256r1 base s i :=
+    fun hi hr => sv_unch U₅ h7 hn hi (apS _ hi hr)
+  have tA₅ : ∀ j < 3, j ≠ 0 → ∀ t < 64 * brainpoolp256r1.n, ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mulW,
+      bitsAt brainpoolp256r1.n j + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ bitsAt brainpoolp256r1.n j + t := by
+    intro j hj hj0 t ht w hw
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+    simp only [bitsAt, brainpoolp256r1] at ht ⊢
+    rcases hw with rfl | rfl | rfl <;> simp only <;> omega
+  have lx₅ : sv brainpoolp256r1 base s₅ RX < brainpoolp256r1.C.p := R₅.x
+  have ly₅ : sv brainpoolp256r1 base s₅ RY < brainpoolp256r1.C.p := R₅.y
+  have lz₅ : sv brainpoolp256r1 base s₅ RZ < brainpoolp256r1.C.p := R₅.z
+  refine WP.seq (WP.mono (chainPow_ok (P := brainpoolp256r1.chainP) (S := brainpoolp256r1.SP) (e := brainpoolp256r1.C.p - 2) brainpoolp256r1_ok.fpk
+    brainpoolp256r1_ok.fpm (modP brainpoolp256r1_ok) (chainLayP brainpoolp256r1_ok) hpR K₅'.ws lz₅ brainpoolp256r1_ok.chainP)
+    fun s₆ ⟨K₆, U₆, lt₆, v₆⟩ => h s₆ ?_)
+  rw [chainWP_eq] at U₆
+  have K₆' : Keep brainpoolp256r1 s₀ base s₆ := K₅'.step h7 K₆ (hU := U₆) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have e₆ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv brainpoolp256r1 base s₆ i = sv brainpoolp256r1 base s₅ i :=
+    fun hi hr ht => sv_unch U₆ h7 hn hi (apart_chainW h7 hi hr ht)
+  have tR : ∀ i ∈ [RX, RY, RZ], Point.tmv brainpoolp256r1.C brainpoolp256r1.n base s₆ (brainpoolp256r1.sl i) =
+      Point.tmv brainpoolp256r1.C brainpoolp256r1.n base s₅ (brainpoolp256r1.sl i) := by
+    intro i hi
+    show toM _ _ (sv brainpoolp256r1 base s₆ i) = toM _ _ (sv brainpoolp256r1 base s₅ i)
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
+    rcases hi with rfl | rfl | rfl <;> rw [e₆ (by decide) (by decide) (by decide)]
+  have apF : ∀ w ∈ Proof.Ecdsa.PPC64LE.Window.BrainpoolP256r1.mulW ++ [(brainpoolp256r1.sl ACC, 8 * brainpoolp256r1.n), (brainpoolp256r1.sl DX, 9 * (8 * brainpoolp256r1.n)),
+      (Impl.Weierstrass.PPC64LE.Mont.own brainpoolp256r1.n, 64 * brainpoolp256r1.n)], brainpoolp256r1.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp256r1.sl FLAG := by
+    intro w hw
+    simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hw
+    rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> decide
+  refine ⟨K₆', fun hi hl => ?_, ?_, ?_,
+    by rw [tR RX (by simp), tR RY (by simp), tR RZ (by simp)]; exact R₅.rep,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lx₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact ly₅,
+    by rw [e₆ (by decide) (by decide) (by decide)]; exact lz₅, lt₆, ?_⟩
+  · rw [e₆ hi (by intro h; subst h; simp at hl) (by
+      simp only [List.mem_cons, Proof.Ecdsa.PPC64LE.ladIx, not_or] at hl
+      simp only [DX, T2, DY, DZ, TX, TY, TZ, T0, T1] at hl ⊢
+      omega), e₅ hi hl]
+  · rw [flagW, (U₅.trans U₆).word apF (by decide), ← flagW]
+  · intro t ht
+    rw [tbl_unch U₆ h7 (j := 2) (by decide) ht (tbl_apart_chainW h7 2 t),
+      tbl_unch U₅ h7 (j := 2) (by decide) ht (tA₅ 2 (by decide) (by decide) t ht)]
+  · rw [tR RZ (by simp)]; exact v₆
+
 theorem ecdh_ppc (hL : Weierstrass.Law Spec.BrainpoolP256r1.curve) (s : State) (hs : ecdhPPC.pre s) :
     ∃ t s', Exec isa exchangeBrainpoolP256r1 s t s' ∧ abiPreserved s s' ∧ ecdhPPC.post s s' := by
-  obtain ⟨t, s', he, K, hpost⟩ := exchange_ok brainpoolp256r1_ok (by decide) hL (pre_of hs)
+  obtain ⟨t, s', he, K, hpost⟩ := exchangeWith_ok brainpoolp256r1_ok hL (pre_of hs) (win_mulPowOk hL s)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhPPC.pre ecdhPPC.pub exchangeBrainpoolP256r1 :=

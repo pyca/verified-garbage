@@ -109,8 +109,7 @@ def artifacts (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact := [
     code := Proof.RsaKeyGen.X86_64.Generate.genCode v
     stack := 552
     verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
-    spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v
-    features := v.features }]
+    spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v }]
 
 end VG.Artifacts.RsaKeyGen.X86_64.MillerRabin
 

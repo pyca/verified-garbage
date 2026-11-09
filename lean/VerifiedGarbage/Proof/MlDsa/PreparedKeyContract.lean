@@ -7,19 +7,14 @@ import VerifiedGarbage.Proof.MlDsa.Arith.Mem
 /-!
 # ML-DSA with prepared keys: the contracts of its internal functions
 
-Not trusted: the contracts of the internal functions (`Rust.Internal`) that
-`vg_mldsa*_sign_message_prepared` and `vg_mldsa*_verify_message_prepared`
-(`Spec/MlDsa/PreparedKey.lean`) call, and that the ordinary entries
-`vg_mldsa*_sign` and `vg_mldsa*_verify` share with them:
+The untrusted contracts of the signing and verification kernels,
+`vg_mldsa*_sign_with_cache` and `vg_mldsa*_verify_with_cache`: they take an
+optional read-only slice of the key's polynomials, with an empty slice
+selecting decoding and transforming the key. Their results and permitted
+leakage are those of `signContract` and `verifyContract`.
 
-* the signing and verification kernels, `vg_mldsa*_sign_with_cache` and
-  `vg_mldsa*_verify_with_cache`, which take an optional read-only slice of the
-  key's polynomials: an empty one selects decoding and transforming the key;
-* signing and verification of a message representative `μ` with a prepared
-  key, `vg_mldsa*_sign_prepared` and `vg_mldsa*_verify_prepared`.
-
-Their results and permitted leakage are those of `signContract` and
-`verifyContract`.
+The public external-`μ` contracts live in `Spec/MlDsa/PreparedKey.lean`;
+the abbreviations here preserve the internal proofs' names.
 -/
 
 @[expose] public section
@@ -58,40 +53,13 @@ theorem preparedSecretKey_iff {p : Params} {m : Mem} {key : Addr} :
 
 /-! ## Signing and verifying a message representative with a prepared key -/
 
-def preparedSignSig (p : Params) : Sig where
-  params := [("sk", .array false .u8 (preparedSecretKeyBytes p)), ("mu", .array false .u8 64),
-    ("rnd", .array false .u8 32), ("sig", .array true .u8 p.sigLen),
-    ("scratch", .array true .u64 (scratchWords p))]
-  ret := some .u32
+abbrev preparedSignSig := @VG.Spec.MlDsa.preparedSignSig
 
-/-- `signContract` of the encoded key a prepared private key begins with. -/
-def preparedSignContract (p : Params) {M : ISA} (A : Abi M)
-    (stack : Nat := 0) : Contract M :=
-  (preparedSignSig p).contract A
-    (pre := fun sk _mu _rnd _sig _scratch m => PreparedSecretKey p m sk)
-    (post := fun sk mu rnd sig _scratch m m' r =>
-      Outcome (fun b => signMu p b (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32)) r
-        (bytesAt m' sig p.sigLen))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun sk mu rnd _sig _scratch m =>
-      signLeak p (bytesAt m sk p.skLen) (bytesAt m mu 64) (bytesAt m rnd 32))
+abbrev preparedSignContract := @VG.Spec.MlDsa.preparedSignContract
 
-def preparedVerifySig (p : Params) : Sig where
-  params := [("pk", .array false .u8 (preparedPublicKeyBytes p)), ("mu", .array false .u8 64),
-    ("sig", .array false .u8 p.sigLen), ("scratch", .array true .u64 (scratchWords p))]
-  ret := some .u32
+abbrev preparedVerifySig := @VG.Spec.MlDsa.preparedVerifySig
 
-/-- `verifyContract` of the encoded key a prepared public key begins with. -/
-def preparedVerifyContract (p : Params) {M : ISA} (A : Abi M)
-    (stack : Nat := 0) : Contract M :=
-  (preparedVerifySig p).contract A
-    (pre := fun pk _mu _sig _scratch m => PreparedPublicKey p m pk)
-    (post := fun pk mu sig _scratch m _m' r =>
-      let v := fun b => verifyMu p b (bytesAt m pk p.pkLen) (bytesAt m mu 64) (bytesAt m sig p.sigLen)
-      (r = 1 ∧ ∃ b, v b = some true) ∨ (r = 0 ∧ v minBounds ≠ some true))
-    (writeArgs := true) (stack := stack)
-    (leak := some fun pk mu sig _scratch m =>
-      leakBytes (bytesAt m pk p.pkLen ++ bytesAt m mu 64 ++ bytesAt m sig p.sigLen))
+abbrev preparedVerifyContract := @VG.Spec.MlDsa.preparedVerifyContract
 
 /-! ## The kernels with an optional polynomial cache -/
 

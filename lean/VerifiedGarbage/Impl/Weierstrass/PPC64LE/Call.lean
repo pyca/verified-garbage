@@ -14,6 +14,14 @@ and leave `r3`, so a caller keeps its own values in `r14`–`r31` (the
 callee-saved registers, which it saves itself) and the working space in
 `r3`; a call changes the link register, which a caller saves once.
 
+The multiplication saves `r15`–`r(15 + n)` (for at most four words,
+`r15`–`r(15 + 2n)`), all of them in `r15`–`r24`, in its own working space
+and restores them (`Impl/Mont/PPC64LE.lean`, `rmul` and `rmul4`). Their values are the
+caller's again, but loaded from memory, which the constant-time analysis
+(`Proof/Framework/PPC64LE/Taint.lean`) takes as secret: a value that must be
+public after a call of the multiplication (a pointer, a counter) is kept in
+`r14` or `r25`–`r31`.
+
 `fprog S ops`: the field operations `ops` on slots of the working space, one
 after the other, by calls of the functions of the modulus `S`.
 -/

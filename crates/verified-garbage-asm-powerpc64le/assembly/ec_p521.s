@@ -1061,132 +1061,2664 @@ vg_ec_p521_public_key:
 	stb %r6, 5255(%r5)
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 22b
-	ld %r4, 640(%r3)
-	std %r4, 1072(%r3)
-	ld %r4, 648(%r3)
-	std %r4, 1080(%r3)
-	ld %r4, 656(%r3)
-	std %r4, 1088(%r3)
-	ld %r4, 664(%r3)
-	std %r4, 1096(%r3)
-	ld %r4, 672(%r3)
-	std %r4, 1104(%r3)
-	ld %r4, 680(%r3)
-	std %r4, 1112(%r3)
-	ld %r4, 688(%r3)
-	std %r4, 1120(%r3)
-	ld %r4, 696(%r3)
-	std %r4, 1128(%r3)
-	ld %r4, 704(%r3)
-	std %r4, 1136(%r3)
-	ld %r4, 712(%r3)
-	std %r4, 1144(%r3)
-	ld %r4, 720(%r3)
-	std %r4, 1152(%r3)
-	ld %r4, 728(%r3)
-	std %r4, 1160(%r3)
-	ld %r4, 736(%r3)
-	std %r4, 1168(%r3)
-	ld %r4, 744(%r3)
-	std %r4, 1176(%r3)
-	ld %r4, 752(%r3)
-	std %r4, 1184(%r3)
-	ld %r4, 760(%r3)
-	std %r4, 1192(%r3)
-	ld %r4, 768(%r3)
-	std %r4, 1200(%r3)
-	ld %r4, 776(%r3)
-	std %r4, 1208(%r3)
-	bl {vg_p521_mul}
-	ld %r4, 424(%r3)
-	std %r4, 2152(%r3)
-	ld %r4, 432(%r3)
-	std %r4, 2160(%r3)
-	ld %r4, 440(%r3)
-	std %r4, 2168(%r3)
-	ld %r4, 448(%r3)
-	std %r4, 2176(%r3)
-	ld %r4, 456(%r3)
-	std %r4, 2184(%r3)
-	ld %r4, 464(%r3)
-	std %r4, 2192(%r3)
-	ld %r4, 472(%r3)
-	std %r4, 2200(%r3)
-	ld %r4, 480(%r3)
-	std %r4, 2208(%r3)
-	ld %r4, 488(%r3)
-	std %r4, 2216(%r3)
-	li %r31, 576
+	lis %r11, -6878
+	ori %r11, %r11, 61590
+	stw %r11, 1072(%r3)
+	lis %r11, -10344
+	ori %r11, %r11, 41607
+	stw %r11, 1076(%r3)
+	lis %r11, 720
+	ori %r11, %r11, 18515
+	stw %r11, 1080(%r3)
+	lis %r11, -9319
+	ori %r11, %r11, 60402
+	stw %r11, 1084(%r3)
+	lis %r11, 17447
+	ori %r11, %r11, 24542
+	stw %r11, 1088(%r3)
+	lis %r11, -24013
+	ori %r11, %r11, 47269
+	stw %r11, 1092(%r3)
+	lis %r11, 4921
+	ori %r11, %r11, 15950
+	stw %r11, 1096(%r3)
+	lis %r11, -11902
+	ori %r11, %r11, 23456
+	stw %r11, 1100(%r3)
+	lis %r11, 28692
+	ori %r11, %r11, 20147
+	stw %r11, 1104(%r3)
+	lis %r11, 32632
+	ori %r11, %r11, 26015
+	stw %r11, 1108(%r3)
+	lis %r11, -22511
+	ori %r11, %r11, 49528
+	stw %r11, 1112(%r3)
+	lis %r11, -9925
+	ori %r11, %r11, 16258
+	stw %r11, 1116(%r3)
+	lis %r11, -28245
+	ori %r11, %r11, 28933
+	stw %r11, 1120(%r3)
+	lis %r11, -32197
+	ori %r11, %r11, 9736
+	stw %r11, 1124(%r3)
+	lis %r11, -28861
+	ori %r11, %r11, 33104
+	stw %r11, 1128(%r3)
+	lis %r11, 12426
+	ori %r11, %r11, 21220
+	stw %r11, 1132(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 458
+	stw %r11, 1136(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1140(%r3)
+	lis %r11, 23473
+	ori %r11, %r11, 10216
+	stw %r11, 1144(%r3)
+	lis %r11, 19213
+	ori %r11, %r11, 63382
+	stw %r11, 1148(%r3)
+	lis %r11, 5520
+	ori %r11, %r11, 27064
+	stw %r11, 1152(%r3)
+	lis %r11, -952
+	ori %r11, %r11, 7397
+	stw %r11, 1156(%r3)
+	lis %r11, 474
+	ori %r11, %r11, 22642
+	stw %r11, 1160(%r3)
+	lis %r11, -31569
+	ori %r11, %r11, 17683
+	stw %r11, 1164(%r3)
+	lis %r11, -28710
+	ori %r11, %r11, 4372
+	stw %r11, 1168(%r3)
+	lis %r11, 30605
+	ori %r11, %r11, 899
+	stw %r11, 1172(%r3)
+	lis %r11, -2030
+	ori %r11, %r11, 32282
+	stw %r11, 1176(%r3)
+	lis %r11, 14967
+	ori %r11, %r11, 19519
+	stw %r11, 1180(%r3)
+	lis %r11, 1705
+	ori %r11, %r11, 13611
+	stw %r11, 1184(%r3)
+	lis %r11, -26226
+	ori %r11, %r11, 64078
+	stw %r11, 1188(%r3)
+	lis %r11, -272
+	ori %r11, %r11, 18212
+	stw %r11, 1192(%r3)
+	lis %r11, -15124
+	ori %r11, %r11, 34805
+	stw %r11, 1196(%r3)
+	lis %r11, -5390
+	ori %r11, %r11, 36247
+	stw %r11, 1200(%r3)
+	lis %r11, -8030
+	ori %r11, %r11, 25429
+	stw %r11, 1204(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 209
+	stw %r11, 1208(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1212(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1216(%r3)
+	lis %r11, 128
+	ori %r11, %r11, 0
+	stw %r11, 1220(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1224(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1228(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1232(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1236(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1240(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1244(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1248(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1252(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1256(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1260(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1264(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1268(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1272(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1276(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1280(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1284(%r3)
+	li %r31, 83
 23:
+	addi %r31, %r31, -1
+	li %r4, 7
+	mulld %r4, %r4, %r31
+	add %r4, %r3, %r4
+	addi %r6, %r31, -82
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 24f
+	li %r9, 0
+	add %r9, %r9, %r9
+	lbz %r5, 4102(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4101(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4100(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4099(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4098(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4097(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4096(%r4)
+	add %r9, %r9, %r5
+	b 25f
+24:
+	li %r9, 0
+	add %r9, %r9, %r9
+	lbz %r5, 4097(%r4)
+	add %r9, %r9, %r5
+	add %r9, %r9, %r9
+	lbz %r5, 4096(%r4)
+	add %r9, %r9, %r5
+25:
+	addi %r9, %r9, -64
+	rldicl %r4, %r9, 1, 63
+	li %r5, 0
+	subf %r4, %r4, %r5
+	xor %r9, %r9, %r4
+	subf %r9, %r4, %r9
+	bcl 20, 31, 2f
+2:
+	mflr %r8
+	addis %r8, %r8, ({VG_P521_COMB}
+	addi %r8, %r8, ({VG_P521_COMB}
+	li %r4, 9216
+	mulld %r4, %r4, %r31
+	add %r8, %r8, %r4
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1504(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1508(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1512(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1516(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1520(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1524(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1528(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1532(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1536(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1540(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1544(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1548(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1552(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1556(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1560(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1564(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1568(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1572(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1576(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1580(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1584(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1588(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1592(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1596(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1600(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1604(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1608(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1612(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1616(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1620(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1624(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1628(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1632(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1636(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1640(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1644(%r3)
+	li %r7, 1
+26:
+	xor %r10, %r9, %r7
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 1504(%r3)
+	ld %r5, 0(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1504(%r3)
+	ld %r4, 1512(%r3)
+	ld %r5, 8(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1512(%r3)
+	ld %r4, 1520(%r3)
+	ld %r5, 16(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1520(%r3)
+	ld %r4, 1528(%r3)
+	ld %r5, 24(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1528(%r3)
+	ld %r4, 1536(%r3)
+	ld %r5, 32(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1536(%r3)
+	ld %r4, 1544(%r3)
+	ld %r5, 40(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1544(%r3)
+	ld %r4, 1552(%r3)
+	ld %r5, 48(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1552(%r3)
+	ld %r4, 1560(%r3)
+	ld %r5, 56(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1560(%r3)
+	ld %r4, 1568(%r3)
+	ld %r5, 64(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1568(%r3)
+	ld %r4, 1576(%r3)
+	ld %r5, 72(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1576(%r3)
+	ld %r4, 1584(%r3)
+	ld %r5, 80(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1584(%r3)
+	ld %r4, 1592(%r3)
+	ld %r5, 88(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1592(%r3)
+	ld %r4, 1600(%r3)
+	ld %r5, 96(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1600(%r3)
+	ld %r4, 1608(%r3)
+	ld %r5, 104(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1608(%r3)
+	ld %r4, 1616(%r3)
+	ld %r5, 112(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1616(%r3)
+	ld %r4, 1624(%r3)
+	ld %r5, 120(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1624(%r3)
+	ld %r4, 1632(%r3)
+	ld %r5, 128(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1632(%r3)
+	ld %r4, 1640(%r3)
+	ld %r5, 136(%r8)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1640(%r3)
+	addi %r8, %r8, 144
+	addi %r7, %r7, 1
+	addi %r6, %r7, -65
+	cmpldi %cr0, %r6, 0
+	bne %cr0, 26b
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1648(%r3)
+	lis %r11, 128
+	ori %r11, %r11, 0
+	stw %r11, 1652(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1656(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1660(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1664(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1668(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1672(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1676(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1680(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1684(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1688(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1692(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1696(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1700(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1704(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1708(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1712(%r3)
+	lis %r11, 0
+	ori %r11, %r11, 0
+	stw %r11, 1716(%r3)
+	li %r7, 0
+	xor %r10, %r9, %r7
+	addi %r10, %r10, -1
+	rldicl %r10, %r10, 1, 63
+	li %r5, 0
+	subf %r10, %r10, %r5
+	ld %r4, 1576(%r3)
+	ld %r5, 1648(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1576(%r3)
+	ld %r4, 1584(%r3)
+	ld %r5, 1656(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1584(%r3)
+	ld %r4, 1592(%r3)
+	ld %r5, 1664(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1592(%r3)
+	ld %r4, 1600(%r3)
+	ld %r5, 1672(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1600(%r3)
+	ld %r4, 1608(%r3)
+	ld %r5, 1680(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1608(%r3)
+	ld %r4, 1616(%r3)
+	ld %r5, 1688(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1616(%r3)
+	ld %r4, 1624(%r3)
+	ld %r5, 1696(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1624(%r3)
+	ld %r4, 1632(%r3)
+	ld %r5, 1704(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1632(%r3)
+	ld %r4, 1640(%r3)
+	ld %r5, 1712(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1640(%r3)
+	ld %r4, 1648(%r3)
+	ld %r5, 280(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1648(%r3)
+	ld %r4, 1656(%r3)
+	ld %r5, 288(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1656(%r3)
+	ld %r4, 1664(%r3)
+	ld %r5, 296(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1664(%r3)
+	ld %r4, 1672(%r3)
+	ld %r5, 304(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1672(%r3)
+	ld %r4, 1680(%r3)
+	ld %r5, 312(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1680(%r3)
+	ld %r4, 1688(%r3)
+	ld %r5, 320(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1688(%r3)
+	ld %r4, 1696(%r3)
+	ld %r5, 328(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1696(%r3)
+	ld %r4, 1704(%r3)
+	ld %r5, 336(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1704(%r3)
+	ld %r4, 1712(%r3)
+	ld %r5, 344(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1712(%r3)
+	li %r4, 1288
+	li %r5, 280
+	li %r6, 1576
+	bl {vg_p521_sub_mod_p}
+	addi %r6, %r31, -82
+	cmpldi %cr0, %r6, 0
+	beq %cr0, 27f
+	li %r4, 7
+	mulld %r4, %r4, %r31
+	add %r4, %r3, %r4
+	lbz %r4, 4102(%r4)
+	addi %r10, %r4, -1
+	b 28f
+27:
+	li %r10, 0
+	addi %r10, %r10, -1
+28:
+	ld %r4, 1576(%r3)
+	ld %r5, 1288(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1576(%r3)
+	ld %r4, 1584(%r3)
+	ld %r5, 1296(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1584(%r3)
+	ld %r4, 1592(%r3)
+	ld %r5, 1304(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1592(%r3)
+	ld %r4, 1600(%r3)
+	ld %r5, 1312(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1600(%r3)
+	ld %r4, 1608(%r3)
+	ld %r5, 1320(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1608(%r3)
+	ld %r4, 1616(%r3)
+	ld %r5, 1328(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1616(%r3)
+	ld %r4, 1624(%r3)
+	ld %r5, 1336(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1624(%r3)
+	ld %r4, 1632(%r3)
+	ld %r5, 1344(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1632(%r3)
+	ld %r4, 1640(%r3)
+	ld %r5, 1352(%r3)
+	xor %r5, %r5, %r4
+	and %r5, %r5, %r10
+	xor %r4, %r4, %r5
+	std %r4, 1640(%r3)
+	li %r4, 1720
+	li %r5, 1072
+	li %r6, 1504
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1792
+	li %r5, 1144
+	li %r6, 1576
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1864
+	li %r5, 1216
+	li %r6, 1648
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1936
+	li %r5, 1072
+	li %r6, 1144
+	bl {vg_p521_add_mod_p}
+	li %r4, 2008
+	li %r5, 1504
+	li %r6, 1576
+	bl {vg_p521_add_mod_p}
+	li %r4, 1936
+	li %r5, 1936
+	li %r6, 2008
+	bl {vg_p521_mul_mod_p}
+	li %r4, 2008
+	li %r5, 1720
+	li %r6, 1792
+	bl {vg_p521_add_mod_p}
+	li %r4, 1936
+	li %r5, 1936
+	li %r6, 2008
+	bl {vg_p521_sub_mod_p}
+	li %r4, 2008
+	li %r5, 1072
+	li %r6, 1216
+	bl {vg_p521_add_mod_p}
+	li %r4, 2080
+	li %r5, 1504
+	li %r6, 1648
+	bl {vg_p521_add_mod_p}
+	li %r4, 2008
+	li %r5, 2008
+	li %r6, 2080
+	bl {vg_p521_mul_mod_p}
+	li %r4, 2080
+	li %r5, 1720
+	li %r6, 1864
+	bl {vg_p521_add_mod_p}
+	li %r4, 2008
+	li %r5, 2008
+	li %r6, 2080
+	bl {vg_p521_sub_mod_p}
+	li %r4, 2080
+	li %r5, 1144
+	li %r6, 1216
+	bl {vg_p521_add_mod_p}
+	li %r4, 1288
+	li %r5, 1576
+	li %r6, 1648
+	bl {vg_p521_add_mod_p}
+	li %r4, 2080
+	li %r5, 2080
+	li %r6, 1288
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1288
+	li %r5, 1792
+	li %r6, 1864
+	bl {vg_p521_add_mod_p}
+	li %r4, 2080
+	li %r5, 2080
+	li %r6, 1288
+	bl {vg_p521_sub_mod_p}
+	li %r4, 1432
+	li %r5, 496
+	li %r6, 2008
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1288
+	li %r5, 568
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1432
+	li %r5, 1288
+	li %r6, 1432
+	bl {vg_p521_add_mod_p}
+	li %r4, 1288
+	li %r5, 1792
+	li %r6, 1432
+	bl {vg_p521_sub_mod_p}
+	li %r4, 1432
+	li %r5, 1792
+	li %r6, 1432
+	bl {vg_p521_add_mod_p}
+	li %r4, 1360
+	li %r5, 1288
+	li %r6, 1432
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1792
+	li %r5, 1720
+	li %r6, 1720
+	bl {vg_p521_add_mod_p}
+	li %r4, 1792
+	li %r5, 1792
+	li %r6, 1720
+	bl {vg_p521_add_mod_p}
+	li %r4, 1864
+	li %r5, 496
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 2008
+	li %r5, 568
+	li %r6, 2008
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1792
+	li %r5, 1792
+	li %r6, 1864
+	bl {vg_p521_add_mod_p}
+	li %r4, 1864
+	li %r5, 1720
+	li %r6, 1864
+	bl {vg_p521_sub_mod_p}
+	li %r4, 1864
+	li %r5, 496
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 2008
+	li %r5, 2008
+	li %r6, 1864
+	bl {vg_p521_add_mod_p}
+	li %r4, 1720
+	li %r5, 1792
+	li %r6, 2008
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1360
+	li %r5, 1360
+	li %r6, 1720
+	bl {vg_p521_add_mod_p}
+	li %r4, 1720
+	li %r5, 2080
+	li %r6, 2008
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1288
+	li %r5, 1936
+	li %r6, 1288
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1288
+	li %r5, 1288
+	li %r6, 1720
+	bl {vg_p521_sub_mod_p}
+	li %r4, 1720
+	li %r5, 1936
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1432
+	li %r5, 2080
+	li %r6, 1432
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1432
+	li %r5, 1432
+	li %r6, 1720
+	bl {vg_p521_add_mod_p}
+	ld %r4, 1288(%r3)
+	std %r4, 1072(%r3)
+	ld %r4, 1296(%r3)
+	std %r4, 1080(%r3)
+	ld %r4, 1304(%r3)
+	std %r4, 1088(%r3)
+	ld %r4, 1312(%r3)
+	std %r4, 1096(%r3)
+	ld %r4, 1320(%r3)
+	std %r4, 1104(%r3)
+	ld %r4, 1328(%r3)
+	std %r4, 1112(%r3)
+	ld %r4, 1336(%r3)
+	std %r4, 1120(%r3)
+	ld %r4, 1344(%r3)
+	std %r4, 1128(%r3)
+	ld %r4, 1352(%r3)
+	std %r4, 1136(%r3)
+	ld %r4, 1360(%r3)
+	std %r4, 1144(%r3)
+	ld %r4, 1368(%r3)
+	std %r4, 1152(%r3)
+	ld %r4, 1376(%r3)
+	std %r4, 1160(%r3)
+	ld %r4, 1384(%r3)
+	std %r4, 1168(%r3)
+	ld %r4, 1392(%r3)
+	std %r4, 1176(%r3)
+	ld %r4, 1400(%r3)
+	std %r4, 1184(%r3)
+	ld %r4, 1408(%r3)
+	std %r4, 1192(%r3)
+	ld %r4, 1416(%r3)
+	std %r4, 1200(%r3)
+	ld %r4, 1424(%r3)
+	std %r4, 1208(%r3)
+	ld %r4, 1432(%r3)
+	std %r4, 1216(%r3)
+	ld %r4, 1440(%r3)
+	std %r4, 1224(%r3)
+	ld %r4, 1448(%r3)
+	std %r4, 1232(%r3)
+	ld %r4, 1456(%r3)
+	std %r4, 1240(%r3)
+	ld %r4, 1464(%r3)
+	std %r4, 1248(%r3)
+	ld %r4, 1472(%r3)
+	std %r4, 1256(%r3)
+	ld %r4, 1480(%r3)
+	std %r4, 1264(%r3)
+	ld %r4, 1488(%r3)
+	std %r4, 1272(%r3)
+	ld %r4, 1496(%r3)
+	std %r4, 1280(%r3)
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 23b
+	ld %r4, 1216(%r3)
+	std %r4, 1288(%r3)
+	ld %r4, 1224(%r3)
+	std %r4, 1296(%r3)
+	ld %r4, 1232(%r3)
+	std %r4, 1304(%r3)
+	ld %r4, 1240(%r3)
+	std %r4, 1312(%r3)
+	ld %r4, 1248(%r3)
+	std %r4, 1320(%r3)
+	ld %r4, 1256(%r3)
+	std %r4, 1328(%r3)
+	ld %r4, 1264(%r3)
+	std %r4, 1336(%r3)
+	ld %r4, 1272(%r3)
+	std %r4, 1344(%r3)
+	ld %r4, 1280(%r3)
+	std %r4, 1352(%r3)
+	li %r4, 1864
+	li %r5, 1216
+	li %r6, 1216
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1360
+	li %r5, 1288
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1432
+	li %r5, 1360
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1504
+	li %r5, 1432
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1576
+	li %r5, 1504
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1648
+	li %r5, 1576
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1720
+	li %r5, 1648
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	li %r4, 1792
+	li %r5, 1720
+	li %r6, 1864
+	bl {vg_p521_mul_mod_p}
+	ld %r4, 1792(%r3)
+	std %r4, 2152(%r3)
+	ld %r4, 1800(%r3)
+	std %r4, 2160(%r3)
+	ld %r4, 1808(%r3)
+	std %r4, 2168(%r3)
+	ld %r4, 1816(%r3)
+	std %r4, 2176(%r3)
+	ld %r4, 1824(%r3)
+	std %r4, 2184(%r3)
+	ld %r4, 1832(%r3)
+	std %r4, 2192(%r3)
+	ld %r4, 1840(%r3)
+	std %r4, 2200(%r3)
+	ld %r4, 1848(%r3)
+	std %r4, 2208(%r3)
+	ld %r4, 1856(%r3)
+	std %r4, 2216(%r3)
+	li %r31, 4
+29:
 	addi %r31, %r31, -1
 	li %r4, 2152
 	li %r5, 2152
 	li %r6, 2152
 	bl {vg_p521_mul_mod_p}
-	li %r4, 2224
-	li %r5, 2152
-	li %r6, 1216
-	bl {vg_p521_mul_mod_p}
-	add %r4, %r3, %r31
-	lbz %r4, 4672(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
-	ld %r4, 2152(%r3)
-	ld %r5, 2224(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2152(%r3)
-	ld %r4, 2160(%r3)
-	ld %r5, 2232(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2160(%r3)
-	ld %r4, 2168(%r3)
-	ld %r5, 2240(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2168(%r3)
-	ld %r4, 2176(%r3)
-	ld %r5, 2248(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2176(%r3)
-	ld %r4, 2184(%r3)
-	ld %r5, 2256(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2184(%r3)
-	ld %r4, 2192(%r3)
-	ld %r5, 2264(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2192(%r3)
-	ld %r4, 2200(%r3)
-	ld %r5, 2272(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2200(%r3)
-	ld %r4, 2208(%r3)
-	ld %r5, 2280(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2208(%r3)
-	ld %r4, 2216(%r3)
-	ld %r5, 2288(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 2216(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 23b
+	bne %cr0, 29b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+210:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 210b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+211:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 211b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+212:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 212b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+213:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 213b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+214:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 214b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+215:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 215b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+216:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 216b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+217:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 217b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+218:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 218b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+219:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 219b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+220:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 220b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+221:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 221b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+222:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 222b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+223:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 223b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+224:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 224b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+225:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 225b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+226:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 226b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+227:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 227b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+228:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 228b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+229:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 229b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+230:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 230b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+231:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 231b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+232:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 232b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+233:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 233b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+234:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 234b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+235:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 235b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+236:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 236b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+237:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 237b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+238:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 238b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+239:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 239b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+240:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 240b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+241:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 241b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+242:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 242b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+243:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 243b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+244:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 244b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+245:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 245b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+246:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 246b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+247:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 247b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+248:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 248b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+249:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 249b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+250:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 250b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+251:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 251b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+252:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 252b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+253:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 253b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+254:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 254b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+255:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 255b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+256:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 256b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+257:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 257b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+258:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 258b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+259:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 259b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+260:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 260b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+261:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 261b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+262:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 262b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+263:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 263b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+264:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 264b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+265:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 265b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+266:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 266b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+267:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 267b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+268:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 268b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+269:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 269b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+270:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 270b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+271:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 271b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+272:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 272b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+273:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 273b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+274:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 274b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+275:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 275b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+276:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 276b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+277:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 277b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+278:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 278b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+279:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 279b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+280:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 280b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+281:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 281b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+282:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 282b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+283:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 283b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+284:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 284b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+285:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 285b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+286:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 286b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+287:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 287b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+288:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 288b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+289:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 289b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+290:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 290b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+291:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 291b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+292:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 292b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+293:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 293b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+294:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 294b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+295:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 295b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+296:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 296b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+297:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 297b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+298:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 298b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+299:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 299b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2100:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2100b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2101:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2101b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2102:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2102b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2103:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2103b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2104:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2104b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2105:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2105b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2106:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2106b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2107:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2107b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2108:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2108b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2109:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2109b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2110:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2110b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2111:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2111b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2112:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2112b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2113:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2113b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2114:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2114b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2115:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2115b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2116:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2116b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2117:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2117b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2118:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2118b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2119:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2119b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2120:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2120b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2121:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2121b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2122:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2122b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2123:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2123b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2124:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2124b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2125:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2125b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2126:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2126b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2127:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2127b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2128:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2128b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2129:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2129b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2130:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2130b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2131:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2131b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2132:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2132b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2133:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2133b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2134:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2134b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2135:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2135b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 4
+2136:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2136b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1792
+	bl {vg_p521_mul_mod_p}
+	li %r31, 3
+2137:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2137b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1504
+	bl {vg_p521_mul_mod_p}
+	li %r31, 2
+2138:
+	addi %r31, %r31, -1
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 2152
+	bl {vg_p521_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2138b
+	li %r4, 2152
+	li %r5, 2152
+	li %r6, 1288
+	bl {vg_p521_mul_mod_p}
 	li %r4, 2512
 	li %r5, 1072
 	li %r6, 2152

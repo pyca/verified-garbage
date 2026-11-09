@@ -4183,14 +4183,32 @@ vg_mldsa65_sign_avx512:
 	ret
 	.p2align 6
 
+vg_mldsa65_sign_prepared_avx512:
+	mov r9d, 1
+	call {vg_mldsa65_sign_with_cache_avx512}
+	ret
+	.p2align 6
+
 vg_mldsa65_sign_avx2:
 	mov r9d, 0
 	call {vg_mldsa65_sign_with_cache_avx2}
 	ret
 	.p2align 6
 
+vg_mldsa65_sign_prepared_avx2:
+	mov r9d, 1
+	call {vg_mldsa65_sign_with_cache_avx2}
+	ret
+	.p2align 6
+
 vg_mldsa65_sign:
 	mov r9d, 0
+	call {vg_mldsa65_sign_with_cache}
+	ret
+	.p2align 6
+
+vg_mldsa65_sign_prepared:
+	mov r9d, 1
 	call {vg_mldsa65_sign_with_cache}
 	ret
 	.p2align 6
@@ -4939,14 +4957,32 @@ vg_mldsa65_verify_avx512:
 	ret
 	.p2align 6
 
+vg_mldsa65_verify_prepared_avx512:
+	mov r8d, 1
+	call {vg_mldsa65_verify_with_cache_avx512}
+	ret
+	.p2align 6
+
 vg_mldsa65_verify_avx2:
 	mov r8d, 0
 	call {vg_mldsa65_verify_with_cache_avx2}
 	ret
 	.p2align 6
 
+vg_mldsa65_verify_prepared_avx2:
+	mov r8d, 1
+	call {vg_mldsa65_verify_with_cache_avx2}
+	ret
+	.p2align 6
+
 vg_mldsa65_verify:
 	mov r8d, 0
+	call {vg_mldsa65_verify_with_cache}
+	ret
+	.p2align 6
+
+vg_mldsa65_verify_prepared:
+	mov r8d, 1
 	call {vg_mldsa65_verify_with_cache}
 	ret
 	.p2align 6

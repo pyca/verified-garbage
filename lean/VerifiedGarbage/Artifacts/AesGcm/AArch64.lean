@@ -56,10 +56,26 @@ public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.KeyPowers
 
 /-! # AES-GCM (NIST SP 800-38D) on AArch64 -/
 
 @[expose] public section
+
+-- The powers of AES-GCM's hash subkey on AArch64
+namespace VG.Artifacts.AesGcm.AArch64.Gcm
+
+def artifacts : List Artifact := [
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    code := Impl.Gcm.AArch64.keyPowers
+    verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    suffix := "_aes"
+    code := Impl.Gcm.AArch64.Pmull.keyPowers
+    verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified }]
+
+end VG.Artifacts.AesGcm.AArch64.Gcm
 
 namespace VG.Artifacts.AesGcm.AArch64
 
@@ -71,58 +87,49 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesGcm.AArch64.init v.callees)
     stack := 2560
-    verified := init_framed v
-    features := v.ctr.features },
+    verified := init_framed v },
   Spec.Gcm.sealApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     stack := 2576
-    verified := Proof.AesGcm.seal_keyed (sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)
-    features := v.features },
+    verified := Proof.AesGcm.seal_keyed (sealCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV) },
   Spec.Gcm.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
-    verified := Proof.AesGcm.open_keyed (openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)
-    features := v.features },
+    verified := Proof.AesGcm.open_keyed (openCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV) },
   Spec.Gcm.streamInitApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4 (Impl.AesGcm.AArch64.streamInit v.callees)
     stack := 2560
-    verified := streamInit_framed v
-    features := v.gh.features },
+    verified := streamInit_framed v },
   Spec.Gcm.streamAadApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5 (Impl.AesGcm.AArch64.streamAad v.callees)
     stack := 2560
-    verified := streamAad_framed v
-    features := v.gh.features },
+    verified := streamAad_framed v },
   Spec.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamEncrypt v.callees)
     stack := 2560
-    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v)
-    features := v.features },
+    verified := Proof.AesGcm.streamEncrypt_keyed (streamEncrypt_framed v) },
   Spec.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7 (Impl.AesGcm.AArch64.streamDecrypt v.callees)
     stack := 2560
-    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v)
-    features := v.features },
+    verified := Proof.AesGcm.streamDecrypt_keyed (streamDecrypt_framed v) },
   Spec.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x6
       (Impl.AesGcm.AArch64.streamFinish v.callees)
     stack := 2560
-    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v)
-    features := v.features },
+    verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed v) },
   Spec.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x7
       (Impl.AesGcm.AArch64.streamVerify v.callees)
     stack := 2560
-    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v)
-    features := v.features }]
+    verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed v) }]
 
 /-- `vg_aes_gcm_seal_gather`, calling the instance of `vg_aes_gcm_seal` of the implementations `v`. -/
 def artifactsGather (v : GcmImpl) : List Artifact := [
@@ -130,8 +137,7 @@ def artifactsGather (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.AesGcm.AArch64.SealGather.sealGather (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV).fn
     stack := 2592
-    verified := Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV))
-    features := v.features }]
+    verified := Proof.AesGcm.sealGather_keyed (Proof.AesGcm.AArch64.Gather.sealGather_verified (Proof.AesGcm.AArch64.sealFn v Proof.Gcm.AArch64.Pmull.mulV_keyV)) }]
 
 /-- `vg_aes_gcm_open_to` of the implementations `v`, in one pass. -/
 def artifactsOpenTo (v : GcmImpl) : List Artifact := [
@@ -139,8 +145,7 @@ def artifactsOpenTo (v : GcmImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode v)
     stack := 2608
-    verified := Proof.AesGcm.openTo_keyed (openToCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV)
-    features := v.features }]
+    verified := Proof.AesGcm.openTo_keyed (openToCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV) }]
 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers`, calling `g` on the path for TLS records:
@@ -151,20 +156,17 @@ def withPowersArtifacts (v : GcmImpl) (g : GhashWithImpl) : List Artifact :=
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (sealPwCode v g)
     stack := 2592
-    verified := Proof.AesGcm.sealWithPowers_keyed (sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
-    features := v.stitchFeatures },
+    verified := Proof.AesGcm.sealWithPowers_keyed (sealPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g) },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 3 (openPwCode v g)
     stack := 2592
-    verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
-    features := v.stitchFeatures },
+    verified := Proof.AesGcm.openWithPowers_keyed (openPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g) },
   Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2608 5 (openToPwCode v g)
     stack := 2608
-    verified := Proof.AesGcm.openToWithPowers_keyed (openToPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g)
-    features := v.stitchFeatures }]
+    verified := Proof.AesGcm.openToWithPowers_keyed (openToPwCode_framed v Proof.Gcm.AArch64.Pmull.mulV_keyV Proof.Gcm.AArch64.Stitch.gh8Ok g) }]
 
 /-- `vg_aes_gcm_seal_with_powers`, `vg_aes_gcm_open_with_powers` and
 `vg_aes_gcm_open_to_with_powers` of implementations without code that reads
@@ -174,20 +176,17 @@ def basePwArtifacts (v : GcmImpl) : List Artifact :=
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2576 1 (sealCode v)
     stack := 2576
-    verified := sealBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features },
+    verified := sealBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV },
   Spec.Gcm.openWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (openCode v)
     stack := 2592
-    verified := openBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features },
+    verified := openBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV },
   Spec.Gcm.openToWithPowersApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 2608 4 (openToCode v)
     stack := 2608
-    verified := openToBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV
-    features := v.features }]
+    verified := openToBasePw_verified v Proof.Gcm.AArch64.Pmull.mulV_keyV }]
 
 /-- The artifacts of a variant, from the implementations it names: those that
 do not use the stitched loops only for the variant without them, of which
@@ -199,6 +198,7 @@ def artifactsFor (v : GcmVariant) : List Artifact :=
       (if v.stitch then [] else basePwArtifacts v.impl)
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v
+  (VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v) ++
+  Gcm.artifacts
 
 end VG.Artifacts.AesGcm.AArch64

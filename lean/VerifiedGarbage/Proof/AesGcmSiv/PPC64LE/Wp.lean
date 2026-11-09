@@ -11,6 +11,9 @@ import VerifiedGarbage.Proof.Gcm.Stream
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 public import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Spec.Aes
+public import VerifiedGarbage.Spec.GcmSiv
+public import VerifiedGarbage.Proof.AesOcb.PPC64LE.Callee
+import VerifiedGarbage.Proof.Ocb.State
 
 /-!
 # AES-GCM-SIV on PPC64LE: arithmetic and the arguments of calls
@@ -122,5 +125,42 @@ theorem bytesAt_writeBytes_past (m : Mem) (q : Addr) (xs : List Byte) (k : Nat) 
       rw [BitVec.add_assoc, Offset.add_sub_cancel_left, ← BitVec.ofNat_add],
     BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]
   simp only [show ¬ xs.length + j < xs.length by omega, ↓reduceIte]
+
+/-- The arguments of `vg_aes_encrypt_blocks`: the schedule of `R` rounds at
+`K'`, `k` blocks at `W + 496` and the working space at `W + 1776`. -/
+theorem bargs {c : Cx} (L : Lay c) {s : State} (E : Env c s) {K' : Addr}
+    (hK : Covers [⟨K', 240⟩] (s.rd ++ s.wr)) {k : Nat} (hk : k ≤ 64)
+    (hKd : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 496, 16 * k⟩)
+    (hKs : (⟨K', 240⟩ : Region).Disjoint ⟨c.W + BitVec.ofNat 64 1776, 2048⟩)
+    (r3 : s.gpr .r3 = K') (r4 : s.gpr .r4 = BitVec.ofNat 64 c.R)
+    (r5 : s.gpr .r5 = c.W + BitVec.ofNat 64 496) (r6 : s.gpr .r6 = BitVec.ofNat 64 k)
+    (r7 : s.gpr .r7 = c.W + BitVec.ofNat 64 1776) :
+    Proof.AesOcb.PPC64LE.BCall s K' (c.W + BitVec.ofNat 64 496) (c.W + BitVec.ofNat 64 1776) c.R k where
+  r3 := r3
+  r4 := r4
+  r5 := r5
+  r6 := r6
+  r7 := r7
+  rounds := by rcases L.rounds with h | h <;> simp [h]
+  wrap := by rw [L.wrapW (by decide)]; have := L.ww; omega
+  kd := hKd
+  ks := hKs
+  ds := L.w_w (.inl (by omega)) (by omega) (by decide)
+  reads := Covers.append_left (Covers.cons hK Covers.nil)
+    (Covers.cons (E.perm.wCR (by omega)) (Covers.cons (E.perm.wCR (by decide)) Covers.nil))
+  writes := Covers.cons (E.perm.wC (by omega)) (Covers.cons (E.perm.wC (by decide)) Covers.nil)
+
+/-- A block `vg_aes_encrypt_blocks` replaced: the cipher of the old one. -/
+theorem bytesAt_cipher {m m' : Mem} {D : Addr} {k : Nat} {R : Nat} {w : List Byte}
+    (h : Spec.Aes.statesAt m' D k = (Spec.Aes.statesAt m D k).map (Spec.Aes.cipher R w)) {l : Nat} (hl : l < k) :
+    Spec.Aes.bytesAt m' (D + BitVec.ofNat 64 (16 * l)) 16 =
+      Spec.GcmSiv.aesWith R w (Spec.Aes.bytesAt m (D + BitVec.ofNat 64 (16 * l)) 16) := by
+  have e : Spec.Aes.stateAt m (D + BitVec.ofNat 64 (16 * l)) =
+      Vector.ofFn fun i => (Spec.Aes.bytesAt m (D + BitVec.ofNat 64 (16 * l)) 16).getD i.1 0 := by
+    apply Vector.ext
+    intro i hi
+    simp [Spec.Aes.stateAt, Spec.Aes.bytesAt, List.getD_eq_getElem?_getD]
+  rw [Proof.Ocb.bytesAt_toList, Proof.Ocb.stateAt_of_statesAt h hl, e]
+  rfl
 
 end VG.Proof.AesGcmSiv.PPC64LE

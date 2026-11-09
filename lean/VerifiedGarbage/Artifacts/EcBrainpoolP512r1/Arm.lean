@@ -36,6 +36,8 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP512r1.Arm.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP512r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress
 
 /-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
@@ -52,7 +54,20 @@ def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP512r1.publicKeyApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.EcKey.Arm.publicKeyBrainpoolP512r1U
-    verified := Proof.EcKey.Arm.BrainpoolP512r1.pkU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.EcKey.Arm.BrainpoolP512r1.pkU_verified hasLaw.law },
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.code
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verified },
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.code
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verified hasLaw.law },
+  Spec.EcKey.BrainpoolP512r1.inst.compressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1.verifiedU },
+  Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyApi.artifact Arm.target {
+    suffix := "_umaal"
+    code := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.codeU
+    verified := Proof.EcKey.Compressed.Arm.BrainpoolP512r1Decompress.verifiedU hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP512r1.Arm

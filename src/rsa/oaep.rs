@@ -27,15 +27,51 @@ use core::fmt;
 use crate::arch::dispatch::rsa_oaep::{
     vg_rsa_oaep_decrypt_auto, vg_rsa_oaep_encrypt_precomputed_auto,
 };
-pub use crate::rsa::pkcs1_sig::Hash;
 use crate::rsa::{PrivateKey, PublicKey};
 use crate::zeroize::zeroize;
+
+/// A hash function supported by RSA OAEP, for the label or MGF1.
+///
+/// MD5 is not an OAEP hash choice:
+///
+/// ```compile_fail,E0599
+/// use verified_garbage::rsa::oaep::Hash;
+/// let hash = Hash::Md5;
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Hash {
+    /// SHA-1.
+    Sha1,
+    /// SHA-224.
+    Sha224,
+    /// SHA-256.
+    Sha256,
+    /// SHA-384.
+    Sha384,
+    /// SHA-512.
+    Sha512,
+    /// SHA-512/224.
+    Sha512_224,
+    /// SHA-512/256.
+    Sha512_256,
+}
+
+impl Hash {
+    /// The length of the hash function's values, in bytes.
+    pub fn digest_len(self) -> usize {
+        match self {
+            Hash::Sha1 => 20,
+            Hash::Sha224 | Hash::Sha512_224 => 28,
+            Hash::Sha256 | Hash::Sha512_256 => 32,
+            Hash::Sha384 => 48,
+            Hash::Sha512 => 64,
+        }
+    }
+}
 
 /// Why an encryption or a decryption was refused.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
-    /// A hash function is not one this module supports.
-    UnsupportedHash,
     /// The message is longer than the modulus' length less twice the hash
     /// function's length, less 2.
     MessageTooLong,
@@ -55,7 +91,6 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
-            Error::UnsupportedHash => "unsupported hash function for RSA OAEP",
             Error::MessageTooLong => "RSA OAEP message too long for the modulus",
             Error::InvalidLength => "RSA ciphertext length is not the modulus length",
             Error::Decryption => "RSA OAEP decryption failed",
@@ -92,9 +127,9 @@ fn scratch_words(n_len: usize) -> usize {
 type Table = *const [usize; 5];
 
 /// The tables of the label's hash function `hash` and of MGF1's `mgf1_hash`
-/// (`table::table`), or `None` if this module does not support them.
-fn with_tables(hash: Hash, mgf1_hash: Hash) -> Option<(Table, Table)> {
-    Some((table::table(hash)?, table::table(mgf1_hash)?))
+/// (`table::table`).
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> (Table, Table) {
+    (table::table(hash), table::table(mgf1_hash))
 }
 
 impl PublicKey {
@@ -129,7 +164,7 @@ impl PublicKey {
         label: &[u8],
         random: impl FnMut(&mut [u8]) -> Result<(), Error>,
     ) -> Result<Vec<u8>, Error> {
-        let (h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        let (h, m) = with_tables(hash, mgf1_hash);
         encrypt_with(self, plaintext, label, (h, hash.digest_len()), m, random)
     }
 }
@@ -218,7 +253,7 @@ impl PrivateKey {
         label: &[u8],
     ) -> Result<Vec<u8>, Error> {
         crate::dit::enter!(dit);
-        let (h, m) = with_tables(hash, mgf1_hash).ok_or(Error::UnsupportedHash)?;
+        let (h, m) = with_tables(hash, mgf1_hash);
         decrypt_with(dit, self, ciphertext, label, h, m)
     }
 }
@@ -293,56 +328,28 @@ fn decrypt_with(
 
 #[cfg(test)]
 mod tests {
-    use super::{Error, Hash, vec, with_tables};
+    use super::{Error, Hash, vec};
     use crate::rsa::tests::composite_key;
     use alloc::string::ToString;
 
     #[test]
-    fn pairs() {
-        let all = [
-            Hash::Md5,
-            Hash::Sha1,
-            Hash::Sha224,
-            Hash::Sha256,
-            Hash::Sha384,
-            Hash::Sha512,
-            Hash::Sha512_224,
-            Hash::Sha512_256,
-            Hash::Sha3_224,
-            Hash::Sha3_256,
-            Hash::Sha3_384,
-            Hash::Sha3_512,
-        ];
-        let mut n = 0;
-        for h in all {
-            for g in all {
-                let supported = |x| {
-                    x != Hash::Md5
-                        && !matches!(
-                            x,
-                            Hash::Sha3_224 | Hash::Sha3_256 | Hash::Sha3_384 | Hash::Sha3_512
-                        )
-                };
-                // Each is any of them (`table::table`).
-                let ok = supported(h) && supported(g);
-                assert_eq!(with_tables(h, g).is_some(), ok);
-                n += usize::from(ok);
-            }
+    fn digest_lengths() {
+        for (hash, len) in [
+            (Hash::Sha1, 20),
+            (Hash::Sha224, 28),
+            (Hash::Sha256, 32),
+            (Hash::Sha384, 48),
+            (Hash::Sha512, 64),
+            (Hash::Sha512_224, 28),
+            (Hash::Sha512_256, 32),
+        ] {
+            assert_eq!(hash.digest_len(), len);
         }
-        assert_eq!(n, 49);
     }
 
     #[test]
     fn refused() {
         let (private, public) = composite_key();
-        assert_eq!(
-            public.encrypt_oaep(b"", Hash::Md5, Hash::Md5, b""),
-            Err(Error::UnsupportedHash)
-        );
-        assert_eq!(
-            private.decrypt_oaep(&[0; 64], Hash::Sha256, Hash::Md5, b""),
-            Err(Error::UnsupportedHash)
-        );
         // 64 bytes hold at most 22 bytes of message with SHA-1, none with
         // SHA-512.
         assert_eq!(
@@ -398,7 +405,6 @@ mod tests {
     #[test]
     fn errors_display() {
         for e in [
-            Error::UnsupportedHash,
             Error::MessageTooLong,
             Error::InvalidLength,
             Error::Decryption,

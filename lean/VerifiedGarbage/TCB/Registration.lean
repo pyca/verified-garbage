@@ -10,13 +10,13 @@ public import VerifiedGarbage.TCB.Print
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
 target, the code and its proof, the stack it uses, the constant tables it
 reads (which `consts_of` finds in the contract the proof is of), the tables
-of functions it takes, the CPU features it needs, how much
+of functions it takes, how much
 of its writable arrays it writes (`written`, with its proof), the proof that
 it returns without secret residue (`residue`), and the suffix of its name. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
 documentation, `writeArgs`, and the contract on the target, which the proof
-is of. So of a registration, a reviewer reads `suffix` and
-`features` (which the emitter checks against the code); the kernel checks
+is of; or from the code: the CPU features it needs (`Code.requiresDedup`).
+So of a registration, a reviewer reads `suffix`; the kernel checks
 the rest, `written` included. The code is printed, and its documentation
 written, with what the emitter needs of the target, its ISA's one `Emitter`
 instance (`TCB/<ISA>/Print.lean`), which `Api.artifact` pairs with the target
@@ -304,6 +304,68 @@ syntax (name := constsOf) "consts_of" : tactic
 that `consts_of` can find them in it. -/
 abbrev ConstsOf {M : ISA} (_contract : Contract M) : Type := List (String × List (BitVec 64))
 
+/-- The value of `f` on the code of each call of `calls` (`Code.calls`), in
+order, but for a call whose value is that of the first call of the same
+function.
+
+`calls` holds a function once per call of it, through every function that
+calls it, and its code is usually the same value in memory at each of them:
+`withPtrEq` finds that at once, without computing `f` again (which, on the
+code of every call, was most of the time of the checks using this). -/
+def Code.distinctCalls {I C β : Type} [BEq β] [LawfulBEq β] (f : Code I C → β)
+    (calls : List (String × Code I C)) : List β := Id.run do
+  -- The first call of each function so far, with its code and its value.
+  let mut first : List {p : String × Code I C × β // p.2.2 = f p.2.1} := []
+  let mut values : List β := []
+  for (n, body) in calls do
+    match first.find? (·.1.1 == n) with
+    | some ⟨(_, body₀, v₀), h₀⟩ =>
+      unless withPtrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
+        values := f body :: values
+    | none =>
+      let v := f body
+      first := ⟨(n, body, v), rfl⟩ :: first
+      values := v :: values
+  return values.reverse
+
+/-- The features that the instructions of `c` require, but not those of the
+functions it calls, each once, in first-seen order after those of `acc`. -/
+def Code.ownRequires {I C : Type} (req : I → List String) : List String → Code I C → List String
+  | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
+  | acc, .seq a b => ownRequires req (ownRequires req acc a) b
+  | acc, .ite _ t e => ownRequires req (ownRequires req acc t) e
+  | acc, .loop b _ => ownRequires req acc b
+  | acc, .call _ _ => acc
+  | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
+  | acc, .icall i _ _ n => ownRequires req (add acc (req i)) n
+where
+  add (acc fs : List String) : List String :=
+    fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
+
+/-- The calls in `c`, and in the functions it calls, as `Code.calls`, but
+not those of an indirect call (`Code.icall`), nor any in the functions it
+may reach: the calls whose code's features `Code.requires` counts. -/
+def Code.reqCalls {I C : Type} : Code I C → List (String × Code I C)
+  | .block _ => []
+  | .seq a b => reqCalls a ++ reqCalls b
+  | .ite _ t e => reqCalls t ++ reqCalls e
+  | .loop b _ => reqCalls b
+  | .call n b => (n, b) :: reqCalls b
+  | .frame _ b _ => reqCalls b
+  | .icall _ _ _ nx => reqCalls nx
+
+/-- The features that the instructions of `c`, and of the functions it
+calls, require (`Code.requires`), each once: those of the instructions of
+`c` outside its calls (`ownRequires`), then those of the code of each call
+(`reqCalls`, which has every call, those in the code of a call too, but not
+the functions an indirect call may reach),
+skipping a call whose code requires what the first call of the same
+function's does (`distinctCalls`). These are the features of
+`dedup (c.requires req)`, without building the list with repetitions or
+going through the code of a function once per call of it. -/
+def Code.requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
+  (distinctCalls (ownRequires req []) (reqCalls c)).foldl ownRequires.add (ownRequires req [] c)
+
 /-- `api`'s contract under the calling convention `A`, for an implementation
 whose calls and frames use `stack` bytes of stack (`Api.contracts`), or, if
 `api` has none, one that no state satisfies, which `Verified` rejects. -/
@@ -343,8 +405,6 @@ structure Registration (api : Api) (target : Target) where
     of_sig
   /-- `Artifact.spSafe`. -/
   spSafe : code.all (fun i => !target.isa.writesSp i) = true := by sp_safe
-  /-- `Artifact.features`. -/
-  features : List String := []
   /-- `Artifact.written`. -/
   written : List (String × Nat) := []
   /-- `Artifact.writtenOk`. -/
@@ -364,7 +424,8 @@ structure Registration (api : Api) (target : Target) where
 signature and `writeArgs` are `api`'s, its name `api`'s followed by
 `r.suffix` (its `base` `api`'s), its documentation `api`'s (`Api.doc`), and its
 contract `api`'s on `target`, for `r.consts`, `r.tables` and `r.stack`
-(`Api.contract`), which makes the mode public if `api.pubMode`; its code is
+(`Api.contract`), which makes the mode public if `api.pubMode`; its CPU
+features those its code requires (`Code.requiresDedup`); its code is
 printed and documented with `target`'s ISA's `Emitter` (`EmitTarget.of`). -/
 def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registration api target) :
     Artifact where
@@ -389,7 +450,7 @@ def Api.artifact (api : Api) (target : Target) [Emitter target.isa] (r : Registr
     unfold Api.contract
     cases api.contracts <;> exact (by trivial)
   spSafe := r.spSafe
-  features := r.features
+  features := Code.requiresDedup target.isa.requires r.code
   written := r.written
   writtenOk := r.writtenOk
   extra := r.extra

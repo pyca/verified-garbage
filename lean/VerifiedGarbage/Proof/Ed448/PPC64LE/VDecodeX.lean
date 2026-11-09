@@ -59,7 +59,7 @@ theorem decodeX_ok {s : State} (hc : Ctx b s) {y : Fe} (hy : FS s.mem b DY = y) 
   refine WP.seq (WP.mono (rootQ_ok (qs := outsQ xOps XQ) (by decide) (by decide) (by decide) h1.ctx
     (fun q hq _ => h1.slots q hq) h1.r0) fun s2 ⟨hst2, hc2, hS2⟩ => ?_)
   refine WP.mono (mulS (o := DXX) (x := DT) (y := R) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) hc2 hS2)
+    (by decide) (by decide) (by decide) hc2 hS2)
     fun t ⟨hrt, hft, hSt⟩ => ?_
   refine ⟨h1.stp.trans (hst2.trans ⟨hrt.mono (by decide), hft⟩), hc2.of_rest hrt (by decide), ?_, ?_, ?_, ?_, ?_⟩
   all_goals

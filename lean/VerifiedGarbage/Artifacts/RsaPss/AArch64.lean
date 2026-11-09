@@ -8,6 +8,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.AArch64
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 /-! # RSASSA-PSS signing on AArch64, with the hash functions as tables -/
 
@@ -21,13 +22,12 @@ open VG.Proof.RsaPss.AArch64 (sign_ok OK)
 def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaPss.signTableApi.artifact AArch64.target {
-      suffix := Emit.qualifiedName "" [("crt", c.suffix)]
+      suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.HashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.signC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (privOf c).name (privOf c).code
       stack := Proof.RsaPss.AArch64.Sgn.stk (privOf c).stack
-      verified := sign_ok h c
-      features := c.features }]
+      verified := sign_ok h c }]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPrivateCrtAllMdHash
@@ -41,13 +41,12 @@ open VG.Proof.RsaPss.AArch64 (verify_ok OK)
 def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
   if h : OK vs then [
     Spec.RsaPss.verifyPrecomputedTableApi.artifact AArch64.target {
-      suffix := Emit.qualifiedName "" [("rsa", c.suffix)]
+      suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.HashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.verifyC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (pdOf c).name (pdOf c).code
       stack := Proof.RsaPss.AArch64.Sgn.stk 624
-      verified := verify_ok h c
-      features := c.features }]
+      verified := verify_ok h c }]
   else []
 
 end VG.Artifacts.RsaPss.AArch64.RsaPublicPrecomputedAllMdHash

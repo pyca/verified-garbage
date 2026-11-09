@@ -29,6 +29,8 @@ public import VerifiedGarbage.Proof.Weierstrass.CombCheckFast
 public import VerifiedGarbage.Proof.Weierstrass.MulContract
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.P521.AArch64.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P521
+public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P521Decompress
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
@@ -39,6 +41,12 @@ namespace VG.Artifacts.EcP521.AArch64
 open VG.Proof.P521.AArch64 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P521.code
+    verified := Proof.EcKey.Compressed.AArch64.P521.verified hasLaw.inv },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact AArch64.target {
+    code := Proof.EcKey.Compressed.AArch64.P521Decompress.code
+    verified := Proof.EcKey.Compressed.AArch64.P521Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.P521.publicKeyApi.artifact AArch64.target {
     code := Impl.EcKey.AArch64.publicKeyP521
     verified := Proof.EcKey.AArch64.P521.pk_verified hasLaw.law hasLaw.inv (Proof.P521.combOk7 hasLaw.law) }]

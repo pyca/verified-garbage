@@ -74,10 +74,39 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P384.X86_64.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P384Adx
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # ECDSA over P-384 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-384 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaP384.X86_64.Rfc6979
+
+open VG.Proof.P384.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p384Of p384T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+
+/-- The signature with P-384's multiplication with BMI2 and ADX (`adx`,
+`_adx`) or not, and the tables of `vs`. -/
+def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P384.curve) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hv : OK vs ∧ "VG_P384_COMB" ∉ names vs) (adx : Bool) : Artifact :=
+  Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact X86_64.target {
+    suffix := if adx then "_adx" else ""
+    tables := [("hmac", tables vs)]
+    code := signCodeT (p384Of adx h.law (Proof.P384.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
+    stack := stackT
+    verified := p384T_verified adx h.law (Proof.P384.combOk7 h.law) h.inv vs hv
+    spSafe := signCode_sp _ _ _ }
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if hv : OK vs ∧ "VG_P384_COMB" ∉ names vs then [withMul hasLaw vs hv false, withMul hasLaw vs hv true] else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+
+end VG.Artifacts.EcdsaP384.X86_64.Rfc6979
 
 namespace VG.Artifacts.EcdsaP384.X86_64
 
@@ -95,8 +124,7 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 96
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    spSafe := hsp }
 
 def artifacts : List Artifact := [
   verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
@@ -106,6 +134,7 @@ def artifacts : List Artifact := [
   verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
     Impl.Ecdsa.Verify.X86_64.jointVerifyP384Adx)
     (Proof.Ecdsa.Verify.X86_64.P384.verifyHash_verified_adx hasLaw.law (Proof.P384.gtabOk9 hasLaw.law) hasLaw.inv
-      hasLaw.prime)]
+      hasLaw.prime)] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP384.X86_64

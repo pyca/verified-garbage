@@ -56,6 +56,9 @@ structure Lay (dn : Nat) where
   /-- The addresses of the hash function's HMAC functions (and zero for
   every other name). -/
   fa : String → Addr
+  /-- The tables of constants of `core`, and the statics' addresses. -/
+  cs : List (String × List (BitVec 64)) := []
+  sy : String → Addr := fun _ => 0
 
 namespace Lay
 
@@ -67,6 +70,8 @@ abbrev DG : Region := ⟨L.dg, dn⟩
 abbrev SCR : Region := ⟨L.scr, 8192⟩
 /-- The table of HMAC. -/
 abbrev TAB : Region := ⟨L.tab, 48⟩
+/-- The tables of constants of `core`. -/
+abbrev TBLs : List Region := Abi.constRegions L.sy L.cs
 /-- The stack used. -/
 abbrev STK : Region := ⟨L.B, 736⟩
 /-- The frame's local variable space, writable. -/
@@ -101,6 +106,9 @@ structure Ok : Prop where
   tout : L.TAB.Disjoint L.OUT
   tsc : L.TAB.Disjoint L.SCR
   tstk : L.TAB.Disjoint L.STK
+  /-- So are `core`'s tables of constants. -/
+  tables : ∀ T ∈ L.TBLs, T.base.toNat + T.len ≤ 2 ^ 64 ∧ T.Disjoint L.OUT ∧ T.Disjoint L.SCR ∧
+    T.Disjoint L.STK ∧ T.base.toNat % 64 = 0
 
 end Lay
 
@@ -195,7 +203,7 @@ end Lay.Ok
 /-- The state between the frames' pushes and pops: `g` are the registers on
 entry, `lr` the return address, `m₀` the memory. -/
 structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ : Mem) (t : State) : Prop where
-  rd : t.rd = [L.D, L.DG, L.TAB]
+  rd : t.rd = [L.D, L.DG, L.TAB] ++ L.TBLs
   wr : t.wr = [L.FR, L.LR, L.OUT, L.SCR]
   sp : t.sp = L.B + BitVec.ofNat 64 96
   cs : ∀ r ∈ preserved, t.gpr r = g r
@@ -212,6 +220,9 @@ structure Ctx {dn : Nat} (L : Lay dn) (g : Reg → BitVec 64) (lr : Addr) (m₀ 
   tabOk : TabOK L.w L.f t.syms
   tabMem : TabMem L.w t.syms L.tab m₀
   fsy : ∀ n ∈ [L.w.initN, L.w.H.updN, L.w.finN], t.syms n = L.fa n
+  /-- `core`'s tables: their addresses, and their words on entry. -/
+  csy : ∀ c ∈ L.cs, t.syms c.1 = L.sy c.1
+  held : Abi.constsHeld m₀ L.sy L.cs
 
 theorem Safe.sub_frame {dn : Nat} {L : Lay dn} {r : Region} (h : Safe L r) :
     ∃ R ∈ [L.OUT, L.SCR, L.STK], Region.Sub r R := by
@@ -245,7 +256,8 @@ theorem keep (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'
     (keep 304 (by omega) (by omega)).trans hc.pDl, (keep 312 (by omega) (by omega)).trans hc.pBl,
     (keep 320 (by omega) (by omega)).trans hc.pTab,
     keepLr.trans hc.lr, hc.frame.trans (hf.sub fun r hr => (hs r hr).sub_frame), by rw [hsy]; exact hc.tabOk,
-    by rw [hsy]; exact hc.tabMem, fun n hn => by rw [hsy]; exact hc.fsy n hn⟩
+    by rw [hsy]; exact hc.tabMem, fun n hn => by rw [hsy]; exact hc.fsy n hn,
+    fun c hc' => by rw [hsy]; exact hc.csy c hc', hc.held⟩
 
 /-- Code that writes only registers but the callee-saved ones. -/
 theorem regs (hL : L.Ok) (hc : Ctx L g lr m₀ t) (hrd : t'.rd = t.rd) (hwr : t'.wr = t.wr) (hm : t'.mem = t.mem)
@@ -332,6 +344,40 @@ theorem coversW (hc : Ctx L g lr m₀ t) {rs : List Region}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl <;> simp
 
+/-- Regions within the buffers or `core`'s tables are covered. -/
+theorem coversT (hc : Ctx L g lr m₀ t) {rs : List Region}
+    (h : ∀ r ∈ rs, (∃ R ∈ [L.D, L.DG, L.FR, L.OUT, L.SCR], Within r R) ∨ r ∈ L.TBLs) :
+    Covers rs (t.rd ++ t.wr) :=
+  covers_of fun r hr => by
+    rcases h r hr with ⟨R, hR, hw⟩ | hT
+    · refine ⟨R, ?_, hw⟩
+      rw [hc.rd, hc.wr]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
+      rcases hR with rfl | rfl | rfl | rfl | rfl <;> simp
+    · refine ⟨r, ?_, within_base _ (Nat.le_refl _)⟩
+      rw [hc.rd]
+      simp [hT]
+
+/-- `core`'s tables, at the addresses the state gives their statics. -/
+theorem tbls (hc : Ctx L g lr m₀ t) : Abi.constRegions t.syms L.cs = L.TBLs :=
+  List.map_congr_left fun c hc' => by rw [hc.csy c hc']
+
+/-- `core`'s tables hold their words. -/
+theorem held_now (hL : L.Ok) (hc : Ctx L g lr m₀ t) : Abi.constsHeld t.mem t.syms L.cs := fun c hc' i hi => by
+  show t.mem.readW (t.syms c.1 + BitVec.ofNat 64 (8 * i)) 64 = c.2.getD i 0
+  rw [hc.csy c hc']
+  obtain ⟨hn, tO, tS, tK, -⟩ := hL.tables ⟨L.sy c.1, 8 * c.2.length⟩
+    (List.mem_map_of_mem (f := fun c => (⟨L.sy c.1, 8 * c.2.length⟩ : Region)) hc')
+  simp only at hn
+  rw [hc.frame.readW (r := ⟨L.sy c.1, 8 * c.2.length⟩) (Offset.contains_base _ (by omega) (by omega))
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact tO
+      · exact tS
+      · exact tK) (by decide)]
+  exact hc.held c hc' i hi
+
 end Ctx
 
 /-! ## The layout of a call, and the frames' entry -/
@@ -344,23 +390,49 @@ def tabFacts (w : HVar) (f : Fns) (s : State) : Prop :=
     s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 w.H.D ∧
     s.mem.readW (s.gpr .r8 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 w.H.B
 
+/-- The statics' addresses of the tables `cs`, and zero for any other name,
+so that two runs' layouts agree when the tables' addresses do. -/
+def csSyms (cs : List (String × List (BitVec 64))) (f : String → Addr) : String → Addr :=
+  fun n => if n ∈ cs.map Prod.fst then f n else 0
+
+theorem csSyms_eq {cs : List (String × List (BitVec 64))} {f : String → Addr} {c : String × List (BitVec 64)}
+    (hc : c ∈ cs) : csSyms cs f c.1 = f c.1 :=
+  ite_eq_left_of_eq_true _ _ (eq_true (List.mem_map_of_mem (f := Prod.fst) hc))
+
+theorem constRegions_csSyms (cs : List (String × List (BitVec 64))) (f : String → Addr) :
+    Abi.constRegions (csSyms cs f) cs = Abi.constRegions f cs :=
+  List.map_congr_left fun c hc => by rw [csSyms_eq hc]
+
+theorem constsHeld_csSyms {m : Mem} {cs : List (String × List (BitVec 64))} {f : String → Addr}
+    (h : Abi.constsHeld m f cs) : Abi.constsHeld m (csSyms cs f) cs := fun c hc i hi => by
+  rw [csSyms_eq hc]; exact h c hc i hi
+
 /-- The layout of a call from `s`, with a digest of `dn` bytes, scalars of
 `q`, and the hash function `w`'s HMAC through the table, whose functions an
 indirect call reaches among `f`'s. -/
-def lay (dn q : Nat) (w : HVar) (f : Fns) (s : State) : Lay dn :=
+def lay (dn q : Nat) (w : HVar) (f : Fns) (s : State) (cs : List (String × List (BitVec 64)) := []) : Lay dn :=
   ⟨s.gpr .r3, s.gpr .r4, s.gpr .r5, s.gpr .r7, s.gpr .r8, s.sp - BitVec.ofNat 64 736, q, w, f,
-    fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0⟩
+    fun n => if n ∈ [w.initN, w.H.updN, w.finN] then s.syms n else 0, cs, csSyms cs s.syms⟩
 
-theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String} {s : State}
-    (h : (rfcPPC I 736 (tabFacts w f) ns).pre s) :
-    (lay I.hashLen I.ecdsa.curve.len w f s).Ok := by
-  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, nt, tout, tsc, tstk, -⟩ := h
+theorem lay_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : List String}
+    {cs : List (String × List (BitVec 64))} {s : State}
+    (h : (rfcPPC I 736 (tabFacts w f) ns cs).pre s) :
+    (lay I.hashLen I.ecdsa.curve.len w f s cs).Ok := by
+  obtain ⟨-, -, od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, hsp, nt, tout, tsc, tstk, -, -, tbl⟩ := h
   have nB : (lay I.hashLen I.ecdsa.curve.len w f s).B.toNat + 736 ≤ 2 ^ 64 := by
     show (s.sp - BitVec.ofNat 64 736).toNat + 736 ≤ 2 ^ 64
     change 736 ≤ s.sp.toNat at hsp
     rw [Offset.toNat_sub_ofNat s.sp _]
     omega
-  exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, nt, tout, tsc, tstk.symm⟩
+  exact ⟨od, og, oc, dc, gc, ko, kd, kg, kc, no, nd, ng, nc, nB, nt, tout, tsc, tstk.symm,
+    fun T hT => by
+      obtain ⟨t1, t2, t3, t4, t5⟩ := tbl T (by
+        have e : (lay I.hashLen I.ecdsa.curve.len w f s cs).TBLs = Abi.constRegions s.syms cs :=
+          constRegions_csSyms cs s.syms
+        rw [← e]; exact hT)
+      have e : (lay I.hashLen I.ecdsa.curve.len w f s cs).STK = below s.sp 736 := by
+        show (⟨s.sp - BitVec.ofNat 64 736, 736⟩ : Region) = _; rfl
+      exact ⟨t1, t2, t3, e ▸ t4.symm, t5⟩⟩
 
 /-- The state after `mflr r0`. -/
 def lrSaved (s : State) : State := s.write .r0 s.lr
@@ -376,13 +448,13 @@ theorem entered_gpr (s : State) {r : Reg} (hr : r ≠ .r0) : (entered s).gpr r =
   show (s.write .r0 s.lr).gpr r = _
   simp [State.write, hr]
 
-theorem entered_sp (dn q : Nat) (w : HVar) (f : Fns) (s : State) :
-    (entered s).sp = (lay dn q w f s).B + BitVec.ofNat 64 96 := by
+theorem entered_sp (dn q : Nat) (w : HVar) (f : Fns) (s : State) (cs : List (String × List (BitVec 64)) := []) :
+    (entered s).sp = (lay dn q w f s cs).B + BitVec.ofNat 64 96 := by
   show s.sp - 48 - BitVec.ofNat 64 592 = s.sp - BitVec.ofNat 64 736 + BitVec.ofNat 64 96
   bv_omega_using []
 
-theorem entered_wr (dn q : Nat) (w : HVar) (f : Fns) (s : State) :
-    (entered s).wr = (lay dn q w f s).FR :: (lay dn q w f s).LR :: s.wr := by
+theorem entered_wr (dn q : Nat) (w : HVar) (f : Fns) (s : State) (cs : List (String × List (BitVec 64)) := []) :
+    (entered s).wr = (lay dn q w f s cs).FR :: (lay dn q w f s cs).LR :: s.wr := by
   show (⟨s.sp - 48 - BitVec.ofNat 64 592 + 32, 592 - 32⟩ : Region) :: ⟨s.sp - 48 + 32, 16⟩ :: s.wr =
     ⟨s.sp - BitVec.ofNat 64 736 + BitVec.ofNat 64 128, 560⟩ ::
     ⟨s.sp - BitVec.ofNat 64 736 + BitVec.ofNat 64 720, 16⟩ :: s.wr
@@ -399,10 +471,10 @@ theorem read8 (m : Mem) (a : Addr) : m.read a 8 = m.readW a 64 := by
   simp only [Mem.readW, Nat.reduceDiv, BitVec.setWidth_eq]
 
 /-- What the frames' pushes write: the back chains and the return address. -/
-theorem entered_mem (dn q : Nat) (w : HVar) (f : Fns) (s : State) :
+theorem entered_mem (dn q : Nat) (w : HVar) (f : Fns) (s : State) (cs : List (String × List (BitVec 64)) := []) :
     (entered s).mem =
-      ((s.mem.writeW ((lay dn q w f s).B + BitVec.ofNat 64 688) s.sp).writeW
-        ((lay dn q w f s).B + BitVec.ofNat 64 720) s.lr).writeW ((lay dn q w f s).B + BitVec.ofNat 64 96)
+      ((s.mem.writeW ((lay dn q w f s cs).B + BitVec.ofNat 64 688) s.sp).writeW
+        ((lay dn q w f s cs).B + BitVec.ofNat 64 720) s.lr).writeW ((lay dn q w f s cs).B + BitVec.ofNat 64 96)
         (s.sp - 48) := by
   show ((s.mem.write (s.sp - 48) 8 s.sp).write (s.sp - 48 + 32) 8 s.lr).write
     (s.sp - 48 - BitVec.ofNat 64 592) 8 (s.sp - 48) =

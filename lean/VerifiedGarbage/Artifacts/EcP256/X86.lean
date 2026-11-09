@@ -70,6 +70,8 @@ public import VerifiedGarbage.Impl.EcKey.P256.X86
 import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P256.X86.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P256Decompress
 
 /-! # P-256 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
 
@@ -80,6 +82,14 @@ namespace VG.Artifacts.EcP256.X86
 open VG.Proof.P256.X86 (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86.target {
+    stack := 28
+    code := Proof.EcKey.Compressed.X86.P256.code
+    verified := Proof.EcKey.Compressed.X86.P256.verified hasLaw.inv },
+  Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86.target {
+    stack := 28
+    code := Proof.EcKey.Compressed.X86.P256Decompress.code
+    verified := Proof.EcKey.Compressed.X86.P256Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.P256.publicKeyApi.artifact X86.target {
     code := Proof.EcKey.X86.pkCombCode
     stack := 20

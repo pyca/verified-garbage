@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_scrypt_shani` requires (`Artifact.features`).
-pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// scrypt (RFC 7914 §6) with block size parameter `r`, cost parameter `N = vlen / r` and parallelization parameter `p = blen / r`: writes the `out_len`-byte key derived from the `password_len` bytes at `password` and the `salt_len` bytes at `salt` to `out`.
 ///
@@ -22,7 +22,7 @@ pub const VG_SCRYPT_SHANI_FEATURES: verified_garbage_cpu::Features = verified_ga
 /// * `b`, `v` and `scratch` are working space: their contents on return are unspecified.
 /// * `b`, `v`, `scratch` and `out` must not overlap each other, `password`, `salt` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `password`, `salt`, `b`, `v`, `scratch` and `out` may overlap the return address on the stack or the 88 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_scrypt_shani(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(

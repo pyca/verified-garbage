@@ -58,10 +58,12 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
   unfold decodeNeg
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   have hS0 : SlotsOk s.mem b [DXX, DY, DK] (FS s.mem b) := fun _ _ => rfl
-  refine WP.append (subS (o := DTMP) (x := DXX) (y := DXX) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (subS (o := DTMP) (x := DXX) (y := DXX) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)
     hc.ctx hS0) fun s1 ⟨hr1, hf1, hS1⟩ => ?_
   have hc1 : VCtx b s1 := hc.of_rest hr1 (by decide) (by decide)
-  refine WP.append (subS (o := DNEG) (x := DTMP) (y := DXX) (by decide) (by decide) (by decide) (by decide)
+  refine WP.append (subS (o := DNEG) (x := DTMP) (y := DXX) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide)
     hc1.ctx hS1) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
   have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
   have hf12 : Frame [FA b] s.mem s2.mem := hf1.trans hf2

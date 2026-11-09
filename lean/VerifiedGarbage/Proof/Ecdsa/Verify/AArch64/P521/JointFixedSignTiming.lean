@@ -13,7 +13,7 @@ open VG.Proof.Weierstrass.AArch64.PubNaf
 open VG.Proof.Ed25519.AArch64 (read_x)
 
 theorem fixedSign_relCT {C : Curve} {base : Addr} {u j : Nat} {V : List Nat} {E : Nat → Fe C}
- (hL : NafLay P521Joint.K 8192) (hm : UnitMod C.p (2^(64*P521Joint.K.M.n)))
+ (hL : NafLay P521Joint.K 8192) (_hm : UnitMod C.p (2^(64*P521Joint.K.M.n)))
  (hV : ∀x∈[P521Joint.K.zero,P521Joint.K.E.y],x∈V) (hj : j<577) :
  RelCT isa (fun s t=>FieldPair P521Joint.K.M base 8192 C.p (·∈winSlots P521Joint.K) V E s t ∧
  s.gpr .x19=BitVec.ofNat 64 j ∧ t.gpr .x19=BitVec.ofNat 64 j ∧
@@ -57,9 +57,9 @@ theorem fixedSign_relCT {C : Curve} {base : Addr} {u j : Nat} {V : List Nat} {E 
        (runOps [FOp.sub P521Joint.K.E.y P521Joint.K.zero P521Joint.K.E.y] E)) := by
      apply fieldWP_relCT fixedNeg_ct
      intro s hs
-     have w := fprog_ok hL.win.lay hL.al.al hm [FOp.sub P521Joint.K.E.y P521Joint.K.zero P521Joint.K.E.y]
-       hs (by decide) (by simp [readsOk, FOp.ins, hV P521Joint.K.zero (by simp), hV P521Joint.K.E.y (by simp)])
-     simp only [fprog,List.flatMap_cons,List.flatMap_nil,List.append_nil,opCode] at w
+     have w := subRaw_ok hL.win.lay hL.al.al hs
+       (o:=P521Joint.K.E.y) (a:=P521Joint.K.zero) (b:=P521Joint.K.E.y)
+       (by decide) (by simp [FOp.ins,hV P521Joint.K.zero (by simp),hV P521Joint.K.E.y (by simp)])
      exact WP.mono w fun t ⟨kt,it⟩=>⟨it,kt.sp⟩
    exact neg.mono (fun _ _ h=>h.1.1) (fun _ _ h=>⟨_,h.sub (fun _ hx=>List.mem_cons_of_mem _ hx)⟩)
  · exact RelCT.block_nil (fun _ _ h=>⟨_,h.1.1⟩)

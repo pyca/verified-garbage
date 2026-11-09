@@ -33,16 +33,18 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`), with `2⁴⁴⁸ ≡ 2²²�
   for `lo + 2⁴⁴⁸ hi ≡ lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded
   once more, limb `k` of `lo + hi + hi_{k+7}` (`k < 7`) and of
   `lo + 2 hi + hi_{k-7}` (`k ≥ 7`) (`pass`), then `tail`;
-* `add`, `sub`: the limbs of `a + b` and of `a + 4p - b` (every limb of `4p`
-  is `2³⁴ - 4`, but limb 7's, `2³⁴ - 8`, so no limb is negative; `r4` holds
-  `2³⁴`), then `tail`;
+* `add`, `sub`: the seven doublewords of `a + b` (carry chain, `addc`/`adde`)
+  and of `a - b` modulo `2⁴⁴⁸` (borrow chain, `subc`/`sube`), each stored as
+  it is made, then the carry `c` added as `c + 2²²⁴ c`, or the borrow `β`
+  taken away as `β + 2²²⁴ β`, twice (a chain over the stored doublewords;
+  the second carries or borrows nothing);
 * `cswap`: with the mask `-swap` (in `r11`), as RFC 7748 §5 describes;
 * `freeze`: the full reduction of the result: `y = x + 2²²⁴ + 1` carries out
   exactly when `x ≥ p` (`x < 2⁴⁴⁸`), and is then `x - p` modulo `2⁴⁴⁸`,
   selected with a mask.
 
-The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the constant element `A24`), over the bits of the scalar
+The ladder follows RFC 7748 §5 operation by operation (with `a24 · E`
+by the one-word multiplication `mulA24`), over the bits of the scalar
 from 447 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
 The inversion `z2^(p-2)` is an addition chain (446 squarings and 15
 multiplications, in the ladder's temporaries), its runs of squarings counted
@@ -75,7 +77,6 @@ def BB : Nat := 560
 def E : Nat := 616
 def DA : Nat := 672
 def CB : Nat := 728
-def A24 : Nat := 784
 def R : Nat := 840
 def Y : Nat := 896
 def ACC : Nat := 952
@@ -99,30 +100,71 @@ def ldSrc (o k : Nat) : List Instr := [.load .w .r7 .r6 (o + 4 * k)]
 /-- Limb `k` of `[o]`, with the carry folded in kept in `r10` added to limb 7, into `r7`. -/
 def foldSrc (o k : Nat) : List Instr := ldSrc o k ++ (if k = 7 then [.add .r7 .r7 .r10] else [])
 
-/-- The carry out of `[o]`, in `r8`, folded in as `r8 + 2²²⁴ r8`. -/
-def fold (o : Nat) : List Instr := .addi .r10 .r8 0 :: pass .r6 o (foldSrc o)
-
-/-- The carry out folded in twice. -/
-def tail (o : Nat) : List Instr := fold o ++ fold o
-
 /-! ## Field arithmetic -/
 
+/-- Limb `k` of `[a] + [b]`, a source for `pass` (Ed448's scalar arithmetic
+on PPC64LE uses it). -/
 def addSrc (a b k : Nat) : List Instr :=
   [.load .w .r7 .r6 (a + 4 * k), .load .w .r5 .r6 (b + 4 * k), .add .r7 .r7 .r5]
 
-/-- `[o] = [a] + [b]`. -/
-def add (o a b : Nat) : List Instr := .li .r8 0 :: pass .r6 o (addSrc a b) ++ tail o
+/-- Step `k` of a carry chain (`addc`, then `adde`), or with `sub` of a
+borrow chain (`subc`, then `sube`), of `r7` and `src`, into `r7`. -/
+def chainOp (sub : Bool) (k : Nat) (src : Reg) : Instr :=
+  if sub then (if k = 0 then .subc .r7 .r7 src else .sube .r7 .r7 src)
+  else (if k = 0 then .addc .r7 .r7 src else .adde .r7 .r7 src)
 
-/-- Limb `k` of `4p` is `2³⁴` less `subLo k`. -/
-def subLo (k : Nat) : Nat := if k = 7 then 8 else 4
+/-- Doubleword `k` of `[x] ± [y]` by the chain, stored at `o + 8k`. -/
+def chainStep (sub : Bool) (o x y k : Nat) : List Instr :=
+  [.load .d .r7 .r6 (x + 8 * k), .load .d .r8 .r6 (y + 8 * k), chainOp sub k .r8,
+    .store .d .r7 .r6 (o + 8 * k)]
 
-def subSrc (a b k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (a + 4 * k), .add .r7 .r7 .r4, .subi .r7 .r7 (subLo k), .load .w .r5 .r6 (b + 4 * k),
-    .sub .r7 .r7 .r5]
+/-- What a fold adds to (or subtracts from) doubleword `k`: `r4` to word 0,
+`r5` to word 3, `r8` (zero) to the others. -/
+def foldSrc64 (k : Nat) : Reg := if k = 0 then .r4 else if k = 3 then .r5 else .r8
 
-/-- `[o] = [a] - [b]`, as `[a] + 4p - [b]`. -/
+/-- Doubleword `k` of `[o] ± foldSrc64`, by the chain. -/
+def foldStep (sub : Bool) (o k : Nat) : List Instr :=
+  [.load .d .r7 .r6 (o + 8 * k), chainOp sub k (foldSrc64 k), .store .d .r7 .r6 (o + 8 * k)]
+
+/-- The carry `c` of a sum into `r4`, `2³² c` into `r5` and zero into `r8`:
+the fold then adds `c + 2²²⁴ c` (`2⁴⁴⁸ ≡ 2²²⁴ + 1`). -/
+def carryPrep : List Instr := [.li .r4 0, .addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
+
+/-- The borrow `β` of a difference (CA clear) into `r4`, `2³² β` into `r5`
+and zero into `r8`: `CA - 1` by `sube`, negated. -/
+def borrowPrep : List Instr := [.li .r8 0, .sube .r4 .r8 .r8, .sub .r4 .r8 .r4, .lsl .r5 .r4 32]
+
+/-- `[o] = [a] + [b]` (`o` may be `a` or `b`): the seven doublewords of the
+sum by the carry chain, each stored as it is made, and its carry folded in
+as `c + 2²²⁴ c`, twice (after the first, nothing carries out). -/
+def add (o a b : Nat) : List Instr :=
+  (List.range 7).flatMap (chainStep false o a b) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o)
+
+/-- `[o] = [a] - [b]` (`o` may be `a` or `b`): the seven doublewords of the
+difference modulo `2⁴⁴⁸` by the borrow chain, and its borrow `β` taken away
+as `β + 2²²⁴ β`, twice (the second does not borrow). -/
 def sub (o a b : Nat) : List Instr :=
-  [.li .r8 0, .li .r4 1, .lsl .r4 .r4 34] ++ pass .r6 o (subSrc a b) ++ tail o
+  (List.range 7).flatMap (chainStep true o a b) ++
+    borrowPrep ++ (List.range 7).flatMap (foldStep true o) ++
+    borrowPrep ++ (List.range 7).flatMap (foldStep true o)
+
+/-- Doubleword `k` of `a24 · [a]` (`a24 = 39081` in `r5`, the previous
+step's high word in `r7`): `mulld` plus the previous `mulhdu` by the carry
+chain, stored at `o + 8k`, and this step's `mulhdu` into `r7`. -/
+def a24Step (o a k : Nat) : List Instr :=
+  [.load .d .r8 .r6 (a + 8 * k), .mul .r9 .r8 .r5,
+    if k = 0 then .addc .r9 .r9 .r7 else .adde .r9 .r9 .r7, .mulhu .r7 .r8 .r5,
+    .store .d .r9 .r6 (o + 8 * k)]
+
+/-- `[o] = a24 · [a]` (`a24 = 39081`; `o` may be `a`): the seven doublewords
+of the product, each stored as it is made, and its top word `t < 2¹⁶`
+folded in as `t + 2²²⁴ t` twice, as `add` folds its carry. -/
+def mulA24 (o a : Nat) : List Instr :=
+  [.li .r5 0, .ori .r5 .r5 0x98a9, .li .r7 0] ++ (List.range 7).flatMap (a24Step o a) ++
+    [.addze .r4 .r7, .lsl .r5 .r4 32, .li .r8 0] ++ (List.range 7).flatMap (foldStep false o) ++
+    carryPrep ++ (List.range 7).flatMap (foldStep false o)
 
 /-- Register `r` stored into the `n` words from `o` of the working space. -/
 def storeN (r : Reg) (o n : Nat) : List Instr := (List.range n).flatMap fun k => [.store .w r .r6 (o + 4 * k)]
@@ -141,12 +183,6 @@ def row (a b : Nat) : List Instr :=
   [.load .w .r4 .r9 a, .li .r8 0] ++ pass .r9 ACC (rowSrc b) ++
     [.store .w .r8 .r9 (ACC + 56), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
-/-- Limb `k` of `lo + hi + 2²²⁴ hi`, with `2²²⁴ hi`'s upper half folded once more, into `r7`. -/
-def mulSrc (k : Nat) : List Instr :=
-  [.load .w .r7 .r6 (ACC + 4 * k), .load .w .r5 .r6 (ACC + 56 + 4 * k), .add .r7 .r7 .r5] ++
-  (if k < 7 then [.load .w .r5 .r6 (ACC + 56 + 4 * (k + 7)), .add .r7 .r7 .r5]
-   else [.add .r7 .r7 .r5, .load .w .r5 .r6 (ACC + 56 + 4 * (k - 7)), .add .r7 .r7 .r5])
-
 /-- Doubleword `j` of row `i` (`r9` = the base plus `8 i`, `a_i` in `r4`, the
 carry word in `r8`): `a_i b_j + acc[i + j] + carry`, below `2¹²⁸`, its low
 word stored over `acc[i + j]` and its high word the next carry (`mulld`,
@@ -161,14 +197,47 @@ def row64 (a b : Nat) : List Instr :=
   [.load .d .r4 .r9 a, .li .r8 0] ++ (List.range 7).flatMap (rowStep64 b) ++
     [.store .d .r8 .r9 (ACC + 56), .addi .r9 .r9 8, .subi .r11 .r11 1]
 
+/-- Doubleword `k` of the high half `H` of the product rotated by 224 bits,
+`(H₍ₖ₊₃₎ mod 7 >> 32) + (H₍ₖ₊₄₎ mod 7 << 32)`, into `r8`. -/
+def rotSrc (k : Nat) : List Instr :=
+  [.load .d .r5 .r6 (ACC + 56 + 8 * ((k + 3) % 7)), .load .d .r10 .r6 (ACC + 56 + 8 * ((k + 4) % 7)),
+    .lsr .d .r5 .r5 32, .lsl .r10 .r10 32, .add .r8 .r5 .r10]
+
+/-- Doubleword `k ≥ 3` of the high half `H` of the product with its low 224
+bits cleared, into `r8`. -/
+def hiSrc (k : Nat) : List Instr :=
+  if k = 3 then [.load .d .r8 .r6 (ACC + 56 + 24), .lsr .d .r8 .r8 32, .lsl .r8 .r8 32]
+  else [.load .d .r8 .r6 (ACC + 56 + 8 * k)]
+
+/-- Doubleword `k` of `[o]` plus what `src k` leaves in `r8`, by the carry chain. -/
+def accStep (src : Nat → List Instr) (o k : Nat) : List Instr :=
+  .load .d .r7 .r6 (o + 8 * k) :: src k ++ [chainOp false k .r8, .store .d .r7 .r6 (o + 8 * k)]
+
+/-- The sums of the reduction of the product `L + 2⁴⁴⁸ H` at `ACC` into `[o]`:
+with `H = Hₗ + 2²²⁴ Hₕ`, `2⁴⁴⁸ H ≡ H + 2²²⁴ Hₗ + Hₕ + 2²²⁴ Hₕ`, so `[o] = L + H`,
+then `+= 2²²⁴ Hₗ + Hₕ` (`H` rotated by 224 bits), then `+= 2²²⁴ Hₕ` (`H` with
+its low 224 bits cleared), three carry chains whose carries `c ≤ 3` are summed
+in `r4`; `2³² c` into `r5` and zero into `r8`, as `carryPrep` leaves them. -/
+def sums (o : Nat) : List Instr :=
+  (List.range 7).flatMap (chainStep false o ACC (ACC + 56)) ++ [.li .r4 0, .addze .r4 .r4] ++
+    (List.range 7).flatMap (accStep rotSrc o) ++ [.addze .r4 .r4] ++
+    (List.range 4).flatMap (fun j => accStep hiSrc o (j + 3)) ++
+    [.addze .r4 .r4, .lsl .r5 .r4 32, .li .r8 0]
+
+/-- The reduction of the product at `ACC` into `[o]`: the `sums`, then their
+carry folded in as `c + 2²²⁴ c` twice, as `add` does. -/
+def reduce (o : Nat) : List Instr :=
+  sums o ++ (List.range 7).flatMap (foldStep false o) ++ carryPrep ++
+    (List.range 7).flatMap (foldStep false o)
+
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product in `ACC`: its
 fourteen doublewords row by row, seven rows of seven `mulld`/`mulhdu`
 products (a loop, so that the ladder's loop stays within the reach of its
-branch), then the reduction of its 28 limbs. -/
+branch), then its reduction (`reduce`). -/
 def mul (o a b : Nat) : Prog isa :=
   .seq (.block (zeroAcc ++ [.addi .r9 .r6 0, .li .r11 7]))
     (.seq (.loop (.block (row64 a b)) (.nonzero .d .r11))
-      (.block (.li .r8 0 :: pass .r6 o mulSrc ++ tail o)))
+      (.block (reduce o)))
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
@@ -198,7 +267,7 @@ def step : Prog isa :=
   .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
   .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
   .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (mul Z2 A24 E) <|
+  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
   .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
 
 /-- The 448 iterations, for `t` from 447 down to 0, with `swap = 0`. -/
@@ -279,11 +348,10 @@ def freeze : List Instr :=
 def decodeStep (k : Nat) : List Instr :=
   [.load .w .r7 .r5 (4 * k), .store .w .r7 .r6 (X1 + 4 * k), .store .w .r7 .r6 (X3 + 4 * k)]
 
-/-- `x2 = 1`, `z2 = 0`, `z3 = 1` and `A24 = 39081 = 0x98a9`. -/
+/-- `x2 = 1`, `z2 = 0` and `z3 = 1`. -/
 def consts : List Instr :=
-  [.li .r7 1, .li .r8 0, .li .r5 0, .ori .r5 .r5 0x98a9, .store .w .r7 .r6 X2,
-    .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3, .store .w .r5 .r6 A24] ++
-  storeN .r8 (X2 + 4) 13 ++ storeN .r8 (Z2 + 4) 13 ++ storeN .r8 (Z3 + 4) 13 ++ storeN .r8 (A24 + 4) 13
+  [.li .r7 1, .li .r8 0, .store .w .r7 .r6 X2, .store .w .r8 .r6 Z2, .store .w .r7 .r6 Z3] ++
+  storeN .r8 (X2 + 4) 13 ++ storeN .r8 (Z2 + 4) 13 ++ storeN .r8 (Z3 + 4) 13
 
 /-- The u-coordinate into `X1` and `X3`, and the constants. -/
 def setup : List Instr := (List.range 14).flatMap decodeStep ++ consts

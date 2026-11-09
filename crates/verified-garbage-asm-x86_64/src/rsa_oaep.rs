@@ -4,7 +4,7 @@
 #![allow(dead_code)]
 
 /// The CPU features `vg_rsa_oaep_decrypt_crt_ifma` requires (`Artifact.features`).
-pub const VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// RSAES-OAEP decryption (RFC 8017 §7.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), decrypts the ciphertext `ct` (`n_len` bytes, most significant first) with the label `label`: if RSADP's result passes the check against `e` and is a valid EME-OAEP encoding, writes the message to the start of `out`, zeros after it, and its length to `*msg_len`, and returns 1. Otherwise writes zeros to `out` and `*msg_len` and returns 0 for every failure of the key, the ciphertext (not below `n`) or its decoding, which are not told apart; or 2 (an internal error) if RSADP's result fails the check against `e`, which it does for no ciphertext if `vg_rsa_check_key` accepts the key and `p` and `q` are prime.
 ///
@@ -39,7 +39,7 @@ pub const VG_RSA_OAEP_DECRYPT_CRT_IFMA_FEATURES: verified_garbage_cpu::Features 
 /// * None of `out`, `msg_len`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `label`, `ct`, `scratch`, `hash` and `mgf1` may overlap the return address on the stack or the 3560 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_decrypt_crt_ifma(out: *mut u8, out_len: usize, msg_len: *mut [u64; 1], n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, label: *const u8, label_len: usize, ct: *const u8, ct_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(
@@ -1425,7 +1425,7 @@ jne 2117b
 }
 
 /// The CPU features `vg_rsa_oaep_encrypt_precomputed_rsa_ifma` requires (`Artifact.features`).
-pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// RSAES-OAEP encryption (RFC 8017 §7.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), writes the encryption of the message `msg` with the label `label` and the `seed_len`-byte seed `seed` (`n_len` bytes, most significant first) to `out` and returns 1; or writes zeros and returns 0 if `n` is not such a modulus or the message is longer than `n_len - 2 seed_len - 2` bytes. The seed must be fresh random bytes for each encryption. If `pre` does not hold those values, what it writes and returns is unspecified; memory safety and the timing guarantee still apply.
 ///
@@ -1457,7 +1457,7 @@ pub const VG_RSA_OAEP_ENCRYPT_PRECOMPUTED_RSA_IFMA_FEATURES: verified_garbage_cp
 /// * None of `out`, `n`, `e`, `label`, `msg`, `seed`, `scratch`, `pre`, `hash` and `mgf1` may overlap the return address on the stack or the 312 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 /// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_rsa_oaep_encrypt_precomputed_rsa_ifma(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, label: *const u8, label_len: usize, msg: *const u8, msg_len: usize, seed: *const u8, seed_len: usize, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 5], mgf1: *const [usize; 5]) -> u32 {
     core::arch::naked_asm!(

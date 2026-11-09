@@ -20,7 +20,7 @@ pub(crate) unsafe extern "sysv64" fn vg_sha1_init(state: *mut [u8; 84]) {
 }
 
 /// The CPU features `vg_sha1_update_shani` requires (`Artifact.features`).
-pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Absorbs data into a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -32,7 +32,7 @@ pub const VG_SHA1_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_update_shani(state: *mut [u8; 84], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
@@ -49,7 +49,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -57,7 +57,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -81,7 +81,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -89,7 +89,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -122,7 +122,7 @@ jne 20b
 }
 
 /// The CPU features `vg_sha1_finalize_shani` requires (`Artifact.features`).
-pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Finishes a SHA-1 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SHA-1 digest of that message to `*out`.
 ///
@@ -135,7 +135,7 @@ pub const VG_SHA1_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `out` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `out` may overlap the return address on the stack or the 176 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_finalize_shani(state: *mut [u8; 84], count: u64, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
@@ -148,7 +148,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -157,7 +157,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -165,7 +165,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -181,7 +181,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -205,7 +205,7 @@ je 22b
 }
 
 /// The CPU features `vg_sha1_digest_shani` requires (`Artifact.features`).
-pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SHA | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::SHA);
 
 /// Computes the SHA-1 digest of the `len` bytes at `data` (20 bytes, `VG.Spec.Sha1.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-1 computation with that message.
 ///
@@ -217,7 +217,7 @@ pub const VG_SHA1_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = verifi
 /// * `out` must be valid for reads and writes of 20 bytes.
 /// * `out` must not overlap `data` (distinct Rust objects never do).
 /// * Neither `data` nor `out` may overlap the return address on the stack or the 288 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `sha` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `sha` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_sha1_digest_shani(data: *const u8, len: usize, out: *mut [u8; 20]) {
     core::arch::naked_asm!(
@@ -232,7 +232,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -243,26 +243,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f
@@ -310,7 +310,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -318,7 +318,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -342,7 +342,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -350,7 +350,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -409,7 +409,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -418,7 +418,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -426,7 +426,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -442,7 +442,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -493,7 +493,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -504,26 +504,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f
@@ -567,7 +567,7 @@ jmp 24f
 .base64 "SSnESIP4CA=="
 jb 25f
 27:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 27b
 jmp 26f
 25:
@@ -575,7 +575,7 @@ jmp 26f
 .base64 "SIXA"
 je 28f
 210:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 210b
 jmp 29f
 28:
@@ -599,7 +599,7 @@ jmp 216f
 .base64 "SSnESIP4CA=="
 jb 217f
 219:
-.base64 "TItNAE6JTCsUSIPFCEmDxQhIg+gISIP4CA=="
+.base64 "TItNAEG6OAAAAE051U0PQtVOiUwTFEiDxQhJg8UISIPoCEiD+Ag="
 jae 219b
 jmp 218f
 217:
@@ -607,7 +607,7 @@ jmp 218f
 .base64 "SIXA"
 je 220f
 222:
-.base64 "RA+2TQBGiEwrFEiDxQFJg8UBSIPoAQ=="
+.base64 "RA+2TQBBuj8AAABNOdVND0LVRohMExRIg8UBSYPFAUiD6AE="
 jne 222b
 jmp 221f
 220:
@@ -662,7 +662,7 @@ jmp 21f
 22:
 .base64 "TInoSIPgDw=="
 je 23f
-.base64 "RohMKxRJg8UBuEAAAABNhfY="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAbhAAAAATYX2"
 je 25f
 jmp 26f
 25:
@@ -671,7 +671,7 @@ jmp 26f
 .base64 "QbkAAAAATCnoSIP4CA=="
 jb 27f
 29:
-.base64 "TolMKxRJg8UISIPoCEiD+Ag="
+.base64 "Qbo4AAAATTnVTQ9C1U6JTBMUSYPFCEiD6AhIg/gI"
 jae 29b
 jmp 28f
 27:
@@ -679,7 +679,7 @@ jmp 28f
 .base64 "SIXA"
 je 210f
 212:
-.base64 "RohMKxRJg8UBSIPoAQ=="
+.base64 "Qbo/AAAATTnVTQ9C1UaITBMUSYPFAUiD6AE="
 jne 212b
 jmp 211f
 210:
@@ -695,7 +695,7 @@ jmp 24f
 .base64 "ZkkPbsFJg/0w"
 jae 215f
 217:
-.base64 "80IPf0QrFGYP78BJg8UQSYP9MA=="
+.base64 "QbowAAAATTnVTQ9C1fNCD39EExRmD+/ASYPFEEmD/TA="
 jb 217b
 jmp 216f
 215:
@@ -742,7 +742,7 @@ jmp 21f
 .base64 "Zg/vwPMPf0MU8w9/QyTzD39DNPMPf0NETYniSYPiP0G7AAAAAE2J0UnB6QQ="
 je 22f
 24:
-.base64 "80EPb00A80IPf0wbFEmDxRBJg8MQSYPpAQ=="
+.base64 "80EPb00AuTAAAABJOctJD0LL8w9/TAsUSYPFEEmDwxBJg+kB"
 jne 24b
 jmp 23f
 22:
@@ -753,26 +753,26 @@ je 25f
 jb 27f
 .base64 "SIP4CA=="
 jb 29f
-.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syvNCD39MGxQ="
+.base64 "TYtFAE2LTAX4uQ8AAABIKcFIweEDSdPpScHpCEiJwUiD6QhIweEDuoAAAABI0+JJCdFmSQ9uyGZJD27RZg9syrkwAAAASTnLSQ9Cy/MPf0wLFA=="
 jmp 210f
 29:
-.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsjzQg9/TBsU"
+.base64 "TYtEBfi5CAAAAEgpwUjB4QNJ0+hIicFIweEDQbmAAAAASdPhTQnIZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 210:
 jmp 28f
 27:
 .base64 "SIXA"
 je 211f
 213:
-.base64 "RQ+2RQBGiEQbFEmDxQFJg8MBSIPoAQ=="
+.base64 "RQ+2RQC5PwAAAEk5y0kPQstEiEQLFEmDxQFJg8MBSIPoAQ=="
 jne 213b
 jmp 212f
 211:
 212:
-.base64 "QbiAAAAARohEGxQ="
+.base64 "QbiAAAAAuT8AAABJOctJD0LLRIhECxQ="
 28:
 jmp 26f
 25:
-.base64 "QbiAAAAAZkkPbsjzQg9/TBsU"
+.base64 "QbiAAAAAZkkPbsi5MAAAAEk5y0kPQsvzD39MCxQ="
 26:
 .base64 "SYP6OA=="
 jae 214f

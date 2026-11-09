@@ -457,6 +457,10 @@ pub mod rc2;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
 #[rustfmt::skip]
+pub mod rc2_cbc;
+
+#[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]
+#[rustfmt::skip]
 pub mod rc4;
 
 #[cfg(all(target_arch = "riscv64", target_endian = "little", target_feature = "m", target_feature = "c"))]

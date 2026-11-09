@@ -3,8 +3,8 @@ module
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Verify.Entry
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.PreparedKey
 public import VerifiedGarbage.Impl.MlDsa.PPC64LE.Verify.Inst
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Ntt
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.NttInv
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNttInv.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.AddSub
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sample.RejNttCT
@@ -36,8 +36,8 @@ open VG VG.PPC64LE
 open VG.Impl.MlDsa.PPC64LE.Verify
 
 theorem prims_ok : VPrimsOk prims 96 where
-  ntt := ⟨⟨96, by decide, Arith.Ntt.verified⟩, by decide +kernel⟩
-  invNtt := ⟨⟨96, by decide, Arith.NttInv.verified⟩, by decide +kernel⟩
+  ntt := ⟨⟨96, by decide, VNtt.verified⟩, by decide +kernel⟩
+  invNtt := ⟨⟨96, by decide, VNtt.iverified⟩, by decide +kernel⟩
   mul := ⟨⟨0, by decide, Arith.Mul.mul_verified⟩, by decide +kernel⟩
   mulAdd := ⟨⟨0, by decide, Arith.Mul.mulAdd_verified⟩, by decide +kernel⟩
   sub := ⟨⟨0, by decide, Arith.AddSub.sub_verified⟩, by decide +kernel⟩

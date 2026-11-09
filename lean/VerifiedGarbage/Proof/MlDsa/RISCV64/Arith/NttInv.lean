@@ -25,7 +25,7 @@ meta import Init.Data.Nat.Bitwise.Basic
 /-!
 # ML-DSA on RISC-V: `vg_mldsa_inv_ntt`
 
-As `vg_mldsa_ntt` (`Ntt.lean`) and PPC64LE's (`Proof/MlDsa/PPC64LE/Arith/NttInv.lean`),
+As `vg_mldsa_ntt` (`Ntt.lean`),
 with the lazy inverse butterflies (`ibfly_ok`, `lp_ibfly`, `Lazy.lean`'s
 `opIB`), the table of the negated zetas read from `m = 255` down, and the
 layers with `len = 2^ℓ`, which leave words less than `256 q` congruent to

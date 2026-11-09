@@ -154,7 +154,7 @@ theorem core_ok (c : Cfg) (hc : CfgOk c) (h9 : c.n=9)
     (show toM c.C.p (2 ^ (64 * c.n)) (c.mont 1) = 1 by rw [toM_cmont hc]; rfl) (hInv base) hRC hx0
     hs₂ hM₂ hF (by rw [hJ]; exact hrec) (Nat.le_add_left _ _) hJ2
     (by rw [hJ]; exact winE_two_bound (d := wordsVal s.mem base (c.sl K) c.n) (J := 131) (b := 521) (n := c.C.n) (by decide) hk hbd) (winAddOk hc)
-    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (scheduled_doubles hL hA hpR) MaddOk.none (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
+    (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (by rw [hpadd]; trivial) (selected_doubles hL hA hpR) MaddOk.none (selOk_default (Nat.lt_trans (hmont 1) hc.p_lt)))
     fun s₃ ⟨K₃, U₃, M₃, L₃, R₃⟩ => ?_)
   change Unch base (winW (winQ c) ++ invJW c) s₂.mem s₃.mem at U₃
   rw [winW_eq] at U₃

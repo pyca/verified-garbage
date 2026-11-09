@@ -73,10 +73,39 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.P521.X86_64.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P521Adx
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # ECDSA over P-521 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-521 on x86-64, with HMAC as a table
+namespace VG.Artifacts.EcdsaP521.X86_64.Rfc6979
+
+open VG.Proof.P521.X86_64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p521Of p521T_verified signCode_sp)
+open VG.Proof.HmacTable.X86_64 (tables names)
+
+/-- The signature with P-521's multiplication with BMI2 and ADX (`adx`,
+`_adx`) or not, and the tables of `vs`. -/
+def withMul (h : Proof.Weierstrass.X86_64.HasLawInvOrd Spec.P521.curve) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash)
+    (hv : OK vs ∧ "VG_P521_COMB" ∉ names vs) (adx : Bool) : Artifact :=
+  Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact X86_64.target {
+    suffix := if adx then "_adx" else ""
+    tables := [("hmac", tables vs)]
+    code := signCodeT (p521Of adx h.law (Proof.P521.combOk7 h.law) h.inv) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs
+    stack := stackT
+    verified := p521T_verified adx h.law (Proof.P521.combOk7 h.law) h.inv vs hv
+    spSafe := signCode_sp _ _ _ }
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
+  if hv : OK vs ∧ "VG_P521_COMB" ∉ names vs then [withMul hasLaw vs hv false, withMul hasLaw vs hv true] else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.X86_64.variants
+
+end VG.Artifacts.EcdsaP521.X86_64.Rfc6979
 
 namespace VG.Artifacts.EcdsaP521.X86_64
 
@@ -94,8 +123,7 @@ def verify (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 96
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx"] else [] }
+    spSafe := hsp }
 
 def artifacts : List Artifact := [
   verify false (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
@@ -103,6 +131,7 @@ def artifacts : List Artifact := [
     (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv),
   verify true (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P521.inst.curve.len true
     Impl.Ecdsa.Verify.X86_64.jointVerifyP521Adx)
-    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)]
+    (Proof.Ecdsa.Verify.X86_64.P521.verifyHash_verified_adx hasLaw.law (Proof.P521.combOk7 hasLaw.law) hasLaw.inv)] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP521.X86_64

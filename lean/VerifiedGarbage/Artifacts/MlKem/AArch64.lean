@@ -17,10 +17,24 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Inst
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Variants.KeccakX2.AArch64
 public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
+public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
+public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
 
 /-! # ML-KEM on AArch64 -/
 
 @[expose] public section
+
+-- ML-KEM-1024 on AArch64
+namespace VG.Artifacts.MlKem.AArch64.MlKem1024
+
+def artifacts : List Artifact := [
+  Spec.MlKem1024.checkEkApi.artifact AArch64.target {
+    code := Impl.MlKem1024.AArch64.checkEk
+    verified := Proof.MlKem1024.AArch64.CheckEk.checkEk_verified }]
+
+end VG.Artifacts.MlKem.AArch64.MlKem1024
 
 namespace VG.Artifacts.MlKem.AArch64
 
@@ -35,55 +49,47 @@ end VG.Artifacts.MlKem.AArch64
 namespace VG.Artifacts.MlKem.AArch64.KeccakX2Keccak
 
 open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW)
-open VG.Proof.MlKem.AArch64.FixedHash.Inst (paired sponge parts features)
+open VG.Proof.MlKem.AArch64.FixedHash.Inst (paired sponge parts)
 
 /-- One Keccak state at a time, over the sponge functions of `v`. -/
 def spongeArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlKem.keyGenApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.keyGenS768_verified v },
   Spec.MlKem.encapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.encapsS768_verified v },
   Spec.MlKem.encapsHApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.encapsHS768_verified v },
   Spec.MlKem.decapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.decapsS768_verified v },
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.keyGenS1024_verified v },
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.encapsS1024_verified v },
   Spec.MlKem1024.encapsHApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.encapsHS1024_verified v },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
     suffix := v.callee.suffix
-    features := v.features
     code := Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee)
     stack := 48
     verified := Proof.MlKem.AArch64.Wipe.decapsS1024_verified v }]
@@ -94,66 +100,58 @@ permutation of `v` rather than the sponge functions. -/
 def pairedArtifacts (x2 : Proof.Sha3.AArch64.X2Permutation) (v : Proof.Sha3.AArch64.Permutation) :
     List Artifact := [
   Spec.MlKem.keyGenApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.keyGen (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.keyGen (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.keyGenP768_verified v _ },
   Spec.MlKem.encapsApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encaps (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.encaps (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.encapsP768_verified v _ },
   Spec.MlKem.encapsHApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encapsH (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.encapsH (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.encapsHP768_verified v _ },
   Spec.MlKem.decapsApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.decaps (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.decaps (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.decapsP768_verified v _ },
   Spec.MlKem1024.keyGenApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.keyGen1024 (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.keyGen1024 (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.keyGenP1024_verified v _ },
   Spec.MlKem1024.encapsApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encaps1024 (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.encaps1024 (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.encapsP1024_verified v _ },
   Spec.MlKem1024.encapsHApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.encapsH1024 (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.encapsH1024 (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.encapsHP1024_verified v _ },
   Spec.MlKem1024.decapsApi.artifact AArch64.target {
-    suffix := Emit.qualifiedName "" (parts x2 v)
-    features := features x2 v
+    suffix := qualifiedName "" (parts x2 v)
     vendor := v.vendor
-    code := Impl.MlKem.AArch64.Wipe.decaps1024 (Emit.qualifiedName "" (parts x2 v))
+    code := Impl.MlKem.AArch64.Wipe.decaps1024 (qualifiedName "" (parts x2 v))
       (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     stack := 160
     verified := Proof.MlKem.AArch64.Wipe.decapsP1024_verified v _ }]
@@ -167,6 +165,7 @@ namespace VG.Artifacts.MlKem.AArch64
 
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2)
+  (VG.Proof.Variants.KeccakX2.AArch64.variants.flatMap fun v => VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v2 => KeccakX2Keccak.artifacts v v2) ++
+  MlKem1024.artifacts
 
 end VG.Artifacts.MlKem.AArch64

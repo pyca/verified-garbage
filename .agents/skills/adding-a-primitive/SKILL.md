@@ -37,7 +37,12 @@ instructions in an ISA model) go in their own PR before either.
    `Verified.of_implies` (see `Proof/Framework/Contract.lean`).
 4. An `Artifact` in the registration file `Artifacts/<Alg>/<Target>.lean`,
    which defines `VG.Artifacts.<Alg>.<Target>.artifacts` (a new file for a
-   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`), made
+   new algorithm or target; see `Artifacts/Selftest/X86_64.lean`). An
+   algorithm has one file per target, holding the artifacts of all its
+   functions, whatever variant lists they map over
+   (`artifacts := [ … ] ++ Sign.artifacts`, with the artifacts of a function
+   generic over a list in a namespace of their own): never a directory for
+   one of its functions or interfaces. Each artifact is made
    from the function's `Api` by `Api.artifact` (`TCB/Registration.lean`),
    with the file importing
    `Proof/Framework/Registration.lean` for its default proofs, and its
@@ -81,9 +86,10 @@ instructions in an ISA model) go in their own PR before either.
    for code that depends on a `Bool` or an enumeration (`adx`, a field
    variant), by cases on it. Never set
    `contracts` outside `Spec/` (the emitter refuses an artifact without
-   them). If its code uses instructions outside
-   the target's baseline ISA, list the CPU features they require in
-   `features` (the emitter rejects anything but the exact set).
+   them). The CPU features the code needs beyond the target's baseline ISA
+   are never stated: `Api.artifact` takes them from its instructions and
+   those of the functions it calls (`Code.requiresDedup`, from the ISA
+   model's `requires`).
    A function that calls another one with several implementations (e.g.
    scalar and SHA-NI compression) is proven once for any of them, and its
    registration file applies it to each: the implementations of the callee
@@ -95,9 +101,9 @@ instructions in an ISA model) go in their own PR before either.
    SHA-256's `update`). A function that calls functions of several such
    interfaces maps over each of their lists, nested (e.g. Argon2's x86-64
    derivation, `Artifacts/Argon2/X86_64.lean`, calling BLAKE2b's streaming
-   functions and Argon2's `G`); its instances are named by
-   `Emit.qualifiedName`: the function's name, then a tag and the suffix of
-   each interface whose variant is not the baseline
+   functions and Argon2's `G`); its instances are named by `qualifiedName`
+   (`Proof/Framework/QualifiedName.lean`): the function's name, then a tag
+   and the suffix of each interface whose variant is not the baseline
    (`vg_argon2_blake2b_avx2_g_avx512`; `vg_argon2` for the baseline), since
    variants of different interfaces may share a suffix; callers of one
    interface append the suffix alone. A function that takes every

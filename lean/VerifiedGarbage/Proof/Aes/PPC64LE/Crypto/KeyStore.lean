@@ -30,6 +30,7 @@ structure WordStored (s t : State) : Prop where
   ptr11 : t.gpr .r11 = s.gpr .r11 + 4#64
   index : t.gpr .r12 = s.gpr .r12 + 4#64
   test : t.gpr .r0 = (s.gpr .r12 + 4#64) - s.gpr .r7
+  word : (t.gpr .r9).setWidth 32 = (s.gpr .r9).setWidth 32 ^^^ s.mem.readW (s.gpr .r10) 32
 
 theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
     (hw : InRegions s.wr (s.gpr .r11 + 4#64) 4) :
@@ -42,7 +43,7 @@ theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
     (by rw [u₂.wr, u₁.wr]; exact hw) fun s₃ u₃ => ?_
   refine wp_addi (by decide) (by decide) fun s₄ u₄ => wp_addi (by decide) (by decide) fun s₅ u₅ => ?_
   refine wp_addi (by decide) (by decide) fun s₆ u₆ => wp_sub fun s₇ u₇ => wp_nil ?_
-  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [u₇.other _ hr.1, u₆.other _ hr.2.2.2.2.2, u₅.other _ hr.2.2.2.1,
       u₄.other _ hr.2.2.2.2.1, congrFun u₃.gpr r, u₂.other _ hr.2.2.1, u₁.other _ hr.2.1]
@@ -59,6 +60,9 @@ theorem wordStore_ok (s : State) (hr : InRegions (s.rd ++ s.wr) (s.gpr .r10) 4)
   · rw [u₇.gpr, u₆.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₄.other _ (by decide), congrFun u₃.gpr .r12, congrFun u₃.gpr .r7,
       u₂.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), u₁.other _ (by decide)]
+  · rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
+      congrFun u₃.gpr .r9, u₂.gpr, u₁.gpr, u₁.other _ (by decide),
+      BitVec.setWidth_xor, BitVec.setWidth_setWidth_of_le _ (show 32 ≤ 64 by decide), BitVec.setWidth_eq]
 
 theorem next_mod {nk i : Nat} (h3 : nk = 4 ∨ nk = 6 ∨ nk = 8) :
     (i+1)%nk = if i%nk+1 = nk then 0 else i%nk+1 := by

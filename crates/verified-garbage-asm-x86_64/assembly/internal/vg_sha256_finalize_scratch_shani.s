@@ -29,7 +29,10 @@ vg_sha256_finalize_scratch_shani:
 	mov rax, r13
 	and rax, 15
 	je 23f
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add r13, 1
 	mov eax, 64
 	test r14, r14
@@ -43,7 +46,10 @@ vg_sha256_finalize_scratch_shani:
 	cmp rax, 8
 	jb 27f
 29:
-	mov QWORD PTR [rbx+r13*1+32], r9
+	mov r10d, 56
+	cmp r13, r10
+	cmovb r10, r13
+	mov QWORD PTR [rbx+r10*1+32], r9
 	add r13, 8
 	sub rax, 8
 	cmp rax, 8
@@ -54,7 +60,10 @@ vg_sha256_finalize_scratch_shani:
 	test rax, rax
 	je 210f
 212:
-	mov BYTE PTR [rbx+r13*1+32], r9b
+	mov r10d, 63
+	cmp r13, r10
+	cmovb r10, r13
+	mov BYTE PTR [rbx+r10*1+32], r9b
 	add r13, 1
 	sub rax, 1
 	jne 212b
@@ -78,7 +87,10 @@ vg_sha256_finalize_scratch_shani:
 	cmp r13, 48
 	jae 215f
 217:
-	movdqu XMMWORD PTR [rbx+r13*1+32], xmm0
+	mov r10d, 48
+	cmp r13, r10
+	cmovb r10, r13
+	movdqu XMMWORD PTR [rbx+r10*1+32], xmm0
 	pxor xmm0, xmm0
 	add r13, 16
 	cmp r13, 48

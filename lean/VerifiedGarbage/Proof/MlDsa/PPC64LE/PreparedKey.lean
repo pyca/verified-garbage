@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.Site
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.KeyGen.CallSP
 public import VerifiedGarbage.Proof.MlDsa.PPC64LE.Sign.Lay
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Copy
-import VerifiedGarbage.Proof.MlDsa.PPC64LE.Arith.Ntt
+import VerifiedGarbage.Proof.MlDsa.PPC64LE.VNtt.Verified
 import VerifiedGarbage.Proof.MlDsa.PPC64LE.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.PreparedKey.Values
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
@@ -363,7 +363,7 @@ theorem slot_disj (P : Addr) {q : Nat} (hq : q + 1024 ≤ 2 ^ 64) :
     (reg P q).Disjoint (reg (P + BitVec.ofNat 64 q) 1024) :=
   (Offset.disjoint_base P (Nat.le_refl q) hq).symm
 
-theorem sdepth_ntt : sdepth Impl.MlDsa.PPC64LE.Arith.ntt ≤ 96 := by decide +kernel
+theorem sdepth_ntt : sdepth Impl.MlDsa.PPC64LE.VNtt.ntt ≤ 96 := by decide +kernel
 theorem sdepth_bitUnpack : sdepth Impl.MlDsa.PPC64LE.Pack.bitUnpack = 0 := by decide +kernel
 theorem sdepth_unpackT1 : sdepth Impl.MlDsa.PPC64LE.Pack.unpackT1 = 0 := by decide +kernel
 
@@ -380,9 +380,9 @@ theorem transform_ok (h : PI KL PB K vals σ i s) (hK : 240 ≤ K) (hi : KL + 10
   have b96 := h.below_sub (d := 96) (by omega)
   obtain ⟨pre, c1, c2⟩ := nt_pre' (q := KL + 1024 * i) h.r30 h.r31 wP wC hp.d_pc fp fc hi hq31 hsp
     (hp.b_p.sub_left b96) (hp.b_c.sub_left b96) hf.1
-  refine callV Arith.Ntt.verified.1 (by have := sdepth_ntt; omega) (ntAs_hg hq31) pre c1 c2 fun s' hk hpo => ?_
+  refine callV VNtt.verified.1 (by have := sdepth_ntt; omega) (ntAs_hg hq31) pre c1 c2 fun s' hk hpo => ?_
   have hd : ∀ r ∈ [reg (σ.gpr .r4 + BitVec.ofNat 64 (KL + 1024 * i)) 1024, reg (σ.gpr .r5) 1024] ++
-      [below s.sp (sdepth Impl.MlDsa.PPC64LE.Arith.ntt)], (reg (σ.gpr .r4) (KL + 1024 * i)).Disjoint r := by
+      [below s.sp (sdepth Impl.MlDsa.PPC64LE.VNtt.ntt)], (reg (σ.gpr .r4) (KL + 1024 * i)).Disjoint r := by
     intro r hr
     have sP : Region.Sub (reg (σ.gpr .r4) (KL + 1024 * i)) (reg (σ.gpr .r4) PB) := by
       have := Offset.sub_base (σ.gpr .r4) (d := 0) (n := KL + 1024 * i) (k := PB) (by omega)
@@ -391,7 +391,7 @@ theorem transform_ok (h : PI KL PB K vals σ i s) (hK : 240 ≤ K) (hi : KL + 10
     rcases hr with rfl | rfl | rfl
     · exact slot_disj _ (by omega)
     · exact hp.d_pc.sub_left sP
-    · exact (hp.b_p.sub_left ((h.below_sub (d := sdepth Impl.MlDsa.PPC64LE.Arith.ntt)
+    · exact (hp.b_p.sub_left ((h.below_sub (d := sdepth Impl.MlDsa.PPC64LE.VNtt.ntt)
         (by have := sdepth_ntt; omega)))).symm.sub_left sP
   have k := h.keep hk hd (by omega)
   refine ⟨k.pre, k.r30, k.r31, k.sp, k.rd, k.wr, k.pres, k.key, fun j hj => ?_⟩
@@ -589,7 +589,7 @@ theorem transform_piece (hK : 240 ≤ K) {i : Nat} (hi : KL + 1024 * i + 1024 �
       (fun σ s => PI KL PB K vals σ (i + 1) s) (transform (KL + 1024 * i)) where
   ok _ _ _ h := by obtain ⟨h, f, hf, hv⟩ := h; exact transform_ok h hK hi hq31 hf hv
   tr := by
-    refine callV_tr Arith.Ntt.verified.1 Arith.Ntt.verified.2.1 (ntAs_hg hq31) fun x y hxy => ?_
+    refine callV_tr VNtt.verified.1 VNtt.verified.2.1 (ntAs_hg hq31) fun x y hxy => ?_
     obtain ⟨σ₁, σ₂, -, -, ⟨e0, -, e4, e5⟩, ⟨h₁, f₁, hf₁, -⟩, ⟨h₂, f₂, hf₂, -⟩⟩ := hxy
     obtain ⟨p1, c1, c2⟩ := h₁.nt hK hi hq31 hf₁.1
     obtain ⟨p2, d1, d2⟩ := h₂.nt hK hi hq31 hf₂.1

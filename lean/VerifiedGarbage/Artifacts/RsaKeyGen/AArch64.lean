@@ -207,8 +207,7 @@ def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 416
     code := Proof.RsaKeyGen.AArch64.Generate.genCode v
-    verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v
-    features := v.features }]
+    verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v }]
 
 end VG.Artifacts.RsaKeyGen.AArch64.MillerRabin
 

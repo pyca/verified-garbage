@@ -181,8 +181,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
     code := Impl.RsaPkcs1Sig.X86.Sign.code (privName v) (privCode v)
     stack := sigStack
     verified := sign_verified v
-    spSafe := code_sp v
-    features := v.features }]
+    spSafe := code_sp v }]
 
 end VG.Artifacts.RsaPkcs1Sig.X86.RsaPrivateCrt
 
