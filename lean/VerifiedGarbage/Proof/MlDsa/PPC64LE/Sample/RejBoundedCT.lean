@@ -96,14 +96,14 @@ theorem try_ct {t : Nat} {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length) 
     fun a b hab => base_r4 hab.1.base hab.2.base h5 hl)
     fun a b hab => ⟨try_ok hp₁ hη hb₁ hab.1, try_ok hp₂ hη hb₂ hab.2⟩
 
-variable (hX₁ : X₁.length = 544) (hX₂ : X₂.length = 544) (oks : X₁.map (hbOks η) = X₂.map (hbOks η))
+variable {N : Nat} (hX₁ : X₁.length = N) (hX₂ : X₂.length = N) (oks : X₁.map (hbOks η) = X₂.map (hbOks η))
 
 include oks in
 theorem len_eq (t : Nat) : (Lf η X₁ t).length = (Lf η X₂ t).length :=
   rbFold_length_congr rfl (by rw [List.map_take, List.map_take, oks])
 
 include hX₁ hX₂ oks in
-theorem ok_eq {t : Nat} (ht : t < 544) : hbOks η (zAt X₁ t) = hbOks η (zAt X₂ t) := by
+theorem ok_eq {t : Nat} (ht : t < N) : hbOks η (zAt X₁ t) = hbOks η (zAt X₂ t) := by
   have h := congrArg (fun L => L[t]?) oks
   simp only [List.getElem?_map, List.getElem?_eq_getElem (show t < X₁.length by omega_arith),
     List.getElem?_eq_getElem (show t < X₂.length by omega_arith), Option.map_some, Option.some.injEq] at h
@@ -117,11 +117,13 @@ theorem tryJ_length_congr {L₁ L₂ : List Zq} (hl : L₁.length = L₂.length)
 
 include hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks in
 /-- An iteration, in two runs. -/
-theorem body_ct {t : Nat} (ht : t < 544) :
+theorem body_ct {t : Nat} (ht : t < N) :
     RelCT isa (fun a b => Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b) (rbBody η)
-      fun a b => (Base σ₁ X₁ (t + 1) (Lf η X₁ (t + 1)) a ∧ (a.gpr .r6 != 0) = decide (t + 1 ≠ 544)) ∧
-        (Base σ₂ X₂ (t + 1) (Lf η X₂ (t + 1)) b ∧ (b.gpr .r6 != 0) = decide (t + 1 ≠ 544)) := by
-  refine relct_wp ?_ fun a b hab => ⟨body_ok hp₁ hη hX₁ ht hab.1, body_ok hp₂ hη hX₂ ht hab.2⟩
+      fun a b => (Base σ₁ X₁ (t + 1) (Lf η X₁ (t + 1)) a ∧ (a.gpr .r6 != 0) = decide (t + 1 ≠ N)) ∧
+        (Base σ₂ X₂ (t + 1) (Lf η X₂ (t + 1)) b ∧ (b.gpr .r6 != 0) = decide (t + 1 ≠ N)) := by
+  refine relct_wp ?_ fun a b hab => ⟨by
+      have k := body_ok hp₁ hη (X := X₁) (by rw [hX₁]; exact ht) hab.1; rwa [hX₁] at k, by
+      have k := body_ok hp₂ hη (X := X₂) (by rw [hX₂]; exact ht) hab.2; rwa [hX₂] at k⟩
   have hl := len_eq oks t
   have hok := ok_eq hX₁ hX₂ oks ht
   simp only [hbOks, Prod.mk.injEq] at hok
@@ -134,7 +136,7 @@ theorem body_ct {t : Nat} (ht : t < 544) :
       H1 η σ₁ X₁ t (Lf η X₁ t) ((zAt X₁ t).toNat % 16) ((zAt X₁ t).setWidth 64) a ∧
       H1 η σ₂ X₂ t (Lf η X₂ t) ((zAt X₂ t).toNat % 16) ((zAt X₂ t).setWidth 64) b)
     (relct_wp (load_ct hη (fun a b hab => base_sp hab.1 hab.2 hsp) fun a b hab => by
-      rw [hab.1.r3, hab.2.r3, h6]) fun a b hab => ⟨loHalf_ok hp₁ hη ht hab.1, loHalf_ok hp₂ hη ht hab.2⟩) ?_
+      rw [hab.1.r3, hab.2.r3, h6]) fun a b hab => ⟨loHalf_ok hp₁ hη (hX₁ ▸ ht) hab.1, loHalf_ok hp₂ hη (hX₂ ▸ ht) hab.2⟩) ?_
   -- its try
   refine RelCT.seq (try_ct hp₁ hp₂ hsp h5 hη hl hlo₁ hlo₂ hok.1) ?_
   -- the high half-byte
@@ -148,29 +150,29 @@ theorem body_ct {t : Nat} (ht : t < 544) :
 
 include hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks in
 /-- The loop. -/
-theorem loop_ct :
+theorem loop_ct (hN : 0 < N) :
     RelCT isa (fun a b => Base σ₁ X₁ 0 (Lf η X₁ 0) a ∧ Base σ₂ X₂ 0 (Lf η X₂ 0) b) (.loop (rbBody η) (.nonzero .d .r6))
-      fun a b => Base σ₁ X₁ 544 (Lf η X₁ 544) a ∧ Base σ₂ X₂ 544 (Lf η X₂ 544) b := by
+      fun a b => Base σ₁ X₁ N (Lf η X₁ N) a ∧ Base σ₂ X₂ N (Lf η X₂ N) b := by
   refine RelCT.mono (RelCT.loop (M := isa) (body := rbBody η) (c := .nonzero .d .r6)
-    (Q := fun a b => Base σ₁ X₁ 544 (Lf η X₁ 544) a ∧ Base σ₂ X₂ 544 (Lf η X₂ 544) b)
-    (fun n a b => ∃ t, t < 544 ∧ n = 544 - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
-    (fun n => ?_) 544) (fun a b hab => ⟨0, by decide, rfl, hab⟩) (fun _ _ h => h)
-  refine RelCT.mono (P := fun a b => ∃ t, t < 544 ∧ n = 544 - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧
+    (Q := fun a b => Base σ₁ X₁ N (Lf η X₁ N) a ∧ Base σ₂ X₂ N (Lf η X₂ N) b)
+    (fun n a b => ∃ t, t < N ∧ n = N - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
+    (fun n => ?_) N) (fun a b hab => ⟨0, hN, rfl, hab⟩) (fun _ _ h => h)
+  refine RelCT.mono (P := fun a b => ∃ t, t < N ∧ n = N - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧
       Base σ₂ X₂ t (Lf η X₂ t) b) (RelCT.exists_ fun t => ?_) (fun _ _ hab => hab) (fun _ _ h => h)
-  by_cases ht : t < 544
-  · by_cases hn : n = 544 - t
+  by_cases ht : t < N
+  · by_cases hn : n = N - t
     · refine RelCT.mono (P := fun a b => Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
         (body_ct hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks ht) (fun _ _ hab => hab.2.2)
         fun a b ⟨⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩ => ⟨?_, fun e => ?_, fun e => ?_⟩
       · rw [eval_nonzero, eval_nonzero, z₁, z₂]
-      · have : t + 1 = 544 := by
+      · have : t + 1 = N := by
           have e' : (a.gpr .r6 != 0) = false := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
         rw [this] at i₁ i₂; exact ⟨i₁, i₂⟩
-      · have : t + 1 ≠ 544 := by
+      · have : t + 1 ≠ N := by
           have e' : (a.gpr .r6 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        exact ⟨544 - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
+        exact ⟨N - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1
   · exact RelCT.of_false fun _ _ hab => ht hab.1
 
