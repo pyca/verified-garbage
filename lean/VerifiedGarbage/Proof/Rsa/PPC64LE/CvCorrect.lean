@@ -76,7 +76,7 @@ theorem valid_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s)
   have hQ := os2ip_bytes_lt s0.mem (PPC64LE.stackArg s0 2) (PPC64LE.stackArg s0 3).toNat
   have hw16 := (pre_ws h.pre).2.1
   refine WP.mono (arith_ok w2 i2 (pL := (PPC64LE.stackArg s0 1).toNat) (qL := (PPC64LE.stackArg s0 3).toNat)
-    (by omega) (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [a2.r22]; exact ofNat_toNat64 _) p1 (by omega) (by omega) hP hQ)
+    (by omega) (by rw [a2.r20]; exact ofNat_toNat64 _) (by rw [a2.r22]; exact ofNat_toNat64 _) p1 q1 (by omega) (by omega) hP hQ)
     fun t3 ⟨w3, k3, ⟨X₁, X₂, V, hm, h₁, h₂⟩, h₃, h₄, r3⟩ => ?_
   have b3 : Base s0 t3 := b2.of_keep k3 (by decide) (by decide) r3.sp r3.lr r3.rd r3.wr (r3.gpr _ (by decide))
   rw [show seqs [VG.Impl.Rsa.PPC64LE.CrtValues.stores] = VG.Impl.Rsa.PPC64LE.CrtValues.stores from rfl]

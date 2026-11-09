@@ -44,7 +44,8 @@ theorem mask_mod2 (x : Nat) : x % 2 = if decide (x % 2 = 1) then 1 else 0 := by
 
 /-- `start`: `1`, the mask of `p` odd, and `n / p` and `n mod p`. -/
 theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
-    (ha : Arrs s0.mem g.B g.w (vals v) live0) (vd : w32 s0.mem g.B (arr g.w aVD + 4 * g.w) = 0) :
+    (ha : Arrs s0.mem g.B g.w (vals v) live0) (vd : w32 s0.mem g.B (arr g.w aVD + 4 * g.w) = 0)
+    (hp : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ s0.gpr .r19 = BitVec.ofNat 64 a) :
     WP isa (seqs start) s0 fun t => ∃ X₁ X₂, (0 < v.p → X₁ = v.n / v.p ∧ X₂ = v.n % v.p) ∧
       Stg g s0 (aDivN v X₁ X₂) (aVR :: aVQ :: live0) (decide (v.p % 2 = 1)) t := by
   have fit : ∀ j < nArr, arr g.w j + S g.w ≤ 2 ^ 64 := fun j hj => hw.fit64 hj
@@ -74,7 +75,9 @@ theorem start_ok {g : Geo} {s0 : State} {v : Vals} (hw : Ws s0 g.B g.Z g.w nArr)
     · rw [k2.word (by simp only [S]; omega) (by simp) (by simp; decide) (fit _ (by decide)),
         k1.word (by simp only [S]; omega) (by simp; decide) (by simp) (fit _ (by decide)), vd]
     · rw [e2, p1]; exact mask_mod2 v.p
-  refine WP.mono (g2.divA_ok (a := aN) (d := aP) (by decide) (by decide) (by decide))
+  obtain ⟨pa, pa1, pa2, plt, p19⟩ := hp
+  refine WP.mono (g2.divA_ok (a := aN) (d := aP) (by decide) (by decide) (by decide) (len := .r19) (by decide)
+    (by decide) ((g2.regs.gpr _ (by decide)).trans p19) pa1 pa2 (by rw [upd_ne _ _ (by decide)]; exact plt))
     fun t ⟨Xq, Xr, hv, ht⟩ => ⟨Xq, Xr, fun hp => ?_, ht⟩
   have e := hv (by simp only [upd_ne _ _ (show aP ≠ aOne by decide)]; exact hp)
   simp only [upd_ne _ _ (show aP ≠ aOne by decide), upd_ne _ _ (show aN ≠ aOne by decide)] at e
@@ -150,7 +153,9 @@ theorem aFin_m2 (v : Vals) : aFin v aM2 = 2 * (v.q / 2) := rfl
 
 /-- The checks of `d`: `d < n`, and its remainders modulo `p - 1` and `q - 1`
 compared with `dP` and `dQ`. -/
-theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s) :
+theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 (aFin v) liveFin c s)
+    (hp : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.p < 2 ^ (8 * a) ∧ s0.gpr .r19 = BitVec.ofNat 64 a)
+    (hq : ∃ a, 1 ≤ a ∧ a < 2 ^ 32 ∧ v.q < 2 ^ (8 * a) ∧ s0.gpr .r21 = BitVec.ofNat 64 a) :
     WP isa (seqs dChecks) s fun t => ∃ Y₁ Y₂,
       (0 < 2 * (v.p / 2) → Y₁ = v.d % (2 * (v.p / 2))) ∧ (0 < 2 * (v.q / 2) → Y₂ = v.d % (2 * (v.q / 2))) ∧
       ∃ A live, Stg g s0 A live (c && decide (v.d < v.n) && decide (Y₁ = v.dP) && decide (Y₂ = v.dQ)) t := by
@@ -160,7 +165,10 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
   refine WP.mono (h.ltA_ok (a := aD) (b := aN) (by decide) (by decide) (by decide)) fun t1 h1 => ?_
   rw [aFin_d, aFin_n] at h1
   rw [wp_seqs_append (by simp [divA]) (by simp [eqA])]
-  refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide))
+  obtain ⟨pa, pa1, pa2, plt, p19⟩ := hp
+  obtain ⟨qa, qa1, qa2, qlt, q21⟩ := hq
+  refine WP.mono (h1.divA_ok (a := aD) (d := aM1) (by decide) (by decide) (by decide) (len := .r19) (by decide)
+    (by decide) ((h1.regs.gpr _ (by decide)).trans p19) pa1 pa2 (by rw [aFin_m1]; omega))
     fun t2 ⟨Xq, Y₁, hv1, h2⟩ => ?_
   rw [aFin_d, aFin_m1] at hv1
   rw [wp_seqs_append (by simp [eqA]) (by simp [divA])]
@@ -173,7 +181,8 @@ theorem dChecks_ok {g : Geo} {s0 s : State} {v : Vals} {c : Bool} (h : Stg g s0 
       simp only [liveFin, List.mem_cons, List.not_mem_nil, or_false] at hj
       rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
   rw [wp_seqs_append (by simp [divA]) (by simp [eqA])]
-  refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide))
+  refine WP.mono (h3'.divA_ok (a := aD) (d := aM2) (by decide) (by decide) (by decide) (len := .r21) (by decide)
+    (by decide) ((h3'.regs.gpr _ (by decide)).trans q21) qa1 qa2 (by rw [aFin_m2]; omega))
     fun t4 ⟨Xq', Y₂, hv2, h4⟩ => ?_
   rw [aFin_d, aFin_m2] at hv2
   refine WP.mono (h4.eqA_ok (a := aVR) (b := aDQ) (by decide) (by decide)) fun t h5 => ?_

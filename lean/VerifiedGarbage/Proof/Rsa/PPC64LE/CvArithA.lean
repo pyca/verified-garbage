@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.Rsa.PPC64LE.CrtValues
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Rsa.PPC64LE.DivN
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.Div
 public import VerifiedGarbage.Impl.Rsa.PPC64LE.KeyArrays
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
@@ -24,7 +25,7 @@ namespace VG.Proof.Rsa.PPC64LE.CrtValues
 
 open VG VG.PPC64LE VG.Proof.Mont VG.Proof.Bignum.PPC64LE VG.Proof.Rsa.PPC64LE.Keys
 open VG.Impl.Rsa.PPC64LE.Keys (seqs copy bitOf eqS aM aNM aZero aT1 aT2 aT3 aT4 sOdd sB sC)
-open VG.Impl.Rsa.PPC64LE.Div (div)
+open VG.Impl.Rsa.PPC64LE.Div (div divP)
 open VG.Impl.Rsa.PPC64LE.CrtValues (sPodd sE1 sE2 sE3 sMask aOne aQ aP aDQ aDR aDD aDT aDR2 aDR3 aD nArr)
 open VG.Proof.Rsa.KeyWorkspace (arr S num slot)
 
@@ -54,36 +55,47 @@ theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : num1 m B w j < 2 ^ (32
 
 /-- The first part of `arith`. -/
 def partA : List (Prog isa) :=
-  [copy aDD aP, .block (bitOf sPodd aP), div aDQ aDR aDD aDT, eqS sE1 aDQ aQ, eqS sE2 aDR aZero]
+  [copy aDD aP, .block (bitOf sPodd aP ++ [.addi .r12 .r20 0]), divP aDQ aDR aDD aDT, eqS sE1 aDQ aQ,
+    eqS sE2 aDR aZero]
 
 /-- The arrays and slots `partA` writes. -/
 abbrev partAArrs : List Nat := [aDD, aDQ, aDR, aDT]
 abbrev partASlots : List Nat := [sPodd, sE1, sE2]
 
-theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd : Nat} (h : Ws s B Z w nArr)
-    (hi : ArInit s.mem B w Nv P Q Dd) :
+theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL : Nat} (h : Ws s B Z w nArr)
+    (hi : ArInit s.mem B w Nv P Q Dd) (h20 : s.gpr .r20 = BitVec.ofNat 64 pL) (hpL : 1 ≤ pL)
+    (hpL' : pL < 2 ^ 32) (hP : P < 2 ^ (8 * pL)) :
     WP isa (seqs partA) s fun t => Ws t B Z w nArr ∧
       KeyWorkspace.Keep B w partAArrs partASlots s.mem t.mem ∧
       slot t.mem B sPodd = P % 2 ∧
       (0 < P → num t.mem B w aDQ = Nv / P ∧ num t.mem B w aDR = Nv % P) ∧
       slot t.mem B sE1 = (if num t.mem B w aDQ = Q then 1 else 0) ∧
       slot t.mem B sE2 = (if num t.mem B w aDR = 0 then 1 else 0) ∧
-      w32 t.mem B (arr w aDD + 4 * w) = 0 ∧ Keep stepRegs s t := by
+      w32 t.mem B (arr w aDD + 4 * w) = 0 ∧ Keep (.r12 :: stepRegs) s t := by
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
   unfold partA
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h (by decide) (by decide) (by decide) (by decide)) fun t1 ⟨h1, k1, v1, r1, top1⟩ => ?_
-  rw [wp_seqs_cons (List.cons_ne_nil _ _), ← List.append_nil (bitOf sPodd aP)]
-  refine bitOf_ok h1 (by decide) (by decide) (by decide) fun t2 h2 k2 o2 r2 => WP.block_nil ?_
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine bitOf_ok h1 (by decide) (by decide) (by decide) fun t2₀ h2₀ k2₀ o2₀ r2₀ => ?_
+  refine WP.mono (WP.keep [.r12] (Q := fun x => x.gpr .r12 = BitVec.ofNat 64 pL ∧ x.mem = t2₀.mem)
+    (by prun [r2₀.gpr (r := .r20) (by decide), r1.gpr (r := .r20) (by decide), h20, BitVec.add_zero,
+      exec_addi (show Reg.r20 ≠ .r0 by decide) (show 0 < 2 ^ 15 by decide)]) (by decide))
+    fun t2 ⟨⟨t12, tm⟩, k12⟩ => ?_
+  have h2 : Ws t2 B Z w nArr := h2₀.of_keep k12
+  have k2 : KeyWorkspace.Keep B w [] [sPodd] t1.mem t2.mem := by rw [tm]; exact k2₀
+  have o2 : slot t2.mem B sPodd = num t1.mem B w aP % 2 := by rw [tm]; exact o2₀
+  have r2 := r2₀.trans k12
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   have p1 : num t1.mem B w aP = P := by rw [k1.num (by decide) (by simp) (fit _ (by decide)), hi.p]
   have dz2 : w32 t2.mem B (arr w aDD + 4 * w) = 0 := by
     rw [KeyWorkspace.Keep.word k2 (i := w) (by omega_arith) (by simp) (by simp; decide) (fit _ (by decide)),
       top1, hi.top _ (by decide)]
-  refine WP.mono (div_ok h2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) dz2) fun t3 ⟨h3, k3, r3, v3⟩ => ?_
+  refine WP.mono (divP_ok h2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) dz2 t12 hpL hpL'
+    (by rw [k2.num (by simp) (by simp; decide) (fit _ (by decide)), v1, hi.p]; exact hP)) fun t3 ⟨h3, k3, r3, v3⟩ => ?_
   have n2 : num t2.mem B w aDQ = Nv := by
     rw [k2.num (by simp) (by simp; decide) (fit _ (by decide)), k1.num (by decide) (by simp) (fit _ (by decide)),
       hi.n]
