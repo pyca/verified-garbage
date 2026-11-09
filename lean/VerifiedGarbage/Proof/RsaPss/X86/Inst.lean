@@ -16,7 +16,7 @@ The variants of the hash functions whose tables of `MdHash` the functions
 take (`mvars`: MD5's, SHA-1's and SHA-224's and SHA-256's with each of their
 backends, and the SHA-512 family's), and the instances' proofs against the
 contracts the registrations state, with the hash function any of the tables
-of `MdHash` and MGF1's any of `Hash`: signing (`sign_ok`) and verification
+of `MdHash` and MGF1's any of `MdHash`: signing (`sign_ok`) and verification
 (`verify_ok`), when the registration's check (`Sg.OK`) holds.
 -/
 
@@ -27,21 +27,6 @@ namespace VG.Proof.RsaPss.X86
 open VG VG.X86
 open VG.Proof.MdHashTable.X86 (MVar)
 open VG.Proof.HashTable.X86 (TVar)
-
-def md5W : MVar := ⟨md5, "", [], rfl⟩
-def sha1W (b : Proof.Sha1.X86.Variants.Backend) : MVar := ⟨sha1 b, b.stream.suffix, b.features, rfl⟩
-def sha224W (b : Proof.Sha256.X86.Variants.Backend) : MVar := ⟨sha224 b, b.stream.suffix, b.features, rfl⟩
-def sha256W (b : Proof.Sha256.X86.Variants.Backend) : MVar := ⟨sha256 b, b.stream.suffix, b.features, rfl⟩
-def sha384W : MVar := ⟨sha384, "", [], rfl⟩
-def sha512W : MVar := ⟨sha512, "", [], rfl⟩
-def sha512_224W : MVar := ⟨sha512_224, "", [], rfl⟩
-def sha512_256W : MVar := ⟨sha512_256, "", [], rfl⟩
-
-/-- Every variant: MD5's, SHA-1's with the backends `vs1`, SHA-224's and
-SHA-256's with `vs256`, and the SHA-512 family's. -/
-def mvars (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
-    List MVar :=
-  md5W :: (vs1.map sha1W ++ vs256.map sha224W ++ vs256.map sha256W ++ [sha384W, sha512W, sha512_224W, sha512_256W])
 
 variable {vs : List MVar} {gs : List TVar}
 

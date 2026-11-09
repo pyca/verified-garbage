@@ -4,14 +4,14 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivCtx
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hash
 
 /-!
 # RSASSA-PSS signing on x86-64: the contract on the registers
 
-`signK tsH tsG` states `Spec.RsaPss.signTableContract` with the tables
-`tsH` of `MdHash` and `tsG` of `Hash` (`Abi.withTables`, with the stack the
+`signK tsH tsG` states `Spec.RsaPss.signMdTableContract` with the tables
+`tsH` of `MdHash` and `tsG` of `MdHash` (`Abi.withTables`, with the stack the
 frame and the calls use, `signStack`) on the registers and the stack
 (`sign_implies`).
 -/
@@ -56,7 +56,7 @@ def signK : Contract isa where
     let sa : Region := ⟨stackArg s 12, (stackArg s 13).toNat⟩
     let scr : Region := ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
     let tH : Region := ⟨stackArg s 16, 88⟩
-    let tG : Region := ⟨stackArg s 17, 40⟩
+    let tG : Region := ⟨stackArg s 17, 88⟩
     let args : Region := ⟨stackArgAddr s 0, 144⟩
     let ret : Region := ⟨s.gpr .rsp, 8⟩
     let stk : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩
@@ -84,7 +84,7 @@ def signK : Contract isa where
       (stackArg s 10).toNat + (stackArg s 11).toNat ≤ 2 ^ 64 ∧
       (stackArg s 12).toNat + (stackArg s 13).toNat ≤ 2 ^ 64 ∧
       (stackArg s 14).toNat + (stackArg s 15).toNat * 8 ≤ 2 ^ 64 ∧ (stackArg s 16).toNat + 88 ≤ 2 ^ 64 ∧
-      (stackArg s 17).toNat + 40 ≤ 2 ^ 64 ∧
+      (stackArg s 17).toNat + 88 ≤ 2 ^ 64 ∧
       Spec.Rsa.lenValid (s.gpr .rcx).toNat ∧ (s.gpr .rsi).toNat = (s.gpr .rcx).toNat ∧
       1 ≤ (s.gpr .r9).toNat ∧ (s.gpr .r9).toNat ≤ (s.gpr .rcx).toNat ∧
       1 ≤ (stackArg s 1).toNat ∧ (stackArg s 1).toNat < (s.gpr .rcx).toNat ∧ 1 ≤ (stackArg s 3).toNat ∧
@@ -93,7 +93,7 @@ def signK : Contract isa where
       Spec.RsaPss.scratchWords (s.gpr .rcx).toNat ≤ (stackArg s 15).toNat ∧
       Spec.RsaPss.digestLenOk 64 s.mem (stackArg s 16) (stackArg s 11)
   post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 16) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some G →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some G →
     Spec.Rsa.writtenOutcome s'.mem (s.gpr .rdi) (s.gpr .rcx).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaPss.sign H G (Spec.Rsa.bytesAt s.mem (s.gpr .rdx) (s.gpr .rcx).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r8) (s.gpr .r9).toNat)
@@ -119,37 +119,37 @@ def signK : Contract isa where
 
 /-- The contract, with the tables `tsH` and `tsG`. -/
 abbrev signC : Contract isa :=
-  Spec.RsaPss.signTableContract (abi.withTables Spec.RsaPss.signTableSig [("hash", tsH), ("mgf1", tsG)]) signStack
+  Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", tsG)]) signStack
 
 theorem sign_implies (hsat : ∃ s, (signC tsH tsG).pre s) : (signK tsH tsG).Implies (signC tsH tsG) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount,
+    sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
+      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.HashTable.wordCount,
       Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
       List.append_eq, tabFns] at h
-    sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount,
+    sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
+      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.HashTable.wordCount,
       Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
       List.append_eq, tabFns, Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
-    sig_reduce [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount,
+    sig_reduce [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
+      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.HashTable.wordCount,
       Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
       List.append_eq, tabFns, Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount,
+  post := by sig_implies_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
+      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.HashTable.wordCount,
       Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
       List.append_eq, tabFns]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
-      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param, Spec.HashTable.wordCount,
+    sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount,
+      Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param, Spec.HashTable.wordCount,
       Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, signK, signStack, stackArgs_eighteen,
       List.append_eq, tabFns] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,

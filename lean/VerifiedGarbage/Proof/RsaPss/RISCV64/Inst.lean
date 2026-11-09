@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.RsaPss.RISCV64.Verified
 public import VerifiedGarbage.Proof.MdHashTable.RISCV64.Tables
-public import VerifiedGarbage.Proof.HashTable.RISCV64
 import VerifiedGarbage.Proof.RsaPss.RISCV64.ByIdx
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Syms
@@ -36,7 +35,6 @@ open VG.Proof.RsaOaep.RISCV64 (Base Fits off kR SC TabS stackBytes stackArgAddr_
 open VG.Proof.RsaPkcs1Sig.RISCV64 (Only Two Pins two_post two_taint wp_ld wp_addSp wp_nil)
 open VG.Proof.MdHashTable.RISCV64 (MVar idx digName tableOf tables fnsOf names Coh held_tableOf hashAt_tableOf
   tabM_of)
-open VG.Proof.HashTable.RISCV64 (TVar)
 
 /-! ## States but for `t4` and `t5` -/
 
@@ -161,11 +159,11 @@ instance (v : MVar) : Decidable (Shape v) := by unfold Shape; infer_instance
 /-- What the registration checks of the tables: the functions of the same
 name have the same code, every hash function has its index's shape, and
 there are fewer than `2^32` names. -/
-def OK (vs : List MVar) (gs : List TVar) : Prop :=
-  Coh vs ∧ HashTable.RISCV64.Coh gs ∧ (∀ v ∈ vs, Shape v) ∧
-    (names vs ++ HashTable.RISCV64.names gs).length < 2 ^ 32 ∧ vs ≠ [] ∧ gs ≠ []
+def OK (vs : List MVar) (gs : List MVar) : Prop :=
+  Coh vs ∧ MdHashTable.RISCV64.Coh gs ∧ (∀ v ∈ vs, Shape v) ∧
+    (names vs ++ MdHashTable.RISCV64.names gs).length < 2 ^ 32 ∧ vs ≠ [] ∧ gs ≠ []
 
-instance (vs : List MVar) (gs : List TVar) : Decidable (OK vs gs) := by unfold OK; infer_instance
+instance (vs : List MVar) (gs : List MVar) : Decidable (OK vs gs) := by unfold OK; infer_instance
 
 theorem shape_code {v : MVar} (hv : Shape v) (f : MdFns) (g : Impl.RsaOaep.RISCV64.Fns) :
     verifyFor (ofIdx (idx v)) (beOf (idx v)) f g = verifyFor v.w.H v.M.be f g := by
@@ -193,11 +191,11 @@ theorem tabM_entry {vs : List MVar} (hc : Coh vs)
   rw [stackArgAddr_eq]
   exact Offset.sub_base _ (by omega)
 
-theorem tabS_entry {gs : List TVar} (hc : HashTable.RISCV64.Coh gs)
-    (hpw : (HashTable.RISCV64.names gs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : TVar} (hw : w ∈ gs)
-    (hh : Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (HashTable.RISCV64.tableOf w))) :
-    TabS w.H (HashTable.RISCV64.fnsOf gs) 7 Sp s (stackArg s 7) := by
-  refine HashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.al7 P.wtg (A := aR s)
+theorem tabS_entry {gs : List MVar} (hc : MdHashTable.RISCV64.Coh gs)
+    (hpw : (MdHashTable.RISCV64.names gs).Pairwise fun f g => f ≠ g → s.syms f ≠ s.syms g) {w : MVar} (hw : w ∈ gs)
+    (hh : Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (MdHashTable.RISCV64.tableOf w))) :
+    TabS w.w.H (MdHashTable.RISCV64.fns3 gs) 7 Sp s (stackArg s 7) := by
+  refine MdHashTable.RISCV64.tabS_of (by decide) rfl (arg_al P (by decide)) P.al7 P.wtg (A := aR s)
     (by rw [P.hrd]; simp) (in_aR (by decide)) ?_ P.ka (P.sa.sub_left (sc_sub P))
     (by rw [P.hrd]; iterate 6 apply List.mem_cons_of_mem
         exact List.mem_cons_self ..) P.ktg (P.stg.sub_left (sc_sub P)) hc hpw hw hh
@@ -207,27 +205,27 @@ theorem tabS_entry {gs : List TVar} (hc : HashTable.RISCV64.Coh gs)
 end
 
 /-- The tables of the hash function's `VT`. -/
-def vtOf (vs : List MVar) (gs : List TVar) (v : MVar) (w : TVar) : VT :=
-  ⟨v.w.H, v.w.l.ok, v.M, digName v, fnsOf vs, w.H, HashTable.RISCV64.fnsOf gs⟩
+def vtOf (vs : List MVar) (gs : List MVar) (v : MVar) (w : MVar) : VT :=
+  ⟨v.w.H, v.w.l.ok, v.M, digName v, fnsOf vs, w.w.H, MdHashTable.RISCV64.fns3 gs⟩
 
-theorem vt_names {vs : List MVar} {gs : List TVar} {v : MVar} {w : TVar} (hv : v ∈ vs) (hw : w ∈ gs) :
-    ∀ n ∈ (vtOf vs gs v w).names, n ∈ names vs ++ HashTable.RISCV64.names gs := by
+theorem vt_names {vs : List MVar} {gs : List MVar} {v : MVar} {w : MVar} (hv : v ∈ vs) (hw : w ∈ gs) :
+    ∀ n ∈ (vtOf vs gs v w).names, n ∈ names vs ++ MdHashTable.RISCV64.names gs := by
   have a := Proof.MdHashTable.RISCV64.mem_names hv
-  have b := HashTable.RISCV64.mem_names hw
+  have b := MdHashTable.RISCV64.mem_names hw
   intro n hn
   simp only [VT.names, vtOf, List.mem_cons, List.not_mem_nil, or_false] at hn
   rcases hn with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   exacts [List.mem_append_left _ a.1, List.mem_append_left _ a.2.1, List.mem_append_left _ a.2.2.1,
     List.mem_append_left _ a.2.2.2.1, List.mem_append_left _ a.2.2.2.2, List.mem_append_right _ b.1,
-    List.mem_append_right _ b.2.1, List.mem_append_right _ b.2.2]
+    List.mem_append_right _ b.2.1, List.mem_append_right _ b.2.2.1]
 
 /-! ## Correctness -/
 
 /-- The code, from an entry state meeting the contract. -/
-theorem code_correct {vs : List MVar} {gs : List TVar} (hok : OK vs gs) (s : State)
-    (h : (verSpec (tables vs) (HashTable.RISCV64.tables gs)).pre s) :
-    ∃ t s', Exec isa (verifyPrecomputed (fnsOf vs) (HashTable.RISCV64.fnsOf gs)) s t s' ∧ abiPreserved s s' ∧
-      (verSpec (tables vs) (HashTable.RISCV64.tables gs)).post s s' := by
+theorem code_correct {vs : List MVar} {gs : List MVar} (hok : OK vs gs) (s : State)
+    (h : (verSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre s) :
+    ∃ t s', Exec isa (verifyPrecomputed (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) s t s' ∧ abiPreserved s s' ∧
+      (verSpec (tables vs) (MdHashTable.RISCV64.tables gs)).post s s' := by
   obtain ⟨⟨TH, hTH, hhH⟩, ⟨TG, hTG, hhG⟩, hpw⟩ := spec_tab h
   obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hTH
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTG
@@ -236,24 +234,24 @@ theorem code_correct {vs : List MVar} {gs : List TVar} (hok : OK vs gs) (s : Sta
   have hpwG := hpw.sublist (List.sublist_append_right _ _)
   obtain ⟨hmH, hiH⟩ := held_tableOf hhH
   have hH := hashAt_tableOf hiH
-  have hG := HashTable.RISCV64.hashAt_tableOf (HashTable.RISCV64.held_tableOf hhG).2.1
+  have hG := MdHashTable.RISCV64.hashAt_tableOf (MdHashTable.RISCV64.held_tableOf hhG).2
   have P : PreP v.w.l.G.len s := preP_of h hH
   have T := tabM_entry P hcv hpwH hv hhH
   have TG := tabS_entry P hcg hpwG hw hhG
   have hS := hsh v hv
-  have key : WP isa (verifyPrecomputed (fnsOf vs) (HashTable.RISCV64.fnsOf gs)) s (Post v.w.l.G w.l.G s) := by
+  have key : WP isa (verifyPrecomputed (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) s (Post v.w.l.G w.w.l.G s) := by
     refine WP.seq (WP.mono (idxLoad_wp P) fun u ⟨hu, e5⟩ => ?_)
     refine byIdx_ok (I := idx v) (idx_lt hS) (F := fun u => Sim s u ∧ u.gpr .t5 = BitVec.ofNat 64 (idx v))
       (fun _ h => h.2) (fun t t' ⟨h, e⟩ o y => ⟨h.trans ⟨o.mono fun r hr => by
           revert r; decide, y⟩, by rw [o.get .t5, e]⟩)
       (fun u ⟨hu, _⟩ => ?_) hS.1 (fun x hx => (idx_certs x hx).1) u ⟨hu, by rw [e5, hiH]⟩
     rw [shape_code hS]
-    exact WP.mono (code_ok (hu.preP P) v.w.l.ok v.w.l.fits (hu.tabM T) v.w.l.hash v.w.l.len v.w.l.valid w.l.ok
-      w.l.fits (hu.tabS TG) w.l.hash w.l.len w.l.valid) fun s' q => hu.post q
+    exact WP.mono (code_ok (hu.preP P) v.w.l.ok v.w.l.fits (hu.tabM T) v.w.l.hash v.w.l.len v.w.l.valid w.w.l.ok
+      w.w.l.fits (hu.tabS TG) w.w.l.hash w.w.l.len w.w.l.valid) fun s' q => hu.post q
   obtain ⟨t, s', he, habi, hr⟩ := key
   refine ⟨t, s', he, habi, ?_⟩
   unfold verSpec
-  sig_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.HashTable.param, Abi.withTables, abi, argRegs, stackArgs_eight, List.append_eq]
   intro H' G' hH' hG' hc
   rw [hH] at hH'
@@ -276,10 +274,10 @@ theorem idxB_taint {α : Type} {Φ : α → State → Prop} (h : Pins Φ [.t5]) 
 
 /-- Two runs from entry states meeting the contract with the same public
 data: through the anchor `s₁`, whose tables both have. -/
-theorem code_constantTime {vs : List MVar} {gs : List TVar} (hok : OK vs gs) :
-    ConstantTime isa (verSpec (tables vs) (HashTable.RISCV64.tables gs)).pre
-      (verSpec (tables vs) (HashTable.RISCV64.tables gs)).pub
-      (verifyPrecomputed (fnsOf vs) (HashTable.RISCV64.fnsOf gs)) := by
+theorem code_constantTime {vs : List MVar} {gs : List MVar} (hok : OK vs gs) :
+    ConstantTime isa (verSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre
+      (verSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pub
+      (verifyPrecomputed (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ => ?_
   obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨TG, hTG, hhG₁⟩, hpw₁⟩ := spec_tab h₁
   obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hTH
@@ -293,10 +291,10 @@ theorem code_constantTime {vs : List MVar} {gs : List TVar} (hok : OK vs gs) :
   let W := vtOf vs gs v w
   let D := v.w.l.G.len
   -- Each run's entry.
-  have ent : ∀ {s : State}, (verSpec (tables vs) (HashTable.RISCV64.tables gs)).pre s →
+  have ent : ∀ {s : State}, (verSpec (tables vs) (MdHashTable.RISCV64.tables gs)).pre s →
       Abi.tableHeld 64 s.mem (stackArg s 6) (FnTable.words isa s (tableOf v)) →
-      Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (HashTable.RISCV64.tableOf w)) →
-      (names vs ++ HashTable.RISCV64.names gs).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) →
+      Abi.tableHeld 64 s.mem (stackArg s 7) (FnTable.words isa s (MdHashTable.RISCV64.tableOf w)) →
+      (names vs ++ MdHashTable.RISCV64.names gs).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g) →
       PreT D W s ∧ s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (idx v) :=
     fun {s} h hh hg hpw => by
       have hH := hashAt_tableOf (held_tableOf hh).2
@@ -309,7 +307,7 @@ theorem code_constantTime {vs : List MVar} {gs : List TVar} (hok : OK vs gs) :
   let Φ₀ := fun (a s : State) => PreT D W s ∧ PubT W a s ∧
     s.mem.readW (stackArg s 6 + BitVec.ofNat 64 40) 64 = BitVec.ofNat 64 (idx v)
   let Φ := fun (a u : State) => ∃ s, Φ₀ a s ∧ Sim s u ∧ u.gpr .t5 = BitVec.ofNat 64 (idx v)
-  have hct : RelCT isa (Two Φ₀) (verifyPrecomputed (fnsOf vs) (HashTable.RISCV64.fnsOf gs)) fun _ _ => True := by
+  have hct : RelCT isa (Two Φ₀) (verifyPrecomputed (fnsOf vs) (MdHashTable.RISCV64.fns3 gs)) fun _ _ => True := by
     refine RelCT.seq (two_post (Ψ := Φ) ?_ fun a s hs => WP.mono (idxLoad_wp hs.1.1) fun u ⟨h, e⟩ =>
       ⟨s, hs, h, by rw [e, hs.2.2]⟩) ?_
     · -- The index's load.
@@ -329,7 +327,7 @@ theorem code_constantTime {vs : List MVar} {gs : List TVar} (hok : OK vs gs) :
       (fun a u u' ⟨s, x, k, e⟩ o y => ⟨s, x, k.trans ⟨o.mono fun r hr => by
           revert r; decide, y⟩, by rw [o.get .t5, e]⟩) ?_ hS.1 idx_certs
     rw [shape_code hS]
-    refine (code_ct (W := W) v.w.l.ct v.w.l.fits v.w.l.len w.l.ok w.l.ct w.l.fits w.l.hash w.l.len w.l.valid
+    refine (code_ct (W := W) v.w.l.ct v.w.l.fits v.w.l.len w.w.l.ok w.w.l.ct w.w.l.fits w.w.l.hash w.w.l.len w.w.l.valid
       v.w.l.hash v.w.l.valid).mono (fun u₁ u₂ ⟨a, ⟨s₁, x₁, k₁, _⟩, ⟨s₂, x₂, k₂, _⟩⟩ => ⟨a, ?_, ?_⟩)
       fun _ _ h => h
     · exact ⟨⟨k₁.preP x₁.1.1, k₁.tabM x₁.1.2.1, k₁.tabS x₁.1.2.2⟩, ⟨k₁.pubP x₁.2.1.1.1,

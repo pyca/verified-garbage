@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.RsaOaep.X86
 
 `sign` and `verifyPrecomputed` take the hash function `H` as a table of the
 interface `MdHash` (`Spec/MdHashTable.lean`), their argument `hash`, and
-MGF1's `G` as a table of `Hash` (`Spec/HashTable.lean`), their argument
+MGF1's `G` as a table of `MdHash` (`Spec/MdHashTable.lean`), their argument
 `mgf1`, the last two. They run the pieces of `Impl/RsaPss/X86.lean` in its
 frames and slots, with these differences:
 
@@ -78,7 +78,7 @@ argument `j`. -/
 def ctHashT (j : Nat) : Prog isa :=
   seqs [.block (hTab j), initPartT f, lenPart H, padPart H, compLoopT f H, outPartT f]
 
-/-! ## MGF1 through the table of `Hash` -/
+/-! ## MGF1 through the table of `MdHash` -/
 
 /-- MGF1's slots: `H` (`hLen` bytes at `DB + dbLen`) its source, `DB`
 (`dbLen` bytes) its destination. -/

@@ -4,7 +4,7 @@
 
 /// RSASSA-PSS signature generation (RFC 8017 §8.1.1) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a digest of the former, with the private key `(p, q, dP, dQ, qInv)` checked against the public exponent as `vg_rsa_private_checked` checks it. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero) and the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits), encodes the `digest_len`-byte digest `digest` with the salt `salt` (EMSA-PSS, RFC 8017 §9.1.1) and computes RSASP1 of the encoding: if it passes the check against `e`, writes the signature (`n_len` bytes, most significant first) to `out` and returns 1. Writes zeros and returns 0 if the salt does not fit (`salt_len` more than `⌈(bits of n - 1) / 8⌉ - digest_len - 2`), or the key is refused as `vg_rsa_private_checked` refuses it; writes zeros and returns 2 (an internal error) if the result fails the check against `e`, which it does for no digest if `vg_rsa_check_key` accepts the key and `p` and `q` are prime. The salt must be fresh random bytes for each signature (or empty).
 ///
-/// Contract: `VG.Spec.RsaPss.signTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
+/// Contract: `VG.Spec.RsaPss.signMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, the contents of `n` and `e`, and which tables `hash` and `mgf1` are, not on the private key, the digest or the salt.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_sign_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PSS_SIGN_UMAAL_FEATURES`); or else `vg_rsa_pss_sign`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
@@ -22,7 +22,7 @@
 /// * `salt` must be valid for reads of `salt_len` bytes.
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `out_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -36,12 +36,12 @@
 /// * `out` and `scratch` must not overlap each other, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `n`, `e`, `p`, `q`, `dp`, `dq`, `qinv`, `digest`, `salt`, `scratch`, `hash` and `mgf1` may overlap the 3624 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32;
+    type Impl = unsafe extern "C" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
     /// features the CPU has.
     #[cold]
@@ -58,7 +58,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
     #[cold]
-    unsafe extern "C" fn first(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+    unsafe extern "C" fn first(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
         let f = select();
         CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
         // SAFETY: the caller's obligations, which are those of every implementation, `f`
@@ -76,7 +76,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
 
 /// RSASSA-PSS signature verification (RFC 8017 §8.1.2) with the hash function of the table `hash` and MGF1 with that of the table `mgf1`, of a signature of a digest of the former. With the modulus `n` (`n_len` bytes, most significant first, odd, from 512 to 8192 bits, its first byte not zero), the public exponent `e` (`e_len` bytes, most significant first, odd, from 3 to `2^33 - 1`: BoringSSL's limits) and `pre`, the `pre_len` words written by `vg_rsa_public_precompute` for `n` (returning 1), returns 1 if `sig` (`n_len` bytes, most significant first) is an RSASSA-PSS signature of the `digest_len`-byte digest `digest` with a salt of `salt_len` bytes, or of any length if `any_salt_len` is not zero (BoringSSL's `RSA_PSS_SALTLEN_AUTO`); and 0 if it is not, or if `n` is not such a modulus, `e` is not such a number, or `sig` is not below `n`. If `pre` does not hold those values, the result is unspecified; memory safety and the timing guarantee still apply.
 ///
-/// Contract: `VG.Spec.RsaPss.verifyPrecomputedTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
+/// Contract: `VG.Spec.RsaPss.verifyPrecomputedMdTableContract`. Constant time but for the public key: timing may depend on the pointers, the lengths, `salt_len`, `any_salt_len`, the contents of `n`, `e` and `pre`, and which tables `hash` and `mgf1` are, not on the digest, the signature or anything computed from them but the result.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pss_verify_precomputed_umaal` if it is compiled (`any(target_os = "linux", target_os = "android", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd")`) and the CPU supports its features (`VG_RSA_PSS_VERIFY_PRECOMPUTED_UMAAL_FEATURES`); or else `vg_rsa_pss_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
@@ -89,7 +89,7 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
 /// * `scratch` must be valid for reads and writes of `8 * scratch_len` bytes.
 /// * `pre` must be valid for reads of `8 * pre_len` bytes.
 /// * `hash` must be valid for reads of `11 * size_of::<usize>()` bytes.
-/// * `mgf1` must be valid for reads of `5 * size_of::<usize>()` bytes.
+/// * `mgf1` must be valid for reads of `11 * size_of::<usize>()` bytes.
 /// * `n_len` must be in 64..=1024.
 /// * `sig_len` must be `n_len`.
 /// * `e_len` must be in 1..=`n_len`.
@@ -103,12 +103,12 @@ pub unsafe fn vg_rsa_pss_sign_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mu
 /// * `scratch` must not overlap `n`, `e`, `digest`, `sig`, `pre`, `hash`, `mgf1` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `n`, `e`, `digest`, `sig`, `scratch`, `pre`, `hash` and `mgf1` may overlap the 240 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * `hash` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
-/// * `mgf1` must be the `as_ptr()` of one of the `Hash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
+/// * `mgf1` must be the `as_ptr()` of one of the `MdHash` tables of functions of this crate (`fn_tables`), and the CPU must support the features its constant `<TABLE>_FEATURES` gives, if it has one.
 #[allow(clippy::too_many_arguments)]
 #[inline]
-pub unsafe fn vg_rsa_pss_verify_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+pub unsafe fn vg_rsa_pss_verify_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
     /// The type of the implementations.
-    type Impl = unsafe extern "C" fn(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32;
+    type Impl = unsafe extern "C" fn(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
     /// features the CPU has.
     #[cold]
@@ -125,7 +125,7 @@ pub unsafe fn vg_rsa_pss_verify_precomputed_auto(_dit: verified_garbage_cpu::Dit
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
     /// after it, and runs it.
     #[cold]
-    unsafe extern "C" fn first(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 5]) -> u32 {
+    unsafe extern "C" fn first(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
         let f = select();
         CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
         // SAFETY: the caller's obligations, which are those of every implementation, `f`

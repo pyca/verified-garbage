@@ -197,7 +197,7 @@ table holds, then its digest length. -/
 structure TabFacts (G : Hash) (f : Fns) (p ai au af : BitVec 32) (σ : State) : Prop where
   ok : TabOK G f σ.syms
   mem : TabMem G σ.syms p σ.mem
-  d : σ.mem.readW (tA p 16) 32 = BitVec.ofNat 32 G.D
+  d : σ.mem.readW (tA p 24) 32 = BitVec.ofNat 32 G.D
   ai : σ.syms G.initN = ai
   au : σ.syms G.updN = au
   af : σ.syms G.finN = af
@@ -260,7 +260,7 @@ structure MP (L : Lay) (scr : BitVec 32) (so sl dOff dl : Nat) (seed : State →
   dst : ∀ σ m, Inv σ m → m.readW (L.fr sDst) 32 = scr + BitVec.ofNat 32 dOff
   dstL : ∀ σ m, Inv σ m → m.readW (L.fr sDstLen) 32 = BitVec.ofNat 32 dl
   hj : j < L.argv.length
-  tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 20 → R.Contains (tA (L.argv.getD j 0) o) 4
+  tbl : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA (L.argv.getD j 0) o) 4
   tab : ∀ σ m, Inv σ m → TabFacts g.H f (L.argv.getD j 0) ai au af σ
   fne : f.init ≠ [] ∧ f.upd ≠ [] ∧ f.fin ≠ []
 
@@ -381,7 +381,7 @@ theorem tload_vp {X : State → State → Prop} (hX : ∀ σ s v, X σ s → X �
       (fun σ s => ((Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧
         s.syms = σ.syms) ∧ s.gpr .r4 = a) := by
   have hg := P.hg
-  have hk : 4 * k + 4 ≤ 20 := by omega
+  have hk : 4 * k + 4 ≤ 44 := by omega
   obtain ⟨tR, tRo, tC⟩ := P.tbl
   let F : State → State → Prop := fun σ s =>
     (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl c dstv seed Inv σ s.mem ∧ X σ s) ∧ s.syms = σ.syms
@@ -906,11 +906,11 @@ theorem tabA_wp (hg : Geo L scr) {σ s : State} (hc : Ctx L scr σ s) (hj : j < 
   prun [sp0, ld, st, hc.st.sp, hc.aFr hg, hc.wFr hg, hA, hR, hV, hoff, sTab_lt]
   rfl
 
-/-- The table's digest length (its word 4) to its slot. -/
+/-- The table's digest length (its word 6) to its slot. -/
 theorem tabB_wp (hg : Geo L scr) {σ s : State} (hc : Ctx L scr σ s) {p : BitVec 32} {D : BitVec 32}
-    (h0 : s.gpr .r0 = p) (h12 : s.gpr .r12 = L.B) (hin : InRegions (s.rd ++ s.wr) (tA p 16) 4)
-    (hv : s.mem.readW (tA p 16) 32 = D) :
-    WP isa (.block [.ldr .r0 .r0 16, st .r0 sHl]) s fun t =>
+    (h0 : s.gpr .r0 = p) (h12 : s.gpr .r12 = L.B) (hin : InRegions (s.rd ++ s.wr) (tA p 24) 4)
+    (hv : s.mem.readW (tA p 24) 32 = D) :
+    WP isa (.block [.ldr .r0 .r0 24, st .r0 sHl]) s fun t =>
       t.mem = s.mem.writeW (L.fr sHl) D ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.syms = s.syms := by
   prun [st, h0, h12, hc.aFr hg, hc.wFr hg, State.load32, hin, hv, sHl_lt]
   rfl
@@ -940,7 +940,7 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv f j ai au af) (hoff : Impl
     (∀ i < dl, s.mem (sa scr (dOff + i)) = dstv σ i) ∧ ∀ i < sl, s.mem (sa scr (so + i)) = (seed σ).getD i 0) ∧
     s.syms = σ.syms
   show VP F0 (.seq (.block ([sp0, ld .r0 (Impl.RsaPss.Arm.arg j), st .r0 sTab] ++
-    ([.ldr .r0 .r0 16, st .r0 sHl] ++ mgfInit))) (.loop (mgfRound f) .ne)) _
+    ([.ldr .r0 .r0 24, st .r0 sHl] ++ mgfInit))) (.loop (mgfRound f) .ne)) _
   refine VP.seq (G := fun σ s => (Ctx L scr σ s ∧ MI g (j := j) L scr so sl dOff dl 0 dstv seed Inv σ s.mem) ∧
     s.syms = σ.syms) (VP.block_append (G := fun σ s => F0 σ s ∧ s.mem.readW (L.fr sTab) 32 = p ∧
       s.gpr .r0 = p ∧ s.gpr .r12 = L.B)
@@ -967,8 +967,8 @@ theorem mgf_vp (P : MP g L scr so sl dOff dl seed Inv f j ai au af) (hoff : Impl
   · obtain ⟨⟨⟨hc, hi, hd, hs⟩, sy⟩, ht, h0, h12⟩ := hs
     have T := P.tab σ _ hi
     obtain ⟨tR, tRo, tC⟩ := P.tbl
-    refine WP.mono (tabB_wp hg hc h0 h12 (St_roR hc.st tRo (tC 16 (by decide)))
-      ((St_roW hc.st tRo (tC 16 (by decide))).trans T.d)) fun t ⟨m, rd, wr, sp, ty⟩ => ?_
+    refine WP.mono (tabB_wp hg hc h0 h12 (St_roR hc.st tRo (tC 24 (by decide)))
+      ((St_roW hc.st tRo (tC 24 (by decide))).trans T.d)) fun t ⟨m, rd, wr, sp, ty⟩ => ?_
     have fr : Frame [slotR L sHl] s.mem t.mem := by rw [m]; exact slot_frame L _ _ _
     refine ⟨⟨⟨hc.write fr (fun r hr => ?_) (fun r hr => ?_) rd wr sp, P.I σ _ _ hi (fr.mono (by simp)),
       fun i hi' => ?_, ?_⟩, ty.trans sy⟩, ?_, by rw [m, Mem.readW_writeW_self32]⟩

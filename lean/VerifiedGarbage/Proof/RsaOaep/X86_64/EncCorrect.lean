@@ -172,7 +172,7 @@ theorem encBodyWith_ok {Hs : Spec.Mgf1.Hash} {f : Impl.Mgf1.X86_64.Table.Fns} {m
   refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (tabSlot_ok L1 R1 TL))
     fun ta ⟨⟨ka, La, Ra, sya⟩, spa, mxa, fa⟩ _ => ?_)
   have hea : EnvE s ta := he1.step ka.2.1 ka.2.2 spa (keep_cs3 ka (by decide)) mxa fa
-  have hDa : ta.mem.readW (off (stackArg s 10) 32) 64 = BitVec.ofNat 64 Hl.stream.D :=
+  have hDa : ta.mem.readW (off (stackArg s 10) 48) 64 = BitVec.ofNat 64 Hl.stream.D :=
     (TL.mem ta.mem (by have := fa; rwa [L1.rsp] at this)).2.1
   refine WP.seq (WP.mono_syms (wp_good (block_good _ rfl) (lenLoad_ok La Ra (by simp [upd])
       (by rw [ka.2.1, ka.2.2]; exact TL.rdD) hDa))

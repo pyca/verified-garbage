@@ -12,7 +12,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Call
 # RSASSA-PSS on RISC-V: the calls through the table of `MdHash`
 
 Untrusted: everything here is checked by Lean. As RSAES-OAEP's calls through
-a table of `Hash` (`Proof/RsaOaep/RISCV64/MgfT.lean`), for a table of
+a table of `MdHash` (`Proof/RsaOaep/RISCV64/MgfT.lean`), for a table of
 `MdHash` (`Spec/MdHashTable.lean`) that is our stack argument `j`, naming
 the hash function `H` (`TabM`: what the table holds on entry, where nothing
 we write reaches it, and that an indirect call of each of its first five

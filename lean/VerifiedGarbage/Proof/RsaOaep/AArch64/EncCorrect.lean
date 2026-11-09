@@ -53,9 +53,9 @@ theorem encMain_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.ha
     (hc : Ctx L g vv m₀ t) {V : Nat → Byte} {W : Nat → BitVec 64} (R : Rep t.mem L.Q L.scr V W) (hS : Slots L W)
     (hk : 2 * Hl.D + 2 + L.ml.toNat ≤ L.k.toNat) (okL : Table.TabOK Hl.stream f t.syms)
     (hmL : Table.TabMem Hl.stream t.syms (tabLW L m₀) m₀)
-    (hDL : m₀.readW (tabLW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Hl.stream.D)
+    (hDL : m₀.readW (tabLW L m₀ + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D)
     (ok : Table.TabOK Gm f t.syms) (hm : Table.TabMem Gm t.syms (tabW L m₀) m₀)
-    (hDm : m₀.readW (tabW L m₀ + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
+    (hDm : m₀.readW (tabW L m₀ + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Gm.D) :
     WP isa (Impl.RsaOaep.AArch64.Precomputed.encMain Hl f c.name c.code) t fun t' => Ctx L g vv m₀ t' ∧
       (Consistent L m₀ → Spec.Rsa.written t'.mem L.out L.k.toNat ((t'.gpr .x0).setWidth 32)
         (Spec.Rsa.publicOpChecked (Spec.Rsa.bytesAt m₀ L.n L.k.toNat) (Spec.Rsa.bytesAt m₀ L.e L.el.toNat)
@@ -240,7 +240,7 @@ theorem tabW_lay (D P : Nat) (s : State) : tabW (lay D P s) s.mem = stackArg s 9
 theorem tabLW_lay (D P : Nat) (s : State) : tabLW (lay D P s) s.mem = stackArg s 8 := arg_mem D P s 8
 
 theorem preOk_lay {Hs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some Hs) : PreOk (lay Hs.len P s) s.mem := by
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some Hs) : PreOk (lay Hs.len P s) s.mem := by
   have e6 : preW (lay Hs.len P s) s.mem = stackArg s 6 := arg_mem Hs.len P s 6
   have e7 : prlW (lay Hs.len P s) s.mem = stackArg s 7 := arg_mem Hs.len P s 7
   exact ⟨by rw [PRE, TABJ, TABJ, e6, e7, show tabJ (lay Hs.len P s) s.mem 8 = stackArg s 8 from tabLW_lay _ _ _,
@@ -276,11 +276,11 @@ theorem body_ok {Hs Gs : Spec.Mgf1.Hash} (hHh : ∀ x, Hs.hash x = hH.SH.H.hash 
     (hHv : Proof.Mgf1.Valid Hs) (hHm : Hs ∈ Proof.Pbkdf2.Md.AArch64.mdHashes)
     (hGh : ∀ x, Gs.hash x = hG.SH.H.hash x) (hGl : Gs.len = Gm.D)
     (hGv : Proof.Mgf1.Valid Gs) (c : PdChecked) {P : Nat} (hP : c.stack ≤ P) (hP16 : 16 ≤ P) {ts : List FnTable}
-    {s : State} (h : (encSpec ts P).pre s) (hHa : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some Hs)
+    {s : State} (h : (encSpec ts P).pre s) (hHa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some Hs)
     (okL : Table.TabOK Hl.stream f s.syms) (hmL : Table.TabMem Hl.stream s.syms (stackArg s 8) s.mem)
-    (hDL : s.mem.readW (stackArg s 8 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Hl.stream.D)
+    (hDL : s.mem.readW (stackArg s 8 + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Hl.stream.D)
     (ok : Table.TabOK Gm f s.syms) (hm : Table.TabMem Gm s.syms (stackArg s 9) s.mem)
-    (hDm : s.mem.readW (stackArg s 9 + BitVec.ofNat 64 32) 64 = BitVec.ofNat 64 Gm.D) :
+    (hDm : s.mem.readW (stackArg s 9 + BitVec.ofNat 64 48) 64 = BitVec.ofNat 64 Gm.D) :
     WP isa (encBodyWith fun d => Impl.RsaOaep.AArch64.Precomputed.encMain (ofLen d) f c.name c.code) (entered s)
       fun u => Ctx (lay Hs.len P s) s.gpr s.v s.mem u ∧ (Consistent (lay Hs.len P s) s.mem →
       Spec.Rsa.written u.mem (lay Hs.len P s).out (lay Hs.len P s).k.toNat ((u.gpr .x0).setWidth 32)
@@ -382,8 +382,8 @@ theorem spec_sp {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pr
 /-- The postcondition, from what the body wrote with `Hs` and `Gs`, the hash
 functions the tables name. -/
 theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} {t : State}
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some Hs)
-    (hG : Spec.HashTable.hashAt 64 s.mem (stackArg s 9) = some Gs)
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some Hs)
+    (hG : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 9) = some Gs)
     (hw : Consistent (lay Hs.len P s) s.mem →
       Spec.Rsa.written t.mem (lay Hs.len P s).out (lay Hs.len P s).k.toNat ((t.gpr .x0).setWidth 32)
       (Spec.RsaOaep.encrypt Hs Gs (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).n (lay Hs.len P s).k.toNat)
@@ -392,8 +392,8 @@ theorem result_ok {Hs Gs : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : St
         (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).msg (lay Hs.len P s).ml.toNat)
         (Spec.Rsa.bytesAt s.mem (lay Hs.len P s).sd Hs.len))) :
     (encSpec ts P).post s t := by
-  sig_post [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_post [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
     AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
   intro H' G' hH' hG' hq
   obtain rfl : Hs = H' := Option.some.inj (hH.symm.trans hH')

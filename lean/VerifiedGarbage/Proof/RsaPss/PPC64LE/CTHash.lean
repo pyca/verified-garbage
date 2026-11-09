@@ -25,7 +25,7 @@ Untrusted: everything here is checked by Lean. After the public operation,
 two runs are compared through the anchor `a` with `BL`: `Base` from entry
 states whose encoding parameters are those of their registers and that hold
 the tables of the hash functions (`PreL`: the hash function's of `MdHash`
-and MGF1's of `Hash`, as `Tabs` names them), that agree with the anchor on
+and MGF1's of `MdHash`, as `Tabs` names them), that agree with the anchor on
 what `Base` fixes and on the tables and the addresses of their functions
 (`PubL`), with the entry's addresses of statics. `hashFixed_ct`: the hash of
 `M'` for a given salt length, its blocks by the taint analysis and its calls

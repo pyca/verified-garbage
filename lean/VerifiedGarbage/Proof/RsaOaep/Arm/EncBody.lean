@@ -72,7 +72,7 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
   · exact VP.empty fun σ s hs => hP ⟨σ, hs.1⟩
   obtain ⟨σ₀, hi₀⟩ := hP
   obtain ⟨tR, tRo, tC⟩ := tblL_of hi₀
-  show VP _ (.block ([Impl.RsaPss.Arm.ld .r1 (Impl.RsaPss.Arm.arg 16)] ++ [.ldr .r1 .r1 16])) _
+  show VP _ (.block ([Impl.RsaPss.Arm.ld .r1 (Impl.RsaPss.Arm.arg 16)] ++ [.ldr .r1 .r1 24])) _
   refine VP.block_append (G := fun σ s => S h P σ s ∧ s.gpr .r1 = P.tabL)
     (VP.ldrSp (c := [(.r1, Impl.RsaPss.Arm.arg 16)]) (fun _ _ _ _ h₁ h₂ => h₁.2.sp.trans h₂.2.sp.symm)
       fun σ s hs => ?_)
@@ -91,8 +91,8 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
   · obtain ⟨⟨hi, st⟩, h1⟩ := hs
     have T := hTL σ hi.tabTL
-    refine WP.mono (wp_ldrT (by decide) h1 (St_roR st tRo (tC 16 (by decide)))
-      ((St_roW st tRo (tC 16 (by decide))).trans T.d)) fun t e => ?_
+    refine WP.mono (wp_ldrT (by decide) h1 (St_roR st tRo (tC 24 (by decide)))
+      ((St_roW st tRo (tC 24 (by decide))).trans T.d)) fun t e => ?_
     subst e
     exact ⟨⟨hi, st.regs rfl rfl rfl rfl⟩, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
 

@@ -72,7 +72,7 @@ def allNames (mvs : List MVar) (vs : List TVar) : List String :=
   MdHashTable.Arm.names mvs ++ HashTable.Arm.names vs
 
 /-- The memory `m` with the table of `MdHash` of `w` at `0x300000` and the
-table of `Hash` of `wg` at `0x300100`, and `m` itself below `0x300000`. -/
+table of `MdHash` of `wg` at `0x300100`, and `m` itself below `0x300000`. -/
 def tabMem (m : Mem) (mvs : List MVar) (vs : List TVar) (w : MVar) (wg : TVar) : Mem := fun a =>
   bif Nat.blt a.toNat 0x300000 then m a
   else putWs (putWs m 0x300000 (tw (allNames mvs vs) (MdHashTable.Arm.tableOf w))) 0x300100
@@ -129,7 +129,7 @@ theorem withTabs_heldH (s : State) :
   refine tabMem_above (by decide) (by rw [hl]; decide) fun i hi => ?_
   rw [hl] at hi
   rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, c2, Nat.reduceDiv]; omega))
-    (by simp [tw, HashTable.Arm.tableOf, Spec.HashTable.dataOf])
+    (by simp [tw, HashTable.Arm.tableOf, MdHashTable.Arm.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
     (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat, c1, Nat.reduceDiv]; omega)]
   exact putWs_held (by rw [hl]; decide) i (by rw [hl]; exact hi)
 
@@ -137,8 +137,8 @@ theorem withTabs_heldG (s : State) :
     Abi.tableHeld 32 (withTabs s mvs vs w wg).mem 0x300100
       (FnTable.words isa (withTabs s mvs vs w wg) (HashTable.Arm.tableOf wg)) := by
   rw [tw_words _ rfl]
-  exact tabMem_above (by decide) (by simp [tw, HashTable.Arm.tableOf, Spec.HashTable.dataOf])
-    (putWs_held (by simp [tw, HashTable.Arm.tableOf, Spec.HashTable.dataOf]))
+  exact tabMem_above (by decide) (by simp [tw, HashTable.Arm.tableOf, MdHashTable.Arm.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
+    (putWs_held (by simp [tw, HashTable.Arm.tableOf, MdHashTable.Arm.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]))
 
 namespace Sg
 
@@ -176,7 +176,7 @@ def satState (D : Nat) : State where
     if a = 0x804d then 1 else
     if a = 0x804e then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3100, 1⟩, ⟨0x3200, 1⟩, ⟨0x3300, 1⟩, ⟨0x3400, 1⟩, ⟨0x3500, 1⟩,
-    ⟨0x3000, D⟩, ⟨0x3600, 0⟩, ⟨0x300000, 44⟩, ⟨0x300100, 20⟩, ⟨0x8000, 80⟩]
+    ⟨0x3000, D⟩, ⟨0x3600, 0⟩, ⟨0x300000, 44⟩, ⟨0x300100, 44⟩, ⟨0x8000, 80⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x10000, 2080 * 8⟩]
 
 /-- Its stack arguments. -/
@@ -217,9 +217,9 @@ theorem sign_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
   have sp0 : s.sp = 0x8000 := hsp
   have e0 : stackArgAddr s 0 = 0x8000 := by simp only [stackArgAddr, sp0]; decide
   have hD' : (BitVec.ofNat 32 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify,
     Loc.val]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
     ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide),
@@ -228,9 +228,9 @@ theorem sign_pre_of {hs ts : List FnTable} {D : Nat} (hD : D ≤ 64) {s : State}
     satArgs]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs, reduceClassify,
     Loc.val]
   sig_and_intros
   all_goals first

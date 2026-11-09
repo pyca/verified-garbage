@@ -261,7 +261,7 @@ theorem code_ct (hl : H.D ∈ lens) :
   have hlen : RelCT isa (Two fun a t => ∃ s, PreT H.D G H f s ∧ PubT G H a s ∧ Entered s t ∧ t.syms = s.syms)
       (.block (lenLoad 8)) (Two E₃) := (tword_two (okT H.D G H f).s (tabL H.D G H f)
       (Φ := fun (ac : State × Nat) t => ∃ s, PreT H.D G H f s ∧ PubT G H ac.1 s ∧ Entered s t ∧ t.syms = s.syms)
-      (fun _ _ ⟨s, P, p, E, y⟩ => ⟨s, P, p, E.base, y⟩) (d := .r3) (.inr (.inr rfl)) (k := 4) (by decide)
+      (fun _ _ ⟨s, P, p, E, y⟩ => ⟨s, P, p, E.base, y⟩) (d := .r3) (.inr (.inr rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 H.D) fun P _ => P.2.2.d).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨(a, 0), h₁, h₂⟩)
       fun _ _ ⟨ac, ⟨t₁, ⟨s₁, P₁, p₁, E₁, y₁⟩, o₁, z₁, e₁⟩, ⟨t₂, ⟨s₂, P₂, p₂, E₂, y₂⟩, o₂, z₂, e₂⟩⟩ =>
         ⟨ac.1, ⟨s₁, P₁, p₁, entered_only P₁.1 E₁ o₁, z₁.trans y₁, e₁⟩, ⟨s₂, P₂, p₂, entered_only P₂.1 E₂ o₂,

@@ -107,17 +107,14 @@ impl fmt::Display for Error {
 impl core::error::Error for Error {}
 
 /// A hash function, as the verified functions take it: the words of one of
-/// the tables of `MdHash` (`crate::arch::fn_tables`), their argument `hash`.
+/// the tables of `MdHash` (`crate::arch::fn_tables`), their arguments `hash`
+/// and, for MGF1's, `mgf1`.
 type MdTable = *const [usize; 11];
 
-/// MGF1's hash function, as the verified functions take it: the words of
-/// one of the tables of `Hash`, their last argument, `mgf1`.
-type Table = *const [usize; 5];
-
 /// The tables of the hash function `hash` and of MGF1's `mgf1_hash`
-/// (`table::md_table`, `table::table`).
-fn with_tables(hash: Hash, mgf1_hash: Hash) -> (MdTable, Table) {
-    (table::md_table(hash), table::table(mgf1_hash))
+/// (`table::md_table`).
+fn with_tables(hash: Hash, mgf1_hash: Hash) -> (MdTable, MdTable) {
+    (table::md_table(hash), table::md_table(mgf1_hash))
 }
 
 /// The words of working space the functions need for an `n_len`-byte

@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 /-!
 # RSASSA-PSS verification on AArch64, calling `checkEncoding`: correctness and constant time
 
-`verifyK vs K`: `verifyPrecomputedTableContract` with the tables of `vs`,
+`verifyK vs K`: `verifyPrecomputedMdTableContract` with the tables of `vs`,
 stated on the registers and the stack (its precondition `PreV`, its public
 data `PubV` and the tables'), which `verifyC` meets: correctness
 (`code_ok`, with the selection `CSel` the tables a state holds give,
@@ -33,12 +33,12 @@ open VG.Proof.MdHashTable.AArch64 (idx)
 open VG.Proof.RsaPss.AArch64 (OK tabsOf csel_of chk_of chkCT_of names_sub Tabs)
 open VG.Proof.RsaPss.AArch64.Sgn (stk)
 
-/-- `verifyPrecomputedTableContract` with the tables `tsH` and `tsG` and the
+/-- `verifyPrecomputedMdTableContract` with the tables `tsH` and `tsG` and the
 stack `stk K`, on the registers and the stack. -/
 def verifyK (tsH tsG : List FnTable) (K : Nat) : Contract isa where
   pre s := PreV tsH tsG K s
   post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 6) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 7) = some G → Cons s →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 7) = some G → Cons s →
       (s'.gpr .x0).setWidth 32 = if Spec.RsaPss.verify H G (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) (Spec.Rsa.bytesAt s.mem (s.gpr .x4) H.len)
         (Spec.Rsa.bytesAt s.mem (s.gpr .x6) (s.gpr .x1).toNat)
@@ -112,7 +112,7 @@ theorem verify_constantTime :
 
 /-- The contract, with the tables of `vs`. -/
 abbrev verifyCK (vs : List MdHash) (K : Nat) : Contract isa :=
-  Spec.RsaPss.verifyPrecomputedTableContract (verifyAbi (MdHashTable.AArch64.tables vs) (HashTable.AArch64.tables vs))
+  Spec.RsaPss.verifyPrecomputedMdTableContract (verifyAbi (MdHashTable.AArch64.tables vs) (HashTable.AArch64.tables vs))
     (stk K)
 
 omit hok c h624 hcK in
@@ -120,17 +120,17 @@ omit hok c h624 hcK in
 theorem verify_implies (hsat : ∃ s, (verifyCK vs K).pre s) : (verifyKV vs K).Implies (verifyCK vs K) where
   pre _ h := preV_of h
   post s s' _ h := by
-    sig_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+    sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
     intro H G hH hG hc
     exact h H G hH hG hc
   pub s₁ s₂ _ _ h := by
-    sig_pub [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+    sig_pub [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,

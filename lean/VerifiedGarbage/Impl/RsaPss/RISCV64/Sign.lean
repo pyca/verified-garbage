@@ -11,7 +11,7 @@ e_len = a5, p = a6, p_len = a7, q, q_len, dp, dp_len, dq, dq_len, qinv,
 qinv_len, digest, digest_len, salt, salt_len, scratch, scratch_len, hash,
 mgf1)`, the last sixteen on the stack, with the hash function of the table
 `hash`, of the interface `MdHash` (`Spec/MdHashTable.lean`), and MGF1's that
-of the table `mgf1`, of the interface `Hash` (`Spec/HashTable.lean`), which
+of the table `mgf1`, of the interface `MdHash` (`Spec/MdHashTable.lean`), which
 it calls (`tcall`), with `vg_rsa_private_checked`. The steps are those of
 PPC64LE (`Impl/RsaPss/PPC64LE/Sign.lean`). As verification does
 (`Impl/RsaPss/RISCV64.lean`), the index of `hash`'s hash function (its word

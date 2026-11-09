@@ -342,7 +342,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -850,7 +850,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1359,7 +1359,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1868,7 +1868,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2372,7 +2372,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2876,7 +2876,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -3380,7 +3380,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -3882,7 +3882,7 @@ vg_rsa_pss_sign_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4204,7 +4204,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5008,7 +5008,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5813,7 +5813,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -6618,7 +6618,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -7423,7 +7423,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -8218,7 +8218,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -9013,7 +9013,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -9808,7 +9808,7 @@ vg_rsa_pss_verify_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10846,7 +10846,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11354,7 +11354,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11863,7 +11863,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -12372,7 +12372,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -12876,7 +12876,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -13380,7 +13380,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -13884,7 +13884,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -14386,7 +14386,7 @@ vg_rsa_pss_sign:
 	add r12, sp, #0
 	ldr r0, [sp, #260]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -14708,7 +14708,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -15512,7 +15512,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -16317,7 +16317,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -17122,7 +17122,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -17927,7 +17927,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -18722,7 +18722,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -19517,7 +19517,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -20312,7 +20312,7 @@ vg_rsa_pss_verify_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #228]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0

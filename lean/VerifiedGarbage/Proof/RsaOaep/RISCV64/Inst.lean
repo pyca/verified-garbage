@@ -19,26 +19,26 @@ decryption (`dec_ok`), with the label's hash function and MGF1's each any of
 namespace VG.Proof.RsaOaep.RISCV64
 
 open VG VG.RISCV64
-open VG.Proof.HashTable.RISCV64 (TVar tables names Coh fnsOf)
+open VG.Proof.MdHashTable.RISCV64 (MVar tables names Coh fns3)
 
 /-- What the registration checks of the hash functions whose tables a
 function takes: their functions of the same name have the same code, there
 are not too many to give distinct addresses in the witnesses, and there is
 one. -/
-def OK (vs : List TVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ []
+def OK (vs : List MVar) : Prop := Coh vs ∧ (names vs).length < 2 ^ 32 ∧ vs ≠ []
 
-instance (vs : List TVar) : Decidable (OK vs) := by unfold OK; infer_instance
+instance (vs : List MVar) : Decidable (OK vs) := by unfold OK; infer_instance
 
-theorem OK.mem {vs : List TVar} (h : OK vs) : ∃ w, w ∈ vs := List.exists_mem_of_ne_nil _ h.2.2
+theorem OK.mem {vs : List MVar} (h : OK vs) : ∃ w, w ∈ vs := List.exists_mem_of_ne_nil _ h.2.2
 
 /-- `vg_rsa_oaep_encrypt_precomputed`, with the tables of `vs`. -/
-theorem enc_ok (vs : List TVar) (hok : OK vs) :
-    Verified RISCV64.target (Impl.RsaOaep.RISCV64.encrypt (fnsOf vs)) (encSpec (tables vs)) :=
+theorem enc_ok (vs : List MVar) (hok : OK vs) :
+    Verified RISCV64.target (Impl.RsaOaep.RISCV64.encrypt (fns3 vs)) (encSpec (tables vs)) :=
   enc_verified hok.1 (let ⟨_, hw⟩ := hok.mem; enc_sat hw hok.2.1)
 
 /-- `vg_rsa_oaep_decrypt`, with the tables of `vs`. -/
-theorem dec_ok (vs : List TVar) (hok : OK vs) :
-    Verified RISCV64.target (Impl.RsaOaep.RISCV64.Dec.decrypt (fnsOf vs)) (Dec.decSpec (tables vs)) :=
+theorem dec_ok (vs : List MVar) (hok : OK vs) :
+    Verified RISCV64.target (Impl.RsaOaep.RISCV64.Dec.decrypt (fns3 vs)) (Dec.decSpec (tables vs)) :=
   Dec.dec_verified hok.1 (let ⟨_, hw⟩ := hok.mem; Dec.dec_sat hw hok.2.1)
 
 end VG.Proof.RsaOaep.RISCV64

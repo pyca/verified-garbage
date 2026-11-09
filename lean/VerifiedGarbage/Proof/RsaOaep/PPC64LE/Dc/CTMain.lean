@@ -364,7 +364,7 @@ theorem code_ct {f : Fns} (hl : H.D ∈ lens) :
   let A₃ := fun (a v : State) => AP G H f a v ∧ v.gpr .r3 = BitVec.ofNat 64 H.D
   have hlen : RelCT isa (Two (AP G H f)) (.block (lenLoad 15)) (Two A₃) :=
     (tword_two (okXL G H f) (tabXL G H f) (Φ := fun (ac : State × Nat) t => AP G H f ac.1 t)
-      (fun _ _ h => h.dxt.toL hH) (d := .r3) (.inr (.inr rfl)) (k := 4) (by decide)
+      (fun _ _ h => h.dxt.toL hH) (d := .r3) (.inr (.inr rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 H.D) fun P _ => P.2.1.d).mono (fun _ _ ⟨a, h₁, h₂⟩ => ⟨(a, 0), h₁, h₂⟩)
       fun _ _ ⟨ac, ⟨t₁, h₁, o₁, z₁, e₁⟩, ⟨t₂, h₂, o₂, z₂, e₂⟩⟩ => ⟨ac.1, ⟨h₁.only o₁ z₁, e₁⟩, ⟨h₂.only o₂ z₂, e₂⟩⟩
   refine RelCT.seq hlen ?_

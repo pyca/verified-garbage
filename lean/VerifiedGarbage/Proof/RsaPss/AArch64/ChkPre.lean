@@ -31,11 +31,11 @@ abbrev dgR (D : Nat) (s : State) : Region := ⟨s.gpr .x0, D⟩
 abbrev emR (s : State) : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat⟩
 abbrev sR (s : State) : Region := ⟨s.gpr .x6, (s.gpr .x7).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 0) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 1) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 16⟩
 
 /-- What the code needs at the entry, for the tables `tsH` of `MdHash` and
-`tsG` of `Hash`. -/
+`tsG` of `MdHash`. -/
 structure PreC (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   sp1 : chkStack ≤ s.sp.toNat
   sp2 : s.sp.toNat + 16 ≤ 2 ^ 64
@@ -59,7 +59,7 @@ structure PreC (D : Nat) (tsH tsG : List FnTable) (s : State) : Prop where
   we : (s.gpr .x1).toNat + (s.gpr .x2).toNat ≤ 2 ^ 64
   ws : (s.gpr .x6).toNat + (s.gpr .x7).toNat * 8 ≤ 2 ^ 64
   wtH : (stackArg s 0).toNat + 88 ≤ 2 ^ 64
-  wtG : (stackArg s 1).toNat + 40 ≤ 2 ^ 64
+  wtG : (stackArg s 1).toNat + 88 ≤ 2 ^ 64
   b1 : 1 ≤ (s.gpr .x3).toNat
   b2 : (s.gpr .x3).toNat ≤ Proof.RsaPss.maxEmBits
   hel : (s.gpr .x2).toNat = Spec.RsaPss.emLength (s.gpr .x3).toNat

@@ -236,12 +236,12 @@ theorem emB_getD {P : EP} (hf : fits h P) (σ : State) {i : Nat} (hi : i < P.K) 
 
 /-- MGF1's table, the argument 17, in a buffer only read. -/
 theorem tbl_of {D : Nat} {P : EP} {σ : State} (hi : In D P σ) :
-    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 17 0) o) 4 := by
+    ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr ((P.lay D).argv.getD 17 0) o) 4 := by
   have hf := hi.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
-  show (⟨P.tab.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
+  show (⟨P.tab.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 

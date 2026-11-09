@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 /-!
 # RSASSA-PSS signing on AArch64, calling `encode`: correctness and constant time
 
-`signTableContract` with the tables of `vs` (and the stack of the frame and
+`signMdTableContract` with the tables of `vs` (and the stack of the frame and
 of the deeper callee, `stk K`), from correctness (`code_ok`, with the
 selection `ESel` the tables a state holds give, `esel_of`) and constant time
 (`code_ct`, for the index, the functions and the hash functions of the
@@ -34,7 +34,7 @@ open VG.Proof.RsaPkcs1Sig (bytesAt_length)
 
 /-- The contract, with the tables of `vs`. -/
 abbrev signCK (vs : List MdHash) (K : Nat) : Contract isa :=
-  Spec.RsaPss.signTableContract (signAbi (MdHashTable.AArch64.tables vs) (HashTable.AArch64.tables vs)) (stk K)
+  Spec.RsaPss.signMdTableContract (signAbi (MdHashTable.AArch64.tables vs) (HashTable.AArch64.tables vs)) (stk K)
 
 theorem leak_eq {a b a' b' : List Byte} (ha : a.length = a'.length)
     (h : (a ++ b).map (·.toNat) = (a' ++ b').map (·.toNat)) : a = a' ∧ b = b' :=
@@ -42,14 +42,14 @@ theorem leak_eq {a b a' b' : List Byte} (ha : a.length = a'.length)
 
 /-- The public data of the contract, by name: the anchor `s₁`'s. -/
 theorem pubS_of {tsH tsG : List FnTable} {K : Nat} {s₁ s₂ : State}
-    (h : (Spec.RsaPss.signTableContract (signAbi tsH tsG) (stk K)).pub s₁ s₂) :
+    (h : (Spec.RsaPss.signMdTableContract (signAbi tsH tsG) (stk K)).pub s₁ s₂) :
     PubS s₁ s₂ ∧ (∀ f ∈ (tsH.map (·.fns)).flatten ++ (tsG.map (·.fns)).flatten, s₁.syms f = s₂.syms f) ∧
       (∀ T ∈ tsH, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 14) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 14) (FnTable.words isa s₂ T))) ∧
       ∀ T ∈ tsG, (Abi.tableHeld 64 s₁.mem (stackArg s₁ 15) (FnTable.words isa s₁ T) ↔
         Abi.tableHeld 64 s₂.mem (stackArg s₂ 15) (FnTable.words isa s₂ T)) := by
-  sig_pub [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+  sig_pub [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
@@ -92,8 +92,8 @@ theorem sign_correct (s : State) (h : (signCK vs K).pre s) :
   have E := esel_of hok hw hw' hp.hsy hp.hdl hH hG
   obtain ⟨t, s', he, habi, hr⟩ := code_ok c h624 hcK hp E
   refine ⟨t, s', he, habi, ?_⟩
-  sig_post [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
+  sig_post [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
   intro H G hH' hG'

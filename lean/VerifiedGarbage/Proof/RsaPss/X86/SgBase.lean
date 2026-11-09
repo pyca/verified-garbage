@@ -4,7 +4,7 @@ public import VerifiedGarbage.Impl.RsaPss.X86
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86.Entry
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.X86.Base
 import VerifiedGarbage.Proof.RsaPkcs1Sig.BytesAt
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.X86.Exec
 As on ARMv7 (`Proof/RsaPss/Arm/SgBase.lean`): `EP`, what two runs share
 (the frame's base `B`, the pointers, the lengths, the public key's bytes
 `nB` and `eB`, and the tables: the hash function's of `MdHash` at `tabH`,
-whose functions are at `hai`, `hac` and `had`, and MGF1's of `Hash` at
+whose functions are at `hai`, `hac` and `had`, and MGF1's of `MdHash` at
 `tab`, whose functions are at `ai`, `au` and `af`, with what each run's
 entry state holds of them, `TH` and `T`), and its layout (`EP.lay`), with
 the 3448 bytes below the frame that the hash function's calls and the
@@ -84,7 +84,7 @@ abbrev DIG : Region := ⟨P.dig.setWidth 64, D⟩
 abbrev SALT : Region := ⟨P.salt.setWidth 64, P.sl⟩
 abbrev SCR : Region := ⟨P.scr.setWidth 64, P.scl * 8⟩
 abbrev TABH : Region := Sig.tableRegion 32 (P.tabH.setWidth 64) 11
-abbrev TAB : Region := Sig.tableRegion 32 (P.tab.setWidth 64) 5
+abbrev TAB : Region := Sig.tableRegion 32 (P.tab.setWidth 64) 11
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
@@ -164,13 +164,13 @@ theorem tblH5 : ∃ R ∈ (P.lay D).ro, R.Contains (VG.X86.addr P.tabH 20) 4 := 
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 
-/-- The table of `Hash`, in a buffer only read. -/
-theorem tbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (VG.X86.addr P.tab o) 4 := by
+/-- The table of `MdHash`, in a buffer only read. -/
+theorem tbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (VG.X86.addr P.tab o) 4 := by
   have hf := h.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, BitVec.toNat_setWidth] at hf
   rw [Nat.mod_eq_of_lt (by have := P.tab.isLt; omega)] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
-  show (⟨P.tab.setWidth 64, 5 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
+  show (⟨P.tab.setWidth 64, 11 * (32 / 8)⟩ : Region).Contains (VG.X86.addr P.tab o) 4
   rw [addr_eq (by omega)]
   exact Offset.contains_base _ (by omega) (by omega)
 
@@ -184,17 +184,17 @@ abbrev stackBytes : Nat := 16 + frameBytes + 3448
 /-- The shared contract, with the hash function's table one of `tsH` and
 MGF1's one of `ts`, and that stack. -/
 abbrev spec (tsH ts : List FnTable) : Contract isa :=
-  Spec.RsaPss.signTableContract (abi.withTables Spec.RsaPss.signTableSig [("hash", tsH), ("mgf1", ts)]) stackBytes
+  Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", ts)]) stackBytes
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "sign_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
       stackBelow] at $h:ident
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
+      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi, argSlots, argVal, argBytes,
       stackBelow] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -249,7 +249,7 @@ theorem spec_tab {tsH ts : List FnTable} {s : State} (h : (spec tsH ts).pre s) :
       (∃ T ∈ ts, Abi.tableHeld 32 s.mem ((arg s 23).setWidth 64) (FnTable.words isa s T)) ∧
       ((tsH.map (fun T : FnTable => T.fns)).flatten ++ ((ts.map (fun T : FnTable => T.fns)).flatten ++ [])).Pairwise
         (fun f g => f ≠ g → (s.syms f).setWidth 64 ≠ (s.syms g).setWidth 64) ∧
-      (arg s 22).toNat + 44 ≤ 2 ^ 32 ∧ (arg s 23).toNat + 20 ≤ 2 ^ 32 ∧
+      (arg s 22).toNat + 44 ≤ 2 ^ 32 ∧ (arg s 23).toNat + 44 ≤ 2 ^ 32 ∧
       Spec.RsaPss.digestLenOk 32 s.mem ((arg s 22).setWidth 64) (arg s 17) := by
   sign_pre at h
   sig_split h

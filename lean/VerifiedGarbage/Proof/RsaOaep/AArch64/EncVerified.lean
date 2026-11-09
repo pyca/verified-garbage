@@ -104,7 +104,7 @@ theorem encFail_tr {P : Nat} {e : Env} (hL : e.L.Ok) (hP16 : 16 ≤ e.L.P) {X : 
 /-! ## The prologue -/
 
 theorem head_ok {ts : List FnTable} {H : Spec.Mgf1.Hash} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hHa : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
+    (hHa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
     WP isa (.block encPrologue) (entered s) (In (lay H.len P s) s.gpr s.v s.mem fun _ _ => True) :=
   WP.mono (prologue_ok h hHa) fun t ⟨hc, _, hS⟩ =>
     ⟨hc, fun o => t.mem (off (lay H.len P s).scr o), fun j => word t.mem (lay H.len P s).Q (8 * j),
@@ -118,32 +118,32 @@ def Entered (vs : List MdHash) (w₁ : MdHash) (P : Nat) (a b : State) : Prop :=
 
 /-- The words of a table held in two memories with its functions at the
 same addresses: the same. -/
-theorem held_words {m₁ m₂ : Mem} {p : Addr} {a b : State} {T : FnTable} (h5 : T.fns.length + T.data.length = 5)
+theorem held_words {m₁ m₂ : Mem} {p : Addr} {a b : State} {T : FnTable} (h11 : T.fns.length + T.data.length = 11)
     (h₁ : Abi.tableHeld 64 m₁ p (T.words isa a)) (h₂ : Abi.tableHeld 64 m₂ p (T.words isa b))
-    (hw : T.words isa a = T.words isa b) : Spec.Rsa.wordsAt m₁ p 5 = Spec.Rsa.wordsAt m₂ p 5 := by
-  have hl : (T.words isa b).length = 5 := by simp [FnTable.words, h5]
+    (hw : T.words isa a = T.words isa b) : Spec.Rsa.wordsAt m₁ p 11 = Spec.Rsa.wordsAt m₂ p 11 := by
+  have hl : (T.words isa b).length = 11 := by simp [FnTable.words, h11]
   rw [hw] at h₁
   simp only [Spec.Rsa.wordsAt]
   refine List.map_congr_left fun i hi => ?_
-  have hi : i < 5 := List.mem_range.mp hi
+  have hi : i < 11 := List.mem_range.mp hi
   have e₁ := h₁ i (by omega)
   have e₂ := h₂ i (by omega)
   simp only [Nat.reduceDiv] at e₁ e₂
   rw [e₁, e₂]
 
-/-- The tables of `vs` have five words. -/
-theorem tables_five (vs : List MdHash) : ∀ T ∈ tables vs, T.fns.length + T.data.length = 5 := by
+/-- The tables of `vs` have eleven words. -/
+theorem tables_eleven (vs : List MdHash) : ∀ T ∈ tables vs, T.fns.length + T.data.length = 11 := by
   intro T hT
   obtain ⟨w, -, rfl⟩ := List.mem_map.mp hT
   rfl
 
 /-- A table both runs hold, with its functions at the same addresses: the
 same words. -/
-theorem held_words_of {ts : List FnTable} (h5 : ∀ T ∈ ts, T.fns.length + T.data.length = 5) {m₁ m₂ : Mem}
+theorem held_words_of {ts : List FnTable} (h11 : ∀ T ∈ ts, T.fns.length + T.data.length = 11) {m₁ m₂ : Mem}
     {p : Addr} {a b : State} (hsy : ∀ f ∈ tabFns ts, a.syms f = b.syms f) {T : FnTable} (hT : T ∈ ts)
     (h₁ : Abi.tableHeld 64 m₁ p (T.words isa a)) (h₂ : Abi.tableHeld 64 m₂ p (T.words isa b)) :
-    Spec.Rsa.wordsAt m₁ p 5 = Spec.Rsa.wordsAt m₂ p 5 :=
-  held_words (h5 T hT) h₁ h₂ (by
+    Spec.Rsa.wordsAt m₁ p 11 = Spec.Rsa.wordsAt m₂ p 11 :=
+  held_words (h11 T hT) h₁ h₂ (by
     simp only [FnTable.words]
     congr 1
     exact List.map_congr_left fun n hn => hsy n (List.mem_flatten.mpr ⟨_, List.mem_map_of_mem hT, hn⟩))
@@ -158,8 +158,8 @@ theorem head_ct (vs : List MdHash) {w₁ : MdHash} (hw₁ : w₁ ∈ vs) {P : Na
   subst ea eb
   obtain ⟨hL₁, hT₁, hd₁⟩ := spec_tab h₁
   obtain ⟨-, hT₂, hd₂⟩ := spec_tab h₂
-  sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at hp
@@ -205,18 +205,18 @@ theorem head_ct (vs : List MdHash) {w₁ : MdHash} (hw₁ : w₁ ∈ vs) {P : Na
     · show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 6) ((stackArg s₁ 7).toNat * 8 / 8) =
         Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 6) ((stackArg s₁ 7).toNat * 8 / 8)
       rw [Nat.mul_div_cancel _ (by decide : 0 < 8), hw, a6, a7]
-    · show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 8) (5 * (64 / 8) / 8) =
-        Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 8) (5 * (64 / 8) / 8)
-      exact held_words_of (tables_five vs) hsy' hTw hh₁ (by rw [a8]; exact hh₂)
-    · show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 9) (5 * (64 / 8) / 8) =
-        Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 9) (5 * (64 / 8) / 8)
+    · show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 8) (11 * (64 / 8) / 8) =
+        Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 8) (11 * (64 / 8) / 8)
+      exact held_words_of (tables_eleven vs) hsy' hTw hh₁ (by rw [a8]; exact hh₂)
+    · show Spec.Rsa.wordsAt s₁.mem (stackArg s₁ 9) (11 * (64 / 8) / 8) =
+        Spec.Rsa.wordsAt s₂.mem (stackArg s₁ 9) (11 * (64 / 8) / 8)
       obtain ⟨T, hT, hh⟩ := hT₁
-      exact held_words_of (tables_five vs) hsy' hT hh ((htab _ _ rfl a9.symm T hT).mp hh)
+      exact held_words_of (tables_eleven vs) hsy' hT hh ((htab _ _ rfl a9.symm T hT).mp hh)
 
 theorem pub_sp {ts : List FnTable} {P : Nat} {s₁ s₂ : State}
     (h : (encSpec ts P).pub s₁ s₂) : s₁.sp = s₂.sp := by
-  sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
   exact h.1
 
@@ -295,7 +295,7 @@ theorem rest_ct {vs : List MdHash} (c : PdChecked) {w₁ w : MdHash} {P : Nat} (
         ⟨⟨hx.1.step Su sy, hx.2.step Su sy⟩, by simp [upd]⟩) ?_
   -- Its digest length to `x16`.
   refine RelCT.seq (pw_wp (X' := fun W t => X0 W t ∧ t.gpr .x16 = BitVec.ofNat 64 w₁.H.D) (by
-      show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 32])) _
+      show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 48])) _
       exact RelCT.block_append (pw_seq_tr [.x16] (fun _ => tabLW e.L e.m₁) (by taint_decide) (by taint_decide)
         fun g vv m₀ t V W _ _ hc R hS h32 => by
           have Ly := ly hc R hS

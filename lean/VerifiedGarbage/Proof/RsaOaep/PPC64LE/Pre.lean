@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PowLit
@@ -13,7 +13,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 # RSAES-OAEP encryption on PPC64LE: the precondition
 
 Untrusted: everything here is checked by Lean. `PreO Hs s`: the contract's
-precondition (`Spec.RsaOaep.encryptTablesContract`, with the stack of the
+precondition (`Spec.RsaOaep.encryptMdTablesContract`, with the stack of the
 frame and of the streaming hash functions, 304 bytes), by name, for the
 label's hash function the table `hash` names (`preO_of`), and what it says
 of the tables (`spec_tab`).
@@ -41,11 +41,11 @@ abbrev mR (s : State) : Region := ⟨stackArg s 0, (stackArg s 1).toNat⟩
 abbrev sdR (D : Nat) (s : State) : Region := ⟨stackArg s 2, D⟩
 abbrev scR (s : State) : Region := ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
 abbrev pR (s : State) : Region := ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
-abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 8) 5
-abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 9) 5
+abbrev tLR (s : State) : Region := Sig.tableRegion 64 (stackArg s 8) 11
+abbrev tR (s : State) : Region := Sig.tableRegion 64 (stackArg s 9) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 80⟩
 
-/-- What the code needs of `encryptTablesContract.pre`, by name, for a
+/-- What the code needs of `encryptMdTablesContract.pre`, by name, for a
 label hash function of `D`-byte digests (the seed's length). -/
 structure PreO (D : Nat) (s : State) : Prop where
   sp1 : 304 ≤ s.sp.toNat
@@ -90,8 +90,8 @@ structure PreO (D : Nat) (s : State) : Prop where
   wsd : (stackArg s 2).toNat + D ≤ 2 ^ 64
   wsc : (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64
   wp : (stackArg s 6).toNat + (stackArg s 7).toNat * 8 ≤ 2 ^ 64
-  wtl : (stackArg s 8).toNat + 40 ≤ 2 ^ 64
-  wt : (stackArg s 9).toNat + 40 ≤ 2 ^ 64
+  wtl : (stackArg s 8).toNat + 88 ≤ 2 ^ 64
+  wt : (stackArg s 9).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .r6).toNat
   k2 : (s.gpr .r6).toNat ≤ 1024
   ok : (s.gpr .r4).toNat = (s.gpr .r6).toNat
@@ -103,18 +103,18 @@ structure PreO (D : Nat) (s : State) : Prop where
 /-- The shared contract, with both hash functions each one of the tables
 `ts`, and the stack of the frame and of the streaming hash functions. -/
 abbrev encSpec (ts : List FnTable) : Contract isa :=
-  Spec.RsaOaep.encryptTablesContract (abi.withTables Spec.RsaOaep.encryptTablesSig [("hash", ts), ("mgf1", ts)]) 304
+  Spec.RsaOaep.encryptMdTablesContract (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) 304
 
 /-- Unfolds the precondition at `h`. -/
 macro "enc_pre" " at " h:ident : tactic => `(tactic| (
   have e : (304 : Nat) = 303 + 1 := rfl
   unfold encSpec at $h:ident
   rw [e] at $h:ident
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_ten, List.append_eq, List.range, List.range.loop] at $h:ident
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_ten, List.append_eq, List.range, List.range.loop] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -122,7 +122,7 @@ macro "enc_pre" " at " h:ident : tactic => `(tactic| (
 /-- `PreO`, for the hash function `H` that the table at the stack argument 8
 names: the seed has its length. -/
 theorem preO_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encSpec ts).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) : PreO H.len s := by
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) : PreO H.len s := by
   enc_pre at h
   obtain ⟨sp1, sp2, -, -, -, hrd, hwr, on, oe, ol, om, osd, osc, op, otl, ot, oa, ns, es, ls, ms, sds, sp, stl, st,
     sa, ko, kn, ke, kl, km, ksd, ksc, kp, ktl, kt, ka, wo, wn, we, wl, wm, wsd, wsc, wp, wtl, wt, ⟨k1, k2⟩, ok, e1, e2,

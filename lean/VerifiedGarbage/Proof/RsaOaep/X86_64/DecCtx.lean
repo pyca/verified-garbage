@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.Impl.RsaOaep.X86_64
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.X86_64.DecContract
 public import VerifiedGarbage.Spec.RsaOaep.Contract
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 import VerifiedGarbage.Proof.Bignum.X86_64.PubVerified
 import Mathlib.Tactic.Finiteness.Attr
 public import Mathlib.Algebra.Group.Nat.Defs
@@ -17,7 +17,7 @@ import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 /-!
 # RSAES-OAEP decryption on x86-64: the contract on the registers
 
-`decK ts` states `Spec.RsaOaep.decryptTablesContract` with the tables
+`decK ts` states `Spec.RsaOaep.decryptMdTablesContract` with the tables
 `ts` of MGF1's hash function (`Abi.withTables`, with the stack the frame and
 the calls use, `decStack`) on the registers and the stack (`dec_implies`);
 `DPre` is its precondition by name. The callee
@@ -43,10 +43,10 @@ theorem stackArgs_nineteen (s : State) :
       stackArg s 17, stackArg s 18] := rfl
 
 /-- The region of the table of the label's hash function. -/
-def tabL (s : State) : Region := ⟨stackArg s 17, 40⟩
+def tabL (s : State) : Region := ⟨stackArg s 17, 88⟩
 
 /-- The region of MGF1's table. -/
-def tabR (s : State) : Region := ⟨stackArg s 18, 40⟩
+def tabR (s : State) : Region := ⟨stackArg s 18, 88⟩
 
 /-- The functions of the tables `ts`. -/
 def tabFns (ts : List FnTable) : List String := (ts.map (·.fns)).flatten
@@ -142,17 +142,17 @@ def decK : Contract isa where
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabR s) ∧
       (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabR s) ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabR s) ∧
-      (stackArg s 18).toNat + 40 ≤ 2 ^ 64 ∧
+      (stackArg s 18).toNat + 88 ≤ 2 ^ 64 ∧
       (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint (tabL s) ∧
       (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabL s) ∧
       (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabL s) ∧
       (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabL s) ∧
-      (stackArg s 17).toNat + 40 ≤ 2 ^ 64 ∧
+      (stackArg s 17).toNat + 88 ≤ 2 ^ 64 ∧
       (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)) ∧
       (∃ T ∈ ts, Abi.tableHeld 64 s.mem (stackArg s 18) (FnTable.words isa s T)) ∧
       (tabFns ts ++ tabFns ts).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  post s s' := ∀ H G, Spec.HashTable.hashAt 64 s.mem (stackArg s 17) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 18) = some G →
+  post s s' := ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 17) = some H →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 18) = some G →
     Spec.RsaOaep.writtenDecrypt s'.mem (s.gpr .rdi) (s.gpr .rdx) (s.gpr .r8).toNat ((s'.gpr .rax).setWidth 32)
       (Spec.RsaOaep.decrypt H G (Spec.Rsa.bytesAt s.mem (s.gpr .rcx) (s.gpr .r8).toNat)
         (Spec.Rsa.bytesAt s.mem (s.gpr .r9) (stackArg s 0).toNat)
@@ -260,12 +260,12 @@ structure DPre (s : State) : Prop where
   dMt : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabR s)
   dst : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabR s)
   dKt : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabR s)
-  wT : (stackArg s 18).toNat + 40 ≤ 2 ^ 64
+  wT : (stackArg s 18).toNat + 88 ≤ 2 ^ 64
   dOtL : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint (tabL s)
   dMtL : (⟨s.gpr .rdx, 8⟩ : Region).Disjoint (tabL s)
   dstL : (⟨stackArg s 15, (stackArg s 16).toNat * 8⟩ : Region).Disjoint (tabL s)
   dKtL : (⟨s.gpr .rsp - BitVec.ofNat 64 decStack, decStack⟩ : Region).Disjoint (tabL s)
-  wTL : (stackArg s 17).toNat + 40 ≤ 2 ^ 64
+  wTL : (stackArg s 17).toNat + 88 ≤ 2 ^ 64
 
 theorem DPre.of {s : State} (h : (decK ts).pre s) : DPre s := by
   simp only [decK] at h
@@ -291,36 +291,36 @@ theorem DPre.tab {s : State} (h : (decK ts).pre s) :
 
 /-- The contract, with the tables `ts`. -/
 abbrev decC : Contract isa :=
-  Spec.RsaOaep.decryptTablesContract (abi.withTables Spec.RsaOaep.decryptTablesSig [("hash", ts), ("mgf1", ts)])
+  Spec.RsaOaep.decryptMdTablesContract (abi.withTables Spec.RsaOaep.decryptMdTablesSig [("hash", ts), ("mgf1", ts)])
     decStack
 
 theorem dec_implies (hsat : ∃ s, (decC ts).pre s) : (decK ts).Implies (decC ts) where
   pre := by
     intro s h
-    sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns] at h
-    sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns,
       Sig.tableRegion] at h
     simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
     sig_split h
-    sig_reduce [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    sig_reduce [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns,
       Sig.tableRegion]
     sig_and_intros
     sig_close
     all_goals with_reducible assumption
-  post := by sig_implies_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  post := by sig_implies_post [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns]
   pub := by
     rintro s₁ s₂ - - h
-    sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+    sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
       decK, decStack, privStack, Impl.RsaOaep.X86_64.frameBytes, stackArgs_nineteen, List.append_eq, tabL, tabR, tabFns] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, ↓reduceIte, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at h

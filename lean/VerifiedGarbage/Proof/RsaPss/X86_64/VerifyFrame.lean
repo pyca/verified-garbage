@@ -33,7 +33,7 @@ structure VPre (s : State) : Prop where
   tabH : ∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 8) (FnTable.words isa s T)
   tabG : ∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 9) (FnTable.words isa s T)
   hsy : (tabFns tsH ++ tabFns tsG).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  hrdE : s.rd = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩, ⟨stackArg s 8, 88⟩, ⟨stackArg s 9, 40⟩, ⟨stackArgAddr s 0, 80⟩]
+  hrdE : s.rd = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩, ⟨stackArg s 8, 88⟩, ⟨stackArg s 9, 88⟩, ⟨stackArgAddr s 0, 80⟩]
   hwr : s.wr = [⟨stackArg s 4, (stackArg s 5).toNat * 8⟩]
   dns : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
   des : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
@@ -41,7 +41,7 @@ structure VPre (s : State) : Prop where
   dsgs : (⟨stackArg s 0, (stackArg s 1).toNat⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
   dsp : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
   dstH : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 8, 88⟩
-  dstG : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 9, 40⟩
+  dstG : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 9, 88⟩
   dsa : (⟨stackArg s 4, (stackArg s 5).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 80⟩
   dRn : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   dRe : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -50,7 +50,7 @@ structure VPre (s : State) : Prop where
   dRs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
   dRp : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
   dRtH : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 8, 88⟩
-  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 9, 40⟩
+  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 9, 88⟩
   dRa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 80⟩
   dKn : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   dKe : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -59,7 +59,7 @@ structure VPre (s : State) : Prop where
   dKs : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArg s 4, (stackArg s 5).toNat * 8⟩
   dKp : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArg s 6, (stackArg s 7).toNat * 8⟩
   dKtH : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArg s 8, 88⟩
-  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArg s 9, 40⟩
+  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArg s 9, 88⟩
   dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 verifyStack, verifyStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 80⟩
   wN : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
   wE : (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64
@@ -68,7 +68,7 @@ structure VPre (s : State) : Prop where
   wS : (stackArg s 4).toNat + (stackArg s 5).toNat * 8 ≤ 2 ^ 64
   preWrap : (stackArg s 6).toNat + (stackArg s 7).toNat * 8 ≤ 2 ^ 64
   wTH : (stackArg s 8).toNat + 88 ≤ 2 ^ 64
-  wTG : (stackArg s 9).toNat + 40 ≤ 2 ^ 64
+  wTG : (stackArg s 9).toNat + 88 ≤ 2 ^ 64
   lv : Spec.Rsa.lenValid (s.gpr .rsi).toNat
   L1 : 1 ≤ (s.gpr .rcx).toNat
   L2 : (s.gpr .rcx).toNat ≤ (s.gpr .rsi).toNat

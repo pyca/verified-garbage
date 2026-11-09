@@ -14,7 +14,7 @@ digest = r7, digest_len = r8, sig = r9, sig_len = r10, salt_len,
 any_salt_len, scratch, scratch_len, pre, pre_len, hash, mgf1)`, the last
 eight on the stack, with the hash function of the table `hash` (of the
 interface `MdHash`, `Spec/MdHashTable.lean`) and MGF1 over that of the table
-`mgf1` (of the interface `Hash`, `Spec/HashTable.lean`), which it calls
+`mgf1` (of the interface `MdHash`, `Spec/MdHashTable.lean`), which it calls
 through the tables (`tcall`), with `vg_rsa_public_precomputed_checked`. The
 index of `hash`'s hash function (its word 5) selects the code for that hash
 function's sizes (`byIdx`, among `idxs`), which is all that code uses of it
@@ -92,7 +92,7 @@ def oSel : Nat := 4800
 
 /-! ## The tables
 
-The hash function's table, of `MdHash`, and MGF1's, of `Hash`, are stack
+The hash function's table, of `MdHash`, and MGF1's, of `MdHash`, are stack
 arguments (`hArg`, `gArg` for verification); each call of one of their
 functions is indirect (`tcall`: the table's word through the stack
 argument, into `r12`, then `bctrl`, of whichever of the functions the list

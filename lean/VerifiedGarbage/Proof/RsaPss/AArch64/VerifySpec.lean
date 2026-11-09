@@ -55,7 +55,7 @@ theorem pubX_length (s : State) : (pubX s).length = (s.gpr .x1).toNat := by
 
 variable (Hs Gs : Spec.Mgf1.Hash)
 
-/-- The result `verifyPrecomputedTableContract.post` asks for, with the hash
+/-- The result `verifyPrecomputedMdTableContract.post` asks for, with the hash
 function `Hs` and MGF1's `Gs`. -/
 def verifyOut (s : State) : Bool :=
   Spec.RsaPss.verify Hs Gs (Spec.Rsa.bytesAt s.mem (s.gpr .x0) (s.gpr .x1).toNat)

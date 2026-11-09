@@ -22,7 +22,7 @@ open VG VG.PPC64LE VG.Impl.RsaOaep.PPC64LE
 open VG.Impl.Hmac.Stream.PPC64LE (Hash)
 open VG.Proof.Hmac.Stream.PPC64LE (HashOK)
 open VG.Proof.RsaPkcs1Sig (bytesAt_length)
-open VG.Proof.HashTable.PPC64LE (TVar tables fnsOf Coh)
+open VG.Proof.MdHashTable.PPC64LE (MVar tables fns3 Coh)
 
 theorem leak_eq {a b c d : List Byte} {w w' : List (BitVec 64)} (ha : a.length = c.length)
     (hb : b.length = d.length)
@@ -44,8 +44,8 @@ theorem pubT_of {ts : List FnTable} {s₁ s₂ : State} (h : (encSpec ts).pub s�
   have e : (304 : Nat) = 303 + 1 := rfl
   unfold encSpec at h
   rw [e] at h
-  sig_pub [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
+  sig_pub [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
     stackArgs_ten, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at h
@@ -65,8 +65,8 @@ theorem pubO_refl (s : State) : PubO s s := ⟨rfl, fun _ _ => rfl, fun _ _ => r
 /-- Constant time: the tables of the first run, which the public data makes
 the second's, at the same addresses with their functions at the same
 addresses. -/
-theorem code_constantTime {vs : List TVar} (hc : Coh vs) :
-    ConstantTime isa (encSpec (tables vs)).pre (encSpec (tables vs)).pub (encrypt (fnsOf vs)) := by
+theorem code_constantTime {vs : List MVar} (hc : Coh vs) :
+    ConstantTime isa (encSpec (tables vs)).pre (encSpec (tables vs)).pub (encrypt (fns3 vs)) := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ => ?_
   obtain ⟨⟨T₁, hT₁, hhL₁⟩, ⟨T, hT, hh₁⟩, hpw₁⟩ := spec_tab h₁
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
@@ -75,10 +75,10 @@ theorem code_constantTime {vs : List TVar} (hc : Coh vs) :
   have hhL₂ := (hiffL _ hT₁).mp hhL₁
   have hh₂ := (hiff _ hT).mp hh₁
   have hpw₂ := (spec_tab h₂).2.2
-  have hn := Proof.HashTable.PPC64LE.mem_names hw
-  have hnL := Proof.HashTable.PPC64LE.mem_names hw₁
-  have hH₁ := Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hhL₁).2.1
-  have hH₂ := Proof.HashTable.PPC64LE.hashAt_tableOf (Proof.HashTable.PPC64LE.held_tableOf hhL₂).2.1
+  have hn := Proof.MdHashTable.PPC64LE.mem_names hw
+  have hnL := Proof.MdHashTable.PPC64LE.mem_names hw₁
+  have hH₁ := Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hhL₁).2.2.2
+  have hH₂ := Proof.MdHashTable.PPC64LE.hashAt_tableOf (Proof.MdHashTable.PPC64LE.held_tableOf hhL₂).2.2.2
   have P₁ : PreO w₁.H.D s₁ := w₁.l.len ▸ preO_of h₁ hH₁
   have P₂ : PreO w₁.H.D s₂ := w₁.l.len ▸ preO_of h₂ hH₂
   have q₁ := hpw₁.sublist (List.sublist_append_left _ _)
@@ -88,13 +88,13 @@ theorem code_constantTime {vs : List TVar} (hc : Coh vs) :
     ⟨s₁, ⟨⟨P₁, tabS_entry hc P₁ q₁ hw hh₁, tabS_entryL hc P₁ q₁ hw₁ hhL₁⟩, pubO_refl s₁, rfl, rfl, rfl, rfl, rfl,
         rfl, rfl, rfl⟩,
       ⟨P₂, tabS_entry hc P₂ q₂ hw hh₂, tabS_entryL hc P₂ q₂ hw₁ hhL₂⟩, p, a9, (hsy _ hn.1).symm,
-      (hsy _ hn.2.1).symm, (hsy _ hn.2.2).symm, a8, (hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm,
-      (hsy _ hnL.2.2).symm⟩ e₁ e₂
+      (hsy _ hn.2.1).symm, (hsy _ hn.2.2.1).symm, a8, (hsy _ hnL.1).symm, (hsy _ hnL.2.1).symm,
+      (hsy _ hnL.2.2.1).symm⟩ e₁ e₂
 
 /-- `vg_rsa_oaep_encrypt_precomputed` against its contract, for the tables
 of `vs`, given a state meeting it. -/
-theorem enc_verified {vs : List TVar} (hc : Coh vs) (hsat : ∃ s, (encSpec (tables vs)).pre s) :
-    Verified PPC64LE.target (encrypt (fnsOf vs)) (encSpec (tables vs)) :=
+theorem enc_verified {vs : List MVar} (hc : Coh vs) (hsat : ∃ s, (encSpec (tables vs)).pre s) :
+    Verified PPC64LE.target (encrypt (fns3 vs)) (encSpec (tables vs)) :=
   ⟨code_correct hc, code_constantTime hc, hsat⟩
 
 /-! ## A state meeting the precondition -/
@@ -115,70 +115,70 @@ def encSatState (D : Nat) : State where
     else bif Nat.beq a.toNat 0x10088 then 0x20 else bif Nat.beq a.toNat 0x10089 then 0x08
     else bif Nat.beq a.toNat 0x10091 then 0x50 else bif Nat.beq a.toNat 0x10098 then 16
     else bif Nat.beq a.toNat 0x100A2 then 0x30 else bif Nat.beq a.toNat 0x100AA then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, D⟩, ⟨0x5000, 128⟩, ⟨0x300000, 40⟩,
-    ⟨0x300000, 40⟩, ⟨0x10060, 80⟩]
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4000, 0⟩, ⟨0x4100, 0⟩, ⟨0x4200, D⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩,
+    ⟨0x300000, 88⟩, ⟨0x10060, 80⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 16640⟩]
 
 section
-variable {vs : List TVar} {w : TVar}
+variable {vs : List MVar} {w : MVar}
 
 theorem stackArgAddr_sat (D j : Nat) (hj : j < 10) :
     (stackArgAddr (encSatState D) j).toNat + 8 ≤ 0x300000 := by
   revert j; show ∀ j < 10, (stackArgAddr (encSatState 0) j).toNat + 8 ≤ 0x300000; decide
 
 theorem sat_a0 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 0 = 0x4100 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 0 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 0 = 0x4100 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 0 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 0 = 0x4100 by decide) D hD)
 theorem sat_a1 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 1 = 0 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 1 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 1 = 0 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 1 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 1 = 0 by decide) D hD)
 theorem sat_a2 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 2 = 0x4200 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 2 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 2 = 0x4200 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 2 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 2 = 0x4200 by decide) D hD)
 theorem sat_a3 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 3 = BitVec.ofNat 64 D :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 3 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 3 = BitVec.ofNat 64 D :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 3 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 3 = BitVec.ofNat 64 D by decide) D hD)
 theorem sat_a4 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 4 = 0x20000 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 4 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 4 = 0x20000 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 4 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 4 = 0x20000 by decide) D hD)
 theorem sat_a5 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 5 = 2080 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 5 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 5 = 2080 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 5 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 5 = 2080 by decide) D hD)
 theorem sat_a6 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 6 = 0x5000 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 6 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 6 = 0x5000 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 6 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 6 = 0x5000 by decide) D hD)
 theorem sat_a7 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 7 = 16 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 7 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 7 = 16 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 7 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 7 = 16 by decide) D hD)
 theorem sat_a8 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 8 = 0x300000 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 8 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 8 = 0x300000 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 8 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 8 = 0x300000 by decide) D hD)
 theorem sat_a9 {D : Nat} (hD : D ∈ Impl.RsaOaep.PPC64LE.lens) :
-    stackArg (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 9 = 0x300000 :=
-  (Proof.HashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 9 (by decide))).trans
+    stackArg (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 9 = 0x300000 :=
+  (Proof.MdHashTable.PPC64LE.withTable_below _ _ _ (stackArgAddr_sat D 9 (by decide))).trans
     ((show ∀ D ∈ Impl.RsaOaep.PPC64LE.lens, stackArg (encSatState D) 9 = 0x300000 by decide) D hD)
-theorem sat_e (D : Nat) : stackArgAddr (Proof.HashTable.PPC64LE.withTable (encSatState D) vs w) 0 = 0x10060 :=
+theorem sat_e (D : Nat) : stackArgAddr (Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w) 0 = 0x10060 :=
   show stackArgAddr (encSatState 0) 0 = _ by decide
 
 /-- A state meeting the contract, with both tables that of `w`, at
 `0x300000`. -/
-theorem enc_sat (hw : w ∈ vs) (hl : (Proof.HashTable.PPC64LE.names vs).length < 2 ^ 32) :
+theorem enc_sat (hw : w ∈ vs) (hl : (Proof.MdHashTable.PPC64LE.names vs).length < 2 ^ 32) :
     ∃ s, (encSpec (tables vs)).pre s := by
-  have hha : ∀ s : State, Spec.HashTable.hashAt 64 (Proof.HashTable.PPC64LE.withTable s vs w).mem 0x300000 =
-      some w.l.G := fun s => Proof.HashTable.PPC64LE.hashAt_tableOf
-        (Proof.HashTable.PPC64LE.held_tableOf (Proof.HashTable.PPC64LE.withTable_held s vs w)).2.1
+  have hha : ∀ s : State, Spec.MdHashTable.hashAt 64 (Proof.MdHashTable.PPC64LE.withTable s vs w).mem 0x300000 =
+      some w.l.G := fun s => Proof.MdHashTable.PPC64LE.hashAt_tableOf
+        (Proof.MdHashTable.PPC64LE.held_tableOf (Proof.MdHashTable.PPC64LE.withTable_held s vs w)).2.2.2
   have hl' : w.l.G.len ∈ Impl.RsaOaep.PPC64LE.lens := w.l.len ▸ w.l.lens_mem
   generalize hDd : w.l.G.len = D at hl'
-  refine ⟨Proof.HashTable.PPC64LE.withTable (encSatState D) vs w, ?_⟩
+  refine ⟨Proof.MdHashTable.PPC64LE.withTable (encSatState D) vs w, ?_⟩
   have e304 : (304 : Nat) = 303 + 1 := rfl
   have hha' := hha (encSatState D)
   have a0 := sat_a0 (vs := vs) (w := w) hl'
@@ -196,17 +196,17 @@ theorem enc_sat (hw : w ∈ vs) (hl : (Proof.HashTable.PPC64LE.names vs).length 
   simp only [Impl.RsaOaep.PPC64LE.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
   rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
       argRegs, stackArgs_ten, List.append_eq, List.range, List.range.loop]
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, sat_e]
     sig_and_intros
     all_goals first
+      | exact ⟨Proof.MdHashTable.PPC64LE.tableOf w, List.mem_map_of_mem hw, Proof.MdHashTable.PPC64LE.held_twL _ _ _ rfl⟩
       | rfl
       | decide
       | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨Proof.HashTable.PPC64LE.tableOf w, List.mem_map_of_mem hw, Proof.HashTable.PPC64LE.withTable_held _ _ _⟩
       | (intro H' hH'
          obtain rfl := Option.some.inj (hha'.symm.trans hH')
          rw [hDd]; rfl)
