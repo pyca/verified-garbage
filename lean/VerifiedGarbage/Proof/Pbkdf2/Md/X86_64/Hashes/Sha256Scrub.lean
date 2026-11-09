@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.ScrubStream
 import VerifiedGarbage.Proof.Sha256.Stream
 import VerifiedGarbage.Proof.Sha256.Scratch
@@ -67,6 +68,25 @@ theorem finalizePost_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (finaliz
   intro iv msg hr hc
   exact (Stream.bytesAt_congr (p := ArgWord.addr.ofRaw ot) ho).trans (h iv msg hr hc)
 
+theorem finalize224Post_out (pb : Nat) : ∀ vs m m₁ m₂ r, vs.length = (finalize224Sig.words pb).length →
+    (∀ b ∈ Sig.bufs finalize224Sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+    Curry.apply (finalize224Sig.words pb) (finalize224Post pb) vs m m₁ r →
+      Curry.apply (finalize224Sig.words pb) (finalize224Post pb) vs m m₂ r := by
+  intro vs m m₁ m₂ r hlen hb h
+  obtain ⟨st, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one (n := 2) hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ct, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain ⟨ot, vs, rfl⟩ := List.exists_cons_of_length_eq_add_one hlen
+  replace hlen := Nat.succ.inj hlen
+  obtain rfl := List.eq_nil_of_length_eq_zero hlen
+  simp only [finalize224Sig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at hb
+  have ho : ∀ i < 28, m₂ (ot + BitVec.ofNat 64 i) = m₁ (ot + BitVec.ofNat 64 i) := fun i hi =>
+    (hb.2 _ (Offset.contains_base _ (by simp only [Elem.size]; omega) (by omega))).symm
+  intro msg hr hc
+  exact (Stream.bytesAt_congr (p := ArgWord.addr.ofRaw ot) ho).trans (h msg hr hc)
+
 theorem digestPost_out (D : Nat) (digest : List Byte → List Byte) (pb : Nat) (hD : D < 2 ^ 64) :
     ∀ vs m m₁ m₂ r, vs.length = ((digestSig D).words pb).length →
     (∀ b ∈ Sig.bufs (digestSig D).params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
@@ -104,3 +124,15 @@ theorem digOut (v : Proof.Sha256.X86_64.Compress) : PostOut (digFn v).contract (
   postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 32 Spec.Sha256.hash 64 (by decide))
 
 end VG.Proof.Pbkdf2.Md.X86_64.Sha256
+
+namespace VG.Proof.Pbkdf2.Md.X86_64.Sha224
+
+open VG.X86_64 VG.X86_64.Scrub
+
+theorem finOut (v : Proof.Sha256.X86_64.Compress) : PostOut (finFn v).contract (finFn v).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.finalize224Post_out 64)
+
+theorem digOut (v : Proof.Sha256.X86_64.Compress) : PostOut (digFn v).contract (digFn v).retBits :=
+  postOut_of_local (leak := none) ScrubAbi.plain (Proof.Sha256.digestPost_out 28 Spec.Sha256.sha224 64 (by decide))
+
+end VG.Proof.Pbkdf2.Md.X86_64.Sha224
