@@ -11,4 +11,4 @@
 
 mod cbc;
 
-pub use cbc::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
+pub use cbc::{Error, InvalidKeyLength, Rc2CbcDecryptor, Rc2CbcEncryptor};
