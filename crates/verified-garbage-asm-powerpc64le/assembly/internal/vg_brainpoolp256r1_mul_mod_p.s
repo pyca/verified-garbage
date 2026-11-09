@@ -11,30 +11,6 @@ vg_brainpoolp256r1_mul_mod_p:
 	add %r4, %r3, %r4
 	add %r5, %r3, %r5
 	add %r6, %r3, %r6
-	lis %r11, 8046
-	ori %r11, %r11, 21367
-	stw %r11, 3944(%r3)
-	lis %r11, 8211
-	ori %r11, %r11, 18461
-	stw %r11, 3948(%r3)
-	lis %r11, -10970
-	ori %r11, %r11, 8232
-	stw %r11, 3952(%r3)
-	lis %r11, 28219
-	ori %r11, %r11, 63011
-	stw %r11, 3956(%r3)
-	lis %r11, -25213
-	ori %r11, %r11, 36210
-	stw %r11, 3960(%r3)
-	lis %r11, 15974
-	ori %r11, %r11, 2704
-	stw %r11, 3964(%r3)
-	lis %r11, -24082
-	ori %r11, %r11, 43452
-	stw %r11, 3968(%r3)
-	lis %r11, -22021
-	ori %r11, %r11, 22491
-	stw %r11, 3972(%r3)
 	lis %r11, -12547
 	ori %r11, %r11, 35257
 	stw %r11, 3912(%r3)
@@ -59,10 +35,26 @@ vg_brainpoolp256r1_mul_mod_p:
 	ld %r21, 8(%r6)
 	ld %r22, 16(%r6)
 	ld %r23, 24(%r6)
-	ld %r6, 3944(%r3)
-	ld %r7, 3952(%r3)
-	ld %r10, 3960(%r3)
-	ld %r0, 3968(%r3)
+	lis %r6, 8211
+	ori %r6, %r6, 18461
+	rldicr %r6, %r6, 32, 31
+	oris %r6, %r6, 8046
+	ori %r6, %r6, 21367
+	lis %r7, 28219
+	ori %r7, %r7, 63011
+	rldicr %r7, %r7, 32, 31
+	oris %r7, %r7, 54566
+	ori %r7, %r7, 8232
+	lis %r10, 15974
+	ori %r10, %r10, 2704
+	rldicr %r10, %r10, 32, 31
+	oris %r10, %r10, 40323
+	ori %r10, %r10, 36210
+	lis %r0, -22021
+	ori %r0, %r0, 22491
+	rldicr %r0, %r0, 32, 31
+	oris %r0, %r0, 41454
+	ori %r0, %r0, 43452
 	li %r8, 4
 20:
 	ld %r9, 0(%r5)

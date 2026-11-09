@@ -93,7 +93,8 @@ theorem zext_wp (s : State) : WP isa (.block zext) s (· = zextState s) := by
 /-- What the entry leaves. -/
 theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
     WP isa (.block (entry n m)) (zextState s) fun u =>
-      OpPre (mod n m) (s.gpr .r3) 4096 (lo s .r4) (lo s .r5) (lo s .r6) m u ∧
+      RegPre (s.gpr .r3) 4096 (lo s .r4) (lo s .r5) (lo s .r6) m u ∧
+      (¬n ≤ 4 → val32 u.mem (s.gpr .r3) (moAt n) (2 * n) = m) ∧
       Outside (s.gpr .r3) (moAt n) (8 * n) s.mem u.mem ∧ Kp fnClob s u := by
   have h9 := own_le n hM.n9
   have hn1 := hM.n1
@@ -104,6 +105,19 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   refine wp_step exec_add ?_
   refine wp_step exec_add ?_
   simp only [zextState, write_gpr, ite_true, reduceCtorEq, ite_false]
+  have K₀ : Kp fnClob s ((((((s.write .r4 (BitVec.ofNat 64 (lo s .r4))).write .r5 (BitVec.ofNat 64 (lo s .r5))).write .r6
+      (BitVec.ofNat 64 (lo s .r6))).write .r4 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r4))).write .r5
+      (s.gpr .r3 + BitVec.ofNat 64 (lo s .r5))).write .r6 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r6))) :=
+    (((((Kp.write s _ (by decide)).trans (Kp.write _ _ (by decide))).trans
+      (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
+      (Kp.write _ _ (by decide))
+  split
+  · refine WP.block_nil ⟨⟨K₀.ws hs, ?_, ?_, ?_, ?_, hM.m0⟩, fun h => absurd ‹_› h, Outside.refl _ _ _ _, K₀⟩
+    · rw [At, K₀.g]; exact h3
+    · rw [At]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+    · rw [At]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+    · rw [At]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+  rename_i h4
   refine WP.mono (setConst_ok ((((((hs.write _ _).write _ _).write _ _).write _ _).write _ _).write _ _)
     ((((((h3.write _).write _).write _).write _).write _).write _)
     (o := moAt n) (n := n) (x := m) (by simp only [moAt, tmpAt]; omega) hM.m_lt) fun u ⟨O, V, K⟩ => ?_
@@ -111,7 +125,7 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
   have K₀ : Kp fnClob s u := (((((((Kp.write s _ (by decide)).trans (Kp.write _ _ (by decide))).trans
     (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
     (Kp.write _ _ (by decide)))).trans (K.mono (by decide))
-  refine ⟨⟨K₀.ws hs, ?_, ?_, ?_, ?_, V, hM.m0⟩, O, K₀⟩
+  refine ⟨⟨K₀.ws hs, ?_, ?_, ?_, ?_, hM.m0⟩, fun _ => V, O, K₀⟩
   · rw [At, K.g]; simp only [write_gpr, reduceCtorEq, ite_false]; exact h3
   · rw [At, K.g]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
   · rw [At, K.g]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
@@ -119,10 +133,11 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
 
 /-- The function of an operation, from what the entry leaves. -/
 theorem fn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) {op : Prog isa} {Q : State → Prop}
-    (hop : ∀ u, OpPre (mod n m) (s.gpr .r3) 4096 (lo s .r4) (lo s .r5) (lo s .r6) m u →
+    (hop : ∀ u, RegPre (s.gpr .r3) 4096 (lo s .r4) (lo s .r5) (lo s .r6) m u →
+      (¬n ≤ 4 → val32 u.mem (s.gpr .r3) (moAt n) (2 * n) = m) →
       Outside (s.gpr .r3) (moAt n) (8 * n) s.mem u.mem → Kp fnClob s u → WP isa op u Q) :
     WP isa (fn n m op) s Q :=
-  WP.seq (WP.mono (zext_wp s) fun _ hz => hz ▸ WP.seq (WP.mono (entry_ok hM hp) fun u ⟨P, O, K⟩ => hop u P O K))
+  WP.seq (WP.mono (zext_wp s) fun _ hz => hz ▸ WP.seq (WP.mono (entry_ok hM hp) fun u ⟨P, V, O, K⟩ => hop u P V O K))
 
 /-- What the functions keep. -/
 theorem abi_of_kp {s u : State} (h : Kp fnClob s u) : abiPreserved s u :=
@@ -162,14 +177,14 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
         wordsVal s.mem (s.gpr .r3) (lo s .r5) n * wordsVal s.mem (s.gpr .r3) (lo s .r6) n % m ∧
       Kept n (s.gpr .r3) (lo s .r4) s.mem s'.mem := by
   have h9 := own_le n hM.n9
-  refine exec_of_wp (fn_ok hM hp fun u P O₁ K₁ => ?_)
+  refine exec_of_wp (fn_ok hM hp fun u P V₀ O₁ K₁ => ?_)
   have hbu : wordsVal u.mem (s.gpr .r3) (lo s .r6) (mod n m).n < m := by
     rw [show (mod n m).n = n from rfl, O₁.wordsVal (by have := hp.b; simp only [moAt, tmpAt]; omega) (by have := hp.fit; have := hp.a; have := hp.b; omega)]; exact hb
   have hinv : (m * (mod n m).minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [show (mod n m).minv = BitVec.ofNat 64 (minv m) from rfl, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (minv_lt m)]
     exact hM.inv
   have en : (mod n m).n = n := rfl
-  have hop : WP isa (rmulSel (mod n m) (own n)) u fun v =>
+  have hop : WP isa (rmulSel (mod n m) m (own n)) u fun v =>
       wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n < m ∧
       wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n * 2 ^ (64 * (mod n m).n) % m =
         wordsVal u.mem (s.gpr .r3) (lo s .r5) (mod n m).n * wordsVal u.mem (s.gpr .r3) (lo s .r6) (mod n m).n % m ∧
@@ -179,10 +194,10 @@ theorem mulFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
     · rename_i h4
       have := hp.a
       have := hp.b
-      exact rmul4_ok P (lay hM hp) h4 (by simp only [mod, moAt, tmpAt, own, Impl.Weierstrass.Mont.ownAt,
-          Impl.Weierstrass.Mont.ownBytes]; omega)
+      exact rmul4_ok P (lay hM hp) h4 hM.m_lt
         (by simp only [mod, tmpAt]; omega) (by simp only [mod, tmpAt]; omega) hinv hbu
-    · exact WP.mono (rmul_ok P (lay hM hp) hM.n9 hinv hbu) fun v ⟨a, b, c, d⟩ => ⟨a, b, c, d.mono (by decide)⟩
+    · rename_i h4
+      exact WP.mono (rmul_ok ⟨P.ws, P.r3, P.r4, P.r5, P.r6, V₀ h4, P.m0⟩ (lay hM hp) hM.n9 hinv hbu) fun v ⟨a, b, c, d⟩ => ⟨a, b, c, d.mono (by decide)⟩
   refine WP.mono hop fun v ⟨V, C, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr,
     by rw [en] at V; exact V, ?_, kept_of hM O₁ O₂⟩
   rw [en] at C
@@ -201,13 +216,25 @@ theorem addFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
         (wordsVal s.mem (s.gpr .r3) (lo s .r5) n + wordsVal s.mem (s.gpr .r3) (lo s .r6) n) % m ∧
       Kept n (s.gpr .r3) (lo s .r4) s.mem s'.mem := by
   have h9 := own_le n hM.n9
-  refine exec_of_wp (fn_ok hM hp fun u P O₁ K₁ => ?_)
+  refine exec_of_wp (fn_ok hM hp fun u P V₀ O₁ K₁ => ?_)
   have ha := O₁.wordsVal (d := lo s .r5) (k := n) (by have := hp.a; simp only [moAt, tmpAt]; omega)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
   have hb' := O₁.wordsVal (d := lo s .r6) (k := n) (by have := hp.b; simp only [moAt, tmpAt]; omega)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
-  refine WP.mono (add_ok (M := mod n m) P (lay hM hp) (by simp only [mod]; rw [ha, hb']; exact hab))
-    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr, ?_, kept_of hM O₁ O₂⟩
+  have hop : WP isa (.block (if n ≤ 4 then add4 n m else add (mod n m) (own n))) u fun v =>
+      wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n =
+        (wordsVal u.mem (s.gpr .r3) (lo s .r5) (mod n m).n + wordsVal u.mem (s.gpr .r3) (lo s .r6) (mod n m).n) % m ∧
+      Outs (s.gpr .r3) (opOuts (mod n m) (own n) (lo s .r4)) u.mem v.mem ∧ Kp fnClob u v := by
+    split
+    · rename_i h4
+      have := hp.o; have := hp.a; have := hp.b; have := hM.n1
+      exact WP.mono (add4_ok ⟨P.ws, P.r4, P.r5, P.r6, hM.n1, h4, by omega, by omega, by omega⟩ hM.m_lt
+        (by rw [ha, hb']; exact hab)) fun v ⟨V, O₂, K₂⟩ =>
+          ⟨V, Outs.of_outside O₂ (by simp [opOuts, mod]), K₂.mono (by decide)⟩
+    · rename_i h4
+      exact WP.mono (add_ok (M := mod n m) ⟨P.ws, P.r3, P.r4, P.r5, P.r6, V₀ h4, P.m0⟩ (lay hM hp)
+        (by simp only [mod]; rw [ha, hb']; exact hab)) fun v ⟨V, O₂, K₂⟩ => ⟨V, O₂, K₂.mono (by decide)⟩
+  refine WP.mono hop fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans K₂), (K₁.trans K₂).gpr, ?_, kept_of hM O₁ O₂⟩
   have en : (mod n m).n = n := rfl
   rw [en] at V; rw [V, ha, hb']
 
@@ -219,14 +246,26 @@ theorem subFn_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s)
         (wordsVal s.mem (s.gpr .r3) (lo s .r5) n + m - wordsVal s.mem (s.gpr .r3) (lo s .r6) n) % m ∧
       Kept n (s.gpr .r3) (lo s .r4) s.mem s'.mem := by
   have h9 := own_le n hM.n9
-  refine exec_of_wp (fn_ok hM hp fun u P O₁ K₁ => ?_)
+  refine exec_of_wp (fn_ok hM hp fun u P V₀ O₁ K₁ => ?_)
   have ha' := O₁.wordsVal (d := lo s .r5) (k := n) (by have := hp.a; simp only [moAt, tmpAt]; omega)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
   have hb' := O₁.wordsVal (d := lo s .r6) (k := n) (by have := hp.b; simp only [moAt, tmpAt]; omega)
     (by have := hp.fit; have := hp.a; have := hp.b; omega)
-  refine WP.mono (sub_ok (M := mod n m) P (lay hM hp) (by simp only [mod]; rw [ha']; exact ha)
-    (by simp only [mod]; rw [hb']; exact hb))
-    fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans (K₂.mono (by decide))), (K₁.trans (K₂.mono (by decide))).gpr, ?_, kept_of hM O₁ O₂⟩
+  have hop : WP isa (.block (if n ≤ 4 then sub4 n m else sub (mod n m) (own n))) u fun v =>
+      wordsVal v.mem (s.gpr .r3) (lo s .r4) (mod n m).n =
+        (wordsVal u.mem (s.gpr .r3) (lo s .r5) (mod n m).n + m - wordsVal u.mem (s.gpr .r3) (lo s .r6) (mod n m).n) % m ∧
+      Outs (s.gpr .r3) (opOuts (mod n m) (own n) (lo s .r4)) u.mem v.mem ∧ Kp fnClob u v := by
+    split
+    · rename_i h4
+      have := hp.o; have := hp.a; have := hp.b; have := hM.n1
+      exact WP.mono (sub4_ok ⟨P.ws, P.r4, P.r5, P.r6, hM.n1, h4, by omega, by omega, by omega⟩ hM.m_lt
+        (by rw [ha']; exact ha) (by rw [hb']; exact hb)) fun v ⟨V, O₂, K₂⟩ =>
+          ⟨V, Outs.of_outside O₂ (by simp [opOuts, mod]), K₂.mono (by decide)⟩
+    · rename_i h4
+      exact WP.mono (sub_ok (M := mod n m) ⟨P.ws, P.r3, P.r4, P.r5, P.r6, V₀ h4, P.m0⟩ (lay hM hp)
+        (by simp only [mod]; rw [ha']; exact ha) (by simp only [mod]; rw [hb']; exact hb))
+        fun v ⟨V, O₂, K₂⟩ => ⟨V, O₂, K₂.mono (by decide)⟩
+  refine WP.mono hop fun v ⟨V, O₂, K₂⟩ => ⟨abi_of_kp (K₁.trans K₂), (K₁.trans K₂).gpr, ?_, kept_of hM O₁ O₂⟩
   have en : (mod n m).n = n := rfl
   rw [en] at V; rw [V, ha', hb']
 
