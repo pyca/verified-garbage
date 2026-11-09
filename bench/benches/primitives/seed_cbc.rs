@@ -45,12 +45,10 @@ pub fn bench(c: &mut Criterion) {
                 b.iter(|| {
                     buffer.copy_from_slice(black_box(&data));
                     if encrypt {
-                        let mut ctx =
-                            SeedCbcEncryptor::new(black_box(&key), &black_box(iv));
+                        let mut ctx = SeedCbcEncryptor::new(black_box(&key), &black_box(iv));
                         ctx.encrypt(black_box(&mut buffer)).unwrap();
                     } else {
-                        let mut ctx =
-                            SeedCbcDecryptor::new(black_box(&key), &black_box(iv));
+                        let mut ctx = SeedCbcDecryptor::new(black_box(&key), &black_box(iv));
                         ctx.decrypt(black_box(&mut buffer)).unwrap();
                     }
                     black_box(&buffer);
