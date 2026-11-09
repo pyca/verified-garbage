@@ -72,9 +72,6 @@ vg_secp256k1_add_mod_n:
 	and %r12, %r12, %r11
 	adde %r9, %r9, %r12
 	std %r9, 16(%r4)
-	lis %r12, -1
-	ori %r12, %r12, 65535
-	and %r12, %r12, %r11
-	adde %r10, %r10, %r12
+	adde %r10, %r10, %r11
 	std %r10, 24(%r4)
 	blr
