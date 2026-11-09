@@ -3,11 +3,12 @@
 
 use pki_types::{AlgorithmIdentifier, InvalidSignature, SignatureVerificationAlgorithm, alg_id};
 use rustls::crypto::{SignatureScheme, WebPkiSupportedAlgorithms};
-use verified_garbage::ecdsa::{P256, P384, P521, VerifyingKey};
+use verified_garbage::ec::{P256, P384, P521, PublicKey};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
-use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87, rsa, rsa_pkcs1_sig, rsa_pss};
+use verified_garbage::rsa::{BigUint, pkcs1_sig as rsa_pkcs1_sig, pss as rsa_pss};
+use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87, rsa};
 
 use crate::der;
 
@@ -210,19 +211,20 @@ impl SignatureVerificationAlgorithm for VerificationAlgorithm {
             Kind::RsaPkcs1(hash, min_len) => {
                 rsa_public_key(public_key, min_len).is_some_and(|key| {
                     let digest = hash.digest(message);
-                    rsa_pkcs1_sig::verify(&key, signature, &digest[..hash.len()], hash.pkcs1())
+                    key.verify_pkcs1v15(signature, &digest[..hash.len()], hash.pkcs1())
+                        .is_ok()
                 })
             }
             Kind::RsaPss(hash) => rsa_public_key(public_key, 2048 / 8).is_some_and(|key| {
                 let digest = hash.digest(message);
-                rsa_pss::verify(
-                    &key,
+                key.verify_pss(
                     signature,
                     &digest[..hash.len()],
                     hash.pss(),
                     hash.pss(),
                     rsa_pss::SaltLength::Len(hash.len()),
                 )
+                .is_ok()
             }),
             Kind::MlDsa44 => verify_mldsa(public_key, signature, |pk, sig| {
                 mldsa44::VerifyingKey44::from_bytes(pk).verify(message, &[], sig)
@@ -249,57 +251,34 @@ pub(crate) fn rsa_public_key(der: &[u8], min_len: usize) -> Option<rsa::PublicKe
     if n.len() < min_len {
         return None;
     }
-    rsa::PublicKey::new(n, key.e.as_bytes()).ok()
-}
-
-/// `digest` as an `N`-byte `e` (FIPS 186-5 §6.4.2, for an order of `8 N`
-/// bits): its leftmost `N` bytes, or all of it with leading zeros.
-fn ecdsa_e<const N: usize>(digest: &[u8]) -> [u8; N] {
-    let mut e = [0u8; N];
-    if digest.len() >= N {
-        e.copy_from_slice(&digest[..N]);
-    } else {
-        e[N - digest.len()..].copy_from_slice(digest);
-    }
-    e
+    rsa::PublicKey::new(
+        BigUint::from_be_bytes(n),
+        BigUint::from_be_bytes(der::trim(key.e.as_bytes())),
+    )
+    .ok()
 }
 
 fn verify_ecdsa(curve: Curve, hash: Hash, public_key: &[u8], message: &[u8], sig: &[u8]) -> bool {
-    let digest = hash.digest(message);
-    let digest = &digest[..hash.len()];
-    // The verified function of each curve takes the hash value of its own
-    // hash function, and uses as `e` its leftmost bits, as many as the
-    // order has: for P-256 and P-384, exactly those of the hash value; for
-    // P-521, all of SHA-512's. Given the `e` of another hash function (the
-    // same computation), it verifies a signature of that hash function.
+    macro_rules! verify {
+        ($curve:ty, $n:literal) => {{
+            let (Ok(q), Some((r, s))) = (public_key.try_into(), der::ecdsa_sig_from_der::<$n>(sig))
+            else {
+                return false;
+            };
+            let key = PublicKey::<$curve>::from_bytes(q);
+            let sig = concat(&r, &s);
+            match hash {
+                Hash::Sha256 => key.verify::<Sha256>(message, &sig),
+                Hash::Sha384 => key.verify::<Sha384>(message, &sig),
+                Hash::Sha512 => key.verify::<Sha512>(message, &sig),
+            }
+            .is_ok()
+        }};
+    }
     match curve {
-        Curve::P256 => {
-            let (Ok(q), Some((r, s))) = (public_key.try_into(), der::ecdsa_sig_from_der::<32>(sig))
-            else {
-                return false;
-            };
-            VerifyingKey::<P256>::from_bytes(q)
-                .verify_prehashed::<Sha256>(&ecdsa_e(digest), &concat(&r, &s))
-                .is_ok()
-        }
-        Curve::P384 => {
-            let (Ok(q), Some((r, s))) = (public_key.try_into(), der::ecdsa_sig_from_der::<48>(sig))
-            else {
-                return false;
-            };
-            VerifyingKey::<P384>::from_bytes(q)
-                .verify_prehashed::<Sha384>(&ecdsa_e(digest), &concat(&r, &s))
-                .is_ok()
-        }
-        Curve::P521 => {
-            let (Ok(q), Some((r, s))) = (public_key.try_into(), der::ecdsa_sig_from_der::<66>(sig))
-            else {
-                return false;
-            };
-            VerifyingKey::<P521>::from_bytes(q)
-                .verify_prehashed::<Sha512>(&ecdsa_e(digest), &concat(&r, &s))
-                .is_ok()
-        }
+        Curve::P256 => verify!(P256, 32),
+        Curve::P384 => verify!(P384, 48),
+        Curve::P521 => verify!(P521, 66),
     }
 }
 

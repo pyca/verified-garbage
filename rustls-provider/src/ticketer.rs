@@ -8,7 +8,7 @@ use core::time::Duration;
 use rustls::crypto::{GetRandomFailed, TicketProducer};
 use rustls::error::Error;
 use subtle::ConstantTimeEq;
-use verified_garbage::aes_gcm::AesGcm;
+use verified_garbage::aead::aes_gcm::AesGcm;
 use zeroize::Zeroizing;
 
 use crate::aead::TAG_LEN;
