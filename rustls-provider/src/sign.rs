@@ -10,11 +10,12 @@ use pki_types::{
 };
 use rustls::crypto::{SignatureScheme, Signer, SigningKey, public_key_to_spki};
 use rustls::error::Error;
-use verified_garbage::ecdsa::{self, P256, P384, P521};
+use verified_garbage::ec::{self, P256, P384, P521};
 use verified_garbage::hashes::sha256::Sha256;
 use verified_garbage::hashes::sha384::Sha384;
 use verified_garbage::hashes::sha512::Sha512;
-use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87, rsa, rsa_pkcs1_sig, rsa_pss};
+use verified_garbage::rsa::BigUint;
+use verified_garbage::{ed25519, mldsa44, mldsa65, mldsa87, rsa};
 use zeroize::Zeroizing;
 
 use crate::der;
@@ -135,15 +136,18 @@ impl RsaSigningKey {
         if !(2048 / 8..=8192 / 8).contains(&n.len()) {
             return Err(bad_key("RSA private key (size)"));
         }
+        fn b<'a>(x: &asn1::BigUint<'a>) -> BigUint<'a> {
+            BigUint::from_be_bytes(der::trim(x.as_bytes()))
+        }
         let key = rsa::PrivateKey::from_crt(
-            n,
-            k.e.as_bytes(),
-            k.d.as_bytes(),
-            k.p.as_bytes(),
-            k.q.as_bytes(),
-            k.dp.as_bytes(),
-            k.dq.as_bytes(),
-            k.qinv.as_bytes(),
+            BigUint::from_be_bytes(n),
+            b(&k.e),
+            b(&k.d),
+            b(&k.p),
+            b(&k.q),
+            b(&k.dp),
+            b(&k.dq),
+            b(&k.qinv),
         )
         .map_err(|e| Error::General(alloc::format!("failed to load RSA private key: {e}")))?;
         let public_key = asn1::write_single(&der::RsaPublicKey { n: k.n, e: k.e }).unwrap();
@@ -202,9 +206,13 @@ impl Signer for RsaSigner {
         let sig = match pss {
             // RFC 8446 §4.2.3: "The length of the Salt MUST be equal to the
             // length of the output of the digest algorithm."
-            true => rsa_pss::sign(&self.key, digest, hash.pss(), hash.pss(), hash.len())
+            true => self
+                .key
+                .sign_pss(digest, hash.pss(), hash.pss(), hash.len())
                 .map_err(|e| Error::General(alloc::format!("signing failed: {e}"))),
-            false => rsa_pkcs1_sig::sign(&self.key, digest, hash.pkcs1())
+            false => self
+                .key
+                .sign_pkcs1v15(digest, hash.pkcs1())
                 .map_err(|e| Error::General(alloc::format!("signing failed: {e}"))),
         }?;
         Ok(sig)
@@ -225,9 +233,9 @@ impl Debug for RsaSigner {
 
 /// An ECDSA private key on one of the NIST curves.
 enum EcdsaKey {
-    P256(ecdsa::SigningKey<P256>, [u8; 65]),
-    P384(ecdsa::SigningKey<P384>, [u8; 97]),
-    P521(ecdsa::SigningKey<P521>, [u8; 133]),
+    P256(ec::PrivateKey<P256>, [u8; 65]),
+    P384(ec::PrivateKey<P384>, [u8; 97]),
+    P521(ec::PrivateKey<P521>, [u8; 133]),
 }
 
 /// A [`SigningKey`] and [`Signer`] implementation for ECDSA.
@@ -263,15 +271,15 @@ impl EcdsaSigner {
         fn load<C, const N: usize, const P: usize>(
             d: &[u8],
             public_key: Option<&[u8]>,
-            make: impl FnOnce(&[u8; N]) -> Result<(ecdsa::SigningKey<C>, [u8; P]), ecdsa::Error>,
-        ) -> Result<(ecdsa::SigningKey<C>, [u8; P]), Error>
+            make: impl FnOnce(&[u8; N]) -> Option<(ec::PrivateKey<C>, [u8; P])>,
+        ) -> Result<(ec::PrivateKey<C>, [u8; P]), Error>
         where
-            C: ecdsa::Curve,
+            C: ec::Curve,
         {
             // RFC 5915 §3: the private key is exactly ceiling(log2(n)/8)
             // bytes long.
             let d = Zeroizing::new(<[u8; N]>::try_from(d).map_err(|_| bad_key("EC private key"))?);
-            let (key, q) = make(&d).map_err(|_| bad_key("EC private key"))?;
+            let (key, q) = make(&d).ok_or_else(|| bad_key("EC private key"))?;
             if public_key.is_some_and(|pk| pk != q) {
                 return Err(bad_key("EC private key (public key mismatch)"));
             }
@@ -281,22 +289,25 @@ impl EcdsaSigner {
         let (key, scheme) = match curve {
             der::SECP256R1 => {
                 let (k, q) = load(k.private_key, public_key, |d| {
-                    let key = ecdsa::SigningKey::<P256>::from_bytes(d);
-                    key.public_key().map(|q| (key, q))
+                    let key = ec::PrivateKey::<P256>::from_bytes(d);
+                    let q = *key.public_key().ok()?.as_bytes();
+                    Some((key, q))
                 })?;
                 (EcdsaKey::P256(k, q), SignatureScheme::ECDSA_NISTP256_SHA256)
             }
             der::SECP384R1 => {
                 let (k, q) = load(k.private_key, public_key, |d| {
-                    let key = ecdsa::SigningKey::<P384>::from_bytes(d);
-                    key.public_key().map(|q| (key, q))
+                    let key = ec::PrivateKey::<P384>::from_bytes(d);
+                    let q = *key.public_key().ok()?.as_bytes();
+                    Some((key, q))
                 })?;
                 (EcdsaKey::P384(k, q), SignatureScheme::ECDSA_NISTP384_SHA384)
             }
             der::SECP521R1 => {
                 let (k, q) = load(k.private_key, public_key, |d| {
-                    let key = ecdsa::SigningKey::<P521>::from_bytes(d);
-                    key.public_key().map(|q| (key, q))
+                    let key = ec::PrivateKey::<P521>::from_bytes(d);
+                    let q = *key.public_key().ok()?.as_bytes();
+                    Some((key, q))
                 })?;
                 (EcdsaKey::P521(k, q), SignatureScheme::ECDSA_NISTP521_SHA512)
             }

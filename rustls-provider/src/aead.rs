@@ -2,8 +2,8 @@
 
 use rustls::crypto::cipher::OutboundPlain;
 use rustls::error::{ApiMisuse, Error};
-use verified_garbage::aes_gcm::AesGcm;
-use verified_garbage::chacha20poly1305::ChaCha20Poly1305;
+use verified_garbage::aead::aes_gcm::AesGcm;
+use verified_garbage::aead::chacha20poly1305::ChaCha20Poly1305;
 
 pub(crate) const TAG_LEN: usize = 16;
 

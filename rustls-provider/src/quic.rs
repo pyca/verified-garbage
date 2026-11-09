@@ -5,8 +5,8 @@ use alloc::boxed::Box;
 use rustls::crypto::cipher::{AeadKey, Iv, Nonce};
 use rustls::error::{ApiMisuse, Error};
 use rustls::quic;
-use verified_garbage::aes_ecb::AesEcb;
-use verified_garbage::chacha20::ChaCha20;
+use verified_garbage::cipher::aes::AesEcb;
+use verified_garbage::cipher::chacha20::ChaCha20;
 use zeroize::Zeroizing;
 
 use crate::aead::{self, TAG_LEN};
