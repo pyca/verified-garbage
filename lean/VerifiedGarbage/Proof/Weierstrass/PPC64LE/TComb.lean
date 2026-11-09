@@ -32,6 +32,8 @@ import VerifiedGarbage.Proof.Weierstrass.CombPointW
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.LadderPCall
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Loop
 import VerifiedGarbage.Proof.Weierstrass.PPC64LE.Pow
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
+import VerifiedGarbage.Proof.Framework.PPC64LE.VectorBytes
 
 /-!
 # The comb's `[k]G`, on PPC64LE
@@ -56,6 +58,7 @@ open VG.Proof.Mont VG.Proof.Mont.PPC64LE VG.Proof.Weierstrass VG.Proof.Weierstra
   VG.Proof.Weierstrass.PPC64LE.Point VG.Proof.Weierstrass.PPC64LE.Mont
 open VG.Impl.Weierstrass.Point (elemBytes ownAt aAt b3At oAt pAt qAt)
 open VG.Impl.Weierstrass.PPC64LE.Mont (own)
+open VG.PPC64LE.Bytes (exec_mtvsrd exec_vsel)
 open Spec.Weierstrass
 
 /-! ## The layout -/
@@ -232,39 +235,6 @@ theorem eqMask_val {a m : Nat} (ha : a < 2 ^ 63) (hm : m < 2 ^ 63) :
     (by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega)]; exact hm)]
   simp only [ofNat64_eq (by omega : a < 2 ^ 64) (by omega : m < 2 ^ 64), decide_eq_true_eq]
 
-/-! ## A word of the scan -/
-
-/-- Word `i` of `Q` or'ed with the table's at `r8 = X` under the mask `r10`. -/
-theorem selectWord_ok (K : TCombCfg) {s : State} {base X : Addr} {i : Nat}
-    (hs : Ws s base 8192) (h3 : At s base .r3 0) (hX : s.gpr .r8 = X)
-    (hq4 : K.Q.x % 4 = 0) (ho : K.Q.x + 8 * i + 8 ≤ 8192) (hi : 8 * i < 2 ^ 15)
-    (hr : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (8 * i)) 8)
-    (b : Bool) (hc : s.gpr .r10 = if b then BitVec.allOnes 64 else 0) :
-    WP isa (.block (K.selectWord i)) s fun t =>
-      word t.mem base (K.Q.x + 8 * i) =
-        (if b then word s.mem X (8 * i) else word s.mem base (K.Q.x + 8 * i)) ∧
-      Kp [.r4, .r5] s t ∧ Outside base (K.Q.x + 8 * i) 8 s.mem t.mem := by
-  have hn := hs.nowrap
-  unfold TCombCfg.selectWord
-  refine wp_step (ld0_ok hs h3 (by decide) (by omega) ho) ?_
-  refine wp_step (exec_load_d (by decide) ⟨hi, by omega⟩ (by
-    simp only [write_gpr, reduceCtorEq, ite_false, hX]; exact hr)) ?_
-  refine wp_step exec_logic ?_
-  refine wp_step exec_logic ?_
-  refine wp_step exec_logic ?_
-  refine wp_step (std0_ok ((((hs.write _ _).write _ _).write _ _).write _ _ |>.write _ _)
-    (((((h3.write _).write _).write _).write _).write _) (by decide) (by omega) ho) (WP.block_nil ?_)
-  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true, hX, hc]
-  have hmk : (if b then BitVec.allOnes 64 else (0 : BitVec 64)) = 0 ∨
-      (if b then BitVec.allOnes 64 else (0 : BitVec 64)) = BitVec.allOnes 64 := by
-    cases b <;> simp
-  refine ⟨?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, writeW_outside _ _ _ (by omega)⟩
-  · rw [word_writeW_self, sel_mask _ _ hmk]
-    cases b <;> simp [word, off]
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [write_gpr, hr.1, hr.2, ite_false]
-
-
 /-- Numbers whose words agree are equal. -/
 theorem wordsVal_congr_words {m m' : Mem} {a a' : Addr} {d d' : Nat} :
     ∀ {n : Nat}, (∀ i < n, word m a (d + 8 * i) = word m' a' (d' + 8 * i)) →
@@ -291,95 +261,185 @@ theorem wordsVal_zero_words {m : Mem} {a : Addr} {d : Nat} :
       rw [show d + 8 + 8 * i = d + 8 * (i + 1) by omega]; exact h (i + 1) (by omega)]
     rfl
 
-/-- The words of an entry `[X, X + 16 n)` selected into `Q` under the mask `r10`. -/
-theorem selectWords_ok (K : TCombCfg) {s : State} {base X : Addr}
-    (hs : Ws s base 8192) (h3 : At s base .r3 0) (hX : s.gpr .r8 = X)
-    (hq4 : K.Q.x % 4 = 0) (ho : K.Q.x + 16 * K.L.M.n ≤ 8192) (hi : 16 * K.L.M.n < 2 ^ 15)
-    (fit : X.toNat + 16 * K.L.M.n ≤ 2 ^ 64)
-    (hr : InRegions (s.rd ++ s.wr) X (16 * K.L.M.n))
-    (hd : Region.Disjoint ⟨X, 16 * K.L.M.n⟩ ⟨base, 8192⟩)
-    (b : Bool) (hc : s.gpr .r10 = if b then BitVec.allOnes 64 else 0) :
-    ∀ k, k ≤ 2 * K.L.M.n →
-    WP isa (.block ((List.range k).flatMap K.selectWord)) s fun t =>
-      (∀ i < k, word t.mem base (K.Q.x + 8 * i) =
-        if b then word s.mem X (8 * i) else word s.mem base (K.Q.x + 8 * i)) ∧
-      Kp [.r4, .r5] s t ∧ Outside base K.Q.x (8 * k) s.mem t.mem
-  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Kp.refl _ _, Outside.refl _ _ _ _⟩
-  | k + 1, hk => by
-    have hn := hs.nowrap
-    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
-    refine wp_append (WP.mono (selectWords_ok K hs h3 hX hq4 ho hi fit hr hd b hc k (by omega))
-      fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
-    have hr₁ : InRegions (s₁.rd ++ s₁.wr) (X + BitVec.ofNat 64 (8 * k)) 8 := by
-      rw [k₁.rd, k₁.wr]
-      exact CallLay.inRegions_sub (off := 8 * k) (l := 8) hr (by omega) (by omega)
-    refine WP.mono (selectWord_ok K (i := k) (k₁.ws hs) (k₁.at h3) (by rw [k₁.g]; exact hX) hq4
-      (by omega) (by omega) hr₁ b (by rw [k₁.g]; exact hc)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_
-    refine ⟨fun i hii => ?_, k₁.trans k₂,
-      (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))⟩
-    by_cases hik : i < k
-    · rw [O₂.word (by omega) (by omega), e₁ i hik]
-    · obtain rfl : i = k := by omega
-      have xeq : word s₁.mem X (8 * i) = word s.mem X (8 * i) :=
-        O₁.unch.far_word (fun w hw => by
-          rw [List.mem_singleton] at hw; subst hw; dsimp only; omega) hd (by omega) fit
-      have oeq : word s₁.mem base (K.Q.x + 8 * i) = word s.mem base (K.Q.x + 8 * i) :=
-        O₁.word (by omega) (by omega)
-      rw [v₂, xeq, oeq]
+/-! ## The scan, in vector registers -/
 
-/-- Entry `m` (in `r7`, its words at `r8 = X`) of the row, for the magnitude
-`a` in `r9`: its words or'ed into `Q` if `a = m`, then the next entry. -/
-theorem selectBody_ok (K : TCombCfg) {s : State} {base X : Addr} {a m : Nat}
-    (hs : Ws s base 8192) (h3 : At s base .r3 0) (hX : s.gpr .r8 = X)
-    (hq4 : K.Q.x % 4 = 0) (ho : K.Q.x + 16 * K.L.M.n ≤ 8192) (hi : 16 * K.L.M.n < 2 ^ 15)
-    (fit : X.toNat + 16 * K.L.M.n ≤ 2 ^ 64)
-    (hr : InRegions (s.rd ++ s.wr) X (16 * K.L.M.n))
-    (hd : Region.Disjoint ⟨X, 16 * K.L.M.n⟩ ⟨base, 8192⟩)
+theorem accV_ne (i : Nat) : TCombCfg.accV i ≠ .v18 ∧ TCombCfg.accV i ≠ .v19 := by
+  unfold TCombCfg.accV; split <;> decide
+
+theorem accV_inj : ∀ i < 18, ∀ j < 18, TCombCfg.accV i = TCombCfg.accV j → i = j := by decide
+
+theorem exec_splatW0 {s : State} {d n : VReg} :
+    exec (.vop (.splat true d n 0)) s = some (s.writeV d (ofVWords fun _ => vword (s.vpr n) 0)) := rfl
+
+theorem exec_vxorSelf {s : State} {d : VReg} :
+    exec (.vop (.logic .xor d d d)) s = some (s.writeV d 0) := by
+  show some (s.writeV d (s.vpr d ^^^ s.vpr d)) = _
+  rw [BitVec.xor_self]; rfl
+
+theorem vword_mask (b : Bool) (u : BitVec 64) :
+    vword ((if b then BitVec.allOnes 64 else 0) ++ u) 0 = if b then BitVec.allOnes 32 else 0 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  have h1 : ¬ (96 + j < 64) := by omega
+  cases b
+  · simp only [Bool.false_eq_true, ↓reduceIte, vword, BitVec.getLsbD_extractLsb', hj, decide_true,
+      Bool.true_and, BitVec.getLsbD_append, h1]
+    simp
+  · simp only [↓reduceIte, vword, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
+      BitVec.getLsbD_append, h1, BitVec.getLsbD_allOnes]
+    simp only [decide_eq_true_eq]; omega
+
+theorem splat_const (b : Bool) :
+    ofVWords (fun _ => if b then BitVec.allOnes 32 else 0) = if b then BitVec.allOnes 128 else 0 := by
+  cases b <;> decide
+
+theorem swapDwords_zero : swapDwords (0 : BitVec 128) = 0 := by decide
+
+theorem sel_ite (a b : BitVec 128) (c : Bool) :
+    (a &&& ~~~(if c then BitVec.allOnes 128 else 0)) ||| (b &&& (if c then BitVec.allOnes 128 else 0)) =
+      if c then b else a := by
+  cases c
+  · apply BitVec.eq_of_getLsbD_eq; intro j hj
+    simp only [Bool.false_eq_true, ↓reduceIte, BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not,
+      hj, decide_true, Bool.true_and]
+    simp
+  · simp only [ite_true, BitVec.not_allOnes, BitVec.and_zero, BitVec.zero_or, BitVec.and_allOnes]
+
+/-- The mask of `r9 = idx` into `r10`, and `r5 = 0`. -/
+theorem eqMask_ok' {s : State} {idx : Reg} :
+    WP isa (.block (TCombCfg.eqMask idx)) s fun t =>
+      t.gpr .r10 = 0#64 - (((s.gpr .r9 ^^^ s.gpr idx) - 1) >>> 63) ∧ t.gpr .r5 = 0 ∧
+      Kp [.r5, .r10] s t ∧ t.mem = s.mem ∧ t.vpr = s.vpr := by
+  unfold TCombCfg.eqMask
+  refine wp_step exec_logic ?_
+  refine wp_step (exec_subi (by decide) (by decide)) ?_
+  refine wp_step (exec_lsr_d (by decide)) ?_
+  refine wp_step (exec_li (by decide)) ?_
+  refine wp_step exec_sub (WP.block_nil ?_)
+  refine ⟨?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, rfl, rfl⟩
+  · simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+    rfl
+  · simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
+    rfl
+  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+    simp only [write_gpr, hr.1, hr.2, ite_false]
+
+/-- The mask `r10` splat to `v19`. -/
+theorem vMask_ok {s : State} (b : Bool) (hc : s.gpr .r10 = if b then BitVec.allOnes 64 else 0) :
+    WP isa (.block TCombCfg.vMask) s fun t =>
+      t.vpr .v19 = (if b then BitVec.allOnes 128 else 0) ∧
+      (∀ v, v ≠ .v19 → t.vpr v = s.vpr v) ∧ Kp [] s t ∧ t.mem = s.mem := by
+  unfold TCombCfg.vMask
+  refine wp_step exec_mtvsrd ?_
+  refine wp_step exec_splatW0 (WP.block_nil ?_)
+  refine ⟨?_, fun v hv => ?_, ⟨fun r _ => rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
+  · simp only [vpr_writeV, ite_true, hc, vword_mask, splat_const]
+  · simp only [vpr_writeV, hv, ite_false]
+
+/-- Chunk `i`: the 16 bytes at `r8 = X` into accumulator `i` under the mask. -/
+theorem selectChunk_ok (i : Nat) {s : State} {X : Addr} (hX : s.gpr .r8 = X) (h5 : s.gpr .r5 = 0)
+    (hr : InRegions (s.rd ++ s.wr) X 16) (b : Bool) (hm : s.vpr .v19 = if b then BitVec.allOnes 128 else 0) :
+    WP isa (.block (TCombCfg.selectChunk i)) s fun t =>
+      t.vpr (TCombCfg.accV i) = (if b then swapDwords (s.mem.read X 16) else s.vpr (TCombCfg.accV i)) ∧
+      (∀ v, v ≠ TCombCfg.accV i → v ≠ .v18 → t.vpr v = s.vpr v) ∧
+      t.gpr .r8 = X + BitVec.ofNat 64 16 ∧ Kp [.r8] s t ∧ t.mem = s.mem := by
+  have ne := accV_ne i
+  unfold TCombCfg.selectChunk
+  refine wp_step (exec_lxvd2x .v18 .r8 .r5 s (by decide) (by rw [hX, h5]; simpa using hr)) ?_
+  refine wp_step (exec_addi (by decide) (by decide)) ?_
+  refine wp_step exec_vsel (WP.block_nil ?_)
+  refine ⟨?_, fun v hv h18 => ?_, ?_, ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, rfl⟩
+  · simp only [vpr_writeV, vpr_write, ite_true, ne.1, ite_false, show VReg.v19 ≠ .v18 by decide,
+      hm, sel_ite, hX, h5]
+    simp
+  · simp only [vpr_writeV, vpr_write, hv, h18, ite_false]
+  · simp only [gpr_writeV, write_gpr, ite_true, hX]
+  · simp only [List.mem_singleton] at hr
+    simp only [gpr_writeV, write_gpr, hr, ite_false]
+
+/-- The first `k` chunks of the entry at `r8 = X`. -/
+theorem selectChunks_ok {s : State} {X : Addr} (hX : s.gpr .r8 = X) (h5 : s.gpr .r5 = 0)
+    (b : Bool) (hm : s.vpr .v19 = if b then BitVec.allOnes 128 else 0) :
+    ∀ k, k ≤ 18 → InRegions (s.rd ++ s.wr) X (16 * k) →
+    WP isa (.block ((List.range k).flatMap TCombCfg.selectChunk)) s fun t =>
+      (∀ i < k, t.vpr (TCombCfg.accV i) =
+        if b then swapDwords (s.mem.read (X + BitVec.ofNat 64 (16 * i)) 16) else s.vpr (TCombCfg.accV i)) ∧
+      (∀ v, (∀ i < k, v ≠ TCombCfg.accV i) → v ≠ .v18 → t.vpr v = s.vpr v) ∧
+      t.gpr .r8 = X + BitVec.ofNat 64 (16 * k) ∧ Kp [.r8] s t ∧ t.mem = s.mem
+  | 0, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), fun _ _ _ => rfl,
+      by rw [hX]; exact (BitVec.add_zero X).symm, Kp.refl _ _, rfl⟩
+  | k + 1, hk, hr => by
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    refine wp_append (WP.mono (selectChunks_ok hX h5 b hm k (by omega)
+      (by simpa using CallLay.inRegions_sub (off := 0) (l := 16 * k) hr (by omega) (by omega)))
+      fun s₁ ⟨v₁, f₁, p₁, k₁, m₁⟩ => ?_)
+    have hr₁ : InRegions (s₁.rd ++ s₁.wr) (X + BitVec.ofNat 64 (16 * k)) 16 := by
+      rw [k₁.rd, k₁.wr]
+      exact CallLay.inRegions_sub (off := 16 * k) (l := 16) hr (by omega) (by omega)
+    have hm₁ : s₁.vpr .v19 = if b then BitVec.allOnes 128 else 0 := by
+      rw [f₁ _ (fun i _ => fun e => (accV_ne i).2 e.symm) (by decide)]; exact hm
+    refine WP.mono (selectChunk_ok k p₁ (by rw [k₁.g]; exact h5) hr₁ b hm₁)
+      fun s₂ ⟨v₂, f₂, p₂, k₂, m₂⟩ => ?_
+    refine ⟨fun i hi => ?_, fun v hv h18 => ?_, ?_, k₁.trans k₂, by rw [m₂, m₁]⟩
+    · by_cases hik : i < k
+      · have hne : TCombCfg.accV i ≠ TCombCfg.accV k := fun e => by
+          have := accV_inj i (by omega) k (by omega) e; omega
+        rw [f₂ _ hne (accV_ne i).1, v₁ i hik]
+      · obtain rfl : i = k := by omega
+        rw [v₂, m₁, f₁ _ (fun j hj e => by
+          have := accV_inj j (by omega) i (by omega) e.symm; omega) (accV_ne i).1]
+    · rw [f₂ _ (hv k (by omega)) h18, f₁ _ (fun i hi => hv i (by omega)) h18]
+    · rw [p₂, VG.Offset.add_add, show 16 * k + 16 = 16 * (k + 1) by omega]
+
+/-- Entry `m` (in `r7`, its bytes at `r8 = X`) of the row, for the magnitude
+`a` in `r9`: its chunks selected into the accumulators if `a = m`, then the
+next entry. -/
+theorem selectBody_ok (K : TCombCfg) {s : State} {X : Addr} {a m : Nat}
+    (hX : s.gpr .r8 = X) (hn : K.L.M.n ≤ 18) (hr : InRegions (s.rd ++ s.wr) X (16 * K.L.M.n))
     (ha : a < 2 ^ 63) (hm : m < 2 ^ 63) (ga : s.gpr .r9 = BitVec.ofNat 64 a)
     (gm : s.gpr .r7 = BitVec.ofNat 64 m) (hH : K.H + 1 ≤ 2 ^ 15) :
     WP isa (.block K.selectBody) s fun t =>
-      (∀ i < 2 * K.L.M.n, word t.mem base (K.Q.x + 8 * i) =
-        if a = m then word s.mem X (8 * i) else word s.mem base (K.Q.x + 8 * i)) ∧
-      Kp [.r4, .r5, .r6, .r7, .r8, .r10] s t ∧ Outside base K.Q.x (16 * K.L.M.n) s.mem t.mem ∧
-      t.gpr .r8 = s.gpr .r8 + BitVec.ofNat 64 (16 * K.L.M.n) ∧
+      (∀ i < K.L.M.n, t.vpr (TCombCfg.accV i) =
+        if a = m then swapDwords (s.mem.read (X + BitVec.ofNat 64 (16 * i)) 16)
+        else s.vpr (TCombCfg.accV i)) ∧
+      Kp [.r4, .r5, .r6, .r7, .r8, .r10] s t ∧ t.mem = s.mem ∧
+      t.gpr .r8 = X + BitVec.ofNat 64 (16 * K.L.M.n) ∧
       t.gpr .r7 = BitVec.ofNat 64 (m + 1) ∧
       t.gpr .r6 = BitVec.ofNat 64 (m + 1) - BitVec.ofNat 64 (K.H + 1) := by
   unfold TCombCfg.selectBody
-  rw [List.append_assoc]
-  refine wp_append (WP.mono (eqMask_ok (s := s) (idx := .r7)) fun s₁ ⟨v₁, k₁, mem₁⟩ => ?_)
+  rw [List.append_assoc, List.append_assoc]
+  refine wp_append (WP.mono (eqMask_ok' (s := s) (idx := .r7)) fun s₁ ⟨v₁, z₁, k₁, mem₁, vp₁⟩ => ?_)
   have cm₁ : s₁.gpr .r10 = if decide (a = m) then BitVec.allOnes 64 else 0 := by
     rw [v₁, ga, gm, eqMask_val ha hm]
-  have hr₁ : InRegions (s₁.rd ++ s₁.wr) X (16 * K.L.M.n) := by rw [k₁.rd, k₁.wr]; exact hr
-  refine wp_append (WP.mono (selectWords_ok K (k₁.ws hs) (k₁.at h3) (by rw [k₁.g]; exact hX) hq4 ho hi fit
-    hr₁ hd (decide (a = m)) cm₁ (2 * K.L.M.n) (Nat.le_refl _)) fun s₂ ⟨v₂, k₂, O₂⟩ => ?_)
-  have g₇ : s₂.gpr .r7 = BitVec.ofNat 64 m := by rw [k₂.g, k₁.g]; exact gm
-  have g₈ : s₂.gpr .r8 = s.gpr .r8 := by rw [k₂.g, k₁.g]
-  refine wp_step (exec_addi (by decide) (by omega)) ?_
+  refine wp_append (WP.mono (vMask_ok _ cm₁) fun s₂ ⟨M₂, f₂, k₂, mem₂⟩ => ?_)
+  refine wp_append (WP.mono (selectChunks_ok (s := s₂) (X := X) (by rw [k₂.g, k₁.g]; exact hX)
+    (by rw [k₂.g]; exact z₁) _ M₂ K.L.M.n hn (by rw [k₂.rd, k₂.wr, k₁.rd, k₁.wr]; exact hr))
+    fun s₃ ⟨v₃, _, p₃, k₃, mem₃⟩ => ?_)
+  have g₇ : s₃.gpr .r7 = BitVec.ofNat 64 m := by rw [k₃.g, k₂.g, k₁.g]; exact gm
   refine wp_step (exec_addi (by decide) (by decide)) ?_
   refine wp_step (exec_subi (by decide) hH) (WP.block_nil ?_)
-  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true]
-  have g₇' : s₂.gpr .r7 + BitVec.ofNat 64 1 = BitVec.ofNat 64 (m + 1) := by
+  simp only [write_gpr, write_mem, vpr_write, reduceCtorEq, ite_false, ite_true]
+  have g₇' : s₃.gpr .r7 + BitVec.ofNat 64 1 = BitVec.ofNat 64 (m + 1) := by
     rw [g₇]; exact (BitVec.ofNat_add _ _).symm
-  refine ⟨fun i hii => ?_, ((k₁.mono (by decide)).trans (k₂.mono (by decide))).trans
-      ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, ?_, by rw [g₈], g₇', by rw [g₇']⟩
-  · rw [v₂ i hii, mem₁]
+  refine ⟨fun i hi => ?_, ((k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans (k₃.mono (by decide)))).trans
+      ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, by rw [mem₃, mem₂, mem₁], by rw [p₃], g₇', by rw [g₇']⟩
+  · rw [v₃ i hi, mem₂, mem₁, f₂ _ (accV_ne i).2, vp₁]
     simp only [decide_eq_true_eq]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [write_gpr, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, ite_false]
-  · rw [mem₁] at O₂
-    simpa only [show 8 * (2 * K.L.M.n) = 16 * K.L.M.n by omega] using O₂
+    simp only [write_gpr, hr.2.2.1, hr.2.2.2.1, ite_false]
 
-/-- What the scan keeps after the entries before `m`: `Q` holds the entry
-of magnitude `a` if it was among them, zeros if not. -/
-structure ScanInv (K : TCombCfg) (base X : Addr) (s₀ : State) (a m : Nat) (s : State) : Prop where
+/-- What the scan keeps after the entries before `m`: the accumulators hold
+the entry of magnitude `a` if it was among them, zeros if not. -/
+structure ScanInv (K : TCombCfg) (X : Addr) (s₀ : State) (a m : Nat) (s : State) : Prop where
   ptr : s.gpr .r8 = X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1))
   index : s.gpr .r7 = BitVec.ofNat 64 m
   keep : Kp [.r4, .r5, .r6, .r7, .r8, .r10] s₀ s
-  unch : Outside base K.Q.x (16 * K.L.M.n) s₀.mem s.mem
-  val : ∀ i < 2 * K.L.M.n, word s.mem base (K.Q.x + 8 * i) =
-    if 1 ≤ a ∧ a < m then word s₀.mem X (16 * K.L.M.n * (a - 1) + 8 * i) else 0
+  mem : s.mem = s₀.mem
+  val : ∀ i < K.L.M.n, s.vpr (TCombCfg.accV i) =
+    if 1 ≤ a ∧ a < m then swapDwords (s₀.mem.read (X + BitVec.ofNat 64 (16 * K.L.M.n * (a - 1) + 16 * i)) 16)
+    else 0
 
-theorem prefix_step {a m : Nat} (hm : 1 ≤ m) (f : Nat → BitVec 64) :
+theorem prefix_step {α : Type} [Zero α] {a m : Nat} (hm : 1 ≤ m) (f : Nat → α) :
     (if a = m then f m else if 1 ≤ a ∧ a < m then f a else 0) =
       if 1 ≤ a ∧ a < m + 1 then f a else 0 := by
   by_cases h : a = m
@@ -394,60 +454,42 @@ structure RowOk (K : TCombCfg) (s : State) (base X : Addr) : Prop where
   apart : Region.Disjoint ⟨X, 16 * K.L.M.n * K.H⟩ ⟨base, 8192⟩
 
 theorem scan_step (K : TCombCfg) {s₀ s : State} {base X : Addr} {a m : Nat}
-    (hs₀ : Ws s₀ base 8192) (h3 : At s₀ base .r3 0) (hq4 : K.Q.x % 4 = 0)
-    (ho : K.Q.x + 16 * K.L.M.n ≤ 8192) (hi : 16 * K.L.M.n < 2 ^ 15) (R : RowOk K s₀ base X)
-    (hn1 : 1 ≤ K.L.M.n) (hH : K.H + 1 ≤ 2 ^ 15) (ha : a ≤ K.H) (ga : s₀.gpr .r9 = BitVec.ofNat 64 a)
-    (hm : 1 ≤ m) (mh : m ≤ K.H) (I : ScanInv K base X s₀ a m s) :
-    WP isa (.block K.selectBody) s fun t => ScanInv K base X s₀ a (m + 1) t ∧
+    (R : RowOk K s₀ base X) (hn : K.L.M.n ≤ 18)
+    (hH : K.H + 1 ≤ 2 ^ 15) (ha : a ≤ K.H) (ga : s₀.gpr .r9 = BitVec.ofNat 64 a)
+    (hm : 1 ≤ m) (mh : m ≤ K.H) (I : ScanInv K X s₀ a m s) :
+    WP isa (.block K.selectBody) s fun t => ScanInv K X s₀ a (m + 1) t ∧
       t.gpr .r6 = BitVec.ofNat 64 (m + 1) - BitVec.ofNat 64 (K.H + 1) := by
-  have hn := hs₀.nowrap
   have hmul : 16 * K.L.M.n * (m - 1) + 16 * K.L.M.n ≤ 16 * K.L.M.n * K.H := by
     calc
       16 * K.L.M.n * (m - 1) + 16 * K.L.M.n = 16 * K.L.M.n * m := by
         rw [← Nat.mul_succ]; congr 1; omega
       _ ≤ 16 * K.L.M.n * K.H := Nat.mul_le_mul_left _ mh
   have fitR := R.fit
-  have efit : (X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1))).toNat + 16 * K.L.M.n ≤ 2 ^ 64 := by
-    rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show 16 * K.L.M.n * (m - 1) < 2 ^ 64 by omega),
-      Nat.mod_eq_of_lt (show X.toNat + 16 * K.L.M.n * (m - 1) < 2 ^ 64 by omega)]
-    omega
+  have hb : 16 * K.L.M.n * K.H ≤ 16 * K.L.M.n * 2 ^ 15 := Nat.mul_le_mul_left _ (by omega)
   have er : InRegions (s.rd ++ s.wr) (X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1))) (16 * K.L.M.n) := by
     rw [I.keep.rd, I.keep.wr]
-    have hb : 16 * K.L.M.n * K.H ≤ 16 * K.L.M.n * 2 ^ 15 := Nat.mul_le_mul_left _ (by omega)
     exact CallLay.inRegions_sub R.readable hmul (by omega)
-  have ed : Region.Disjoint ⟨X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1)), 16 * K.L.M.n⟩ ⟨base, 8192⟩ :=
-    R.apart.sub_left (Offset.sub_base X hmul)
-  have hH63 : K.H < 2 ^ 63 := by omega
-  refine WP.mono (selectBody_ok K (a := a) (m := m) (I.keep.ws hs₀) (I.keep.at h3) I.ptr hq4 ho hi efit er ed
+  refine WP.mono (selectBody_ok K (a := a) (m := m) I.ptr hn er
     (by omega) (by omega) (by rw [I.keep.g]; exact ga) I.index hH)
-    fun t ⟨v, k, O, p, index, z⟩ => ⟨?_, z⟩
-  refine ⟨?_, index, I.keep.trans (k.mono (by decide)), I.unch.trans O, ?_⟩
+    fun t ⟨v, k, mt, p, index, z⟩ => ⟨?_, z⟩
+  refine ⟨?_, index, I.keep.trans (k.mono (by decide)), by rw [mt, I.mem], ?_⟩
   · have he : 16 * K.L.M.n * (m - 1) + 16 * K.L.M.n = 16 * K.L.M.n * m := by
       rw [← Nat.mul_succ]; congr 1; omega
-    rw [p, I.ptr, VG.Offset.add_add, he, show m + 1 - 1 = m by omega]
+    rw [p, VG.Offset.add_add, he, show m + 1 - 1 = m by omega]
   · intro i hii
-    have hoff : 16 * K.L.M.n * (m - 1) + 8 * i + 8 ≤ 16 * K.L.M.n * K.H := by omega
-    have src : word s.mem (X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1))) (8 * i) =
-        word s₀.mem X (16 * K.L.M.n * (m - 1) + 8 * i) := by
-      show s.mem.readW (X + BitVec.ofNat 64 (16 * K.L.M.n * (m - 1)) + BitVec.ofNat 64 (8 * i)) 64 = _
-      rw [VG.Offset.add_add]
-      exact I.unch.unch.far_word (fun w hw => by
-        rw [List.mem_singleton] at hw; subst hw; dsimp only; omega) (d := 16 * K.L.M.n * (m - 1) + 8 * i)
-        R.apart hoff R.fit
-    rw [v i hii, src, I.val i hii]
-    exact prefix_step hm (fun q => word s₀.mem X (16 * K.L.M.n * (q - 1) + 8 * i))
+    rw [v i hii, I.mem, VG.Offset.add_add, I.val i hii]
+    exact prefix_step hm (fun q => swapDwords (s₀.mem.read (X + BitVec.ofNat 64 (16 * K.L.M.n * (q - 1) + 16 * i)) 16))
 
 /-- Every entry of the row is visited, in order, whatever the magnitude. -/
 theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {a : Nat}
-    (hs₀ : Ws s₀ base 8192) (h3 : At s₀ base .r3 0) (hq4 : K.Q.x % 4 = 0)
-    (ho : K.Q.x + 16 * K.L.M.n ≤ 8192) (hi : 16 * K.L.M.n < 2 ^ 15) (R : RowOk K s₀ base X)
-    (hX : s₀.gpr .r8 = X) (hn1 : 1 ≤ K.L.M.n) (hH : K.H + 1 ≤ 2 ^ 15) (ha : a ≤ K.H) (ga : s₀.gpr .r9 = BitVec.ofNat 64 a)
-    (gm : s₀.gpr .r7 = 1) (hz : ∀ i < 2 * K.L.M.n, word s₀.mem base (K.Q.x + 8 * i) = 0) :
-    WP isa (.loop (.block K.selectBody) (.nonzero .d .r6)) s₀ (ScanInv K base X s₀ a (K.H + 1)) := by
+    (R : RowOk K s₀ base X) (hX : s₀.gpr .r8 = X) (hn : K.L.M.n ≤ 18) (hH : K.H + 1 ≤ 2 ^ 15) (ha : a ≤ K.H)
+    (ga : s₀.gpr .r9 = BitVec.ofNat 64 a)
+    (gm : s₀.gpr .r7 = 1) (hz : ∀ i < K.L.M.n, s₀.vpr (TCombCfg.accV i) = 0) :
+    WP isa (.loop (.block K.selectBody) (.nonzero .d .r6)) s₀ (ScanInv K X s₀ a (K.H + 1)) := by
   have hHp : 1 ≤ K.H := Nat.two_pow_pos _
-  refine WP.loop (M := isa) (fun j s => 1 ≤ j ∧ j ≤ K.H ∧ ScanInv K base X s₀ a (K.H + 1 - j) s)
+  refine WP.loop (M := isa) (fun j s => 1 ≤ j ∧ j ≤ K.H ∧ ScanInv K X s₀ a (K.H + 1 - j) s)
     (fun j s ⟨j1, jH, I⟩ => ?_) K.H s₀ ?_
-  · refine WP.mono (scan_step K hs₀ h3 hq4 ho hi R hn1 hH ha ga (by omega) (by omega) I) fun t ⟨I', z⟩ => ?_
+  · refine WP.mono (scan_step K R hn hH ha ga (by omega) (by omega) I) fun t ⟨I', z⟩ => ?_
     have ev : isa.eval (.nonzero .d .r6) t = some (decide (K.H + 1 - j + 1 ≠ K.H + 1)) := by
       rw [eval_nonzero, z, sub_ne_zero_dec (by omega) (by omega)]
     by_cases je : j = 1
@@ -460,7 +502,7 @@ theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {a : Nat}
   · refine ⟨hHp, Nat.le_refl _, ?_⟩
     have e : K.H + 1 - K.H = 1 := by omega
     rw [e]
-    refine ⟨?_, ?_, Kp.refl _ _, Outside.refl _ _ _ _, ?_⟩
+    refine ⟨?_, ?_, Kp.refl _ _, rfl, ?_⟩
     · rw [hX, show 16 * K.L.M.n * (1 - 1) = 0 by simp]
       exact (BitVec.add_zero X).symm
     · exact gm
@@ -468,6 +510,114 @@ theorem scan_loop_ok (K : TCombCfg) {s₀ : State} {base X : Addr} {a : Nat}
       rw [hz i hi']
       have h : ¬(1 ≤ a ∧ a < 1) := by omega
       simp only [h, ↓reduceIte]
+
+/-- The first `k` accumulators zero. -/
+theorem zeroAcc_ok : ∀ k, k ≤ 18 → ∀ (s : State),
+    WP isa (.block ((List.range k).map fun i =>
+      Instr.vop (.logic .xor (TCombCfg.accV i) (TCombCfg.accV i) (TCombCfg.accV i)))) s fun t =>
+      (∀ i < k, t.vpr (TCombCfg.accV i) = 0) ∧ Kp [] s t ∧ t.mem = s.mem
+  | 0, _, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Kp.refl _ _, rfl⟩
+  | k + 1, hk, s => by
+    rw [List.range_succ, List.map_append, List.map_singleton]
+    refine wp_append (WP.mono (zeroAcc_ok k (by omega) s) fun s₁ ⟨z₁, k₁, m₁⟩ => ?_)
+    refine wp_step exec_vxorSelf (WP.block_nil ?_)
+    refine ⟨fun i hi => ?_, k₁.trans ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩, m₁⟩
+    by_cases hik : i < k
+    · have hne : TCombCfg.accV i ≠ TCombCfg.accV k := fun e => by
+        have := accV_inj i (by omega) k (by omega) e; omega
+      simp only [vpr_writeV, hne, ite_false, z₁ i hik]
+    · obtain rfl : i = k := by omega
+      simp only [vpr_writeV, ite_true]
+
+/-- The row's address (row `j`, in `r31`) in `r8`, the accumulators zero,
+and `r7 = 1`. -/
+theorem selectSetup_ok (K : TCombCfg) {s : State} {j : Nat} (hn : K.L.M.n ≤ 18)
+    (gj : s.gpr .r31 = BitVec.ofNat 64 j) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15) :
+    WP isa (.block K.selectSetup) s fun t =>
+      t.gpr .r8 = s.syms K.tsym + BitVec.ofNat 64 (16 * K.L.M.n * K.H * j) ∧
+      t.gpr .r7 = 1 ∧ (∀ i < K.L.M.n, t.vpr (TCombCfg.accV i) = 0) ∧
+      Rk [.r4, .r7, .r8, .r11] s t ∧ t.mem = s.mem := by
+  unfold TCombCfg.selectSetup
+  simp only [List.cons_append, List.nil_append]
+  refine wp_step (exec_adrSym (d := .r8) (by decide)) ?_
+  generalize hs₁ : ({ s.write .r8 (s.syms K.tsym) with lr := s.unknowns 0, unknowns := fun i => s.unknowns (i + 1) } : State) = s₁
+  have k₁ : Rk [.r8] s s₁ := by
+    rw [← hs₁]; exact ⟨(Kp.write s (s.syms K.tsym) (by decide : Reg.r8 ∈ [.r8])).gpr, rfl, rfl, rfl⟩
+  have m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
+  have g₁ : s₁.gpr .r8 = s.syms K.tsym := by rw [← hs₁]; simp only [write_gpr, ite_true]
+  refine wp_step (exec_li hrow) ?_
+  refine wp_step exec_mul ?_
+  refine wp_step exec_add ?_
+  generalize hs₄ : ((s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).write .r4
+    ((s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).gpr .r4 *
+      (s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).gpr .r31)).write .r8 _ = s₄
+  have k₄ : Kp [.r4, .r8] s₁ s₄ := by
+    rw [← hs₄]
+    exact ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))
+  have g₄ : s₄.gpr .r8 = s.syms K.tsym + BitVec.ofNat 64 (16 * K.L.M.n * K.H * j) := by
+    rw [← hs₄]
+    simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
+    rw [g₁, k₁.g, gj, ← BitVec.ofNat_mul]
+  have m₄ : s₄.mem = s.mem := by rw [← hs₄]; exact m₁
+  refine wp_append (WP.mono (zeroAcc_ok K.L.M.n hn s₄) fun s₅ ⟨z₅, k₅, m₅⟩ => ?_)
+  refine wp_step (exec_li (by decide)) (WP.block_nil ?_)
+  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true]
+  refine ⟨by rw [k₅.g, g₄], rfl, fun i hi => by rw [vpr_write]; exact z₅ i hi, ?_, by rw [m₅, m₄]⟩
+  exact (k₁.mono (by decide)).trans ((k₄.rk (rs' := [.r4, .r7, .r8, .r11])).trans
+    ((k₅.rk (rs' := [.r4, .r7, .r8, .r11])).trans ((Kp.write s₅ 1 (rs := [.r7]) (by decide)).rk)))
+
+theorem write16_outside (m : Mem) (base : Addr) {d : Nat} (v : BitVec (8 * 16)) (h : d + 16 ≤ 2 ^ 64) :
+    Outside base d 16 m (m.write (off base d) 16 v) := by
+  intro x hx
+  apply Mem.write_apply
+  rw [Offset.lt_iff x base h]
+  simp only [ofs] at hx
+  omega
+
+theorem write16_byte (m : Mem) (A : Addr) (v : BitVec (8 * 16)) {c : Nat} (hc : c < 16) :
+    m.write A 16 v (A + BitVec.ofNat 64 c) = v.extractLsb' (8 * c) 8 := by
+  simp only [Mem.write, Mem.sub_ofNat_toNat A (show c < 2 ^ 64 by omega), hc, ite_true]
+
+/-- Reads whose bytes agree are equal. -/
+theorem read_congr2 {m m' : Mem} {a a' : Addr} {n : Nat}
+    (h : ∀ i < n, m (a + BitVec.ofNat 64 i) = m' (a' + BitVec.ofNat 64 i)) : m.read a n = m'.read a' n :=
+  Mem.read_eq_of_bytes fun i hi => by rw [h i hi, Mem.extractLsb'_read _ _ hi]
+
+/-- The first `k` accumulators to `Q`'s `x` and `y`, through `r4`. -/
+theorem selectStore_ok (K : TCombCfg) {s : State} {base : Addr} (hw : WsReg s base)
+    (hq : K.Q.x + 16 * K.L.M.n ≤ 8192) (V : Nat → BitVec 128)
+    (hv : ∀ i < K.L.M.n, s.vpr (TCombCfg.accV i) = swapDwords (V i)) :
+    ∀ k, k ≤ K.L.M.n →
+    WP isa (.block ((List.range k).flatMap fun i =>
+      [.li .r4 (K.Q.x + 16 * i), .stxvd2x (TCombCfg.accV i) wb .r4])) s fun t =>
+      (∀ i < k, ∀ c < 16, t.mem (off base (K.Q.x + 16 * i) + BitVec.ofNat 64 c) = (V i).extractLsb' (8 * c) 8) ∧
+      Outside base K.Q.x (16 * k) s.mem t.mem ∧ Kp [.r4] s t ∧ t.vpr = s.vpr
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, Kp.refl _ _, rfl⟩
+  | k + 1, hk => by
+    have hn' := hw.nowrap
+    rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    refine wp_append (WP.mono (selectStore_ok K hw hq V hv k (by omega)) fun s₁ ⟨b₁, O₁, k₁, vp₁⟩ => ?_)
+    have w₁ := hw.of_kp k₁
+    have hin : InRegions (s₁.write .r4 (BitVec.ofNat 64 (K.Q.x + 16 * k))).wr
+        ((s₁.write .r4 (BitVec.ofNat 64 (K.Q.x + 16 * k))).gpr wb +
+          (s₁.write .r4 (BitVec.ofNat 64 (K.Q.x + 16 * k))).gpr .r4) 16 := by
+      simp only [write_wr, write_gpr, ite_true, reduceCtorEq, ite_false, w₁.r3]
+      exact w₁.ws.wrIn (d := K.Q.x + 16 * k) (n := 16) (by omega)
+    refine wp_step (exec_li (by omega)) ?_
+    refine wp_step (exec_stxvd2x _ _ _ _ (by decide) hin) (WP.block_nil ?_)
+    simp only [write_gpr, ite_true, reduceCtorEq, ite_false, w₁.r3, write_mem, vpr_write]
+    rw [vp₁, hv k (by omega), swapDwords_involutive]
+    have O₂ := write16_outside s₁.mem base (d := K.Q.x + 16 * k) (V k) (by omega)
+    refine ⟨fun i hi c hc => ?_, ?_, k₁.trans ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩, ?_⟩
+    · by_cases hik : i < k
+      · rw [O₂ _ (.inl (by rw [ofs_off base (by omega)]; omega)), b₁ i hik c hc]
+      · obtain rfl : i = k := by omega
+        exact write16_byte _ _ _ hc
+    · exact (O₁.mono (Nat.le_refl _) (by omega)).trans (O₂.mono (by omega) (by omega))
+    · simp only [List.mem_singleton] at hr
+      show (s₁.write .r4 _).gpr r = _
+      simp only [write_gpr, hr, ite_false]
+    · rfl
 
 
 /-- The words of a number that is zero are zero. -/
@@ -492,60 +642,6 @@ theorem setConstW_ok {s : State} {base : Addr} (hw : WsReg s base) {n o x : Nat}
     WP isa (.block (Impl.Mont.PPC64LE.setConst n o x)) s fun u =>
       Outside base o (8 * n) s.mem u.mem ∧ wordsVal u.mem base o n = x ∧ Kp [.r11] s u :=
   WP.mono (setConst_ok hw.ws hw.at3 ho hx) fun _ ⟨O, V, K⟩ => ⟨O, by rw [wordsVal_eq_val32]; exact V, K⟩
-
-/-- The row's address (row `j`, in `r31`) in `r8`, `Q`'s `x` and `y` zero,
-and `r7 = 1`. -/
-theorem selectSetup_ok (K : TCombCfg) {s : State} {base : Addr} {j : Nat}
-    (hw : WsReg s base) (hq : K.Q.x + 16 * K.L.M.n ≤ 8192)
-    (gj : s.gpr .r31 = BitVec.ofNat 64 j) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15) :
-    WP isa (.block K.selectSetup) s fun t =>
-      t.gpr .r8 = s.syms K.tsym + BitVec.ofNat 64 (16 * K.L.M.n * K.H * j) ∧
-      t.gpr .r7 = 1 ∧ (∀ i < 2 * K.L.M.n, word t.mem base (K.Q.x + 8 * i) = 0) ∧
-      Rk [.r4, .r7, .r8, .r11] s t ∧ Outside base K.Q.x (16 * K.L.M.n) s.mem t.mem := by
-  have hy : K.Q.y = K.Q.x + 8 * K.L.M.n := rfl
-  have hn := hw.nowrap
-  unfold TCombCfg.selectSetup
-  simp only [List.cons_append]
-  refine wp_step (exec_adrSym (d := .r8) (by decide)) ?_
-  generalize hs₁ : ({ s.write .r8 (s.syms K.tsym) with lr := s.unknowns 0, unknowns := fun i => s.unknowns (i + 1) } : State) = s₁
-  have k₁ : Rk [.r8] s s₁ := by
-    rw [← hs₁]; exact ⟨(Kp.write s (s.syms K.tsym) (by decide : Reg.r8 ∈ [.r8])).gpr, rfl, rfl, rfl⟩
-  have m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
-  have g₁ : s₁.gpr .r8 = s.syms K.tsym := by rw [← hs₁]; simp only [write_gpr, ite_true]
-  have w₁ := hw.of_rk k₁
-  refine wp_step (exec_li hrow) ?_
-  refine wp_step exec_mul ?_
-  refine wp_step exec_add ?_
-  generalize hs₄ : ((s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).write .r4
-    ((s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).gpr .r4 *
-      (s₁.write .r4 (BitVec.ofNat 64 (16 * K.L.M.n * K.H))).gpr .r31)).write .r8 _ = s₄
-  have k₄ : Kp [.r4, .r8] s₁ s₄ := by
-    rw [← hs₄]
-    exact ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))
-  have g₄ : s₄.gpr .r8 = s.syms K.tsym + BitVec.ofNat 64 (16 * K.L.M.n * K.H * j) := by
-    rw [← hs₄]
-    simp only [write_gpr, ite_true, reduceCtorEq, ite_false]
-    rw [g₁, k₁.g, gj, ← BitVec.ofNat_mul]
-  have m₄ : s₄.mem = s.mem := by rw [← hs₄]; exact m₁
-  have w₄ := w₁.of_kp k₄
-  rw [List.append_assoc]
-  refine wp_append (WP.mono (setConstW_ok w₄ (o := K.Q.x) (x := 0) (n := K.L.M.n) (by omega)
-    (Nat.two_pow_pos _)) fun s₅ ⟨Ox, vx, k₅⟩ => ?_)
-  refine wp_append (WP.mono (setConstW_ok (w₄.of_kp k₅) (o := K.Q.y) (x := 0) (n := K.L.M.n)
-    (by rw [hy]; omega) (Nat.two_pow_pos _)) fun s₆ ⟨Oy, vy, k₆⟩ => ?_)
-  refine wp_step (exec_li (by decide)) (WP.block_nil ?_)
-  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true]
-  have k₄₆ : Kp [.r11] s₄ s₆ := k₅.trans k₆
-  refine ⟨by rw [k₄₆.g, g₄], rfl, fun i hi => ?_, ?_, ?_⟩
-  · by_cases hx : i < K.L.M.n
-    · rw [Oy.word (by rw [hy]; omega) (by omega)]
-      exact words_zero_of_wordsVal vx i hx
-    · have e := words_zero_of_wordsVal vy (i - K.L.M.n) (by omega)
-      rwa [hy, show K.Q.x + 8 * K.L.M.n + 8 * (i - K.L.M.n) = K.Q.x + 8 * i by omega] at e
-  · exact (k₁.mono (by decide)).trans ((k₄.rk (rs' := [.r4, .r7, .r8, .r11])).trans
-      ((k₄₆.rk (rs' := [.r4, .r7, .r8, .r11])).trans ((Kp.write s₆ 1 (rs := [.r7]) (by decide)).rk)))
-  · rw [← m₄]
-    exact (Ox.mono (Nat.le_refl _) (by omega)).trans (Oy.mono (by rw [hy]; omega) (by rw [hy]; omega))
 
 /-- `Z = 1`, and `(0 : 1 : 0)` for a magnitude of zero. -/
 theorem selectTail_ok (K : TCombCfg) {s : State} {base : Addr} {a : Nat}
@@ -613,7 +709,7 @@ theorem selectRow_ok (K : TCombCfg) {s : State} {base X : Addr} {a j : Nat}
     (hq : K.Q.x + 24 * K.L.M.n ≤ 8192) (hzle : K.zero + 8 * K.L.M.n ≤ 8192)
     (hza : K.zero + 8 * K.L.M.n ≤ K.Q.x ∨ K.Q.x + 24 * K.L.M.n ≤ K.zero)
     (hone : K.one < 2 ^ (64 * K.L.M.n)) (hz : wordsVal s.mem base K.zero K.L.M.n = 0)
-    (hn1 : 1 ≤ K.L.M.n) (hH : K.H + 1 ≤ 2 ^ 15) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15) (ha : a ≤ K.H)
+    (hn18 : K.L.M.n ≤ 18) (hH : K.H + 1 ≤ 2 ^ 15) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15) (ha : a ≤ K.H)
     (ga : s.gpr .r9 = BitVec.ofNat 64 a) (gj : s.gpr .r31 = BitVec.ofNat 64 j)
     (hX : s.syms K.tsym + BitVec.ofNat 64 (16 * K.L.M.n * K.H * j) = X) (R : RowOk K s base X) :
     WP isa K.select s fun t =>
@@ -625,44 +721,63 @@ theorem selectRow_ok (K : TCombCfg) {s : State} {base X : Addr} {a j : Nat}
       Rk [.r4, .r5, .r6, .r7, .r8, .r10, .r11] s t ∧ Outside base K.Q.x (24 * K.L.M.n) s.mem t.mem := by
   have hy : K.Q.y = K.Q.x + 8 * K.L.M.n := rfl
   have hn := hw.nowrap
-  have hHp : 1 ≤ K.H := Nat.two_pow_pos _
-  have hrowle : 16 * K.L.M.n ≤ 16 * K.L.M.n * K.H := Nat.le_mul_of_pos_right _ hHp
-  have span : 16 * K.L.M.n * (a - 1) + 16 * K.L.M.n ≤ 16 * K.L.M.n * K.H := by
-    rw [← Nat.mul_succ]
-    exact Nat.mul_le_mul_left _ (by omega)
   unfold TCombCfg.select
   rw [WP.seq_iff]
-  refine WP.mono (selectSetup_ok K hw (by omega) gj hrow) fun s₁ ⟨p₁, g₁, z₁, k₁, O₁⟩ => ?_
-  have w₁ := hw.of_rk k₁
+  refine WP.mono (selectSetup_ok K hn18 gj hrow) fun s₁ ⟨p₁, g₁, z₁, k₁, m₁⟩ => ?_
   have R₁ : RowOk K s₁ base X := ⟨R.fit, by rw [k₁.rd, k₁.wr]; exact R.readable, R.apart⟩
   rw [WP.seq_iff]
-  refine WP.mono (scan_loop_ok K (a := a) w₁.ws w₁.at3 hq4 (by omega) (by omega) R₁ (by rw [p₁]; exact hX) hn1 hH ha
+  refine WP.mono (scan_loop_ok K (a := a) R₁ (by rw [p₁]; exact hX) hn18 hH ha
     (by rw [k₁.g]; exact ga) g₁ z₁) fun s₂ I => ?_
   have keep₂ : Rk [.r4, .r5, .r6, .r7, .r8, .r10, .r11] s s₂ := (k₁.mono (by decide)).trans (I.keep.rk (by decide))
   have w₂ := hw.of_rk keep₂
-  have source : ∀ i < 2 * K.L.M.n,
-      word s₁.mem X (16 * K.L.M.n * (a - 1) + 8 * i) = word s.mem X (16 * K.L.M.n * (a - 1) + 8 * i) :=
-    fun i hi => O₁.unch.far_word (fun w hw => by
-      rw [List.mem_singleton] at hw; subst hw; dsimp only; omega) R.apart (by omega) R.fit
-  have raw : ∀ i < 2 * K.L.M.n, word s₂.mem base (K.Q.x + 8 * i) =
+  let V : Nat → BitVec 128 := fun i =>
+    if a = 0 then 0 else s.mem.read (X + BitVec.ofNat 64 (16 * K.L.M.n * (a - 1) + 16 * i)) 16
+  have hV : ∀ i < K.L.M.n, s₂.vpr (TCombCfg.accV i) = swapDwords (V i) := by
+    intro i hi
+    rw [I.val i hi, m₁]
+    by_cases zero : a = 0
+    · simp only [↓reduceIte, V, zero]
+      exact swapDwords_zero.symm
+    · have yes : 1 ≤ a ∧ a < K.H + 1 := by omega
+      simp only [yes, and_self, ↓reduceIte, V, zero]
+  unfold TCombCfg.selectStore
+  refine wp_append (WP.mono (selectStore_ok K w₂ (by omega) V hV K.L.M.n (Nat.le_refl _))
+    fun s₃ ⟨b₃, O₃, k₃, _⟩ => ?_)
+  have w₃ := w₂.of_kp k₃
+  have raw : ∀ i < 2 * K.L.M.n, word s₃.mem base (K.Q.x + 8 * i) =
       if a = 0 then 0 else word s.mem X (16 * K.L.M.n * (a - 1) + 8 * i) := by
     intro i hi
-    rw [I.val i hi, source i hi]
-    by_cases zero : a = 0
-    · have no : ¬(1 ≤ a ∧ a < K.H + 1) := by omega
-      rw [ite_eq_right_of_eq_false _ _ (eq_false no), ite_eq_left_of_eq_true _ _ (eq_true zero)]
-    · have yes : 1 ≤ a ∧ a < K.H + 1 := by omega
-      rw [ite_eq_left_of_eq_true _ _ (eq_true yes), ite_eq_right_of_eq_false _ _ (eq_false zero)]
-  have x₂ : wordsVal s₂.mem base K.Q.x K.L.M.n =
+    have bytes : ∀ c < 8, s₃.mem (off base (K.Q.x + 8 * i) + BitVec.ofNat 64 c) =
+        (if a = 0 then (0 : BitVec 64) else s.mem.readW (off X (16 * K.L.M.n * (a - 1) + 8 * i)) 64).extractLsb'
+          (8 * c) 8 := by
+      intro c hc
+      have e₁ : off base (K.Q.x + 8 * i) + BitVec.ofNat 64 c =
+          off base (K.Q.x + 16 * (i / 2)) + BitVec.ofNat 64 (8 * (i % 2) + c) := by
+        simp only [off, VG.Offset.add_add]; congr 2; omega
+      have i2 : i / 2 < K.L.M.n := by omega
+      have c16 : 8 * (i % 2) + c < 16 := by omega
+      rw [e₁, b₃ (i / 2) i2 (8 * (i % 2) + c) c16]
+      by_cases zero : a = 0
+      · simp [V, zero]
+      · simp only [V, zero, ↓reduceIte, Mem.readW, BitVec.setWidth_eq]
+        have j16 : 8 * (i % 2) + c < 16 := by omega
+        rw [Mem.extractLsb'_read (n := 16) _ _ j16, Mem.extractLsb'_read (n := 8) _ _ hc]
+        simp only [off, VG.Offset.add_add]; congr 2
+        exact congrArg (BitVec.ofNat 64) (by generalize 16 * K.L.M.n * (a - 1) = q; omega)
+    show s₃.mem.readW _ 64 = _
+    simp only [Mem.readW, BitVec.setWidth_eq]
+    rw [Mem.read_eq_of_bytes bytes]
+    by_cases zero : a = 0 <;> simp only [zero, ↓reduceIte] <;> rfl
+  have x₂ : wordsVal s₃.mem base K.Q.x K.L.M.n =
       if a = 0 then 0 else wordsVal s.mem X (16 * K.L.M.n * (a - 1)) K.L.M.n := by
     by_cases zero : a = 0
     · simp only [zero, ↓reduceIte]
       exact wordsVal_zero_words fun i hi => by rw [raw i (by omega)]; simp only [zero, ↓reduceIte]
     · simp only [zero, ↓reduceIte]
       exact wordsVal_congr_words fun i hi => by rw [raw i (by omega)]; simp only [zero, ↓reduceIte]
-  have y₂ : wordsVal s₂.mem base K.Q.y K.L.M.n =
+  have y₂ : wordsVal s₃.mem base K.Q.y K.L.M.n =
       if a = 0 then 0 else wordsVal s.mem X (16 * K.L.M.n * (a - 1) + 8 * K.L.M.n) K.L.M.n := by
-    have word' : ∀ i < K.L.M.n, word s₂.mem base (K.Q.y + 8 * i) =
+    have word' : ∀ i < K.L.M.n, word s₃.mem base (K.Q.y + 8 * i) =
         if a = 0 then 0 else word s.mem X (16 * K.L.M.n * (a - 1) + 8 * K.L.M.n + 8 * i) := by
       intro i hi
       have e := raw (K.L.M.n + i) (by omega)
@@ -675,14 +790,16 @@ theorem selectRow_ok (K : TCombCfg) {s : State} {base X : Addr} {a j : Nat}
       exact wordsVal_zero_words fun i hi => by rw [word' i hi]; simp only [zero, ↓reduceIte]
     · simp only [zero, ↓reduceIte]
       exact wordsVal_congr_words fun i hi => by rw [word' i hi]; simp only [zero, ↓reduceIte]
-  have zero₂ : wordsVal s₂.mem base K.zero K.L.M.n = 0 := by
-    rw [I.unch.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega), hz]
-  refine WP.mono (selectTail_ok K (a := a) w₂ hq4 hz4 hq hzle hza hone (by omega)
-    (by rw [keep₂.g]; exact ga) zero₂) fun s₃ ⟨x₃, y₃, z₃, k₃, O₃⟩ => ?_
-  refine ⟨by rw [x₃, x₂], ?_, z₃, keep₂.trans (k₃.rk (by decide)), ?_⟩
-  · rw [y₃, y₂]
+  have zero₂ : wordsVal s₃.mem base K.zero K.L.M.n = 0 := by
+    rw [O₃.wordsVal (by omega) (by omega), I.mem, m₁, hz]
+  refine WP.mono (selectTail_ok K (a := a) w₃ hq4 hz4 hq hzle hza hone (by omega)
+    (by rw [k₃.g, keep₂.g]; exact ga) zero₂) fun s₄ ⟨x₄, y₄, z₄, k₄, O₄⟩ => ?_
+  refine ⟨by rw [x₄, x₂], ?_, z₄, keep₂.trans ((k₃.rk (by decide)).trans (k₄.rk (by decide))), ?_⟩
+  · rw [y₄, y₂]
     by_cases zero : a = 0 <;> simp only [zero, ↓reduceIte]
-  · exact ((O₁.mono (Nat.le_refl _) (by omega)).trans (I.unch.mono (Nat.le_refl _) (by omega))).trans O₃
+  · have O₂ : Outside base K.Q.x (24 * K.L.M.n) s.mem s₂.mem := by
+      rw [I.mem, m₁]; exact Outside.refl _ _ _ _
+    exact (O₂.trans (O₃.mono (Nat.le_refl _) (by omega))).trans O₄
 
 /-- The selection from the table's row `j`: its entry `a - 1`, affine, or
 `(0 : 1 : 0)` for `a = 0`. -/
@@ -692,8 +809,8 @@ theorem selectTable_ok (K : TCombCfg) {s : State} {base T : Addr} {a j R p : Nat
     (hq : K.Q.x + 24 * K.L.M.n ≤ 8192) (hzle : K.zero + 8 * K.L.M.n ≤ 8192)
     (hza : K.zero + 8 * K.L.M.n ≤ K.Q.x ∨ K.Q.x + 24 * K.L.M.n ≤ K.zero)
     (hone : K.one < 2 ^ (64 * K.L.M.n)) (hz : wordsVal s.mem base K.zero K.L.M.n = 0)
-    (hn1 : 1 ≤ K.L.M.n) (hH : K.H + 1 ≤ 2 ^ 15) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15) (ha : a ≤ K.H)
-    (ga : s.gpr .r9 = BitVec.ofNat 64 a) (gj : s.gpr .r31 = BitVec.ofNat 64 j)
+    (hn1 : 1 ≤ K.L.M.n) (hn18 : K.L.M.n ≤ 18) (hH : K.H + 1 ≤ 2 ^ 15) (hrow : 16 * K.L.M.n * K.H < 2 ^ 15)
+    (ha : a ≤ K.H) (ga : s.gpr .r9 = BitVec.ofNat 64 a) (gj : s.gpr .r31 = BitVec.ofNat 64 j)
     (hT : TableMem s T (tcombWords K.L.M.n R p tbl)) (sym : s.syms K.tsym = T)
     (hJ : tbl.length = K.J) (hRows : ∀ j < K.J, (tbl.getD j []).length = K.H) (hj : j < K.J)
     (hJ32 : K.J < 2 ^ 32) (hp : 0 < p) (hpfit : p ≤ 2 ^ (64 * K.L.M.n))
@@ -724,7 +841,7 @@ theorem selectTable_ok (K : TCombCfg) {s : State} {base T : Addr} {a j R p : Nat
   have entry := tcombWords_entry hT.words hJ hRows hj (show a - 1 < K.H by omega)
     (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) hpfit) (Nat.lt_of_lt_of_le (Nat.mod_lt _ hp) hpfit)
   rw [Nat.mul_comm j (16 * K.L.M.n * K.H)] at entry
-  refine WP.mono (selectRow_ok K hw hq4 hz4 hq hzle hza hone hz hn1 hH hrow ha ga gj
+  refine WP.mono (selectRow_ok K hw hq4 hz4 hq hzle hza hone hz hn18 hH hrow ha ga gj
     (by rw [sym]) row) fun t ⟨x, y, z, keep, unch⟩ => ?_
   exact ⟨by rw [x, entry.1], by rw [y, entry.2], z, keep, unch⟩
 
@@ -1228,7 +1345,7 @@ theorem entry_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     i.keep h.layout hd (ku.rk (rs' := fnClob)) (by decide) (by rw [mu]; exact Unch.refl _ _ _) syu
   refine WP.seq (WP.mono_syms (selectTable_ok K (a := magH K.H (combWin K.w k j)) iu.wsr hq4 h.layout.al.1
     (by omega) (by omega) (.inl (by omega)) (Nat.lt_of_lt_of_le h.one_lt hfit) iu.zero
-    (by have := h.layout.point.k3; omega) hH15 h.row (h.magnitude k j) gu
+    (by have := h.layout.point.k3; omega) (by have := h.layout.point.k6; omega) hH15 h.row (h.magnitude k j) gu
     (by rw [ku.g]; exact gj) iu.table iu.symbol h.tables.len h.tables.lenH hj (by have := h.J15; omega) hp hfit hd)
     fun v ⟨xv, yv, zv, kv, ov⟩ syv => ?_)
   have ouv : Unch base (loopWrites K) u.mem v.mem :=
