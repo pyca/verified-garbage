@@ -158,9 +158,10 @@ impl AesCmac {
 
     /// The MAC of `data` with `key`, which must be 16, 24 or 32 bytes long.
     pub fn mac(key: &[u8], data: &[u8]) -> Result<[u8; 16], InvalidKeyLength> {
-        let mut c = Self::new(key)?;
-        c.update(data);
-        Ok(c.finalize())
+        crate::dit::enter!(dit);
+        let mut c = Self::new_with(dit, key)?;
+        c.update_with(dit, data);
+        Ok(c.finalize_with(dit))
     }
 
     /// Checks that `mac` is the whole MAC of `data` with `key`, in constant

@@ -120,9 +120,10 @@ impl Poly1305 {
 
     /// The tag of `data` with the one-time key `key`.
     pub fn mac(key: &[u8; 32], data: &[u8]) -> [u8; 16] {
-        let mut p = Self::new(key);
-        p.update(data);
-        p.finalize()
+        crate::dit::enter!(dit);
+        let mut p = Self::new_with(dit, key);
+        p.update_with(dit, data);
+        p.finalize_with(dit)
     }
 
     /// Checks that `mac` is the whole MAC of `data` with `key`, in constant
