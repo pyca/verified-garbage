@@ -57,8 +57,10 @@ def wideArtifactsOf (v : GcmImpl) : List Artifact := [
       verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
       spSafe := avx2Open_spSafe v }]
 
-/-- The artifacts of the implementations `v`: those with the AVX2 copies
-first, which its dispatchers then try first. -/
+/-- The artifacts of the implementations `v`: those with the AVX2 copies,
+where they may run (`hasWide`), first, which its dispatchers then try first;
+then those without them, where they may run where the others cannot
+(`hasNarrow`). -/
 def artifactsFor (v : GcmImpl) : List Artifact :=
   (if hasWide v then wideArtifactsOf v else []) ++ if hasNarrow v then artifactsOf v else []
 

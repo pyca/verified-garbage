@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.AesEcb.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.Registration
 
 /-!
 # AES-CBC on AArch64, zeroing the scratch it writes
@@ -19,6 +20,14 @@ independent states, `Decrypt.code` with SHA-3's `eor3` and `Decrypt.codeAes`) is
 `scratch` with `vg_zeroize`. Each implementation meets its contract and
 leaves each byte of `scratch` unchanged or zero (`*_scrubbed`), which is
 the contract of `Spec/Cbc/` (`*_verified`).
+
+Which are emitted, for each implementation `v` of the blocks functions
+(`encryptRegs`, `decryptRegs`): for encryption, the Cryptographic
+Extension's loop (`Caller.encrypt`), which writes no `scratch`, where `v` is
+the Cryptographic Extension's, and the call wiping `scratch` otherwise; for
+decryption, none where `v` writes nothing in `scratch` (the Cryptographic
+Extension's decryptions are their own artifacts), and the call wiping
+`scratch` otherwise.
 -/
 
 @[expose] public section
@@ -126,5 +135,30 @@ theorem decryptAes_scrubbed :
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 0 none) :=
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes)
     Proof.AesCbc.AArch64.Decrypt.writtenAes args_length
+
+/-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted (see
+the module's documentation). -/
+def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
+  if h : v.enc.name = "vg_aes_encrypt_blocks_aes" then [{
+    suffix := v.suffix
+    code := Caller.encrypt v
+    verified := encrypt_free_scrubbed v h
+    written := Caller.written v
+    writtenOk := Caller.written_ok v }]
+  else [{
+    suffix := v.suffix
+    code := encrypt v
+    stack := 32
+    verified := encrypt_verified v }]
+
+/-- The implementation of `vg_aes_cbc_decrypt` over `v` that is emitted, if
+any (see the module's documentation). -/
+def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
+  if v.free then []
+  else [{
+    suffix := v.suffix
+    code := decrypt v
+    stack := 32
+    verified := decrypt_verified v }]
 
 end VG.Proof.AesCbc.AArch64.Wiped
