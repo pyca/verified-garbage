@@ -97,36 +97,29 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.
 
 theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := by
   simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
-theorem cipher_ser (k : Spec.Sm4.Schedule) : Serial.coreSpec.cipher k = Spec.Sm4.cipher k := rfl
+theorem cipher_ser (k : Spec.Sm4.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
 theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := by
   simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 16 cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcEncPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcEncChained_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cbcEncChained 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.cbcEncChained 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.cbcEncChained_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.cbcEncChained 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.cbcEncChained 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
-
-theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 16 cbcDecPost).pre s) :
-    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 4) (by decide) (by decide) (by decide)
-    (seqPre_of (dirCore .decrypt) rfl rfl (dirCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl hs)
-    (keyArgs_of (dirCore .decrypt) rfl (M := Mode.cbcDecChained 4) rfl hs))
-    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem ofb_correct (s : State) (hs : (modeContract 16 ofbPost).pre s) :
     ∃ t s', Exec isa ofb s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ofbPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ofb_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ofb 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.ofb 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.ofb_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.ofb 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.ofb 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
 
 theorem cfbEncrypt_correct (s : State) (hs : (modeContract 16 cfbEncPost).pre s) :
     ∃ t s', Exec isa cfbEncrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cfbEncPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbEnc_wp Serial.coreSpec
-    (seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbEnc 4) rfl hs)
-    (keyArgs_of Serial.core rfl (M := Mode.cfbEnc 4) rfl hs))
+  WP.mono (Proof.Modes.PPC64LE.cfbEnc_wp (Serial.coreSpec .encrypt)
+    (seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.cfbEnc 4) rfl hs)
+    (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.cfbEnc 4) rfl hs))
     fun _ ⟨h1, h2, h3⟩ => by simp only [cipher_ser] at h2 h3; exact ⟨h1, h2, h3⟩
 
 /-- The key's arguments do not mention `r8`. -/
@@ -154,9 +147,9 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract 16 cfbDecPost).pre s)
   refine pick_correct fun v => ?_
   obtain ⟨-, eP, eD, eN, eM, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
   split
-  · refine WP.mono (Proof.Modes.PPC64LE.cfbDecSeq_wp Serial.coreSpec
-      ((seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.cfbDec 4) rfl hs).write_r8 v)
-      (keyArgs_r8 v (keyArgs_of Serial.core rfl (M := Mode.cfbDec 4) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+  · refine WP.mono (Proof.Modes.PPC64LE.cfbDecSeq_wp (Serial.coreSpec .encrypt)
+      ((seqPre_of (Serial.core .encrypt) rfl rfl (Serial.coreSpec .encrypt).layout (M := Mode.cfbDec 4) rfl hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (Serial.core .encrypt) rfl (M := Mode.cfbDec 4) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
     simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_ser] at h2 h3
     exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
   · refine WP.mono (Proof.Modes.PPC64LE.cfbDecWide_wp (dirCoreSpec .encrypt) (lg := 4) (by decide) (by decide)
@@ -164,6 +157,27 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract 16 cfbDecPost).pre s)
         hs).write_r8 v)
       (keyArgs_r8 v (keyArgs_of (dirCore .encrypt) rfl (M := Mode.cfbDecEarly 4) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
     simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_enc] at h2 h3
+    exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
+
+theorem cipher_serDec (k : Spec.Sm4.Schedule) : (Serial.coreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := by
+  simp only [Serial.coreSpec, Proof.Sm4.PPC64LE.dirCipher]
+
+theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 16 cbcDecPost).pre s) :
+    ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcDecPost).post s s' := by
+  refine pick_correct fun v => ?_
+  obtain ⟨-, eP, eD, eN, eM, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecChained_wp (Serial.coreSpec .decrypt)
+      ((seqPre_of (Serial.core .decrypt) rfl rfl (Serial.coreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl
+        hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (Serial.core .decrypt) rfl (M := Mode.cbcDecChained 4) rfl hs))) fun _ ⟨h1, h2, h3⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_serDec] at h2 h3
+    exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
+  · refine WP.mono (Proof.Modes.PPC64LE.cbcDecWide_wp (dirCoreSpec .decrypt) (lg := 4) (by decide) (by decide)
+      (by decide) ((seqPre_of (dirCore .decrypt) rfl rfl (dirCoreSpec .decrypt).layout (M := Mode.cbcDecChained 4) rfl
+        hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (dirCore .decrypt) rfl (M := Mode.cbcDecChained 4) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_dec] at h2 h3
     exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
 
 /-! ## The contracts -/

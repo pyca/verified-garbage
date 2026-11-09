@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Modes.PPC64LE.Seq
 public import VerifiedGarbage.Impl.Sm4.PPC64LE.Layers
+public import VerifiedGarbage.Impl.Sm4.PPC64LE.Ecb
 
 /-!
 # A single-block SM4 core on PPC64LE
@@ -99,9 +100,16 @@ def linear : List Instr :=
    .rotr .w .r10 .r9 14, .logic .xor .r11 .r11 .r10,
    .rotr .w .r10 .r9 8, .logic .xor .r11 .r11 .r10]
 
-/-- Round `i`: `X_i := X_i ⊕ T(X_{i+1} ⊕ X_{i+2} ⊕ X_{i+3} ⊕ rk_i)`. -/
-def round (i : Nat) : List Instr :=
-  [.load .w .r9 .r3 (4 * i), .logic .xor .r9 .r9 (wordReg (i + 1)),
+/-- The round key of round `i` in the direction `d`: in order to encrypt,
+in reverse to decrypt (§7.2). -/
+def rkIdx : Dir → Nat → Nat
+  | .encrypt, i => i
+  | .decrypt, i => 31 - i
+
+/-- Round `i`: `X_i := X_i ⊕ T(X_{i+1} ⊕ X_{i+2} ⊕ X_{i+3} ⊕ rk)`, `rk` the
+round key `rkIdx d i`. -/
+def round (d : Dir) (i : Nat) : List Instr :=
+  [.load .w .r9 .r3 (4 * rkIdx d i), .logic .xor .r9 .r9 (wordReg (i + 1)),
    .logic .xor .r9 .r9 (wordReg (i + 2)), .logic .xor .r9 .r9 (wordReg (i + 3))] ++
   tau ++ linear ++ [.logic .xor (wordReg i) (wordReg i) .r11]
 
@@ -116,13 +124,12 @@ def storeBlock : List Instr :=
   (List.range 4).flatMap fun i => [.li .r0 (8 * tailSlot + 4 * i), .storeRev .w (wordReg (3 - i)) sb .r0]
 
 /-- The 32 rounds. -/
-def rounds : List Instr := (List.range 32).flatMap round
+def rounds (d : Dir) : List Instr := (List.range 32).flatMap (round d)
 
-/-- The single-block core, for the encryption direction (the schedule's
-round keys in order). -/
-def core : Modes.PPC64LE.Core where
+/-- The single-block core in the direction `d`. -/
+def core (d : Dir) : Modes.PPC64LE.Core where
   prepare := .block []
-  crypt := .block (loadTables ++ loadBlock ++ rounds ++ storeBlock)
+  crypt := .block (loadTables ++ loadBlock ++ rounds d ++ storeBlock)
   slots := slots
   total := slots + 6
   buf := tailSlot

@@ -45,6 +45,7 @@ namespace VG.Proof.Sm4.PPC64LE.Serial
 
 open VG VG.PPC64LE VG.PPC64LE.RegUpd VG.PPC64LE.Bytes
 open VG.Impl.Sm4.PPC64LE.Serial
+open VG.Impl.Sm4.PPC64LE (Dir)
 
 /-! ## Bytes -/
 
@@ -319,10 +320,13 @@ theorem wordReg_mod (j : Nat) : wordReg (j % 4) = wordReg j := by simp [wordReg]
 /-- The round key `i` from the schedule at `r3`. -/
 def rkey (s : State) (i : Nat) : BitVec 32 := s.mem.readW (s.gpr .r3 + BitVec.ofNat 64 (4 * i)) 32
 
-theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Consts s)
-    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 (4 * i)) 4) :
-    ∃ t, runBlock isa (round i) s = some t ∧
-      (∀ w < 4, words t w = Proof.Sm4.sround .enc (rkey s i) (i % 4) (words s) w) ∧
+theorem keyIdx_lt (dir : Dir) {i : Nat} (hi : i < 32) : rkIdx dir i < 32 := by
+  cases dir <;> simp only [rkIdx] <;> omega
+
+theorem round_run (dir : Dir) {s : State} {i : Nat} (hi : i < 32) (hc : Consts s)
+    (hr : InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 (4 * rkIdx dir i)) 4) :
+    ∃ t, runBlock isa (round dir i) s = some t ∧
+      (∀ w < 4, words t w = Proof.Sm4.sround .enc (rkey s (rkIdx dir i)) (i % 4) (words s) w) ∧
       Consts t ∧
       (∀ r, r ≠ wordReg i → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → t.gpr r = s.gpr r) ∧
       (∀ v, v ≠ .v0 → v ≠ .v1 → t.vpr v = s.vpr v) ∧
@@ -331,11 +335,12 @@ theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Consts s)
   let q2 := wordReg (i + 2)
   let q3 := wordReg (i + 3)
   let ra := wordReg i
-  let a := s.write .r9 ((rkey s i).setWidth 64)
+  have hki := keyIdx_lt dir hi
+  let a := s.write .r9 ((rkey s (rkIdx dir i)).setWidth 64)
   let b := a.write .r9 (a.gpr .r9 ^^^ a.gpr q1)
   let c := b.write .r9 (b.gpr .r9 ^^^ b.gpr q2)
   let d := c.write .r9 (c.gpr .r9 ^^^ c.gpr q3)
-  have hm : runBlock isa ([.load .w .r9 .r3 (4 * i), .logic .xor .r9 .r9 q1, .logic .xor .r9 .r9 q2,
+  have hm : runBlock isa ([.load .w .r9 .r3 (4 * rkIdx dir i), .logic .xor .r9 .r9 q1, .logic .xor .r9 .r9 q2,
       .logic .xor .r9 .r9 q3] : List Instr) s = some d := by
     rw [runBlock_cons, exec_load_w (by decide) (by omega) hr, runStep_some, runBlock_cons, exec_logic, runStep_some,
       runBlock_cons, exec_logic, runStep_some, runBlock_cons, exec_logic, runStep_some, runBlock_nil]
@@ -345,7 +350,7 @@ theorem round_run {s : State} {i : Nat} (hi : i < 32) (hc : Consts s)
   have ag : ∀ r, r ≠ .r9 → a.gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ h
   have bg : ∀ r, r ≠ .r9 → b.gpr r = s.gpr r := fun r h => (gpr_write_of_ne _ _ h).trans (ag r h)
   have cg : ∀ r, r ≠ .r9 → c.gpr r = s.gpr r := fun r h => (gpr_write_of_ne _ _ h).trans (bg r h)
-  have d9 : (d.gpr .r9).setWidth 32 = rkey s i ^^^ words s (i + 1) ^^^ words s (i + 2) ^^^ words s (i + 3) := by
+  have d9 : (d.gpr .r9).setWidth 32 = rkey s (rkIdx dir i) ^^^ words s (i + 1) ^^^ words s (i + 2) ^^^ words s (i + 3) := by
     rw [show d.gpr .r9 = c.gpr .r9 ^^^ c.gpr q3 from gpr_write_self _ _ _,
       show c.gpr .r9 = b.gpr .r9 ^^^ b.gpr q2 from gpr_write_self _ _ _,
       show b.gpr .r9 = a.gpr .r9 ^^^ a.gpr q1 from gpr_write_self _ _ _,
@@ -425,10 +430,10 @@ theorem wordReg_mem (j : Nat) : wordReg j ∈ written := by
   generalize j % 4 = k at h
   rcases k with _ | _ | _ | _ | k <;> first | omega | decide
 
-theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32) (hc : Consts s)
+theorem rounds_run (dir : Dir) (s : State) (n : Nat) (hn : n ≤ 32) (hc : Consts s)
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .r3 + BitVec.ofNat 64 (4 * i)) 4) :
-    ∃ t, runBlock isa ((List.range n).flatMap round) s = some t ∧
-      (∀ w < 4, words t w = steps (rkey s) n (words s) w) ∧
+    ∃ t, runBlock isa ((List.range n).flatMap (round dir)) s = some t ∧
+      (∀ w < 4, words t w = steps (fun i => rkey s (rkIdx dir i)) n (words s) w) ∧
       Consts t ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       (∀ v, v ≠ .v0 → v ≠ .v1 → t.vpr v = s.vpr v) ∧
@@ -438,14 +443,14 @@ theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32) (hc : Consts s)
   | succ n ih =>
     obtain ⟨a, ae, aw, ac, ag, av, am, ard, awr, asp, asy⟩ := ih (by omega)
     have ab : a.gpr .r3 = s.gpr .r3 := ag _ (by decide)
-    have ar : InRegions (a.rd ++ a.wr) (a.gpr .r3 + BitVec.ofNat 64 (4 * n)) 4 := by
-      rw [ard, awr, ab]; exact hr n (by omega)
-    obtain ⟨b, be, bw, bc, bg, bv, bm, brd, bwr, bsp, bsy⟩ := round_run (by omega) ac ar
+    have ar : InRegions (a.rd ++ a.wr) (a.gpr .r3 + BitVec.ofNat 64 (4 * rkIdx dir n)) 4 := by
+      rw [ard, awr, ab]; exact hr _ (keyIdx_lt dir (by omega))
+    obtain ⟨b, be, bw, bc, bg, bv, bm, brd, bwr, bsp, bsy⟩ := round_run dir (by omega) ac ar
     refine ⟨b, ?_, fun w hw => ?_, bc, fun r hr => ?_, fun v h0 h1 => (bv v h0 h1).trans (av v h0 h1),
       bm.trans am, brd.trans ard, bwr.trans awr, bsp.trans asp, bsy.trans asy⟩
     · rw [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil,
         VG.Interleave.runBlock_append, ae, Option.bind_some, be]
-    · rw [bw w hw, steps_succ, show rkey a n = rkey s n by rw [rkey, rkey, am, ab]]
+    · rw [bw w hw, steps_succ, show rkey a (rkIdx dir n) = rkey s (rkIdx dir n) by rw [rkey, rkey, am, ab]]
       exact sround_congr _ (Nat.mod_lt _ (by decide)) aw hw
     · have hreg : r ≠ wordReg n := fun he => hr (he ▸ wordReg_mem n)
       have h9 : r ≠ .r9 := fun he => hr (by simp [written, he])
@@ -697,7 +702,7 @@ theorem steps_congr (K L : Nat → BitVec 32) (n : Nat) (x y : Nat → BitVec 32
 /-- The key is ready: the schedule at `r3`, apart from the core's slots and
 the regions `ws`. -/
 def Ready (s : State) (B : Addr) (ws : List Region) (k : Spec.Sm4.Schedule) : Prop :=
-  Proof.Sm4.PPC64LE.KeyArgs s (coreRegion core B :: ws) k
+  Proof.Sm4.PPC64LE.KeyArgs s (⟨B, 8 * slots⟩ :: ws) k
 
 /-- The schedule survives a frame within its regions. -/
 theorem keyArgs_frame {s s' : State} {rs rs' : List Region} {k : Spec.Sm4.Schedule}
@@ -716,18 +721,33 @@ theorem kept_ne : ∀ r ∈ kept, r ≠ .r0 ∧ r ∉ written ∧ r ≠ .r10 ∧
 
 /-! ## The block -/
 
-theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B core.total) (hk : Ready s B ws k) :
-    WP isa core.crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
-      Frame [coreRegion core B] s.mem t.mem ∧
-      (∀ j < core.G, bytesAt t.mem (blkAddr core B j) (4 * core.bw) =
-        Spec.Sm4.cipher k (bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
+theorem invCipher_bytes (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
+    Spec.Sm4.invCipher k (bytesAt m p 16) =
+      (Proof.Sm4.outBlock (Proof.Sm4.quads .enc (fun i => k.getD (31 - i) 0) 8
+        (Proof.Sm4.ofBlock (Spec.Sm4.blockAt m p)))).toList := by
+  rw [Spec.Sm4.invCipher, Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.ofFn_toList, Spec.Sm4.decryptBlock,
+    Proof.Sm4.crypt_eq]
+
+theorem dirCipher_bytes (dir : Dir) (k : Spec.Sm4.Schedule) (m : Mem) (p : Addr) :
+    Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt m p 16) =
+      (Proof.Sm4.outBlock (Proof.Sm4.quads .enc (fun i => k.getD (rkIdx dir i) 0) 8
+        (Proof.Sm4.ofBlock (Spec.Sm4.blockAt m p)))).toList := by
+  cases dir
+  · exact Proof.Sm4.cipher_bytes k m p
+  · exact invCipher_bytes k m p
+
+theorem crypt_wp (dir : Dir) {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (core dir).total) (hk : Ready s B ws k) :
+    WP isa (core dir).crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+      Frame [coreRegion (core dir) B] s.mem t.mem ∧
+      (∀ j < (core dir).G, bytesAt t.mem (blkAddr (core dir) B j) (4 * (core dir).bw) =
+        Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B j) (4 * (core dir).bw))) ∧
       t.rd = s.rd ∧ t.wr = s.wr := by
   have hfB : B.toNat + 8 * (slots + 6) ≤ 2 ^ 64 := hs.fit
   have hwr : (⟨B, 8 * (slots + 6)⟩ : Region) ∈ s.wr := hs.wr
   have hk' := hk
   obtain ⟨p, hp, hsched, hin, hfit, _⟩ := hk'
-  change WP isa (.block (loadTables ++ loadBlock ++ rounds ++ storeBlock)) s _
+  change WP isa (.block (loadTables ++ loadBlock ++ rounds dir ++ storeBlock)) s _
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   obtain ⟨a, ae, ac, _, ag, am, ard, awr, _, _⟩ := loadTables_run s
   refine WP.of_runBlock ⟨a, ae, ?_⟩
@@ -745,21 +765,21 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedul
   have br : ∀ i < 32, InRegions (b.rd ++ b.wr) (b.gpr .r3 + BitVec.ofNat 64 (4 * i)) 4 := fun i hi => by
     rw [brd, ard, b3]
     exact ⟨_, List.mem_append_left _ hin, VG.Offset.contains_base p (by omega) (by omega)⟩
-  obtain ⟨d, de, dw, _, dg, _, dm, drd, dwr, _, _⟩ := rounds_run b 32 (by decide) bc br
+  obtain ⟨d, de, dw, _, dg, _, dm, drd, dwr, _, _⟩ := rounds_run dir b 32 (by decide) bc br
   refine WP.of_runBlock ⟨d, de, ?_⟩
   have dbase : d.gpr sb = B := by
     rw [dg _ (by decide), bg _ (by decide) (fun j _ => (wordReg_ne_sb j).1.symm), ab]
   have dmem : d.mem = s.mem := dm.trans bmem
   let A := B + BitVec.ofNat 64 (8 * tailSlot)
   let init := Proof.Sm4.ofBlock (Spec.Sm4.blockAt s.mem A)
-  let z := Proof.Sm4.quads .enc (fun i => k.getD i 0) 8 init
+  let z := Proof.Sm4.quads .enc (fun i => k.getD (rkIdx dir i) 0) 8 init
   have initial : ∀ w < 4, words b w = init w := fun w hw => by
     rw [bw w hw, am, ab, woff, ← VG.Offset.add_add B (8 * tailSlot) (4 * w), readBE_word _ _ w hw]
     rfl
   have dwords : ∀ w < 4, words d w = z w := fun w hw => by
-    rw [dw w hw, steps_congr (rkey b) (fun i => k.getD i 0) 32 (words b) init
-      (fun i hi => by rw [rkey, bmem, b3, hsched, schedule_readW _ _ i hi]) initial w hw]
-    change steps (fun i => k.getD i 0) (4 * 8) init w = z w
+    rw [dw w hw, steps_congr (fun i => rkey b (rkIdx dir i)) (fun i => k.getD (rkIdx dir i) 0) 32 (words b) init
+      (fun i hi => by rw [rkey, bmem, b3, hsched, schedule_readW _ _ _ (keyIdx_lt dir hi)]) initial w hw]
+    change steps (fun i => k.getD (rkIdx dir i) 0) (4 * 8) init w = z w
     rw [steps_quads]
   have dr : ∀ i < 4, InRegions d.wr (d.gpr sb + BitVec.ofNat 64 (woff i)) 4 := fun i hi => by
     rw [dwr, bwr, awr, dbase]
@@ -770,7 +790,7 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedul
   have keptE : ∀ r ∈ kept, e.gpr r = s.gpr r := fun r hr => by
     have h := kept_ne r hr
     rw [eg r h.1, dg r h.2.1, bg r h.1 (fun j _ he => h.2.1 (he ▸ wordReg_mem j)), ag r h.2.2.1 h.2.2.2.1 h.2.2.2.2.1]
-  have frame : Frame [coreRegion core B] s.mem e.mem := by
+  have frame : Frame [coreRegion (core dir) B] s.mem e.mem := by
     rw [← dmem]
     refine ef.sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst r
@@ -787,21 +807,22 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedul
   · rw [erd, drd, brd, ard]
   · have hj0 : j = 0 := by have : j < 1 := hj; omega
     subst hj0
-    have ha : blkAddr core B 0 = A := by
+    have ha : blkAddr (core dir) B 0 = A := by
       show B + BitVec.ofNat 64 (8 * tailSlot) + BitVec.ofNat 64 (4 * 4 * 0) = A
       rw [VG.Offset.add_add, Nat.mul_zero, Nat.add_zero]
-    show bytesAt e.mem (blkAddr core B 0) 16 = Spec.Sm4.cipher k (bytesAt s.mem (blkAddr core B 0) 16)
-    rw [ha, output, Proof.Sm4.cipher_bytes]
+    show bytesAt e.mem (blkAddr (core dir) B 0) 16 =
+      Proof.Sm4.PPC64LE.dirCipher dir k (bytesAt s.mem (blkAddr (core dir) B 0) 16)
+    rw [ha, output, dirCipher_bytes]
   · rw [erd, drd, brd, ard]
   · rw [ewr, dwr, bwr, awr]
 
 /-! ## The core -/
 
-theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule}
-    (_hs : ScrIn s B core.total) (hR : (⟨B, 8 * core.total⟩ : Region) ∈ rs)
+theorem prepare_wp (dir : Dir) {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Schedule}
+    (_hs : ScrIn s B (core dir).total) (hR : (⟨B, 8 * (core dir).total⟩ : Region) ∈ rs)
     (hk : Proof.Sm4.PPC64LE.KeyArgs s rs k) (hB : s.gpr sb = B) :
-    WP isa core.prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
-      Frame [coreRegion core B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    WP isa (core dir).prepare s fun s' => Ready s' B rs k ∧ s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Frame [coreRegion (core dir) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   refine WP.of_runBlock ⟨s, rfl, ?_, hB, fun _ _ => rfl, Frame.refl _ _, rfl, rfl⟩
   obtain ⟨p, hp, hk', hin, hfit, hdis⟩ := hk
   refine ⟨p, hp, hk', hin, hfit, fun r hr => ?_⟩
@@ -810,29 +831,31 @@ theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Spec.Sm4.Sched
   · exact (hdis _ hR).sub_right (Region.sub_prefix (by show 8 * slots ≤ 8 * (slots + 6); omega))
   · exact hdis r hr
 
-theorem ready_frame {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} {rs : List Region}
+theorem ready_frame (dir : Dir) {s s' : State} {B : Addr} {ws : List Region} {k : Spec.Sm4.Schedule} {rs : List Region}
     (h : Ready s B ws k) (e : s'.gpr .r3 = s.gpr .r3) (hrd : s'.rd = s.rd) (hf : Frame rs s.mem s'.mem)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r')
-    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion core B) r ∨ Region.Sub r (blkRegion core B)) :
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion (core dir) B) r ∨ Region.Sub r (blkRegion (core dir) B)) :
     Ready s' B ws k := keyArgs_frame h e hrd hf fun r hr => by
   rcases hd r hr with _ | h'
   · obtain ⟨r', hr', hs'⟩ := hsub r hr
     exact ⟨r', List.mem_cons_of_mem _ hr', hs'⟩
-  · have hb : Region.Sub (blkRegion core B) (coreRegion core B) :=
+  · have hb : Region.Sub (blkRegion (core dir) B) (coreRegion (core dir) B) :=
       VG.Offset.sub_base B (by show 8 * tailSlot + 4 * 4 * 1 ≤ 8 * slots; rw [tailSlot_eq, slots_eq]; omega)
     exact ⟨_, List.mem_cons_self, fun x hx => hb x (h' x hx)⟩
 
 /-- The single-block core meets what the modes need. -/
-def coreSpec : CoreSpec core where
+def coreSpec (dir : Dir) : CoreSpec (core dir) where
   Key := Spec.Sm4.Schedule
-  cipher := Spec.Sm4.cipher
+  cipher := Proof.Sm4.PPC64LE.dirCipher dir
   KeyArgs := Proof.Sm4.PPC64LE.KeyArgs
   Ready := Ready
-  cipher_len _ _ := by show _ = 16; simp [Spec.Sm4.cipher]
-  layout := ⟨by decide, .inr rfl, by decide, by decide, by decide⟩
+  cipher_len _ _ := by
+    show _ = 16; cases dir <;> simp [Proof.Sm4.PPC64LE.dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]
+  layout := ⟨Nat.one_pos, .inr rfl, by simp only [core]; decide, by simp only [core]; decide,
+    by simp only [core]; decide⟩
   keyArgs_congr h e hrd hwr _ hf := Proof.Sm4.PPC64LE.keyArgs_congr h e.r3 hrd hwr hf
-  ready_frame h e hrd _ _ hf hsub hd := ready_frame h e.r3 hrd hf hsub hd
-  prepare_wp hB hs hR hk := prepare_wp hs hR hk hB
-  crypt_wp hB hs hR := crypt_wp hB hs hR
+  ready_frame h e hrd _ _ hf hsub hd := ready_frame dir h e.r3 hrd hf hsub hd
+  prepare_wp hB hs hR hk := prepare_wp dir hs hR hk hB
+  crypt_wp hB hs hR := crypt_wp dir hB hs hR
 
 end VG.Proof.Sm4.PPC64LE.Serial

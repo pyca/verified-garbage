@@ -20,12 +20,12 @@ namespace VG.Impl.Sm4.PPC64LE
 open VG.PPC64LE
 
 /-- `vg_sm4_cfb128_encrypt_final`, with its scratch buffer as the fifth argument. -/
-def cfbEncryptFinal : Prog isa := Serial.core.seqFinal (Modes.Mode.cfbEnc 4)
+def cfbEncryptFinal : Prog isa := (Serial.core .encrypt).seqFinal (Modes.Mode.cfbEnc 4)
 
 /-- `vg_sm4_cfb128_decrypt_final`, with its scratch buffer as the fifth argument. -/
-def cfbDecryptFinal : Prog isa := Serial.core.seqFinal (Modes.Mode.cfbDec 4)
+def cfbDecryptFinal : Prog isa := (Serial.core .encrypt).seqFinal (Modes.Mode.cfbDec 4)
 
 /-- `vg_sm4_ofb_final`, with its scratch buffer as the fifth argument. -/
-def ofbFinal : Prog isa := Serial.core.seqFinal (Modes.Mode.ofb 4)
+def ofbFinal : Prog isa := (Serial.core .encrypt).seqFinal (Modes.Mode.ofb 4)
 
 end VG.Impl.Sm4.PPC64LE
