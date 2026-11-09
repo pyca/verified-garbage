@@ -1992,87 +1992,1409 @@ vg_ecdsa_brainpoolp512r1_verify:
 	li %r5, 1984
 	li %r6, 704
 	bl {vg_brainpoolp512r1_mul_mod_n}
-	ld %r4, 768(%r3)
+	ld %r4, 2432(%r3)
+	std %r4, 1152(%r3)
+	ld %r4, 2440(%r3)
+	std %r4, 1160(%r3)
+	ld %r4, 2448(%r3)
+	std %r4, 1168(%r3)
+	ld %r4, 2456(%r3)
+	std %r4, 1176(%r3)
+	ld %r4, 2464(%r3)
+	std %r4, 1184(%r3)
+	ld %r4, 2472(%r3)
+	std %r4, 1192(%r3)
+	ld %r4, 2480(%r3)
+	std %r4, 1200(%r3)
+	ld %r4, 2488(%r3)
+	std %r4, 1208(%r3)
+	li %r4, 1664
+	li %r5, 2432
+	li %r6, 2432
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1216
+	li %r5, 1152
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1280
+	li %r5, 1216
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1344
+	li %r5, 1280
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1408
+	li %r5, 1344
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1472
+	li %r5, 1408
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1536
+	li %r5, 1472
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r4, 1600
+	li %r5, 1536
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	ld %r4, 1280(%r3)
 	std %r4, 1920(%r3)
-	ld %r4, 776(%r3)
+	ld %r4, 1288(%r3)
 	std %r4, 1928(%r3)
-	ld %r4, 784(%r3)
+	ld %r4, 1296(%r3)
 	std %r4, 1936(%r3)
-	ld %r4, 792(%r3)
+	ld %r4, 1304(%r3)
 	std %r4, 1944(%r3)
-	ld %r4, 800(%r3)
+	ld %r4, 1312(%r3)
 	std %r4, 1952(%r3)
-	ld %r4, 808(%r3)
+	ld %r4, 1320(%r3)
 	std %r4, 1960(%r3)
-	ld %r4, 816(%r3)
+	ld %r4, 1328(%r3)
 	std %r4, 1968(%r3)
-	ld %r4, 824(%r3)
+	ld %r4, 1336(%r3)
 	std %r4, 1976(%r3)
-	li %r31, 512
+	li %r31, 4
 28:
 	addi %r31, %r31, -1
 	li %r4, 1920
 	li %r5, 1920
 	li %r6, 1920
 	bl {vg_brainpoolp512r1_mul_mod_n}
-	li %r4, 1984
-	li %r5, 1920
-	li %r6, 2432
-	bl {vg_brainpoolp512r1_mul_mod_n}
-	add %r4, %r3, %r31
-	lbz %r4, 5120(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
-	ld %r4, 1920(%r3)
-	ld %r5, 1984(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1920(%r3)
-	ld %r4, 1928(%r3)
-	ld %r5, 1992(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1928(%r3)
-	ld %r4, 1936(%r3)
-	ld %r5, 2000(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1936(%r3)
-	ld %r4, 1944(%r3)
-	ld %r5, 2008(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1944(%r3)
-	ld %r4, 1952(%r3)
-	ld %r5, 2016(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1952(%r3)
-	ld %r4, 1960(%r3)
-	ld %r5, 2024(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1960(%r3)
-	ld %r4, 1968(%r3)
-	ld %r5, 2032(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1968(%r3)
-	ld %r4, 1976(%r3)
-	ld %r5, 2040(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1976(%r3)
 	cmpldi %cr0, %r31, 0
 	bne %cr0, 28b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+29:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 29b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+210:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 210b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+211:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 211b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+212:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 212b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+213:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 213b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 1
+214:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 214b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+215:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 215b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+216:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 216b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+217:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 217b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+218:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 218b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 2
+219:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 219b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+220:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 220b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+221:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 221b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+222:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 222b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+223:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 223b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+224:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 224b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+225:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 225b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+226:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 226b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+227:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 227b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 1
+228:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 228b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+229:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 229b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+230:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 230b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+231:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 231b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+232:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 232b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 2
+233:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 233b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 11
+234:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 234b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+235:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 235b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+236:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 236b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+237:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 237b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+238:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 238b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+239:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 239b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+240:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 240b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+241:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 241b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+242:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 242b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+243:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 243b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+244:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 244b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+245:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 245b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+246:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 246b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+247:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 247b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+248:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 248b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+249:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 249b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+250:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 250b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+251:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 251b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+252:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 252b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+253:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 253b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+254:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 254b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+255:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 255b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+256:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 256b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+257:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 257b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+258:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 258b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+259:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 259b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+260:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 260b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+261:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 261b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+262:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 262b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+263:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 263b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+264:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 264b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+265:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 265b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+266:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 266b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+267:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 267b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+268:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 268b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+269:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 269b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+270:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 270b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 1
+271:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 271b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+272:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 272b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+273:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 273b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+274:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 274b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+275:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 275b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+276:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 276b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+277:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 277b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+278:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 278b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+279:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 279b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+280:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 280b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+281:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 281b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+282:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 282b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+283:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 283b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+284:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 284b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+285:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 285b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+286:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 286b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+287:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 287b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 1
+288:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 288b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+289:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 289b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+290:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 290b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 2
+291:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 291b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 7
+292:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 292b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+293:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 293b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+294:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 294b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+295:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 295b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+296:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 296b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+297:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 297b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 4
+298:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 298b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+299:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 299b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+2100:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2100b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 3
+2101:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2101b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+2102:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2102b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 6
+2103:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2103b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 2
+2104:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2104b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 8
+2105:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2105b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+2106:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2106b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+2107:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2107b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+2108:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2108b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 11
+2109:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2109b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	li %r31, 5
+2110:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_n}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2110b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_n}
 	li %r4, 2624
 	li %r5, 2112
 	li %r6, 704
@@ -2098,7 +3420,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	li %r6, 320
 	bl {vg_brainpoolp512r1_mul_mod_n}
 	li %r31, 64
-29:
+2111:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 2240(%r4)
@@ -2129,9 +3451,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 29b
+	bne %cr0, 2111b
 	li %r31, 512
-210:
+2112:
 	addi %r31, %r31, -1
 	li %r4, 1536
 	li %r5, 960
@@ -2602,7 +3924,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	xor %r4, %r4, %r5
 	std %r4, 1144(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 210b
+	bne %cr0, 2112b
 	ld %r4, 960(%r3)
 	std %r4, 2688(%r3)
 	ld %r4, 968(%r3)
@@ -2796,7 +4118,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	ori %r11, %r11, 0
 	stw %r11, 1148(%r3)
 	li %r31, 64
-211:
+2113:
 	addi %r31, %r31, -1
 	add %r4, %r3, %r31
 	lbz %r4, 2304(%r4)
@@ -2827,9 +4149,9 @@ vg_ecdsa_brainpoolp512r1_verify:
 	and %r6, %r6, %r7
 	stb %r6, 4103(%r5)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 211b
+	bne %cr0, 2113b
 	li %r31, 512
-212:
+2114:
 	addi %r31, %r31, -1
 	li %r4, 1536
 	li %r5, 960
@@ -3300,7 +4622,7 @@ vg_ecdsa_brainpoolp512r1_verify:
 	xor %r4, %r4, %r5
 	std %r4, 1144(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 212b
+	bne %cr0, 2114b
 	li %r4, 1536
 	li %r5, 2688
 	li %r6, 960
@@ -3509,87 +4831,1370 @@ vg_ecdsa_brainpoolp512r1_verify:
 	std %r4, 1136(%r3)
 	ld %r4, 1336(%r3)
 	std %r4, 1144(%r3)
-	ld %r4, 384(%r3)
+	ld %r4, 1088(%r3)
+	std %r4, 1152(%r3)
+	ld %r4, 1096(%r3)
+	std %r4, 1160(%r3)
+	ld %r4, 1104(%r3)
+	std %r4, 1168(%r3)
+	ld %r4, 1112(%r3)
+	std %r4, 1176(%r3)
+	ld %r4, 1120(%r3)
+	std %r4, 1184(%r3)
+	ld %r4, 1128(%r3)
+	std %r4, 1192(%r3)
+	ld %r4, 1136(%r3)
+	std %r4, 1200(%r3)
+	ld %r4, 1144(%r3)
+	std %r4, 1208(%r3)
+	li %r4, 1664
+	li %r5, 1088
+	li %r6, 1088
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1216
+	li %r5, 1152
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1280
+	li %r5, 1216
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1344
+	li %r5, 1280
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1408
+	li %r5, 1344
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1472
+	li %r5, 1408
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1536
+	li %r5, 1472
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r4, 1600
+	li %r5, 1536
+	li %r6, 1664
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	ld %r4, 1280(%r3)
 	std %r4, 1920(%r3)
-	ld %r4, 392(%r3)
+	ld %r4, 1288(%r3)
 	std %r4, 1928(%r3)
-	ld %r4, 400(%r3)
+	ld %r4, 1296(%r3)
 	std %r4, 1936(%r3)
-	ld %r4, 408(%r3)
+	ld %r4, 1304(%r3)
 	std %r4, 1944(%r3)
-	ld %r4, 416(%r3)
+	ld %r4, 1312(%r3)
 	std %r4, 1952(%r3)
-	ld %r4, 424(%r3)
+	ld %r4, 1320(%r3)
 	std %r4, 1960(%r3)
-	ld %r4, 432(%r3)
+	ld %r4, 1328(%r3)
 	std %r4, 1968(%r3)
-	ld %r4, 440(%r3)
+	ld %r4, 1336(%r3)
 	std %r4, 1976(%r3)
-	li %r31, 512
-213:
+	li %r31, 4
+2115:
 	addi %r31, %r31, -1
 	li %r4, 1920
 	li %r5, 1920
 	li %r6, 1920
 	bl {vg_brainpoolp512r1_mul_mod_p}
-	li %r4, 1984
-	li %r5, 1920
-	li %r6, 1088
-	bl {vg_brainpoolp512r1_mul_mod_p}
-	add %r4, %r3, %r31
-	lbz %r4, 4608(%r4)
-	li %r5, 0
-	subf %r10, %r4, %r5
-	ld %r4, 1920(%r3)
-	ld %r5, 1984(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1920(%r3)
-	ld %r4, 1928(%r3)
-	ld %r5, 1992(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1928(%r3)
-	ld %r4, 1936(%r3)
-	ld %r5, 2000(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1936(%r3)
-	ld %r4, 1944(%r3)
-	ld %r5, 2008(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1944(%r3)
-	ld %r4, 1952(%r3)
-	ld %r5, 2016(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1952(%r3)
-	ld %r4, 1960(%r3)
-	ld %r5, 2024(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1960(%r3)
-	ld %r4, 1968(%r3)
-	ld %r5, 2032(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1968(%r3)
-	ld %r4, 1976(%r3)
-	ld %r5, 2040(%r3)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1976(%r3)
 	cmpldi %cr0, %r31, 0
-	bne %cr0, 213b
+	bne %cr0, 2115b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2116:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2116b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2117:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2117b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2118:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2118b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2119:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2119b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2120:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2120b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 1
+2121:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2121b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2122:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2122b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2123:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2123b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2124:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2124b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2125:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2125b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 2
+2126:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2126b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2127:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2127b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2128:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2128b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2129:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2129b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2130:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2130b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2131:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2131b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2132:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2132b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2133:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2133b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2134:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2134b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 1
+2135:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2135b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2136:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2136b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2137:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2137b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2138:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2138b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2139:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2139b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 2
+2140:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2140b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 11
+2141:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2141b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2142:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2142b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2143:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2143b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2144:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2144b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2145:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2145b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2146:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2146b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2147:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2147b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2148:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2148b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2149:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2149b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2150:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2150b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2151:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2151b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2152:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2152b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2153:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2153b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 8
+2154:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2154b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2155:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2155b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2156:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2156b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2157:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2157b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2158:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2158b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2159:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2159b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2160:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2160b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2161:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2161b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2162:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2162b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 8
+2163:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2163b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2164:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2164b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2165:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2165b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2166:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2166b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2167:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2167b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2168:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2168b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2169:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2169b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2170:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2170b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2171:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2171b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2172:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2172b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 12
+2173:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2173b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2174:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2174b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 2
+2175:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2175b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2176:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2176b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2177:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2177b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2178:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2178b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2179:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2179b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2180:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2180b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2181:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2181b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2182:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2182b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2183:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2183b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 8
+2184:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2184b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2185:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2185b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2186:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2186b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2187:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2187b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 2
+2188:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2188b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2189:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2189b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 10
+2190:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2190b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2191:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2191b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2192:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2192b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2193:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2193b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 10
+2194:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2194b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2195:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2195b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2196:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2196b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2197:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2197b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2198:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2198b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2199:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2199b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 9
+2200:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2200b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2201:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2201b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1536
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2202:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2202b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2203:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2203b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2204:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2204b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2205:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2205b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2206:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2206b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 9
+2207:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2207b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1280
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2208:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2208b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1216
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 6
+2209:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2209b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1472
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 8
+2210:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2210b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1344
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 5
+2211:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2211b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1408
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 3
+2212:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2212b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 7
+2213:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2213b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1600
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	li %r31, 4
+2214:
+	addi %r31, %r31, -1
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1920
+	bl {vg_brainpoolp512r1_mul_mod_p}
+	cmpldi %cr0, %r31, 0
+	bne %cr0, 2214b
+	li %r4, 1920
+	li %r5, 1920
+	li %r6, 1152
+	bl {vg_brainpoolp512r1_mul_mod_p}
 	li %r4, 2240
 	li %r5, 960
 	li %r6, 1920

@@ -84,7 +84,7 @@ theorem final_eq (c : Cfg) : Impl.Ecdsa.Verify.PPC64LE.Cfg.final c =
 /-- `Z^(p-2)`, `x`, the last checks and the result. -/
 theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Point c.C} {s : State}
     (hP : Pts c s₀ base u v P s) :
-    WP isa (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c)) s fun s' =>
+    WP isa (.seq c.invP (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c)) s fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ s'.sp = s₀.sp ∧ s'.lr = s₀.lr ∧
       Unch base [(0, size)] s₀.mem s'.mem ∧ ∃ xo, xo < c.C.p ∧
         Fin.ofNat c.C.p xo = tmv c.C c.n base s (c.sl RX) * tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) ∧
@@ -101,18 +101,17 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   have hn3 := hc.n_ge
   have hfl : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
   -- `Z^(p-2)`.
-  refine WP.seq (WP.mono (pow_ok (P := c.powP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc) rfl
-    (powLayP hc) hpR hP.ws hP.rz_lt hP.fixed.onep hP.t₁
-    (show c.C.p - 2 < 2 ^ (64 * c.n) by have := hc.p_lt; omega_arith)) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
-  rw [powWxP_eq] at U₁
-  have K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_powWx h7) (hWs := powWx_le h7)
-  have e₁ : ∀ {i}, i < 45 → i ∉ [ACC, PT] → sv c base s₁ i = sv c base s i := fun hi hr =>
-    sv_unch U₁ h7 hn hi (apart_powWx h7 hi hr)
+  refine WP.seq (WP.mono (chainPow_ok (P := c.chainP) (S := c.SP) (e := c.C.p - 2) hc.fpk hc.fpm (modP hc)
+    (chainLayP hc) hpR hP.ws hP.rz_lt hc.chainP) fun s₁ ⟨k₁, U₁, lt₁, v₁⟩ => ?_)
+  rw [chainWP_eq] at U₁
+  have K₁ : Keep c s₀ base s₁ := hP.toKeep.step h7 k₁ (hU := U₁) (hW := fixedOk_chainW h7) (hWs := chainW_le h7)
+  have e₁ : ∀ {i}, i < 45 → i ≠ ACC → (i < DX ∨ T2 < i) → sv c base s₁ i = sv c base s i := fun hi hr ht =>
+    sv_unch U₁ h7 hn hi (apart_chainW h7 hi hr ht)
   have fl₁ : flagW c base s₁ = flagW c base s := by
-    have apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl PT, 8 * c.n), (own c.n, 64 * c.n)],
+    have apF : ∀ w ∈ [(c.sl ACC, 8 * c.n), (c.sl DX, 9 * (8 * c.n)), (own c.n, 64 * c.n)],
         c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
       have := sl_le c h7 (i := FLAG) (by decide)
-      rcases apart_powWx h7 (i := FLAG) (by decide) (by decide) w hw with h | h
+      rcases apart_chainW h7 (i := FLAG) (by decide) (by decide) (by decide) w hw with h | h
       · exact Or.inl (by omega_arith)
       · exact Or.inr h
     rw [flagW, U₁.word apF (by omega_arith), ← flagW]
@@ -131,7 +130,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
     have acc₁ : toM c.C.p (2 ^ (64 * c.n)) (sv c base s₁ ACC) = tmv c.C c.n base s (c.sl RZ) ^ (c.C.p - 2) := v₁
     rw [toM_one_mul hpR (by rw [e₃, one₂]), toM_mul hpR e₂, acc₁]
     show toM _ _ (sv c base s₁ RX) * _ = toM _ _ (sv c base s RX) * _
-    rw [e₁ (by decide) (by decide)]
+    rw [e₁ (by decide) (by decide) (by decide)]
   -- `XN = x R mod n`, `W = XN - r R mod n`.
   have r2₃ : sv c base s₃ R2N = 2 ^ (64 * c.n) * 2 ^ (64 * c.n) % c.C.n := K₃.fixed.r2n
   refine WP.seq (WP.mono (slMul_ok hc.fn hc.fnk hc.fnm h7 K₃.ws (o := XN) (a := X) (b := R2N) (by decide)
@@ -139,7 +138,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   obtain ⟨K₄, f₄, -, v₄⟩ := K₃.call h0 h7 (o := XN) (by decide) (by decide) (by decide) k₄ U₄
   have rm₄ : sv c base s₄ RM' = sv c base s RM' := by
     rw [v₄ (by decide) (by decide), v₃ (by decide) (by decide), v₂ (by decide) (by decide),
-      e₁ (by decide) (by decide)]
+      e₁ (by decide) (by decide) (by decide)]
   refine WP.seq (WP.mono (slSub_ok hc.fn hc.fnk hc.fnm h7 K₄.ws (o := W) (a := XN) (b := RM') (by decide)
     (by decide) (by decide) lt₄ (by rw [rm₄]; exact hP.rm_lt)) fun s₅ ⟨k₅, U₅, e₅⟩ => ?_)
   obtain ⟨K₅, f₅, -, v₅⟩ := K₄.call h0 h7 (o := W) (by decide) (by decide) (by decide) k₅ U₅
@@ -162,7 +161,7 @@ theorem vtail_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {u v : Nat} {P : Po
   have z₅ : wordsVal s₅.mem base (c.sl RZ) c.n = sv c base s RZ := by
     show sv c base s₅ RZ = _
     rw [v₅ (by decide) (by decide), v₄ (by decide) (by decide), v₃ (by decide) (by decide),
-      v₂ (by decide) (by decide), e₁ (by decide) (by decide)]
+      v₂ (by decide) (by decide), e₁ (by decide) (by decide) (by decide)]
   have hW₆ : wordsVal s₆.mem base (c.sl W) c.n = sv c base s₅ W :=
     sv_unch O₆.unch h7 hn (i := W) (by decide) (apart_flag h0 (by decide))
   have hflag : flagW c base s₇ = mask64 (decide ((KeyOk c s₀ ∧ (0 < sigR c s₀ ∧ sigR c s₀ < c.C.n) ∧
