@@ -67,26 +67,22 @@ vg_p256_mul_mod_p:
 	mulhdu %r11, %r9, %r23
 	adde %r19, %r19, %r11
 	addze %r12, %r12
-	ori %r9, %r15, 0
-	mulld %r11, %r9, %r6
-	addc %r15, %r15, %r11
-	mulld %r11, %r9, %r7
-	adde %r16, %r16, %r11
-	mulld %r11, %r9, %r10
-	adde %r17, %r17, %r11
-	mulld %r11, %r9, %r0
-	adde %r18, %r18, %r11
-	addze %r19, %r19
+	rldicr %r11, %r15, 32, 31
+	rldicl %r9, %r15, 32, 32
+	subfc %r18, %r11, %r18
+	subfe %r19, %r9, %r19
 	addze %r12, %r12
-	mulhdu %r11, %r9, %r6
-	addc %r15, %r16, %r11
-	mulhdu %r11, %r9, %r7
-	adde %r16, %r17, %r11
-	mulhdu %r11, %r9, %r10
-	adde %r17, %r18, %r11
-	mulhdu %r11, %r9, %r0
-	adde %r18, %r19, %r11
-	addze %r19, %r12
+	addi %r12, %r12, -1
+	addc %r16, %r16, %r11
+	adde %r17, %r17, %r9
+	adde %r18, %r18, %r15
+	adde %r19, %r19, %r15
+	addze %r12, %r12
+	ori %r15, %r16, 0
+	ori %r16, %r17, 0
+	ori %r17, %r18, 0
+	ori %r18, %r19, 0
+	ori %r19, %r12, 0
 	addi %r5, %r5, 8
 	addi %r8, %r8, -1
 	cmpldi %cr0, %r8, 0

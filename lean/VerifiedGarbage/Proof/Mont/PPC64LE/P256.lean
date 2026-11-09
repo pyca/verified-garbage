@@ -8,6 +8,9 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.PPC64LE.Carry
 import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
 
+-- separate module: one file per prime whose row has its own code (P-224 will add its own beside it),
+-- so that the Montgomery proofs of `Ops.lean`, imported by every curve, need not hold every prime's row.
+
 /-!
 # P-256's reduction row, on PPC64LE
 
