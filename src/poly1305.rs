@@ -43,6 +43,11 @@ impl Poly1305 {
     /// Starts a computation with the one-time key `key`.
     pub fn new(key: &[u8; 32]) -> Self {
         crate::dit::enter!(dit);
+        Self::new_with(dit, key)
+    }
+
+    /// Runs with the timing token of the enclosing operation.
+    fn new_with(dit: crate::dit::Dit<'_>, key: &[u8; 32]) -> Self {
         let mut state = CacheAligned([0; 16]);
         // SAFETY: `state` is valid for writes of 128 bytes and `key` for
         // reads of 32 bytes; they are distinct objects, so they do not overlap
@@ -55,6 +60,11 @@ impl Poly1305 {
     /// Absorbs `data`.
     pub fn update(&mut self, data: &[u8]) {
         crate::dit::enter!(dit);
+        self.update_with(dit, data)
+    }
+
+    /// Runs with the timing token of the enclosing operation.
+    fn update_with(&mut self, dit: crate::dit::Dit<'_>, data: &[u8]) {
         // SAFETY: `self.state` is valid for reads and writes of 128 bytes and
         // `data` for reads of `data.len()` bytes; they are distinct objects,
         // so they do not overlap each other or anything on the stack (the
@@ -110,9 +120,24 @@ impl Poly1305 {
 
     /// The tag of `data` with the one-time key `key`.
     pub fn mac(key: &[u8; 32], data: &[u8]) -> [u8; 16] {
-        let mut p = Self::new(key);
-        p.update(data);
-        p.finalize()
+        crate::dit::enter!(dit);
+        let mut p = Self::new_with(dit, key);
+        p.update_with(dit, data);
+        p.finalize_with(dit)
+    }
+
+    /// Checks that `mac` is the whole MAC of `data` with `key`, in constant
+    /// time, with data independent timing turned on once for the operation.
+    /// `key` must be a one-time key, as for [`Self::mac`].
+    pub fn verify_mac(key: &[u8; 32], data: &[u8], mac: &[u8]) -> Result<(), InvalidMac> {
+        crate::dit::enter!(dit);
+        let mut c = Self::new_with(dit, key);
+        c.update_with(dit, data);
+        if crate::ct::eq(dit, &c.finalize_with(dit), mac) {
+            Ok(())
+        } else {
+            Err(InvalidMac)
+        }
     }
 }
 
@@ -167,5 +192,21 @@ mod tests {
         let mut longer = [0u8; 17];
         longer[..16].copy_from_slice(&tag);
         assert_eq!(check(&longer), Err(InvalidMac));
+    }
+    #[test]
+    fn verify_mac() {
+        let key = [0x3c; 32];
+        for data in [&b""[..], &b"message"[..]] {
+            let mac = Poly1305::mac(&key, data);
+            assert_eq!(Poly1305::verify_mac(&key, data, &mac), Ok(()));
+            for i in 0..mac.len() {
+                let mut bad = mac;
+                bad[i] ^= 1;
+                assert!(Poly1305::verify_mac(&key, data, &bad).is_err());
+            }
+            for bad in [&mac[..mac.len() - 1], &[][..], &[0; 17][..]] {
+                assert!(Poly1305::verify_mac(&key, data, bad).is_err());
+            }
+        }
     }
 }
