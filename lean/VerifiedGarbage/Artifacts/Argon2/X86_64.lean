@@ -52,25 +52,16 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.Argon2.X86_64
 
-/-- Argon2 for a BLAKE2b backend and an implementation of G of the same
-suffix (the baseline with the baseline, `_avx2` with `_avx2`, `_avx512`
-with `_avx512`), and BLAKE2b's `_avx2` with G's `_avx512`, for CPUs with
-AVX-512F but not AVX512VL (Intel's Knights Landing), which BLAKE2b's
-`_avx512` needs: any other pair needs the features of one of these, which
-runs both its parts with them. -/
-def artifactsFor (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.CompressImpl) :
-    List Artifact :=
-  have : Proof.Argon2.X86_64.CompressImpl := c
-  if !(v.suffix == c.suffix || (v.suffix == "_avx2" && c.suffix == "_avx512")) then [] else
-  [Spec.Argon2.deriveApi.artifact VG.X86_64.target {
-    suffix := qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
-    code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
-      (Proof.Argon2.X86_64.HPrime.hash v)
-    stack := 344
-    verified := Proof.Argon2.X86_64.Derive.verified v _
-    spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _ }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun v => VG.Proof.Variants.Argon2Compress.X86_64.variants.flatMap fun v2 => artifactsFor v v2
+  VG.Proof.Variants.Argon2Compress.X86_64.withBlake2b.map
+    fun ((v, c) : Proof.Blake2.X86_64.Backend × Proof.Argon2.X86_64.CompressImpl) =>
+    have : Proof.Argon2.X86_64.CompressImpl := c
+    Spec.Argon2.deriveApi.artifact VG.X86_64.target {
+      suffix := qualifiedName "" [("blake2b", v.suffix), ("g", c.suffix)]
+      code := Impl.Argon2.X86_64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
+        (Proof.Argon2.X86_64.HPrime.hash v)
+      stack := 344
+      verified := Proof.Argon2.X86_64.Derive.verified v _
+      spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _ }
 
 end VG.Artifacts.Argon2.X86_64

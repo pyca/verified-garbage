@@ -28,31 +28,6 @@ def direct : List Artifact := [
 
 end VG.Artifacts.Dsa.AArch64
 
--- DSA parameter generation over refillable tapes with every SHA-1, SHA-256 and Miller–Rabin backend on AArch64
-namespace VG.Artifacts.Dsa.AArch64.MdHashMdHashMillerRabin
-
-open VG.Proof.Dsa.AArch64.Generation VG.Proof.MillerRabin.AArch64
-
-/-- DSA's parameter search for a SHA-1 and a SHA-256 backend for the same
-CPUs (both baselines or both SHA-2 extensions), with each Miller–Rabin
-round: either other pair needs the features of one of these, which runs
-both hashes with them. -/
-def artifacts (v1 v256 : Proof.Pbkdf2.Md.AArch64.MdHash) (v : RoundImpl) : List Artifact :=
-  if v1.suffix != v256.suffix then [] else
-  if h1 : v1.mgf.G.rust = "sha1" then
-    if h256 : v256.mgf.G.rust = "sha256" then
-      let hashes := v1.features ++ v256.features.filter (!v1.features.contains ·)
-      [Spec.Dsa.parameterSearchApi.artifact AArch64.target {
-        suffix := qualifiedName "" [("sha1", v1.suffix), ("sha256", v256.suffix), ("mr", v.suffix)]
-        stack := 768
-        code := Impl.Dsa.AArch64.Generation.code v1.H v256.H (Proof.Dsa.AArch64.Generator.generatorStage v).run
-          (Proof.Dsa.AArch64.ProbablePrime.primeTest v).run
-        verified := Refill.backend_verified v1 v256 v h1 h256 }]
-    else []
-  else []
-
-end VG.Artifacts.Dsa.AArch64.MdHashMdHashMillerRabin
-
 namespace VG.Artifacts.Dsa.AArch64
 
 open VG.Proof.Dsa.AArch64
@@ -98,6 +73,13 @@ def artifacts : List Artifact :=
       stack := v.stack
       verified := v.deriveVerified
       spSafe := v.deriveSp }]) ++
-  (VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v => VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v2 => VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun v3 => MdHashMdHashMillerRabin.artifacts v v2 v3)
+  (Generation.Refill.hashPairs.flatMap fun (p : Generation.Refill.Hashes) =>
+    VG.Proof.Variants.MillerRabin.AArch64.variants.map fun (v : Proof.MillerRabin.AArch64.RoundImpl) =>
+    Spec.Dsa.parameterSearchApi.artifact AArch64.target {
+      suffix := qualifiedName "" [("sha1", p.sha1.suffix), ("sha256", p.sha256.suffix), ("mr", v.suffix)]
+      stack := 768
+      code := Impl.Dsa.AArch64.Generation.code p.sha1.H p.sha256.H (Generator.generatorStage v).run
+        (ProbablePrime.primeTest v).run
+      verified := Generation.Refill.backend_verified p.sha1 p.sha256 v p.h1 p.h256 })
 
 end VG.Artifacts.Dsa.AArch64
