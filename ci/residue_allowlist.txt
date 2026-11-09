@@ -745,7 +745,9 @@ x86_64 vg_sha512_224_init
 x86_64 vg_sha512_256_digest_avx2
 x86_64 vg_sha512_256_finalize_avx2
 x86_64 vg_sha512_256_init
+x86_64 vg_sha512_digest
 x86_64 vg_sha512_digest_avx2
+x86_64 vg_sha512_digest_shani
 x86_64 vg_sha512_finalize_avx2
 x86_64 vg_sha512_init
 x86_64 vg_sha512_update_avx2
