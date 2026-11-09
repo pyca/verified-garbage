@@ -213,7 +213,9 @@ two carry chains (`pass`): the low words of the products `x y_j` added in
 one, then their high words one word up in another. A product's words then
 need no carry of their own: a step is a multiplication and an `adde`. The
 second row's high chain also moves the accumulator one register down. `m'`
-is at `[M.tmp]` until the reduction. -/
+is in `mpReg` (whose value is kept at `[M.tmp]` meanwhile), and the
+reduction computes `T - m` into `bReg`, free by then, and selects in
+registers. -/
 
 /-- The registers of `[b]`, after the accumulator's. -/
 def bReg (n j : Nat) : Reg := treg (n + 1 + j)
@@ -241,12 +243,12 @@ def qrowB (n : Nat) : List Instr :=
 def mpReg (n : Nat) : Reg := treg (2 * n + 1)
 
 /-- `r9 = q = t₀ m' mod 2⁶⁴`: `t₀` itself for `m' = 1` (P-256's `p`), else
-`t₀` times `m'` from `[M.tmp]`. -/
+`t₀` times `m'` from `mpReg`. -/
 def qhead (M : Mod) : List Instr :=
   if M.minv.toNat = 1 then [.ori .r9 (treg 0) 0] else [.mul .r9 (treg 0) (mpReg M.n)]
 
-/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` at
-`[M.tmp]`): the low words into `treg 0`, …, the carry into `treg n` and
+/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` in
+`mpReg`): the low words into `treg 0`, …, the carry into `treg n` and
 `r12`, then the high words with the accumulator moved one register down,
 `r12` into `treg n`. -/
 def qrowM (M : Mod) : List Instr :=
@@ -256,17 +258,6 @@ def qrowM (M : Mod) : List Instr :=
 
 /-- An iteration of `rmul4`. -/
 def qrow (M : Mod) : List Instr := qrowB M.n ++ qrowM M ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
-
-/-- Word `j` of `T - m` (`m` in registers), with CA, to `[M.tmp + 8j]`. -/
-def qsubStep (M : Mod) (j : Nat) : List Instr :=
-  [carryOp true (j == 0) .r11 (treg j) (mReg j), .store .d .r11 wb (M.tmp + 8 * j)]
-
-/-- `T` (`n` words and the top word `treg n`, 0 or 1), below `2m`, reduced
-modulo `m` (in registers) into `[r4]`. -/
-def qcsub (M : Mod) : List Instr :=
-  (List.range M.n).flatMap (qsubStep M) ++
-  ([.addze .r10 (treg M.n), .li .r11 0, .sub .r10 .r11 .r10] : List Instr) ++
-  (List.range M.n).flatMap (rselWord M)
 
 /-- Word `j` of `T - m` (both in registers), with CA, to `bReg n j` (free once
 the rows are done). -/
