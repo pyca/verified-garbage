@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyOps
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyBits
 import VerifiedGarbage.Proof.Rsa.PPC64LE.KeyHalf
 import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
-import VerifiedGarbage.Proof.Rsa.PPC64LE.DivLoop
+import VerifiedGarbage.Proof.Rsa.PPC64LE.DivN
 import VerifiedGarbage.Proof.Rsa.PPC64LE.CvArithA
 import VerifiedGarbage.Proof.Rsa.InverseArithmetic
 import VerifiedGarbage.Proof.Framework.Block
@@ -216,29 +216,40 @@ theorem Stg.mulA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
           (h.ws.fit64 (h.live_lt j hj)),
         h4.arrs.get (by simp [hj]), upd_ne (j := aA) _ _ e, upd_ne (j := aX) _ _ jX, upd_ne (j := aY) _ _ jY]
 
-/-- `divA a d`: `[a] / [d]` in `aVQ`, `[a] mod [d]` in `aVR`. -/
+/-- `divA len a d`: `[a] / [d]` in `aVQ`, `[a] mod [d]` in `aVR`, for a
+divisor of `L` bytes (`L` in `len`). -/
 theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat} {c : Bool}
     (h : Stg g s0 A live c s) {a d : Nat} (ha : a ∈ live) (hd : d ∈ live)
-    (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) :
-    WP isa (seqs (divA a d)) s fun t => ∃ Xq Xr, (0 < A d → Xr = A a % A d ∧ Xq = A a / A d) ∧
+    (hfree : ∀ j ∈ live, j ∉ [aVQ, aVR, aVD, aVT]) {len : Reg} (hlr : len ∉ bodyRegs) (hl12 : len ≠ .r12)
+    {L : Nat} (hl : s.gpr len = BitVec.ofNat 64 L) (hL1 : 1 ≤ L) (hL : L < 2 ^ 32) (hlt : A d < 2 ^ (8 * L)) :
+    WP isa (seqs (divA len a d)) s fun t => ∃ Xq Xr, (0 < A d → Xr = A a % A d ∧ Xq = A a / A d) ∧
       Stg g s0 (upd (upd A aVQ Xq) aVR Xr) (aVR :: aVQ :: live) c t := by
   have aQ : a ≠ aVQ := fun e => hfree a ha (by simp [e])
   have dQ : d ≠ aVQ := fun e => hfree d hd (by simp [e])
   have dD : d ≠ aVD := fun e => hfree d hd (by simp [e])
+  have hl0 : len ≠ .r0 := fun e => hlr (by rw [e]; decide)
   unfold divA
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h.copy_ok (o := aVQ) (a := a) (by decide) ha (Ne.symm aQ)) fun t1 h1 => ?_
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (h1.copy_ok (o := aVD) (a := d) (by decide) (List.mem_cons_of_mem _ hd) (Ne.symm dD))
     fun t2 h2 => ?_
-  rw [show seqs [VG.Impl.Rsa.PPC64LE.Div.div aVQ aVR aVD aVT] = VG.Impl.Rsa.PPC64LE.Div.div aVQ aVR aVD aVT
+  have l2 : t2.gpr len = BitVec.ofNat 64 L := by
+    rw [h2.regs.gpr _ hlr, ← h.regs.gpr _ hlr]; exact hl
+  rw [wp_seqs_cons (List.cons_ne_nil _ _)]
+  refine WP.mono (WP.keep [.r12] (Q := fun x => x.gpr .r12 = BitVec.ofNat 64 L ∧ x.mem = t2.mem)
+    (by prun [l2, exec_addi hl0 (show 0 < 2 ^ 15 by decide), BitVec.add_zero]) (by cases len <;> decide))
+    fun t3 ⟨⟨t12, tm⟩, k3⟩ => ?_
+  have h3ws : Ws t3 g.B g.Z g.w nArr := h2.ws.of_keep k3
+  rw [show seqs [VG.Impl.Rsa.PPC64LE.Div.divP aVQ aVR aVD aVT] = VG.Impl.Rsa.PPC64LE.Div.divP aVQ aVR aVD aVT
     from rfl]
-  have fq : num t2.mem g.B g.w aVQ = A a := by
-    rw [h2.arrs.get (by simp), upd_ne (j := aVD) _ _ (by decide), upd_self]
-  have fd : num t2.mem g.B g.w aVD = A d := by
-    rw [h2.arrs.get (by simp), upd_self, upd_ne _ _ dQ]
-  refine WP.mono (div_ok h2.ws (q := aVQ) (r := aVR) (d := aVD) (t := aVT) (by decide) (by decide) (by decide)
-    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) h2.vdTop)
+  have fq : num t3.mem g.B g.w aVQ = A a := by
+    rw [tm, h2.arrs.get (by simp), upd_ne (j := aVD) _ _ (by decide), upd_self]
+  have fd : num t3.mem g.B g.w aVD = A d := by
+    rw [tm, h2.arrs.get (by simp), upd_self, upd_ne _ _ dQ]
+  refine WP.mono (divP_ok h3ws (q := aVQ) (r := aVR) (d := aVD) (t := aVT) (by decide) (by decide) (by decide)
+    (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+    (by rw [tm]; exact h2.vdTop) t12 hL1 hL (by rw [fd]; exact hlt))
     fun t ⟨ht, k, r, v⟩ => ⟨num t.mem g.B g.w aVQ, num t.mem g.B g.w aVR, fun pos => ?_, ?_⟩
   · obtain ⟨vq, vr⟩ := v (by rw [fd]; exact pos)
     rw [fq, fd] at vq vr
@@ -246,8 +257,9 @@ theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       rw [vr]
       exact Nat.lt_of_lt_of_le (Nat.mod_lt _ pos) (by rw [← fd]; exact Nat.le_of_lt (val32_lt _ _ _ _))
     exact ⟨(VG.Proof.Rsa.PPC64LE.CrtValues.num_of_num1 lt).trans vr, vq⟩
-  · refine h2.next ht k (by decide) (by simp) r (by decide) ?_ ?_ (h2.vd_keep k (by decide) (by simp))
-      (h2.mask_keep k (by simp))
+  · have k' : KeyWorkspace.Keep g.B g.w [aVQ, aVR, aVT] [] t2.mem t.mem := by rw [← tm]; exact k
+    refine h2.next ht k' (by decide) (by simp) (k3.trans r) (by decide) ?_ ?_ (h2.vd_keep k' (by decide) (by simp))
+      (h2.mask_keep k' (by simp))
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj
       · rw [upd_self]
@@ -255,7 +267,7 @@ theorem Stg.divA_ok {g : Geo} {s0 s : State} {A : Nat → Nat} {live : List Nat}
       · rw [upd_ne _ _ (by decide), upd_self]
       have hn := hfree j hj
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k.num (by simp; omega_arith) (by simp)
+      rw [upd_ne _ _ hn.2.1, upd_ne _ _ hn.1, k'.num (by simp; omega_arith) (by simp)
         (h.ws.fit64 (h.live_lt j hj)), h2.arrs.get (by simp [hj]), upd_ne _ _ hn.2.2.1, upd_ne _ _ hn.1]
     · intro j hj
       rcases List.mem_cons.mp hj with rfl | hj

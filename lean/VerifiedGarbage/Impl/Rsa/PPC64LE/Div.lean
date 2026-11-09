@@ -18,6 +18,14 @@ of 0 still runs the same steps.
 The steps count down in `r4`, and the new quotient bit is in `r10`; every
 address is computed from the working space's base (`ptr`), so the addresses
 and branches depend only on `w` and the base.
+
+`divN q r d t` is the same division for a divisor below `2^(32 wd)`, with
+`wd` in `r12`, even and at most `w`: the remainder, the divisor and the
+temporary are shifted, subtracted and selected over their `wd + 1` low
+digits (`wd / 2` words and a digit), as the remainder stays below twice the
+divisor; the quotient is still shifted over its `w` digits. `divP` takes `wd`
+from the divisor's length in bytes, and divides by `div` when it is above
+`w`. The addresses and branches depend only on `w`, the length and the base.
 -/
 
 @[expose] public section
@@ -88,5 +96,49 @@ def init (r : Nat) : Prog isa :=
 /-- `32 w` division steps of `[q]` by `[d]`: the quotient in `[q]` and the
 remainder in `[r]`. -/
 def div (q r d t : Nat) : Prog isa := .seq (init r) (.loop (step q r d t) (.nonzero .d .r4))
+
+/-! ## At the divisor's width -/
+
+/-- The remainder's `wd + 1` low digits (`wd = r12`, even) shifted left, the
+carry in and out in `r9`: `wd / 2` words, then a digit. -/
+def shiftR (r : Nat) : Prog isa :=
+  .seq (.block (ptr .r5 r ++ [.lsr .d .r8 .r12 1])) (.seq (countLoop .r8 shlWBody) (.block shlBody))
+
+/-- The quotient (`w` digits) and the remainder's `wd + 1` low digits
+shifted left together. -/
+def shiftN (q r : Nat) : Prog isa :=
+  .seq (.block (ptr .r5 q ++ [.li .r9 0]))
+    (.seq (evenW (.seq (.block [.lsr .d .r8 .r29 1]) (countLoop .r8 shlWBody))
+        (.seq (.block [.addi .r8 .r29 0]) (countLoop .r8 shlBody)))
+      (shiftR r))
+
+/-- `[t] := [r] - [d]` over `wd + 1` digits, the borrow in `r9`. -/
+def subtractN (r d t : Nat) : Prog isa :=
+  .seq (.block (ptr .r5 t ++ ptr .r6 r ++ ptr .r7 d))
+    (.seq (.block [.lsr .d .r8 .r12 1, .subc .r0 .r8 .r8]) (.seq (countLoop .r8 subWBody)
+      (.block [.load .w .r0 .r6 0, .load .w .r3 .r7 0, .sube .r0 .r0 .r3, .store .w .r0 .r5 0,
+        .lsr .d .r9 .r0 63])))
+
+/-- `[r] := mask ? [t] : [r]` over `wd + 1` digits. -/
+def keepN (r t : Nat) : Prog isa :=
+  .seq (.block (ptr .r5 r ++ ptr .r6 r ++ ptr .r7 t))
+    (.seq (.block [.lsr .d .r8 .r12 1]) (.seq (countLoop .r8 selWBody) (.block selTop)))
+
+/-- One step at the divisor's width. -/
+def stepN (q r d t : Nat) : Prog isa :=
+  .seq (shiftN q r) (.seq (subtractN r d t) (.seq (.block bit) (.seq (keepN r t) (.block (setBit q)))))
+
+/-- `32 w` division steps of `[q]` by `[d]` at the divisor's width `wd`. -/
+def divN (q r d t : Nat) : Prog isa := .seq (init r) (.loop (stepN q r d t) (.nonzero .d .r4))
+
+/-- `wd := 2 ⌈len / 8⌉` into `r12`, from the divisor's length `len` in bytes
+in `r12`, and `r0 := 1` if `wd > w`, else 0. -/
+def setWd : List Instr :=
+  [.addi .r12 .r12 7, .lsr .d .r12 .r12 3, .lsl .r12 .r12 1, .sub .r0 .r29 .r12, .lsr .d .r0 .r0 63]
+
+/-- The division of `[q]` by `[d]`, a divisor of `len` bytes (`len` in
+`r12`): at its width (`divN`) if that is at most `w`, else `div`. -/
+def divP (q r d t : Nat) : Prog isa :=
+  .seq (.block setWd) (.ite (.zero .d .r0) (divN q r d t) (div q r d t))
 
 end VG.Impl.Rsa.PPC64LE.Div
