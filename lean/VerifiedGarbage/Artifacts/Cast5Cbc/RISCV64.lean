@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Cast5.RISCV64.ModesLit
 
-/-! # CAST5-CBC artifacts on baseline RISC-V -/
+/-! # CAST5-CBC on RISC-V -/
 
 @[expose] public section
 

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.ChaCha20.Arm.Stream.Init
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Streaming ChaCha20 (RFC 8439) on ARMv7 -/
+/-! # ChaCha20 (RFC 8439) on ARMv7 -/
 
 @[expose] public section
 

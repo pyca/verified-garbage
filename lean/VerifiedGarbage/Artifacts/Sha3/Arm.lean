@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Sha3.Arm.Instances
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SHA-3 and SHAKE (FIPS 202) on 32-bit ARM -/
+/-! # SHA-3 and SHAKE (FIPS 202) on ARMv7 -/
 
 @[expose] public section
 

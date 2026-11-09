@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Inst
 public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # RSAES-OAEP on PPC64LE, with both hash functions as tables -/
+/-! # RSAES-OAEP (RFC 8017) on PPC64LE -/
 
 @[expose] public section
 

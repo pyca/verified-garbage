@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Framework.X86_64.Sse
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
 public import VerifiedGarbage.TCB.X86_64.Print
 
+/-! # Zeroization on x86-64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Zeroize.X86_64

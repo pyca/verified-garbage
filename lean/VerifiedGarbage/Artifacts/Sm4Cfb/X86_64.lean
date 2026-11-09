@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sm4.X86_64.ModesLit
 import VerifiedGarbage.Proof.Sm4.X86_64.FbFinalLit
 
-/-! # SM4-CFB128 artifacts on baseline x86-64 -/
+/-! # SM4-CFB128 on x86-64 -/
 
 @[expose] public section
 

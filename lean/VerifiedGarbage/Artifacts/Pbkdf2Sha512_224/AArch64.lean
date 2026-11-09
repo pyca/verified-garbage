@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
-/-! # PBKDF2-HMAC-SHA-512/224 (RFC 8018) on AArch64: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-512/224 (RFC 8018) on AArch64 -/
 
 @[expose] public section
 

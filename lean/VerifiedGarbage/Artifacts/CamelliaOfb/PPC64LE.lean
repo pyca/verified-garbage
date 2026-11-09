@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Camellia.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.Lit
 import VerifiedGarbage.Proof.Camellia.PPC64LE.FbFinalLit
 
-/-! # Camellia-OFB artifacts on baseline PPC64LE -/
+/-! # Camellia-OFB on PPC64LE -/
 
 @[expose] public section
 

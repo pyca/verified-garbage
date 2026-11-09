@@ -8,6 +8,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
+/-! # Blowfish on x86-64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Blowfish.X86_64

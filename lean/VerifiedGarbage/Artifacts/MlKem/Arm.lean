@@ -10,7 +10,7 @@ public import VerifiedGarbage.Proof.MlKem1024.Arm.CheckEk
 public import VerifiedGarbage.Proof.MlKem1024.Arm.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.Arm.Decompress
 
-/-! # ML-KEM (FIPS 203) on 32-bit ARM -/
+/-! # ML-KEM (FIPS 203) on ARMv7 -/
 
 @[expose] public section
 

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Sm4.Arm.CfbBatchVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # SM4-CFB128 artifacts on baseline ARMv7 -/
+/-! # SM4-CFB128 on ARMv7 -/
 
 @[expose] public section
 

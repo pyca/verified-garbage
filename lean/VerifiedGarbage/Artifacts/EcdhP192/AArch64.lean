@@ -59,7 +59,7 @@ public import VerifiedGarbage.Proof.Weierstrass.AArch64.WindowQuad
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.P192.AArch64.Law
 
-/-! # p192 on AArch64, generic over its proven group law and inversions -/
+/-! # ECDH over P-192 (SP 800-56A) on AArch64 -/
 
 @[expose] public section
 

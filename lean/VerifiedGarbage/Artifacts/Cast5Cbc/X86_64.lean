@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Cast5.X86_64.ModesLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
-/-! # CAST5-CBC artifacts on baseline x86-64 -/
+/-! # CAST5-CBC on x86-64 -/
 
 @[expose] public section
 

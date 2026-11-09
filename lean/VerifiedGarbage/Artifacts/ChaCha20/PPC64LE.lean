@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.ChaCha20.PPC64LE.Stream.ApplyCT
 public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.TCB.Registration
 
-/-! # Streaming ChaCha20 (RFC 8439) on PPC64LE -/
+/-! # ChaCha20 (RFC 8439) on PPC64LE -/
 
 @[expose] public section
 

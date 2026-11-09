@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.SignVerified
 public import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.VerifyVerified
 
-/-! # Ed448 (RFC 8032) on RISC-V (RV64) -/
+/-! # Ed448 (RFC 8032) on RISC-V -/
 
 @[expose] public section
 

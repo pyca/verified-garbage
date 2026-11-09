@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.X448.X86_64.Exchange
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.Curve448Field.X86_64
 
-/-! # X448 and Ed448 share the selected Curve448 exponentiation backend -/
+/-! # X448 (RFC 7748) on x86-64 -/
 
 @[expose] public section
 

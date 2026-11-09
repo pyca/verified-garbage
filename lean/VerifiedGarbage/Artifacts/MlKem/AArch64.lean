@@ -22,7 +22,7 @@ public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
 
-/-! # ML-KEM on AArch64 -/
+/-! # ML-KEM (FIPS 203) on AArch64 -/
 
 @[expose] public section
 

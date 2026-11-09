@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Camellia.Arm.CbcVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Camellia-CBC artifacts on baseline ARMv7 -/
+/-! # Camellia-CBC on ARMv7 -/
 
 @[expose] public section
 

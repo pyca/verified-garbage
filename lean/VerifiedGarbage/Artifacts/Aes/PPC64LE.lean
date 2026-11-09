@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Aes.PPC64LE.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # AES on PPC64LE -/
+/-! # AES (FIPS 197) on PPC64LE -/
 
 @[expose] public section
 

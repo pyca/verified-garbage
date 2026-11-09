@@ -9,6 +9,8 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Framework.X86_64.Masked
 public import VerifiedGarbage.TCB.X86_64.Print
 
+/-! # Constant-time byte comparison on x86-64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Ct.X86_64

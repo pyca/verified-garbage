@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Rc4.RISCV64.Lit
 
-/-! # Raw RC4 on RISC-V -/
+/-! # RC4 on RISC-V -/
 
 @[expose] public section
 

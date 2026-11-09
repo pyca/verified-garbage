@@ -9,7 +9,7 @@ import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # IDEA-CFB64 artifacts on baseline ARMv7 -/
+/-! # IDEA-CFB64 on ARMv7 -/
 
 @[expose] public section
 

@@ -352,7 +352,7 @@ public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
-/-! # RSASSA-PKCS1-v1_5 signing on ARMv7, for each implementation of the CRT -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on ARMv7 -/
 
 @[expose] public section
 

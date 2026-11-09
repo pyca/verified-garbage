@@ -47,7 +47,7 @@ public import VerifiedGarbage.Proof.BrainpoolP512r1.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP512r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP512r1Decompress
 
-/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
+/-! # brainpoolP512r1 public keys (FIPS 186-5 §A.2) on x86 -/
 
 @[expose] public section
 

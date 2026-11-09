@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Secp256k1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
-/-! # secp256k1 on AArch64, generic over its proven group law and inversions -/
+/-! # secp256k1 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
 @[expose] public section
 

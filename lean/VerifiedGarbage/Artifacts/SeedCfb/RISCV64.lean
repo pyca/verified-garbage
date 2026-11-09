@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Seed.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Seed.RISCV64.FbFinalLit
 
-/-! # SEED-CFB128 artifacts on baseline RISC-V -/
+/-! # SEED-CFB128 on RISC-V -/
 
 @[expose] public section
 

@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.TCB.AArch64.Print
 
+/-! # Constant-time byte comparison on AArch64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Ct.AArch64

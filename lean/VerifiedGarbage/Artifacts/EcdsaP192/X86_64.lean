@@ -70,7 +70,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.P192
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
-/-! # p192 on x86-64, generic over its proven group law and inversions -/
+/-! # ECDSA over P-192 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 

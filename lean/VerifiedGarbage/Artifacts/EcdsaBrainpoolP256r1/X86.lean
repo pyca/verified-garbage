@@ -68,7 +68,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.BrainpoolP256r1
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on x86 (32-bit) -/
+/-! # ECDSA over brainpoolP256r1 (FIPS 186-5) on x86 -/
 
 @[expose] public section
 

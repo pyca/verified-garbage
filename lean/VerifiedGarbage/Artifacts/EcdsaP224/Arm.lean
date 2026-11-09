@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P224.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P224Comb
 
-/-! # ECDSA over P-224 (FIPS 186-5) on 32-bit ARM -/
+/-! # ECDSA over P-224 (FIPS 186-5) on ARMv7 -/
 
 @[expose] public section
 

@@ -26,7 +26,7 @@ public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeKgV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeEncV
 public import VerifiedGarbage.Proof.MlKem1024.X86_64.KpkeDecV
 
-/-! # ML-KEM (FIPS 203) on x86-64: the polynomial primitives -/
+/-! # ML-KEM (FIPS 203) on x86-64 -/
 
 @[expose] public section
 

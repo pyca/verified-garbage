@@ -42,7 +42,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P521.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P521
 
-/-! # ECDSA over P-521 (FIPS 186-5) on 32-bit ARM -/
+/-! # ECDSA over P-521 (FIPS 186-5) on ARMv7 -/
 
 @[expose] public section
 

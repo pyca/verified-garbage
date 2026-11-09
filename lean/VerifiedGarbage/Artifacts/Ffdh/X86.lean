@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86.Shape
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # FFDH's domain and key checks, exchange, key generation and parameter candidates on baseline i686 -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on x86 -/
 
 @[expose] public section
 

@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.CbcLit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Verified
 public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 
-/-! # Triple DES-CBC encryption on baseline x86-64 -/
+/-! # Triple DES-CBC on x86-64 -/
 
 @[expose] public section
 

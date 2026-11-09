@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Dsa.Arm.Leaves
 public import VerifiedGarbage.Proof.Dsa.Arm.Gen.Instances
 public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
 
-/-! # DSA on ARMv7 -/
+/-! # DSA (FIPS 186-4) on ARMv7 -/
 
 @[expose] public section
 

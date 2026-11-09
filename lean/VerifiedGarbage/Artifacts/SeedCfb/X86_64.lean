@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Seed.X86_64.ModesLit
 import VerifiedGarbage.Proof.Seed.X86_64.FbFinalLit
 
-/-! # SEED-CFB128 artifacts on baseline x86-64 -/
+/-! # SEED-CFB128 on x86-64 -/
 
 @[expose] public section
 

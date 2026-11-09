@@ -43,6 +43,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86_64.RoundBody
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.CallVerified
 public import VerifiedGarbage.TCB.X86_64.Print
 
+/-! # Triple DES on x86-64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.TripleDes.X86_64

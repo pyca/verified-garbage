@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Enc.Arm.DecVerified
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
-/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on ARMv7, for each implementation of the CRT -/
+/-! # RSAES-PKCS1-v1_5 (RFC 8017) on ARMv7 -/
 
 @[expose] public section
 

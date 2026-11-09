@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.CTCode
 public import VerifiedGarbage.Proof.Ffdh.AArch64.Generation.Search.Verified
 public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 
-/-! # FFDH parameter generation calls each shared Miller–Rabin implementation -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on AArch64 -/
 
 @[expose] public section
 

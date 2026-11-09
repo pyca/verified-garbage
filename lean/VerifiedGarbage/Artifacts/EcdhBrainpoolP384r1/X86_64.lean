@@ -49,7 +49,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.WinLoop
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.X86_64.Law
 
-/-! # brainpoolP384r1 on x86-64, generic over its proven group law and inversions -/
+/-! # ECDH over brainpoolP384r1 (SP 800-56A) on x86-64 -/
 
 @[expose] public section
 

@@ -30,7 +30,7 @@ public import VerifiedGarbage.Proof.Variants.Ffdh.Arm
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedCheckPublicInstances
 public import VerifiedGarbage.Proof.Ffdh.Arm.SharedExchangeInstances
 
-/-! # Native FFDH on little-endian AAPCS ARMv7, including baseline and UMAAL arithmetic -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 

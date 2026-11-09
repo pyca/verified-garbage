@@ -9,7 +9,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Idea.Arm.FbFinalVerified
 public import VerifiedGarbage.Impl.Idea.Arm.FbFinal
 
-/-! # IDEA-OFB artifacts on baseline ARMv7 -/
+/-! # IDEA-OFB on ARMv7 -/
 
 @[expose] public section
 

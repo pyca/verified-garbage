@@ -26,7 +26,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 
-/-! # AES-SIV (RFC 5297) key setup on AArch64 -/
+/-! # AES-SIV (RFC 5297) on AArch64 -/
 
 @[expose] public section
 

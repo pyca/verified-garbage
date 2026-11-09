@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Sm4.RISCV64.ModesLit
 import VerifiedGarbage.Proof.Sm4.RISCV64.FbFinalLit
 
-/-! # SM4-CFB128 artifacts on baseline RISC-V -/
+/-! # SM4-CFB128 on RISC-V -/
 
 @[expose] public section
 

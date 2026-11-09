@@ -61,7 +61,7 @@ public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.P256.X86.Law
 
-/-! # ECDH over P-256 (SP 800-56A) on x86 (32-bit) -/
+/-! # ECDH over P-256 (SP 800-56A) on x86 -/
 
 @[expose] public section
 

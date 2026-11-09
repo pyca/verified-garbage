@@ -15,7 +15,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Ffdh.PPC64LE.Generation.Search.Verified
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
-/-! # Finite-field Diffie–Hellman on PPC64LE -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on PPC64LE -/
 
 @[expose] public section
 

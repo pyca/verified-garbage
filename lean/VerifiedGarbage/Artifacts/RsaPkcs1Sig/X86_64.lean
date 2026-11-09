@@ -56,7 +56,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCT
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.X86_64.VerifyCorrect
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 
-/-! # RSASSA-PKCS1-v1_5 signing on x86-64 -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
 @[expose] public section
 

@@ -66,7 +66,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on x86-64 -/
+/-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
 @[expose] public section
 

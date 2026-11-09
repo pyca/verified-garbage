@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # scrypt (RFC 7914 §6) on x86, over SHA-256 -/
+/-! # scrypt (RFC 7914) on x86 -/
 
 @[expose] public section
 

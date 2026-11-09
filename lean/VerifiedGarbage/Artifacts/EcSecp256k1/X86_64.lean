@@ -54,7 +54,7 @@ public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Secp256k1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Secp256k1Decompress
 
-/-! # secp256k1 on x86-64, generic over its proven group law and inversions -/
+/-! # secp256k1 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
 

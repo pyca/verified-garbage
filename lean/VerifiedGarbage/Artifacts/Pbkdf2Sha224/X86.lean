@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Sha256.X86.Stream.Variant
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # PBKDF2-HMAC-SHA-224 (RFC 8018) on x86, for every x86 SHA-256 backend: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-224 (RFC 8018) on x86 -/
 
 @[expose] public section
 

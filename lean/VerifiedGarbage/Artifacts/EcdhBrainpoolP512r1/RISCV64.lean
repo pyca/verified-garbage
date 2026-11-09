@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.BrainpoolP512r1.EcdhLit
 public import VerifiedGarbage.Proof.BrainpoolP512r1.RISCV64.Law
 
-/-! # ECDH over brainpoolP512r1 (SP 800-56A §5.7.1.2) on RISC-V -/
+/-! # ECDH over brainpoolP512r1 (SP 800-56A) on RISC-V -/
 
 @[expose] public section
 

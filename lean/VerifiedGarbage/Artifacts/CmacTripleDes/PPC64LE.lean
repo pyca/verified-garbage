@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.CmacTripleDes.Stream.PPC64LE.Lit
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.FunctionsLit
 
-/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on baseline PPC64LE -/
+/-! # TDEA-CMAC (3DES-CMAC, NIST SP 800-38B) on PPC64LE -/
 
 @[expose] public section
 

@@ -43,7 +43,7 @@ public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.BrainpoolP384r1
 
-/-! # ECDSA over brainpoolP384r1 (FIPS 186-5) on 32-bit ARM -/
+/-! # ECDSA over brainpoolP384r1 (FIPS 186-5) on ARMv7 -/
 
 @[expose] public section
 

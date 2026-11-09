@@ -31,6 +31,8 @@ public import VerifiedGarbage.Proof.TripleDes.X86.RestoredOutput
 public import VerifiedGarbage.Proof.TripleDes.X86.WordStore
 public import VerifiedGarbage.TCB.X86.Print
 
+/-! # Triple DES on x86 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.TripleDes.X86

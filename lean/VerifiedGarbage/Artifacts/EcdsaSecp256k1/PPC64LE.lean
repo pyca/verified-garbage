@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.Secp256k1
 public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.CombLit
 
-/-! # ECDSA signatures over secp256k1 (FIPS 186-5 §6.4.1) on PPC64LE -/
+/-! # ECDSA over secp256k1 (FIPS 186-5) on PPC64LE -/
 
 @[expose] public section
 

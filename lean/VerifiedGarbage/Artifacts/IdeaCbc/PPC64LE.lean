@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 
-/-! # IDEA-CBC artifacts on baseline PPC64LE -/
+/-! # IDEA-CBC on PPC64LE -/
 
 @[expose] public section
 

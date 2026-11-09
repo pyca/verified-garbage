@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Rc4.Arm.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
 
-/-! # Raw RC4 on ARMv7 -/
+/-! # RC4 on ARMv7 -/
 
 @[expose] public section
 

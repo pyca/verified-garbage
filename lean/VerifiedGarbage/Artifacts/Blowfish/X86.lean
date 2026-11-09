@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Blowfish.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # Blowfish on baseline x86 -/
+/-! # Blowfish on x86 -/
 
 @[expose] public section
 

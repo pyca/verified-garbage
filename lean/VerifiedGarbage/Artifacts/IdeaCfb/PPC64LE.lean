@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Idea.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Idea.PPC64LE.FbFinalLit
 
-/-! # IDEA-CFB64 artifacts on baseline PPC64LE -/
+/-! # IDEA-CFB64 on PPC64LE -/
 
 @[expose] public section
 

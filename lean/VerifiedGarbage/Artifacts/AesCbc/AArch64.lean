@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Lit
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
-/-! # AES-CBC decryption with seven independent AES states -/
+/-! # AES-CBC (NIST SP 800-38A §6.2) on AArch64 -/
 
 @[expose] public section
 

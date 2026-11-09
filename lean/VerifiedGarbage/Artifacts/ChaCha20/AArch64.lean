@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.ChaCha20.AArch64.Stream.ApplyCT
 public import VerifiedGarbage.Proof.Variants.ChaCha20Xor.AArch64
 
-/-! # Streaming ChaCha20 (RFC 8439) on AArch64 -/
+/-! # ChaCha20 (RFC 8439) on AArch64 -/
 
 @[expose] public section
 

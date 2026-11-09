@@ -61,7 +61,7 @@ public import VerifiedGarbage.Proof.P384.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P384Decompress
 
-/-! # P-384 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
+/-! # P-384 public keys (FIPS 186-5 §A.2) on x86 -/
 
 @[expose] public section
 

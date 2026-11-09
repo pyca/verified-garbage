@@ -48,7 +48,7 @@ public import VerifiedGarbage.Proof.P521.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P521
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.P521Decompress
 
-/-! # P-521 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
+/-! # P-521 public keys (FIPS 186-5 §A.2) on x86 -/
 
 @[expose] public section
 

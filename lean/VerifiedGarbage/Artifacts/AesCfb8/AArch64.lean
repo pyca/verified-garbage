@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
 
-/-! # AES-CFB8 (NIST SP 800-38A §6.3, with 8-bit segments) on AArch64 -/
+/-! # AES-CFB8 (NIST SP 800-38A §6.3) on AArch64 -/
 
 @[expose] public section
 

@@ -5,7 +5,7 @@ import VerifiedGarbage.Proof.Camellia.X86.CbcLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 
-/-! # Camellia-CBC artifacts on baseline x86 (32-bit) -/
+/-! # Camellia-CBC on x86 -/
 
 @[expose] public section
 
