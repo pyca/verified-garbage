@@ -21,24 +21,13 @@ def direct : List Artifact := [
     code := Impl.RsaKeyGen.PPC64LE.KeyInit.init
     verified := Proof.RsaKeyGen.PPC64LE.KeyInit.init_verified }]
 
-end VG.Artifacts.RsaKeyGen.PPC64LE
-
--- RSA key generation on PPC64LE, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.PPC64LE.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
-    suffix := v.suffix
-    stack := 1088
-    code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
-    verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }]
-
-end VG.Artifacts.RsaKeyGen.PPC64LE.MillerRabin
-
-namespace VG.Artifacts.RsaKeyGen.PPC64LE
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
+      suffix := v.suffix
+      stack := 1088
+      code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
+      verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }])
 
 end VG.Artifacts.RsaKeyGen.PPC64LE

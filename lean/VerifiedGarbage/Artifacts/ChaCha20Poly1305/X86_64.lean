@@ -17,33 +17,31 @@ namespace VG.Artifacts.ChaCha20Poly1305.X86_64
 
 open VG.Proof.ChaCha20Poly1305.X86_64
 
-def artifactsFor (v : Proof.ChaCha20.X86_64.XorImpl) : List Artifact := [
-  Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.ChaCha20Poly1305.X86_64.Shared.sealCode v.callee v.poly
-    stack := 1768
-    verified := Shared.seal_verified v
-    spSafe := Shared.seal_sp v },
-  Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.ChaCha20Poly1305.X86_64.Shared.openCode v.callee v.poly
-    stack := 1784
-    verified := Shared.open_verified v
-    spSafe := Shared.open_sp v },
-  Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
-    stack := 1800
-    verified := OpenTo.openTo_verified v
-    spSafe := OpenTo.openTo_sp v },
-  Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Gather.gatherCode v
-    stack := 1880
-    verified := Gather.gather_verified v
-    spSafe := Gather.gather_spSafe v }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.ChaCha20Xor.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.ChaCha20Xor.X86_64.variants.flatMap fun (v : Proof.ChaCha20.X86_64.XorImpl) => [
+    Spec.ChaCha20Poly1305.sealApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Shared.sealCode v.callee v.poly
+      stack := 1768
+      verified := Shared.seal_verified v
+      spSafe := Shared.seal_sp v },
+    Spec.ChaCha20Poly1305.openZeroApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.Shared.openCode v.callee v.poly
+      stack := 1784
+      verified := Shared.open_verified v
+      spSafe := Shared.open_sp v },
+    Spec.ChaCha20Poly1305.openToApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.ChaCha20Poly1305.X86_64.OpenTo.openToCode v.callee v.poly
+      stack := 1800
+      verified := OpenTo.openTo_verified v
+      spSafe := OpenTo.openTo_sp v },
+    Spec.ChaCha20Poly1305.sealGatherApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Gather.gatherCode v
+      stack := 1880
+      verified := Gather.gather_verified v
+      spSafe := Gather.gather_spSafe v }]
 
 end VG.Artifacts.ChaCha20Poly1305.X86_64

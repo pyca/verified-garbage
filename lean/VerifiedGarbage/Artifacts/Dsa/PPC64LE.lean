@@ -17,23 +17,9 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
 @[expose] public section
 
--- DSA parameter generation on PPC64LE, calling the probable-prime tests over each Miller–Rabin round
-namespace VG.Artifacts.Dsa.PPC64LE.Parameters
-open VG Proof.Dsa.PPC64LE.Gen
-
-def artifactsFor (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
-  Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
-    suffix := v.suffix
-    code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
-    stack := 176
-    verified := search_params v }]
-
-def artifacts : List Artifact :=
-  VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun v => artifactsFor v
-
-end VG.Artifacts.Dsa.PPC64LE.Parameters
-
 namespace VG.Artifacts.Dsa.PPC64LE
+
+open VG Proof.Dsa.PPC64LE.Gen
 
 def artifacts : List Artifact := [
   Spec.Dsa.deriveKeyApi.artifact PPC64LE.target {
@@ -59,6 +45,11 @@ def artifacts : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact PPC64LE.target {
     code := Impl.Dsa.PPC64LE.Generation.init
     verified := Proof.Dsa.PPC64LE.Gen.init_verified }] ++
-  Parameters.artifacts
+  (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
+    Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
+      suffix := v.suffix
+      code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
+      stack := 176
+      verified := search_params v }])
 
 end VG.Artifacts.Dsa.PPC64LE

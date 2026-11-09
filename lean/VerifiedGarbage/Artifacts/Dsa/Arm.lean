@@ -18,23 +18,9 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.Arm
 
 @[expose] public section
 
--- DSA parameter generation over refillable tapes on ARMv7, calling the probable-prime test over each Miller–Rabin round
-namespace VG.Artifacts.Dsa.Arm.Parameters
-open VG Proof.Dsa.Arm.Gen
-
-def artifactsFor (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
-  Spec.Dsa.parameterSearchApi.artifact Arm.target {
-    suffix := v.suffix
-    code := Impl.Dsa.Arm.Generation.code (geo1 v) (geo2 v) (geo3 v)
-    stack := 304
-    verified := search_params v }]
-
-def artifacts : List Artifact :=
-  VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun v => artifactsFor v
-
-end VG.Artifacts.Dsa.Arm.Parameters
-
 namespace VG.Artifacts.Dsa.Arm
+
+open VG Proof.Dsa.Arm.Gen
 
 def artifacts : List Artifact := [
   Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
@@ -61,6 +47,11 @@ def artifacts : List Artifact := [
   Spec.Dsa.parameterInitApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Generation.init
     verified := Proof.Dsa.Arm.Gen.Init.init_verified }] ++
-  Parameters.artifacts
+  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) => [
+    Spec.Dsa.parameterSearchApi.artifact Arm.target {
+      suffix := v.suffix
+      code := Impl.Dsa.Arm.Generation.code (geo1 v) (geo2 v) (geo3 v)
+      stack := 304
+      verified := search_params v }])
 
 end VG.Artifacts.Dsa.Arm

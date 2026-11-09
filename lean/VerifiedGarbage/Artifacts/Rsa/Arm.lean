@@ -35,24 +35,17 @@ def direct : List Artifact := [
 
 end VG.Artifacts.Rsa.Arm
 
--- The RSA modulus' precomputed values on ARMv7, for each private CRT implementation
-namespace VG.Artifacts.Rsa.Arm.RsaPrivateCrt
+namespace VG.Artifacts.Rsa.Arm
 
 open VG.Proof.Rsa.Arm
 
-def artifacts (v : CrtImpl) : List Artifact := [
-  Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
-    suffix := v.suffix
-    code := v.pc
-    stack := 56
-    verified := v.pcVerified }]
-
-end VG.Artifacts.Rsa.Arm.RsaPrivateCrt
-
-namespace VG.Artifacts.Rsa.Arm
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun v => RsaPrivateCrt.artifacts v)
+  (VG.Proof.Variants.RsaPrivateCrt.Arm.variants.flatMap fun (v : CrtImpl) => [
+    Spec.Rsa.publicPrecomputeApi.artifact Arm.target {
+      suffix := v.suffix
+      code := v.pc
+      stack := 56
+      verified := v.pcVerified }])
 
 end VG.Artifacts.Rsa.Arm

@@ -15,19 +15,17 @@ public import VerifiedGarbage.Proof.Variants.Curve448Field.X86_64
 
 namespace VG.Artifacts.X448.X86_64
 
-def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
-  Spec.X448.exchangeApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
-    stack := 24
-    verified := Proof.X448.X86_64.Exchange.exchange_variant v },
-  Spec.X448.x448BaseApi.artifact X86_64.target {
-    suffix := v.suffix
-    code := Proof.X448.X86_64.codeBase v
-    stack := 8
-    verified := Proof.X448.X86_64.codeBase_verified v }]
-
 def artifacts : List Artifact :=
-  VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.Curve448Field.X86_64.variants.flatMap fun (v : Impl.Ed448.X86_64.FieldVariant) => [
+    Spec.X448.exchangeApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
+      stack := 24
+      verified := Proof.X448.X86_64.Exchange.exchange_variant v },
+    Spec.X448.x448BaseApi.artifact X86_64.target {
+      suffix := v.suffix
+      code := Proof.X448.X86_64.codeBase v
+      stack := 8
+      verified := Proof.X448.X86_64.codeBase_verified v }]
 
 end VG.Artifacts.X448.X86_64

@@ -252,24 +252,13 @@ def direct : List Artifact := [
     code := Impl.RsaKeyGen.Arm.KeyInit.init
     verified := Proof.RsaKeyGen.Arm.KeyInit.init_verified }]
 
-end VG.Artifacts.RsaKeyGen.Arm
-
--- RSA key generation on ARMv7, its prime searches' candidates calling each shared Miller–Rabin implementation
-namespace VG.Artifacts.RsaKeyGen.Arm.MillerRabin
-
-def artifacts (v : Proof.MillerRabin.Arm.RoundImpl) : List Artifact := [
-  Spec.RsaKeyGen.keySearchApi.artifact Arm.target {
-    suffix := v.suffix
-    stack := 256
-    code := Proof.RsaKeyGen.Arm.Generate.genCode v
-    verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }]
-
-end VG.Artifacts.RsaKeyGen.Arm.MillerRabin
-
-namespace VG.Artifacts.RsaKeyGen.Arm
-
 def artifacts : List Artifact :=
   direct ++
-  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun v => MillerRabin.artifacts v)
+  (VG.Proof.Variants.MillerRabin.Arm.variants.flatMap fun (v : Proof.MillerRabin.Arm.RoundImpl) => [
+    Spec.RsaKeyGen.keySearchApi.artifact Arm.target {
+      suffix := v.suffix
+      stack := 256
+      code := Proof.RsaKeyGen.Arm.Generate.genCode v
+      verified := Proof.RsaKeyGen.Arm.Generate.gen_verified v }])
 
 end VG.Artifacts.RsaKeyGen.Arm
