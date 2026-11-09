@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
+import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombJ
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256.Window
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Lays
@@ -17,7 +18,7 @@ import VerifiedGarbage.Proof.Ecdh.PPC64LE.Validate
 
 `combPts_ok`: `pointsP256` computes `[u]G + [v]Q` as `PtsOk` states,
 from the comb's table in memory at the address its symbol names: `u`'s bits,
-`b` in Montgomery's form at `EM`, `[u]G` by the comb (`comb_ok`), `U = [u]G`
+`b` in Montgomery's form at `EM`, `[u]G` by the comb (`combJ_ok`), `U = [u]G`
 and `R = O` (`save_ok`), `v`'s bits, `[v]Q` by the windows (`Window.mul_ok`),
 and `R = U + R` (`sum_ok`).
 -/
@@ -76,7 +77,7 @@ theorem combPts_ok (hC : Law Spec.P256.curve) {s₀ : State} {T : Addr}
       if (sv p256 (s₀.gpr .r6) s U).testBit i then 1 else 0 := fun i hi => by
     rw [tbl_unch O₂.unch (by decide) (j := 0) (by decide) hi (tbl_apart_slW (c := p256) (l := [EM]) (by decide) (by decide) 0 i)]
     exact b₁ i hi
-  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (TComb.comb_ok p256Comb (Proof.P256.PPC64LE.comb_config hC) hC
+  refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (TCombJ.combJ_ok p256Comb (Proof.P256.PPC64LE.comb_jconfig hC) hC
     hc.onG K₂.ws ht' (by rw [sy₂, sy₁, syms, sym]) hd' (k := sv p256 (s₀.gpr .r6) s U)
     (Nat.lt_trans hM.u_lt hc.n_enc) K₂.fixed.zero (fun i hi => bu i (by
       have : i < 8 * Spec.P256.curve.len := hi

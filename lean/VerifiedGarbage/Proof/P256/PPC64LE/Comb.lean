@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
+public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TCombJ
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LEComb
 public import VerifiedGarbage.Proof.Ecdsa.PPC64LE.LadPow
 import VerifiedGarbage.Proof.Ecdsa.PPC64LE.P256
@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
 import VerifiedGarbage.Proof.P256.Comb7Shape
+import VerifiedGarbage.Proof.P256.Order
 public import VerifiedGarbage.Proof.Framework.ConstMem
 
 /-!
@@ -27,7 +28,7 @@ namespace VG.Proof.P256.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Weierstrass VG.Impl.Weierstrass.PPC64LE VG.Impl.Ecdsa.PPC64LE VG.Impl.P256
 open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.PPC64LE VG.Proof.Weierstrass.PPC64LE.Point
-  VG.Proof.Weierstrass.PPC64LE.TComb VG.Proof.Ecdsa.PPC64LE
+  VG.Proof.Weierstrass.PPC64LE.TComb VG.Proof.Weierstrass.PPC64LE.TCombJ VG.Proof.Ecdsa.PPC64LE
 open Spec.Weierstrass
 
 theorem comb_layout : Layout p256Comb where
@@ -60,6 +61,33 @@ theorem comb_config (hC : Law Spec.P256.curve) :
   bitsOff := by decide
   row := by decide
 
+/-- The slots of the conversion out of Jacobian coordinates, for the field
+functions. -/
+theorem comb_out_lay : Lay p256Comb.L.M (Impl.Weierstrass.PPC64LE.Mont.own p256Comb.L.M.n)
+    (· ∈ [p256Comb.L.R.x, p256Comb.L.R.y, p256Comb.L.R.z, p256Comb.neg, p256Comb.zero]) where
+  le x hx := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> decide
+  apart x y hx hy hne := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx hy
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> rcases hy with rfl | rfl | rfl | rfl | rfl <;>
+      first | decide | exact absurd rfl hne
+  mo x hx := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> decide
+  tmp x hx := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
+    rcases hx with rfl | rfl | rfl | rfl | rfl <;> decide
+
+theorem comb_jconfig (hC : Law Spec.P256.curve) :
+    JConfig p256Comb Spec.P256.curve p256Comb7 p256Comb7Start where
+  base := comb_config hC
+  booth := Proof.P256.booth hC
+  am3 := by unfold AM3; decide
+  short := by decide
+  bits1 := by decide
+  outLay := comb_out_lay
+
 theorem comb_words_eq : tableWords p256Comb Spec.P256.curve p256Comb7 = p256CombWords := by
   unfold p256CombWords
   rfl
@@ -82,7 +110,7 @@ theorem comb_generator_ok (hC : Law Spec.P256.curve) {A : Args} {s₀ : State} {
     rw [comb_words_eq]; exact ht
   have hd' : Region.Disjoint ⟨T, 8 * (tableWords p256Comb Spec.P256.curve p256Comb7).length⟩ ⟨base, 8192⟩ := by
     rw [comb_words_eq]; exact hd
-  refine WP.mono (comb_ok p256Comb (comb_config hC) hC p256_ok.onG S.ws ht' sym hd'
+  refine WP.mono (combJ_ok p256Comb (comb_jconfig hC) hC p256_ok.onG S.ws ht' sym hd'
     (Nat.lt_of_le_of_lt (Nat.shiftRight_le _ _) (ofBytes_bytesAt_lt _ _ _)) F'.zero S.t₀ F'.ap F'.b3p)
     fun t ⟨keep, unch, lt, rep⟩ => ⟨keep, unch.cover comb_writes_cover, lt, rep⟩
 
