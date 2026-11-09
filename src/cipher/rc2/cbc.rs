@@ -1,5 +1,4 @@
-//! RC2-CBC (RFC 2268), incrementally and without padding: `finalize` rejects a
-//! trailing partial block.
+//! RC2-CBC (RFC 2268), in place and without padding.
 
 #![cfg(any(
     target_arch = "x86_64",
@@ -11,10 +10,11 @@
 ))]
 
 use crate::align::CacheAligned;
-use crate::arch::dispatch::rc2::{
-    vg_rc2_cbc_decrypt_update_auto, vg_rc2_cbc_encrypt_update_auto, vg_rc2_cbc_init_auto,
+use crate::arch::dispatch::rc2::vg_rc2_cbc_init_auto;
+use crate::arch::dispatch::rc2_cbc::{
+    vg_rc2_cbc_decrypt_chained_auto, vg_rc2_cbc_encrypt_chained_auto,
 };
-use crate::error::{IncompleteBlock, OutputTooSmall};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// The key length is outside 1..=128 bytes.
@@ -36,13 +36,12 @@ crate::error::impl_error! {
     }
 }
 
-/// A streaming RC2-CBC encryption (or, if `DECRYPT`, decryption), which
+/// An RC2-CBC encryption (or, if `DECRYPT`, decryption), which
 /// [`Rc2CbcEncryptor`] and [`Rc2CbcDecryptor`] wrap.
 struct Cbc<const DECRYPT: bool> {
     /// The verified primitives' context: key schedule, chaining value and
-    /// pending bytes.
+    /// unused space for pending bytes (always empty at this API).
     ctx: CacheAligned<[u8; 144]>,
-    pending_len: usize,
 }
 
 impl<const DECRYPT: bool> Cbc<DECRYPT> {
@@ -50,7 +49,6 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
     fn new(key: &[u8], iv: &[u8; 8], effective_bits: usize) -> Result<Self, Error> {
         let mut ctx = Self {
             ctx: CacheAligned([0; 144]),
-            pending_len: 0,
         };
         crate::dit::enter!(dit);
         // SAFETY: the key, IV and context are valid, separate objects of the
@@ -77,56 +75,33 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
         }
     }
 
-    /// The number of bytes an update with `input_len` bytes of input
-    /// writes, saturating at `usize::MAX`.
-    fn output_len(&self, input_len: usize) -> usize {
-        self.pending_len
-            .checked_add(input_len)
-            .map_or(usize::MAX, |total| total / 8 * 8)
-    }
-
-    /// Processes the whole blocks of the pending bytes and `input` into the
-    /// first bytes of `output`, keeps the rest pending, and returns how many
-    /// bytes it wrote; changes nothing if `output` is too short.
-    fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
-        // No slice is `usize::MAX` bytes long, so an overflowing length
-        // (`output_len` saturates) is too long for any `output`.
-        let written = self.output_len(input.len());
-        let output = output.get_mut(..written).ok_or(OutputTooSmall)?;
-        let update = if DECRYPT {
-            vg_rc2_cbc_decrypt_update_auto
+    /// Processes whole blocks in place, preserving the chaining value.
+    fn crypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        if !buffer.len().is_multiple_of(8) {
+            return Err(IncompleteBlock);
+        }
+        let crypt = if DECRYPT {
+            vg_rc2_cbc_decrypt_chained_auto
         } else {
-            vg_rc2_cbc_encrypt_update_auto
+            vg_rc2_cbc_encrypt_chained_auto
         };
+        let ctx = self.ctx.0.as_mut_ptr();
         crate::dit::enter!(dit);
-        // SAFETY: the context holds `pending_len` (less than 8) pending
-        // bytes; `output` is exactly `(pending_len + input.len()) / 8 * 8`
-        // bytes long, as the contract requires; the context, input and
-        // output are valid for their lengths and are separate objects
-        // (`input` and `output` are distinct borrows, so they do not
-        // overlap).
+        // SAFETY: initialization wrote the schedule in bytes 0..128 and the
+        // IV in bytes 128..136 of the context. These regions and the buffer
+        // are disjoint and valid for the signature's sizes. The buffer holds
+        // exactly `len / 8` whole blocks; the primitive updates the IV to
+        // continue the message, leaving it unchanged for empty input.
         unsafe {
-            update(
+            crypt(
                 dit,
-                &mut self.ctx.0,
-                self.pending_len,
-                input.as_ptr(),
-                input.len(),
-                output.as_mut_ptr(),
-                output.len(),
+                ctx.cast(),
+                ctx.add(128).cast(),
+                buffer.as_mut_ptr().cast(),
+                buffer.len() / 8,
             );
         }
-        self.pending_len = (self.pending_len + input.len() % 8) % 8;
-        Ok(written)
-    }
-
-    /// Fails if a partial block remains.
-    fn finalize(self) -> Result<(), IncompleteBlock> {
-        if self.pending_len == 0 {
-            Ok(())
-        } else {
-            Err(IncompleteBlock)
-        }
+        Ok(())
     }
 }
 
@@ -136,7 +111,10 @@ impl<const DECRYPT: bool> Drop for Cbc<DECRYPT> {
     }
 }
 
-/// A streaming RC2-CBC encryptor, without padding.
+/// An RC2-CBC encryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues from the last ciphertext
+/// block of the previous call, so a message may be encrypted in pieces.
 ///
 /// The IV must be unpredictable (SP 800-38A Appendix C).
 pub struct Rc2CbcEncryptor {
@@ -166,36 +144,18 @@ impl Rc2CbcEncryptor {
         })
     }
 
-    /// The number of bytes the next [`update`](Self::update) with
-    /// `input_len` bytes of input writes: the whole blocks of the pending
-    /// bytes and the input, at most `input_len + 7` (saturating at
-    /// `usize::MAX`, for lengths no slice has).
-    pub fn output_len(&self, input_len: usize) -> usize {
-        self.cbc.output_len(input_len)
-    }
-
-    /// Encrypts the whole blocks of the pending bytes and `input` into the
-    /// first bytes of `output`, keeps the rest (at most seven bytes) pending
-    /// for the next update, and returns how many bytes it wrote:
-    /// [`output_len`](Self::output_len)`(input.len())`.
-    ///
-    /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
-    /// writing nothing and leaving the encryptor unchanged. An update that
-    /// completes no block (an empty one, for example) writes nothing and
-    /// keeps the chaining value.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
-        self.cbc.update(input, output)
-    }
-
-    /// Consumes the encryptor. Fails with [`IncompleteBlock`] if a
-    /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), IncompleteBlock> {
-        self.cbc.finalize()
+    /// Encrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn encrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        self.cbc.crypt(buffer)
     }
 }
 
-/// A streaming RC2-CBC decryptor, without padding.
+/// An RC2-CBC decryption of one message, without padding.
+///
+/// Each call takes whole 8-byte blocks and continues from the last ciphertext
+/// block of the previous call, so a message may be decrypted in pieces.
 ///
 /// The IV must be unpredictable (SP 800-38A Appendix C).
 pub struct Rc2CbcDecryptor {
@@ -225,31 +185,10 @@ impl Rc2CbcDecryptor {
         })
     }
 
-    /// The number of bytes the next [`update`](Self::update) with
-    /// `input_len` bytes of input writes: the whole blocks of the pending
-    /// bytes and the input, at most `input_len + 7` (saturating at
-    /// `usize::MAX`, for lengths no slice has).
-    pub fn output_len(&self, input_len: usize) -> usize {
-        self.cbc.output_len(input_len)
-    }
-
-    /// Decrypts the whole blocks of the pending bytes and `input` into the
-    /// first bytes of `output`, keeps the rest (at most seven bytes) pending
-    /// for the next update, and returns how many bytes it wrote:
-    /// [`output_len`](Self::output_len)`(input.len())`.
-    ///
-    /// `output` may be longer than that, and `input.len() + 7` bytes always
-    /// suffice. If it is shorter, fails with [`OutputTooSmall`],
-    /// writing nothing and leaving the decryptor unchanged. An update that
-    /// completes no block (an empty one, for example) writes nothing and
-    /// keeps the chaining value.
-    pub fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall> {
-        self.cbc.update(input, output)
-    }
-
-    /// Consumes the decryptor. Fails with [`IncompleteBlock`] if a
-    /// partial block is pending; padding is neither added nor removed.
-    pub fn finalize(self) -> Result<(), IncompleteBlock> {
-        self.cbc.finalize()
+    /// Decrypts whole 8-byte blocks in place, continuing the message.
+    /// Returns an error without changing anything if the buffer's length is
+    /// not a multiple of 8.
+    pub fn decrypt(&mut self, buffer: &mut [u8]) -> Result<(), IncompleteBlock> {
+        self.cbc.crypt(buffer)
     }
 }

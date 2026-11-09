@@ -339,6 +339,9 @@ pub mod poly1305;
 pub mod rc2;
 
 #[rustfmt::skip]
+pub mod rc2_cbc;
+
+#[rustfmt::skip]
 pub mod rc4;
 
 #[rustfmt::skip]
