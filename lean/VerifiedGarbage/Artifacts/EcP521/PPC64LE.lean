@@ -9,6 +9,9 @@ public import VerifiedGarbage.Spec.EcKey.P521
 public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.EcKey.PPC64LE.P521.CombLit
 public import VerifiedGarbage.Proof.P521.PPC64LE.Law
+public import VerifiedGarbage.Impl.EcKey.Compressed.P521.PPC64LE
+public import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Verified
+import VerifiedGarbage.Proof.EcKey.Compressed.PPC64LE.P521.Lit
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on PPC64LE -/
 
@@ -19,6 +22,12 @@ namespace VG.Artifacts.EcP521.PPC64LE
 open VG.Proof.P521.PPC64LE (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact PPC64LE.target {
+    code := Impl.EcKey.Compressed.PPC64LE.compressP521
+    verified := Proof.EcKey.Compressed.PPC64LE.P521.compress_verified },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact PPC64LE.target {
+    code := Impl.EcKey.Compressed.PPC64LE.decompressP521
+    verified := Proof.EcKey.Compressed.PPC64LE.P521.decompress_verified hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact PPC64LE.target {
     code := Impl.EcKey.PPC64LE.publicKeyP521Comb
     verified := Proof.EcKey.PPC64LE.P521.combPk_verified hasLaw.law }]

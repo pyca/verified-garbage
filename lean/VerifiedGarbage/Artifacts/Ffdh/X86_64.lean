@@ -15,10 +15,45 @@ public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 public import VerifiedGarbage.Proof.Variants.FfdhExp.X86_64
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Generation.SearchVerified
 public import VerifiedGarbage.Proof.Framework.QualifiedName
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
+public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
 
 /-! # Emit FFDH domain operations for every shared arithmetic backend and exponentiation -/
 
 @[expose] public section
+
+-- Emit FFDH key generation from the context for every shared arithmetic backend
+namespace VG.Artifacts.Ffdh.X86_64.Cached
+
+def artifactsFor (v : Proof.MillerRabin.X86_64.RoundImpl) : List Artifact :=
+  if v.roundOnly then [] else [
+  Spec.Ffdh.generationPrecomputeApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 8
+    code := Proof.Ffdh.X86_64.Cached.precomputeCode v
+    verified := Proof.Ffdh.X86_64.Cached.precomputeCode_verified v
+    spSafe := Proof.Ffdh.X86_64.Cached.precomputeCode_sp v
+    features := v.arithFeatures },
+  Spec.Ffdh.cachedGenerateKeyApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 8
+    code := Proof.Ffdh.X86_64.Cached.attemptCode v
+    verified := Proof.Ffdh.X86_64.Cached.attemptCode_verified v
+    spSafe := Proof.Ffdh.X86_64.Cached.attemptCode_sp v
+    features := v.arithFeatures },
+  Spec.Ffdh.cachedKeySearchApi.artifact X86_64.target {
+    suffix := v.suffix
+    stack := 72
+    code := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode v
+    verified := Proof.Ffdh.X86_64.Cached.SearchProof.key_verified v
+    spSafe := Proof.Ffdh.X86_64.Cached.SearchProof.keyCode_sp v
+    features := v.arithFeatures }]
+
+def artifacts : List Artifact :=
+  VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => artifactsFor v
+
+end VG.Artifacts.Ffdh.X86_64.Cached
 
 namespace VG.Artifacts.Ffdh.X86_64
 open VG.X86_64
@@ -92,6 +127,7 @@ end VG.Artifacts.Ffdh.X86_64.MillerRabin
 namespace VG.Artifacts.Ffdh.X86_64
 
 def artifacts : List Artifact :=
+  Cached.artifacts ++
   direct ++
   (VG.Proof.Variants.FfdhExp.X86_64.variants.flatMap fun v2 =>
     VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun v => MillerRabinFfdhExp.artifacts v v2) ++

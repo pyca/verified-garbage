@@ -56,10 +56,27 @@ public import VerifiedGarbage.Proof.Gcm.Powers
 public import VerifiedGarbage.Proof.Gcm.SealGather
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesGcm.AArch64
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.KeyPowers
 
 /-! # AES-GCM (NIST SP 800-38D) on AArch64 -/
 
 @[expose] public section
+
+-- The powers of AES-GCM's hash subkey on AArch64
+namespace VG.Artifacts.AesGcm.AArch64.Gcm
+
+def artifacts : List Artifact := [
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    code := Impl.Gcm.AArch64.keyPowers
+    verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
+  Spec.Gcm.storePowersApi.artifact AArch64.target {
+    suffix := "_aes"
+    code := Impl.Gcm.AArch64.Pmull.keyPowers
+    verified := Proof.Gcm.AArch64.Pmull.keyPowers_verified
+    features := ["aes"] }]
+
+end VG.Artifacts.AesGcm.AArch64.Gcm
 
 namespace VG.Artifacts.AesGcm.AArch64
 
@@ -199,6 +216,7 @@ def artifactsFor (v : GcmVariant) : List Artifact :=
       (if v.stitch then [] else basePwArtifacts v.impl)
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v
+  (VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v) ++
+  Gcm.artifacts
 
 end VG.Artifacts.AesGcm.AArch64

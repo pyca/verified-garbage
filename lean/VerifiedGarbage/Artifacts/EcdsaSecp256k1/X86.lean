@@ -64,10 +64,36 @@ import VerifiedGarbage.Proof.X25519.X86.Column
 public import VerifiedGarbage.Impl.Ecdsa.X86.VerifyHash
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Secp256k1.X86.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.Secp256k1
+public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 /-! # ECDSA over secp256k1 (FIPS 186-5) on x86 (32-bit) -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over secp256k1 on x86 (32-bit), with HMAC as a table
+namespace VG.Artifacts.EcdsaSecp256k1.X86.Rfc6979
+
+open VG.Proof.Secp256k1.X86 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT stackT OK secp256k1 secp256k1T_verified signCode_sp)
+open VG.Proof.HmacTable.X86 (tables names vars)
+
+def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
+    (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
+  if hv : OK (vars vs1 vs256) then [
+    Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact X86.target {
+      tables := [("hmac", tables (vars vs1 vs256))]
+      code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries (vars vs1 vs256)
+      stack := stackT
+      verified := secp256k1T_verified hasLaw.law hasLaw.inv (vars vs1 vs256) hv
+      spSafe := signCode_sp _ _ _ }]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.Sha1.X86.variants VG.Proof.Variants.Sha256.X86.variants
+
+end VG.Artifacts.EcdsaSecp256k1.X86.Rfc6979
 
 namespace VG.Artifacts.EcdsaSecp256k1.X86
 
@@ -78,6 +104,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifySecp256k1
     stack := 136
-    verified := Proof.Ecdsa.Verify.X86.Secp256k1.verifyHash_verified hasLaw.law hasLaw.inv }]
+    verified := Proof.Ecdsa.Verify.X86.Secp256k1.verifyHash_verified hasLaw.law hasLaw.inv }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaSecp256k1.X86

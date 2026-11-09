@@ -1,6 +1,6 @@
 module
-import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Lit
 
+import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Lit
 import VerifiedGarbage.TCB.X86_64.Target
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvSpec
 public import VerifiedGarbage.Proof.EcKey.X86_64.Secp256k1.Verified
@@ -50,19 +50,57 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombJDigit
 public import VerifiedGarbage.Proof.Weierstrass.X86_64.TCombSelectY
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Secp256k1.X86_64.Law
+public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.Secp256k1
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Secp256k1
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.Secp256k1Decompress
 
 /-! # secp256k1 on x86-64, generic over its proven group law and inversions -/
 
 @[expose] public section
 
+-- Standalone Secp256k1 public-point compression on x86-64
+namespace VG.Artifacts.EcSecp256k1.X86_64.Compressed
+
+open VG.Proof.Secp256k1.X86_64 (hasLaw)
+open VG.Proof.EcKey.Compressed.X86_64.Secp256k1
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.Secp256k1.inst.compressPublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 },
+    Spec.EcKey.Secp256k1.inst.decompressPublicKeyApi.artifact X86_64.target {
+      code := Proof.EcKey.Compressed.X86_64.Secp256k1Decompress.code false
+      verified := Proof.EcKey.Compressed.X86_64.Secp256k1Decompress.verified hasLaw.law hasLaw.inv false
+      stack := 8 }]
+
+end VG.Artifacts.EcSecp256k1.X86_64.Compressed
+
+-- Standalone Secp256k1 public-key validation on x86-64
+namespace VG.Artifacts.EcSecp256k1.X86_64.Validate
+
+open VG.Proof.Secp256k1.X86_64 (hasLaw)
+open VG.Proof.EcKey.Validate.X86_64.Secp256k1
+
+def artifacts : List Artifact :=
+  [Spec.EcKey.Secp256k1.inst.validatePublicKeyApi.artifact X86_64.target {
+    code := code false
+    verified := verified hasLaw.inv false
+    stack := 8 }]
+
+end VG.Artifacts.EcSecp256k1.X86_64.Validate
+
 namespace VG.Artifacts.EcSecp256k1.X86_64
 
 open VG.Proof.Secp256k1.X86_64 (hasLaw)
 
-def artifacts : List Artifact := [
-  Spec.EcKey.Secp256k1.publicKeyApi.artifact X86_64.target {
-    code := Impl.EcKey.X86_64.publicKeySecp256k1
-    stack := 8
-    verified := Proof.EcKey.X86_64.Secp256k1.pk_verified hasLaw.law hasLaw.inv }]
+def artifacts : List Artifact :=
+  Compressed.artifacts ++
+  [
+    Spec.EcKey.Secp256k1.publicKeyApi.artifact X86_64.target {
+      code := Impl.EcKey.X86_64.publicKeySecp256k1
+      stack := 8
+      verified := Proof.EcKey.X86_64.Secp256k1.pk_verified hasLaw.law hasLaw.inv }] ++
+  Validate.artifacts
 
 end VG.Artifacts.EcSecp256k1.X86_64

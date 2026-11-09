@@ -12,6 +12,9 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.Sha256.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Sha256.init224Api.artifact AArch64.target {
+    code := Impl.Sha256.AArch64.Stream.init224
+    verified := Proof.Sha256.AArch64.Shared.init224 },
   Spec.Sha256.initApi.artifact AArch64.target {
     code := Impl.Sha256.AArch64.Stream.init
     verified := Proof.Sha256.AArch64.Shared.init }]

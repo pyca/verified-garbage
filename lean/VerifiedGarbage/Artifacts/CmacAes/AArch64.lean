@@ -16,10 +16,26 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64
+public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.AArch64
 
 /-! # AES-CMAC (NIST SP 800-38B) on AArch64 -/
 
 @[expose] public section
+
+-- Streaming CMAC absorb on AArch64, for each CMAC update
+namespace VG.Artifacts.CmacAes.AArch64.Absorb
+def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
+  Spec.Cmac.aesAbsorbApi.artifact AArch64.target {
+    suffix := v.suffix
+    code := Impl.StackScratch.AArch64.withStackScratch 2304 .x5
+      (Impl.CmacAes.Stream.AArch64.absorb v.callee)
+    stack := 2304
+    verified := Proof.CmacAes.Stream.AArch64.absorb_framed v
+    features := v.features }]
+def artifacts : List Artifact :=
+  VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun v => artifactsFor v
+
+end VG.Artifacts.CmacAes.AArch64.Absorb
 
 namespace VG.Artifacts.CmacAes.AArch64
 def direct : List Artifact := [
@@ -52,6 +68,7 @@ end VG.Artifacts.CmacAes.AArch64.AesCtr32
 namespace VG.Artifacts.CmacAes.AArch64
 
 def artifacts : List Artifact :=
+  Absorb.artifacts ++
   direct ++
   (VG.Proof.Variants.AesCtr32.AArch64.variants.flatMap fun v => AesCtr32.artifacts v)
 

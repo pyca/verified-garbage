@@ -35,6 +35,8 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P521.Arm.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P521
+public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P521Decompress
 
 /-! # P-521 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
 
@@ -45,6 +47,12 @@ namespace VG.Artifacts.EcP521.Arm
 open VG.Proof.P521.Arm (hasLaw)
 
 def artifacts : List Artifact := [
+  Spec.EcKey.P521.inst.compressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.P521.code
+    verified := Proof.EcKey.Compressed.Arm.P521.verified },
+  Spec.EcKey.P521.inst.decompressPublicKeyApi.artifact Arm.target {
+    code := Proof.EcKey.Compressed.Arm.P521Decompress.code
+    verified := Proof.EcKey.Compressed.Arm.P521Decompress.verified hasLaw.law },
   Spec.EcKey.P521.publicKeyApi.artifact Arm.target {
     code := Impl.EcKey.Arm.publicKeyP521
     verified := Proof.EcKey.Arm.P521.pk_verified hasLaw.law }]

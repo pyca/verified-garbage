@@ -44,6 +44,8 @@ public import VerifiedGarbage.Proof.X25519.X86.Arith
 public import VerifiedGarbage.Proof.X25519.X86.Fold
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.BrainpoolP384r1.X86.Law
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1
+public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress
 
 /-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
 
@@ -57,6 +59,14 @@ def artifacts : List Artifact := [
   Spec.EcKey.BrainpoolP384r1.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.publicKeyBrainpoolP384r1
     stack := 28
-    verified := Proof.EcKey.X86.BrainpoolP384r1.pk_verified hasLaw.law }]
+    verified := Proof.EcKey.X86.BrainpoolP384r1.pk_verified hasLaw.law },
+  Spec.EcKey.BrainpoolP384r1.inst.compressPublicKeyApi.artifact X86.target {
+    stack := 28
+    code := Proof.EcKey.Compressed.X86.BrainpoolP384r1.code
+    verified := Proof.EcKey.Compressed.X86.BrainpoolP384r1.verified },
+  Spec.EcKey.BrainpoolP384r1.inst.decompressPublicKeyApi.artifact X86.target {
+    stack := 28
+    code := Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress.code
+    verified := Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress.verified hasLaw.law }]
 
 end VG.Artifacts.EcBrainpoolP384r1.X86

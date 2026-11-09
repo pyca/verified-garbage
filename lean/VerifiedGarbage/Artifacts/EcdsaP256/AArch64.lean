@@ -129,10 +129,38 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Framework.Pratt
 import VerifiedGarbage.Proof.Weierstrass.JacInplace
 public import VerifiedGarbage.Proof.P256.AArch64.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.AArch64.P256
+import Mathlib.Data.Finset.Attr
+import Mathlib.Tactic.Finiteness.Attr
+import Mathlib.Tactic.SetLike
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 /-! # ECDSA over P-256 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
+
+-- Deterministic ECDSA (RFC 6979) over P-256 on AArch64, with HMAC as a table
+namespace VG.Artifacts.EcdsaP256.AArch64.Rfc6979
+
+open VG.Proof.P256.AArch64 (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT stackT OK p256 p256T_verified)
+open VG.Proof.HmacTable.AArch64 (tables names)
+
+def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
+  if hv : OK vs ∧ "VG_P256_COMB" ∉ names vs then [
+    Spec.Ecdsa.Rfc6979.Curves.p256SignApi.artifact AArch64.target {
+      suffix := ""
+      tables := [("hmac", tables vs)]
+      code := signCodeT (p256 hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
+      stack := stackT
+      verified := p256T_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) vs hv
+      features := [] }]
+  else []
+
+def artifacts : List Artifact :=
+  artifactsFor VG.Proof.Variants.MdHash.AArch64.variants
+
+end VG.Artifacts.EcdsaP256.AArch64.Rfc6979
 
 namespace VG.Artifacts.EcdsaP256.AArch64
 
@@ -143,6 +171,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
     stack := 80
-    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }]
+    verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }] ++
+  Rfc6979.artifacts
 
 end VG.Artifacts.EcdsaP256.AArch64

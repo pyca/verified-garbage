@@ -41,6 +41,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Limbs
 public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.P192.Arm.Law
+public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P192
 
 /-! # ECDSA over P-192 (FIPS 186-5) on 32-bit ARM -/
 
@@ -49,12 +50,19 @@ public import VerifiedGarbage.Proof.P192.Arm.Law
 namespace VG.Artifacts.EcdsaP192.Arm
 
 open VG.Proof.P192.Arm (hasLaw)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT stackT p192 p192T_verified)
+open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
       Impl.Ecdsa.Verify.Arm.verifyP192
     stack := 96
-    verified := Proof.Ecdsa.Verify.Arm.P192.verifyHash_verified hasLaw.law }]
+    verified := Proof.Ecdsa.Verify.Arm.P192.verifyHash_verified hasLaw.law },
+  Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact Arm.target {
+    tables := [("hmac", tables vars)]
+    code := signCodeT (p192 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p192.tries vars
+    stack := stackT
+    verified := p192T_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaP192.Arm
