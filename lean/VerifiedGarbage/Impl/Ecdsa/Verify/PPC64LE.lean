@@ -176,8 +176,8 @@ def points : Prog isa := if c.n ≤ 6 then joint c else ladders c
 
 /-- Everything after the checks of the key, with `pts` for `[u]G + [v]Q`. -/
 def backWith (pts : Prog isa) : Prog isa :=
-  .seq (scalars c) <| .seq (pow c.powN c.SN) <| .seq (uv c) <| .seq pts <|
-  .seq (pow c.powP c.SP) (final c)
+  .seq (scalars c) <| .seq c.invN <| .seq (uv c) <| .seq pts <|
+  .seq c.invP (final c)
 
 /-- `vg_ecdsa_<curve>_verify`, with `pts` for `[u]G + [v]Q`. -/
 def verifyWith (pts : Prog isa) : Prog isa :=

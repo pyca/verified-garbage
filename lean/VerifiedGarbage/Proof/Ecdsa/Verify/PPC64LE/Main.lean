@@ -59,9 +59,9 @@ structure VKeep (s₀ s' : State) : Prop where
 theorem verifyWith_eq (c : Cfg) (pts : Prog isa) : Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c pts =
     .seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.prefix' c) (.seq (.block (Impl.Ecdsa.Verify.PPC64LE.Cfg.loadS c))
       (.seq (.block (Impl.Ecdh.PPC64LE.Cfg.peerAt c .r14)) (.seq (Impl.Ecdh.PPC64LE.Cfg.validate c)
-      (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalars c) (.seq (pow c.powN c.SN)
+      (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalars c) (.seq c.invN
       (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.uv c) (.seq pts
-      (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c))))))))) := rfl
+      (.seq c.invP (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c))))))))) := rfl
 
 /-- What a computation of `[u]G + [v]Q` into `R` does, as `points_ok` states
 it: from the stages before (`Mid`, naming the statics `s₀` names), with the
@@ -82,10 +82,10 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State}
     WP isa (Impl.Ecdsa.Verify.PPC64LE.Cfg.verifyWith c pts) s₀ fun s' => VKeep s₀ s' ∧ VPost c s₀ s' := by
   have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   have setupRun := front_ok hc hp (rest := .seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.scalars c)
-    (.seq (pow c.powN c.SN) (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.uv c) (.block []))))
+    (.seq c.invN (.seq (Impl.Ecdsa.Verify.PPC64LE.Cfg.uv c) (.block []))))
     (Q := fun s => Mid c s₀ (s₀.gpr .r6) s) (fun _ F => mid_ok hc F fun _ M => WP.block_nil M)
   have finish : ∀ s₂, Mid c s₀ (s₀.gpr .r6) s₂ → s₂.syms = s₀.syms →
-      WP isa (.seq pts (.seq (pow c.powP c.SP) (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c))) s₂
+      WP isa (.seq pts (.seq c.invP (Impl.Ecdsa.Verify.PPC64LE.Cfg.final c))) s₂
         (fun t => VKeep s₀ t ∧ VPost c s₀ t) := by
     intro s₂ hM syms₂
     -- The point the second ladder multiplies.
