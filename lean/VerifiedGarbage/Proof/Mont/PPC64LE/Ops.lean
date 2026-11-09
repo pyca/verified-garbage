@@ -2060,7 +2060,7 @@ theorem qcsubR_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {
     WP isa (.block (qcsubR n)) s fun u =>
       wordsVal u.mem base O n = regsVal s 0 (n + 1) % m ∧
       Outside base O (8 * n) s.mem u.mem ∧
-      Kp ([.r10, .r11, .r12] ++ tregs (n + 1) n) s u := by
+      Kp (([.r10, .r11, .r12] : List Reg) ++ tregs (n + 1) n) s u := by
   simp only [qcsubR, List.append_assoc]
   refine WP.block_append (WP.mono (qsubRs_ok (s := s) hn4 (k := n) (Nat.le_refl _)) fun s₂ ⟨V₂, M₂, K₂⟩ => ?_)
   rw [hm, show cOf true n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega] at V₂
