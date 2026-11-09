@@ -255,14 +255,14 @@ def mul (o a b : Nat) : Prog isa :=
 /-! ## Multiplication in registers -/
 
 /-- The registers of the operands' words: `a_i` in `opA i`, `b_j` in `opB j`. -/
-def opA (i : Nat) : Reg := [.r14, .r15, .r16, .r17, .r18, .r19, .r20].getD i .r14
-def opB (j : Nat) : Reg := [.r21, .r22, .r23, .r24, .r25, .r26, .r27].getD j .r21
+def opA (i : Nat) : Reg := [.r15, .r16, .r17, .r18, .r19, .r20, .r21].getD i .r15
+def opB (j : Nat) : Reg := [.r22, .r23, .r24, .r25, .r26, .r27, .r28].getD j .r22
 
-/-- The registers of the product's words `0, …, 14`: from word 9 on, those
-of operands' words no later column reads (`a_0`, `b_0`, `a_1`, `b_1`, `a_2`,
-`a_3`). -/
+/-- The registers of the product's words `0, …, 14`: from word 8 on, those
+of operands' words no later term reads (`a_0`, `b_0`, `a_1`, `b_1`, `a_2`,
+`b_2`, `a_3`), so that `r14` is not among them. -/
 def pw (k : Nat) : Reg :=
-  [.r7, .r8, .r9, .r10, .r11, .r28, .r29, .r30, .r31, .r14, .r21, .r15, .r22, .r16, .r17].getD k .r7
+  [.r7, .r8, .r9, .r10, .r11, .r29, .r30, .r31, .r15, .r22, .r16, .r23, .r17, .r24, .r18].getD k .r7
 
 /-- The pairs `(i, j)` of column `k`: `i + j = k`, `i, j < 7`. -/
 def pairs (k : Nat) : List (Nat × Nat) :=
@@ -273,11 +273,19 @@ def termR (k : Nat) (p : Nat × Nat) : List Instr :=
   [.mul .r4 (opA p.1) (opB p.2), .mulhu .r5 (opA p.1) (opB p.2),
     .addc (pw k) (pw k) .r4, .adde (pw (k + 1)) (pw (k + 1)) .r5, .addze (pw (k + 2)) (pw (k + 2))]
 
-/-- Column `k`: `pw (k + 2)` cleared, then its terms. -/
-def colR (k : Nat) : List Instr := .li (pw (k + 2)) 0 :: (pairs k).flatMap (termR k)
+/-- The first term `a_i b_j` of column `k`: its product, then `pw (k + 2)`
+cleared (which may be the register of `a_i` or `b_j`, which no later term
+reads), then the product added. -/
+def firstR (k : Nat) (p : Nat × Nat) : List Instr :=
+  [.mul .r4 (opA p.1) (opB p.2), .mulhu .r5 (opA p.1) (opB p.2), .li (pw (k + 2)) 0,
+    .addc (pw k) (pw k) .r4, .adde (pw (k + 1)) (pw (k + 1)) .r5, .addze (pw (k + 2)) (pw (k + 2))]
+
+/-- Column `k`: its first term, which clears `pw (k + 2)`, then the others. -/
+def colR (k : Nat) : List Instr :=
+  firstR k ((pairs k).headD (0, 0)) ++ (pairs k).tail.flatMap (termR k)
 
 /-- The registers the reduction's chains add from. -/
-def rotReg (k : Nat) : Reg := [.r18, .r19, .r20, .r23, .r24, .r25, .r26].getD k .r18
+def rotReg (k : Nat) : Reg := [.r19, .r20, .r21, .r25, .r26, .r27, .r28].getD k .r19
 
 /-- Step `k` of a carry chain into `pw k` from `src`. -/
 def chainR (k : Nat) (src : Reg) : Instr := if k = 0 then .addc (pw k) (pw k) src else .adde (pw k) (pw k) src
@@ -286,18 +294,18 @@ def chainR (k : Nat) (src : Reg) : Instr := if k = 0 then .addc (pw k) (pw k) sr
 def chain7 (src : Nat → Reg) : List Instr := (List.range 7).map fun k => chainR k (src k)
 
 /-- Doubleword `k` of the product's high half `H = pw 7, …, pw 13` rotated by
-224 bits into `rotReg k` (`r27` scratch). -/
+224 bits into `rotReg k` (`r18` scratch). -/
 def rotR (k : Nat) : List Instr :=
-  [.lsr .d (rotReg k) (pw (7 + (k + 3) % 7)) 32, .lsl .r27 (pw (7 + (k + 4) % 7)) 32,
-    .add (rotReg k) (rotReg k) .r27]
+  [.lsr .d (rotReg k) (pw (7 + (k + 3) % 7)) 32, .lsl .r18 (pw (7 + (k + 4) % 7)) 32,
+    .add (rotReg k) (rotReg k) .r18]
 
 /-- What the third chain adds: `H` with its low 224 bits cleared (zero in
-`r18`, doubleword 3 in `r19`). -/
-def hiReg (k : Nat) : Reg := if k < 3 then .r18 else if k = 3 then .r19 else pw (7 + k)
+`r19`, doubleword 3 in `r20`). -/
+def hiReg (k : Nat) : Reg := if k < 3 then .r19 else if k = 3 then .r20 else pw (7 + k)
 
 /-- What a fold adds: the carry `c` (`r4`) to word 0, `2³² c` (`r5`) to word
-3, zero (`r18`) to the others. -/
-def foldReg (k : Nat) : Reg := if k = 0 then .r4 else if k = 3 then .r5 else .r18
+3, zero (`r19`) to the others. -/
+def foldReg (k : Nat) : Reg := if k = 0 then .r4 else if k = 3 then .r5 else .r19
 
 /-- The reduction of the product in `pw` into `pw 0, …, pw 6`, as `reduce`'s
 on memory: `L + H`, `+= 2²²⁴ Hₗ + Hₕ`, `+= 2²²⁴ Hₕ` (carries summed in
@@ -305,7 +313,7 @@ on memory: `L + H`, `+= 2²²⁴ Hₗ + Hₕ`, `+= 2²²⁴ Hₕ` (carries summe
 def reduceR : List Instr :=
   chain7 (fun k => pw (7 + k)) ++ [.li .r4 0, .addze .r4 .r4] ++
   (List.range 7).flatMap rotR ++ chain7 rotReg ++ [.addze .r4 .r4] ++
-  [.li .r18 0, .lsr .d .r19 (pw 10) 32, .lsl .r19 .r19 32] ++ chain7 hiReg ++ [.addze .r4 .r4] ++
+  [.li .r19 0, .lsr .d .r20 (pw 10) 32, .lsl .r20 .r20 32] ++ chain7 hiReg ++ [.addze .r4 .r4] ++
   [.lsl .r5 .r4 32] ++ chain7 foldReg ++ [.li .r4 0, .addze .r4 .r4, .lsl .r5 .r4 32] ++ chain7 foldReg
 
 /-- Registers `regs 0`, …, `regs (n - 1)` at consecutive doublewords. -/
