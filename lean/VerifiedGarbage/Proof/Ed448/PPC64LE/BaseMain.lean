@@ -22,13 +22,16 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # Ed448's base-point multiplication on PPC64LE: the whole function
 
 `vg_ed448_scalar_base` writes the encoding of `[s]B` to `out`, and returns
-with the link register it was called with (`scalarBase_correct`): the
-return address and the caller's `r14` kept at `LRS` and `R14S`, and `out` in `r14`, `R = (0 : 1 : 1)` and
-`d` (`combInit_ok`), the comb's table (`Comb.tabBuild_ok`), the scalar's
-bits, the 114 rows of the comb, after which `R` represents `[s]B`
-(`Comb.loop_ok`, `Proof.Ed448.Comb.accScalar_total`), the return address and
-`r14` loaded back (and `out` into `r3`), and the encoding of `R`. (The hypothesis `BaseLadder2Ok`
-of the earlier ladder is kept for the registration, unused.)
+with the link register, `r14` and `r15`–`r31` it was called with
+(`scalarBase_correct`): the return address and the caller's `r14` kept at
+`LRS` and `R14S`, `r15`–`r31` (which the multiplication uses) at `SNV`, and
+`out` in `r14`, `R = (0 : 1 : 1)` and `d` (`combInit_ok`), the comb's table
+(`Comb.tabBuild_ok`), the scalar's bits, the 114 rows of the comb, after which
+`R` represents `[s]B` (`Comb.loop_ok`, `Proof.Ed448.Comb.accScalar_total`), the
+return address and `r14` loaded back (and `out` into `r3`), the encoding of
+`R`, which keeps the doublewords from `LRS` on (`HiKept`), and `r15`–`r31`
+loaded back. (The hypothesis `BaseLadder2Ok` of the earlier ladder is kept for
+the registration, unused.)
 -/
 
 @[expose] public section
