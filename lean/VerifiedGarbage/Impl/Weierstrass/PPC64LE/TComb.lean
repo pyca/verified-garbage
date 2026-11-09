@@ -22,10 +22,11 @@ From `R = S`, for `j` from `J - 1` down to 0 (`r31 = j + 1`, then `j`):
    the last window (`topBits` of them, when `r31 = J - 1`, the only branch
    but the loops', on the public counter);
 2. the digit's magnitude `|k_j - H|` (`magnitude`), and every entry `m` of
-   row `j` scanned: its words are or'ed into the point functions' `Q` under
-   the mask of `m = |k_j - H|` (`eqMask`), so that `Q` holds entry
-   `|k_j - H| - 1` (or zeros), with `Z = 1`; for a magnitude of zero,
-   `Q = (0 : 1 : 0)` instead;
+   row `j` scanned: its `16 n` bytes, 16 at a time, are selected into the
+   vector registers `v0`, … (`accV`) under the mask of `m = |k_j - H|`
+   (`eqMask`, splat to `v19`), so that they hold entry `|k_j - H| - 1` (or
+   zeros), stored to the point functions' `Q` after the scan, with `Z = 1`;
+   for a magnitude of zero, `Q = (0 : 1 : 0)` instead;
 3. `-y` (the field's subtraction from zero) into `neg`, and `y = -y` if the
    digit is negative (the window's top bit is clear; always for a short last
    window);
@@ -108,24 +109,36 @@ def digit : Prog isa :=
 def eqMask (idx : Reg) : List Instr :=
   [.logic .xor .r10 .r9 idx, .subi .r10 .r10 1, .lsr .d .r10 .r10 63, .li .r5 0, .sub .r10 .r5 .r10]
 
-/-- Word `i` of `Q` or'ed with the table's at `r8` under the mask `r10`,
-through `r4` and `r5`. -/
-def selectWord (i : Nat) : List Instr :=
-  [.load .d .r4 wb (K.Q.x + 8 * i), .load .d .r5 .r8 (8 * i),
-    .logic .xor .r5 .r5 .r4, .logic .and .r5 .r5 .r10,
-    .logic .xor .r4 .r4 .r5, .store .d .r4 wb (K.Q.x + 8 * i)]
+/-- The scan's accumulators: an entry's `16 n` bytes, 16 to each (`n ≤ 18`). -/
+def accV : Nat → VReg
+  | 0 => .v0 | 1 => .v1 | 2 => .v2 | 3 => .v3 | 4 => .v4 | 5 => .v5 | 6 => .v6 | 7 => .v7
+  | 8 => .v8 | 9 => .v9 | 10 => .v10 | 11 => .v11 | 12 => .v12 | 13 => .v13 | 14 => .v14
+  | 15 => .v15 | 16 => .v16 | _ => .v17
 
-/-- Entry `r7` of the row: its `2 n` words selected under the mask of
-`r9 = r7`, then `r8` to the next entry, `r7 += 1` and `r6 = r7 - (H + 1)`. -/
+/-- `v19` all ones if `r10` is, zeros if it is: `r10` to its high
+doubleword, and that doubleword's high word to every word. -/
+def vMask : List Instr := [.mtvsrd .v19 .r10, .vop (.splat true .v19 .v19 0)]
+
+/-- Bytes `16 i` to `16 i + 15` of the entry at `r8` into accumulator `i`
+under the mask `v19` (through `v18`; `r5` is zero), and `r8` past them. -/
+def selectChunk (i : Nat) : List Instr :=
+  [.lxvd2x .v18 .r8 .r5, .addi .r8 .r8 16, .vop (.sel (accV i) (accV i) .v18 .v19)]
+
+/-- Entry `r7` of the row: its `16 n` bytes selected under the mask of
+`r9 = r7`, with `r8` past them, then `r7 += 1` and `r6 = r7 - (H + 1)`. -/
 def selectBody : List Instr :=
-  eqMask .r7 ++ (List.range (2 * K.L.M.n)).flatMap K.selectWord ++
-    [.addi .r8 .r8 (16 * K.L.M.n), .addi .r7 .r7 1, .subi .r6 .r7 (K.H + 1)]
+  eqMask .r7 ++ vMask ++ (List.range K.L.M.n).flatMap selectChunk ++
+    [.addi .r7 .r7 1, .subi .r6 .r7 (K.H + 1)]
 
-/-- The row's address in `r8` (row `r31`), `Q`'s `x` and `y` zero, and
+/-- The row's address in `r8` (row `r31`), the accumulators zero, and
 `r7 = 1`. -/
 def selectSetup : List Instr :=
   [.adrSym .r8 K.tsym, .li .r4 (16 * K.L.M.n * K.H), .mul .r4 .r4 .r31, .add .r8 .r8 .r4] ++
-    setConst K.L.M.n K.Q.x 0 ++ setConst K.L.M.n K.Q.y 0 ++ [.li .r7 1]
+    (List.range K.L.M.n).map (fun i => .vop (.logic .xor (accV i) (accV i) (accV i))) ++ [.li .r7 1]
+
+/-- The accumulators to `Q`'s `x` and `y`, through `r4`. -/
+def selectStore : List Instr :=
+  (List.range K.L.M.n).flatMap fun i => [.li .r4 (K.Q.x + 16 * i), .stxvd2x (accV i) wb .r4]
 
 /-- `Z = 1`, and `Q = (0 : 1 : 0)` if the magnitude is zero. -/
 def selectTail : List Instr :=
@@ -134,7 +147,8 @@ def selectTail : List Instr :=
 
 /-- The entry of magnitude `r9` of row `r31` into `Q`. -/
 def select : Prog isa :=
-  .seq (.block K.selectSetup) (.seq (.loop (.block K.selectBody) (.nonzero .d .r6)) (.block K.selectTail))
+  .seq (.block K.selectSetup) (.seq (.loop (.block K.selectBody) (.nonzero .d .r6))
+    (.block (K.selectStore ++ K.selectTail)))
 
 /-- The mask `r10` of the window's top bit being clear (the digit is
 negative), through `r4`. -/

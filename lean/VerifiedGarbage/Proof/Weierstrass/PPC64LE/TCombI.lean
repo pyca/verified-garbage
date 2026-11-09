@@ -355,7 +355,7 @@ theorem entryI_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {s
     i.keep h.layout hd (ku.rk (rs' := fnClob)) (by decide) (by rw [mu]; exact Unch.refl _ _ _) syu
   refine WP.seq (WP.mono_syms (selectTable_ok K (a := magH K.H (combWin K.w k j)) iu.wsr hq4 hz4
     (by omega) (by omega) qzr (Nat.lt_of_lt_of_le h.one_lt hfit) iu.zero
-    hn1 hH15 h.row (h.magnitude k j) gu
+    hn1 (by sorry) hH15 h.row (h.magnitude k j) gu
     (by rw [ku.g]; exact gj) iu.table iu.symbol h.tables.len h.tables.lenH hj (by have := h.J15; omega) hp hfit hd)
     fun v ⟨xv, yv, zv, kv, ov⟩ syv => ?_)
   have ov3 := unch_three ov.unch
