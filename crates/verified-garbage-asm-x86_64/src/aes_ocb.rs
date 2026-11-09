@@ -28,7 +28,7 @@ call {vg_aes_encrypt_blocks_vaes}
 .base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -167,7 +167,7 @@ call {vg_aes_encrypt_blocks_vaes}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -327,8 +327,8 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes::vg_aes_decrypt_blocks_vaes,
     )
 }
 
@@ -357,7 +357,7 @@ call {vg_aes_encrypt_blocks_aesni}
 .base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
 .p2align 6"#,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -496,7 +496,7 @@ call {vg_aes_encrypt_blocks_aesni}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -656,8 +656,8 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
     )
 }
 
@@ -682,7 +682,7 @@ call {vg_aes_encrypt_blocks}
 .base64 "SYscJEmLbCQITYtkJBBIjaQkCAoAAMM="
 .p2align 6"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -817,7 +817,7 @@ call {vg_aes_encrypt_blocks}
 jne 232b
 .base64 "SYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -973,7 +973,7 @@ jmp 238f
 238:
 .base64 "SYsHSYufoAAAAEmLr6gAAABNi6ewAAAATYuvuAAAAE2Lt8AAAABNi7/IAAAASI2kJDAOAADD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )
 }

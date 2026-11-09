@@ -28,7 +28,7 @@ call {vg_aes_decrypt_blocks_vaes}
 call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes,
+        vg_aes_decrypt_blocks_vaes = sym super::aes::vg_aes_decrypt_blocks_vaes::vg_aes_decrypt_blocks_vaes,
         vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
@@ -139,7 +139,7 @@ call {vg_aes_decrypt_blocks_aesni}
 call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
         vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
@@ -231,7 +231,7 @@ call {vg_aes_decrypt_blocks_aesni}
 call {vg_zeroize}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni,
+        vg_aes_decrypt_blocks_aesni = sym super::aes::vg_aes_decrypt_blocks_aesni::vg_aes_decrypt_blocks_aesni,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -261,7 +261,7 @@ call {vg_aes_encrypt_blocks}
 call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
@@ -291,7 +291,7 @@ call {vg_aes_decrypt_blocks}
 call {vg_zeroize_avx}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize_avx = sym super::zeroize::vg_zeroize_avx,
     )
 }
@@ -317,7 +317,7 @@ call {vg_aes_encrypt_blocks}
 call {vg_zeroize}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }
@@ -343,7 +343,7 @@ call {vg_aes_decrypt_blocks}
 call {vg_zeroize}
 .base64 "SIsEJEiNZCQQww=="
 .p2align 6"#,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
 }

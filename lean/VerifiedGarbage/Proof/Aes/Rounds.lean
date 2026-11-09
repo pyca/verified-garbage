@@ -50,17 +50,45 @@ def decryptBlocksRoundsContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contr
           (invCipher rounds.toNat (bytesAt m schedule (16 * (rounds.toNat + 1)))))
     (stack := stack)
 
-/-- `Spec.Aes.encryptBlocksContract` from `encryptBlocksRoundsContract`. -/
+/-- For `rounds` of 10, 12 or 14, and every key `key` whose key schedule is
+at `schedule` with `rounds` rounds (`KeySchedule`): replaces each of the `n`
+blocks at `data` with `CIPHER(·, Nr, KEYEXPANSION(key))`. The key schedule
+and the data are secret. -/
+def encryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  blocksSig.contract A
+    (pre := fun _schedule rounds _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun schedule rounds data n _scratch m m' _ =>
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        statesAt m' data n.toNat =
+          (statesAt m data n.toNat).map (cipher (Spec.Aes.rounds (key.length / 4)) (expandKey key)))
+    (stack := stack)
+
+/-- For `rounds` of 10, 12 or 14, and every key `key` whose key schedule is
+at `schedule` with `rounds` rounds (`KeySchedule`): replaces each of the `n`
+blocks at `data` with `INVCIPHER(·, Nr, KEYEXPANSION(key))`. The key schedule
+and the data are secret. -/
+def decryptBlocksContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  blocksSig.contract A
+    (pre := fun _schedule rounds _data _n _scratch _ =>
+      rounds.toNat = 10 ∨ rounds.toNat = 12 ∨ rounds.toNat = 14)
+    (post := fun schedule rounds data n _scratch m m' _ =>
+      ∀ key, KeySchedule m schedule rounds.toNat key →
+        statesAt m' data n.toNat =
+          (statesAt m data n.toNat).map (invCipher (Spec.Aes.rounds (key.length / 4)) (expandKey key)))
+    (stack := stack)
+
+/-- `encryptBlocksContract` from `encryptBlocksRoundsContract`. -/
 theorem encryptBlocks_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (encryptBlocksRoundsContract A stack)) : Verified T c (Spec.Aes.encryptBlocksContract A stack) :=
+    (h : Verified T c (encryptBlocksRoundsContract A stack)) : Verified T c (Proof.Aes.encryptBlocksContract A stack) :=
   h.post_mono fun _ _ _ _ _ _ _ _ hp key ⟨_, hr, hw⟩ => by
     dsimp only at hp
     rw [hw, hr] at hp
     exact hp
 
-/-- `Spec.Aes.decryptBlocksContract` from `decryptBlocksRoundsContract`. -/
+/-- `decryptBlocksContract` from `decryptBlocksRoundsContract`. -/
 theorem decryptBlocks_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
-    (h : Verified T c (decryptBlocksRoundsContract A stack)) : Verified T c (Spec.Aes.decryptBlocksContract A stack) :=
+    (h : Verified T c (decryptBlocksRoundsContract A stack)) : Verified T c (Proof.Aes.decryptBlocksContract A stack) :=
   h.post_mono fun _ _ _ _ _ _ _ _ hp key ⟨_, hr, hw⟩ => by
     dsimp only at hp
     rw [hw, hr] at hp

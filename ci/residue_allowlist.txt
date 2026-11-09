@@ -39,9 +39,6 @@ x86_64 vg_aes_ctr_final
 x86_64 vg_aes_ctr_final_aesni
 x86_64 vg_aes_ctr_final_vaes
 x86_64 vg_aes_ctr_vaes
-x86_64 vg_aes_decrypt_blocks
-x86_64 vg_aes_decrypt_blocks_aesni
-x86_64 vg_aes_decrypt_blocks_vaes
 x86_64 vg_aes_ecb_decrypt
 x86_64 vg_aes_ecb_decrypt_aesni
 x86_64 vg_aes_ecb_decrypt_aesni_avx
@@ -51,9 +48,6 @@ x86_64 vg_aes_ecb_encrypt
 x86_64 vg_aes_ecb_encrypt_aesni
 x86_64 vg_aes_ecb_encrypt_avx
 x86_64 vg_aes_ecb_encrypt_vaes
-x86_64 vg_aes_encrypt_blocks
-x86_64 vg_aes_encrypt_blocks_aesni
-x86_64 vg_aes_encrypt_blocks_vaes
 x86_64 vg_aes_expand_key
 x86_64 vg_aes_expand_key_aesni
 x86_64 vg_aes_gcm_init

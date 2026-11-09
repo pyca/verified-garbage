@@ -1,9 +1,5 @@
 module
 
-public import VerifiedGarbage.TCB.RISCV64.Target
-public import VerifiedGarbage.Proof.Aes.RISCV64.BlocksVerified
-public import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32Verified
-public import VerifiedGarbage.Proof.Aes.RISCV64.ExpandKeyVerified
 public import VerifiedGarbage.Proof.Aes.RISCV64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
@@ -19,12 +15,6 @@ def artifacts : List Artifact := [
   Spec.Aes.expandKeyApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a3 64 Impl.Aes.RISCV64.expandKey
     stack := 512
-    verified := Proof.Aes.RISCV64.expandKey_framed },
-  Spec.Aes.encryptBlocksApi.artifact RISCV64.target {
-    code := Impl.Aes.RISCV64.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.RISCV64.encryptBlocks_verified },
-  Spec.Aes.decryptBlocksApi.artifact RISCV64.target {
-    code := Impl.Aes.RISCV64.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.RISCV64.decryptBlocks_verified }]
+    verified := Proof.Aes.RISCV64.expandKey_framed }]
 
 end VG.Artifacts.Aes.RISCV64

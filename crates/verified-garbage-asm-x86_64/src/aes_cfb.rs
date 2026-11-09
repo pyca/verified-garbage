@@ -36,7 +36,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -88,7 +88,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -129,7 +129,7 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_encrypt_vaes = sym super::aes_cfb::vg_aes_cfb128_encrypt_vaes,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -170,7 +170,7 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_decrypt_vaes = sym super::aes_cfb::vg_aes_cfb128_decrypt_vaes,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
     )
 }
 
@@ -207,7 +207,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -259,7 +259,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -300,7 +300,7 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_encrypt_aesni = sym super::aes_cfb::vg_aes_cfb128_encrypt_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -341,7 +341,7 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_decrypt_aesni = sym super::aes_cfb::vg_aes_cfb128_decrypt_aesni,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
     )
 }
 
@@ -374,7 +374,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -422,7 +422,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -459,7 +459,7 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -496,6 +496,6 @@ jmp 21f
 .base64 "SItEJAhIixhIi2gITItgEEyLaBhMi3AgTIt4KEG7AAAAAEyJXCQQTIlcJBhMiVwkIEyJXCQoTIlcJDBMiVwkOEiNZCRAww=="
 .p2align 6"#,
         vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

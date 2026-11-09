@@ -1,21 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
-public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.Frame
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
-public import VerifiedGarbage.Proof.Aes.Scratch
-public import VerifiedGarbage.Proof.Framework.AArch64.Exec
-public import VerifiedGarbage.Proof.Framework.AArch64.Lit
-public import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
-public import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
-public import VerifiedGarbage.Proof.Framework.AddrArith
-public import VerifiedGarbage.Proof.Framework.Offset
-public import VerifiedGarbage.Proof.Framework.RegionsSub
-public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # AES (FIPS 197) on AArch64 -/
@@ -34,24 +22,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64
       Impl.Aes.AArch64.Aese.expandKey
     stack := 512
-    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.Aese.Key.expandKey_verified },
-  Spec.Aes.encryptBlocksApi.artifact AArch64.target {
-    code := Impl.Aes.AArch64.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.encryptBlocks_verified },
-  Spec.Aes.decryptBlocksApi.artifact AArch64.target {
-    code := Impl.Aes.AArch64.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.decryptBlocks_verified },
-  Spec.Aes.encryptBlocksApi.artifact AArch64.target {
-    suffix := "_aes"
-    written := [("scratch", 0)]
-    code := Impl.Aes.AArch64.Aese.encryptBlocks
-    verified := Proof.Aes.encryptBlocks_keyed Proof.Aes.AArch64.Aese.encryptBlocks_verified
-    writtenOk := Proof.Aes.AArch64.Aese.encryptBlocks_written },
-  Spec.Aes.decryptBlocksApi.artifact AArch64.target {
-    suffix := "_aes"
-    written := [("scratch", 0)]
-    code := Impl.Aes.AArch64.Aese.decryptBlocks
-    verified := Proof.Aes.decryptBlocks_keyed Proof.Aes.AArch64.Aese.decryptBlocks_verified
-    writtenOk := Proof.Aes.AArch64.Aese.decryptBlocks_written }]
+    verified := Proof.Aes.AArch64.expandKey_framed Proof.Aes.AArch64.Aese.Key.expandKey_verified }]
 
 end VG.Artifacts.Aes.AArch64

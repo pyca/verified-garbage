@@ -1062,7 +1062,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2592
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }
 
@@ -2117,7 +2117,7 @@ ldr lr, [r11, #160]
 ldr r11, [r11, #156]
 add sp, sp, #2592
 bx lr",
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks,
-        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
     )
 }
