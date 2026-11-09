@@ -247,6 +247,20 @@ pub fn bench(c: &mut Criterion) {
         b.iter(|| key.sign_mu(black_box(&mu), black_box(&rnd)).unwrap())
     });
     g.finish();
+    let mut g = c.benchmark_group("mldsa44_sign_mu_prepared");
+    g.bench(BenchmarkId::new(VG, mu_sig.len()), |b| {
+        b.iter(|| prepared.sign_mu(black_box(&mu), black_box(&rnd)).unwrap())
+    });
+    g.finish();
+    let mut g = c.benchmark_group("mldsa44_verify_mu_prepared");
+    g.bench(BenchmarkId::new(VG, 64), |b| {
+        b.iter(|| {
+            prepared_public
+                .verify_mu(black_box(&mu), black_box(&mu_sig))
+                .unwrap()
+        })
+    });
+    g.finish();
     let mut g = c.benchmark_group("mldsa44_verify_mu");
     g.bench(BenchmarkId::new(VG, 64), |b| {
         b.iter(|| {

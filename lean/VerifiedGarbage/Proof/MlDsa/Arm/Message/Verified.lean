@@ -1,4 +1,7 @@
 module
+
+public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Verified
+public import VerifiedGarbage.Proof.MlDsa.Arm.Verify.Verified
 public import VerifiedGarbage.Impl.MlDsa.Arm.Sign.Sign
 public import VerifiedGarbage.Proof.MlDsa.Arm.Sign.Inst
 public import VerifiedGarbage.Impl.MlDsa.Arm.Verify.Inst
@@ -377,5 +380,94 @@ theorem signPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = ml
 theorem verifyPreparedFn {p : Params} (h3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     VerifyFn p true (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p) :=
   ⟨Verify.entry_correct h3 true, Verify.entry_ct h3 true, by rcases h3 with rfl | rfl | rfl <;> decide +kernel⟩
+
+/-! ## Public external-μ contracts -/
+
+def externalSignSat (p : Params) (m : Mem) : State :=
+  { Sign.signSat p with
+    gpr := fun r => if r = .r0 then 0x200000 else (Sign.signSat p).gpr r
+    mem := fun a => if 0x80000 ≤ a.toNat ∧ a.toNat < 0x80010 then (Sign.signSat p).mem a else m a
+    rd := [⟨0x200000, preparedSecretKeyBytes p⟩, ⟨0x3000, 64⟩, ⟨0x3100, 32⟩, ⟨0x80000, 4⟩] }
+
+theorem externalSign_sat {p : Params} (hp : p ∈ params) :
+    ∃ s, (preparedSignContract p Arm.abi 44).pre s := by
+  have h3 : PreparedKey.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  obtain ⟨m, hk⟩ := PreparedKey.prepared_secret_mem h3
+  have hb : bytesAt (externalSignSat p m).mem 0x200000 (preparedSecretKeyBytes p) =
+      bytesAt m 0x200000 (preparedSecretKeyBytes p) :=
+    key_bytes (by rcases h3 with rfl | rfl | rfl <;> decide)
+  have hk' := PreparedKey.preparedSecretKey_of_bytes hb hk
+  have ha : stackArg (externalSignSat p m) 0 = 0x10000 := by
+    have e := stackArg_eq_of (s := externalSignSat p m) (s' := Sign.signSat p) rfl rfl (by decide : 0 < 4)
+      (fun a h₁ h₂ => by simp only [externalSignSat, h₁, h₂, and_self, ite_true])
+    exact e.trans (show stackArg (Sign.signSat mlDsa44) 0 = 0x10000 by decide)
+  refine ⟨externalSignSat p m, ?_⟩
+  rcases h3 with rfl | rfl | rfl <;>
+    sig_pre [preparedSignContract, preparedSignSig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] <;>
+    simp only [ha] <;> sig_and_intros <;> (try dsimp only [externalSignSat, Sign.signSat, stackArgAddr])
+  all_goals first | exact hk' | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem externalSign_verified {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Sign.signPrepared Sign.prims p)
+      (preparedSignContract p Arm.abi 44) := by
+  have h3 : Sign.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  refine Verified.of_correct (Sign.entry_correct h3 true) (Sign.entry_ct h3 true) ?_
+  refine { pre := ?_, post := ?_, pub := ?_, sat := externalSign_sat hp }
+  · intro s h
+    sig_pre [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨hsp, hsp4, hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, k1, k2, k3, k4, k5, -, n1, n2, n3, n4, n5, hk⟩ := h
+    simp only [Nat.mul_comm (scratchWords p) 8] at hwr d2 d4 d6 d7 d9 k5 n5
+    exact ⟨hrd, hwr, d1, d2, d3, d4, d5, d6, d7, d8, d9, k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, hsp, hsp4,
+      fun _ => hk⟩
+  · intro s s' _ h
+    sig_post [preparedSignContract, preparedSignSig, Sign.signE, Sign.signK, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    rw [VG.Proof.MlKem.Arm.setWidth_append32]
+    exact h
+  · intro s₁ s₂ _ _ h
+    sig_pub [preparedSignContract, preparedSignSig, Sign.signE, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨hsp, hb, h0, h1, h2, h3, h4⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, hsp, hb⟩
+
+def externalVerifySat (p : Params) (m : Mem) : State :=
+  { Verify.verifySat p with
+    gpr := fun r => if r = .r0 then 0x200000 else (Verify.verifySat p).gpr r
+    mem := m
+    rd := [⟨0x200000, preparedPublicKeyBytes p⟩, ⟨0x2000, 64⟩, ⟨0x3000, p.sigLen⟩] }
+
+theorem externalVerify_sat {p : Params} (hp : p ∈ params) :
+    ∃ s, (preparedVerifyContract p Arm.abi 52).pre s := by
+  have h3 : PreparedKey.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  obtain ⟨m, _, hk⟩ := PreparedKey.prepared_public_mem h3
+  refine ⟨externalVerifySat p m, ?_⟩
+  rcases h3 with rfl | rfl | rfl <;>
+    sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] <;>
+    sig_and_intros
+  all_goals first | exact hk | rfl | decide | exact Region.disjoint_of_sep (by decide)
+
+theorem externalVerify_verified {p : Params} (hp : p ∈ params) :
+    Verified Arm.target (Impl.MlDsa.Arm.Verify.verifyPrepared Impl.MlDsa.Arm.Verify.prims p)
+      (preparedVerifyContract p Arm.abi 52) := by
+  have h3 : Verify.Ok3 p := by
+    simp only [params, List.mem_cons, List.not_mem_nil, or_false] at hp; exact hp
+  refine Verified.of_correct (Verify.entry_correct h3 true) (Verify.entry_ct h3 true) ?_
+  refine { pre := ?_, post := ?_, pub := ?_, sat := externalVerify_sat hp }
+  · intro s h
+    sig_pre [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at h
+    obtain ⟨h0, -, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, hk⟩ := h
+    exact ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, fun _ => hk⟩
+  · intro s s' _ h
+    sig_post [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val]
+    rw [VG.Proof.MlKem.Arm.setWidth_append32]
+    exact h
+  · intro s₁ s₂ _ _ hpub
+    sig_pub [preparedVerifyContract, preparedVerifySig, Arm.abi, Arm.argRegs, Arm.reduceClassify, Arm.Loc.val] at hpub
+    obtain ⟨hsp, hl, h0, h1, h2, h3⟩ := hpub
+    obtain ⟨e12, e3⟩ := List.append_inj (Proof.MlDsa.KeyGen.leakBytes_inj hl)
+      (by simp only [List.length_append, Proof.MlKem.bytesAt_length])
+    obtain ⟨e1, e2⟩ := List.append_inj e12 (by simp only [Proof.MlKem.bytesAt_length])
+    exact ⟨hsp, h0, h1, h2, h3, e1, e2, e3⟩
 
 end VG.Proof.MlDsa.Arm.Message

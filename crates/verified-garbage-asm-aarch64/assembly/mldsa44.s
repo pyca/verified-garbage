@@ -2075,10 +2075,28 @@ vg_mldsa44_sign_sha3:
 	ret
 	.p2align 6
 
+vg_mldsa44_sign_prepared_sha3:
+	str x30, [sp, #-16]!
+	add x5, x0, #2560
+	movz x6, #12288, lsl #0
+	bl {vg_mldsa44_sign_with_cache_sha3}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_mldsa44_sign:
 	str x30, [sp, #-16]!
 	add x5, x0, #0
 	movz x6, #0, lsl #0
+	bl {vg_mldsa44_sign_with_cache}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa44_sign_prepared:
+	str x30, [sp, #-16]!
+	add x5, x0, #2560
+	movz x6, #12288, lsl #0
 	bl {vg_mldsa44_sign_with_cache}
 	ldr x30, [sp], #16
 	ret
@@ -2517,10 +2535,28 @@ vg_mldsa44_verify_sha3:
 	ret
 	.p2align 6
 
+vg_mldsa44_verify_prepared_sha3:
+	str x30, [sp, #-16]!
+	add x4, x0, #1312
+	movz x5, #4096, lsl #0
+	bl {vg_mldsa44_verify_with_cache_sha3}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
 vg_mldsa44_verify:
 	str x30, [sp, #-16]!
 	add x4, x0, #0
 	movz x5, #0, lsl #0
+	bl {vg_mldsa44_verify_with_cache}
+	ldr x30, [sp], #16
+	ret
+	.p2align 6
+
+vg_mldsa44_verify_prepared:
+	str x30, [sp, #-16]!
+	add x4, x0, #1312
+	movz x5, #4096, lsl #0
 	bl {vg_mldsa44_verify_with_cache}
 	ldr x30, [sp], #16
 	ret
