@@ -12,9 +12,9 @@ literal the module does not see is built again by the kernel, from the
 functions that build it (a register allocator, unrolled rounds, tables), in
 every check: seconds where reading the literal takes milliseconds.
 
-`lake env lean --run CheckLitImports.lean FILE` imports the modules listed
-in FILE (one per line, as the registration files, which reach every proof
-of an artifact) and prints, for each proposition the kernel decides
+`lake env lean --run ../ci/lit_imports.lean FILE`, from `lean/`, imports the
+modules listed in FILE (one per line, as the registration files, which reach
+every proof of an artifact) and prints, for each proposition the kernel decides
 (`of_decide_eq_true p _ _` at the head of a declaration, as `decide +kernel`
 leaves it) that mentions code leading to a constant with a literal, a line
 
@@ -90,7 +90,7 @@ partial def sees (env : Environment) (idx : NameMap Nat) (m : Name) : NameSet :=
   return seen
 
 def main (args : List String) : IO UInt32 := do
-  let [file] := args | IO.eprintln "usage: CheckLitImports.lean FILE"; return 2
+  let [file] := args | IO.eprintln "usage: lit_imports.lean FILE"; return 2
   initSearchPath (← findSysroot)
   let roots := (← IO.FS.lines file).filter (!·.isEmpty)
   let env ← importModules (roots.map fun m => { module := m.toName }) {}
