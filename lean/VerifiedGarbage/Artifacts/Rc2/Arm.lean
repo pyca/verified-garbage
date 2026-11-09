@@ -16,14 +16,6 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.init
     stack := 600
     verified := Proof.Rc2.Arm.Stream.init_framed },
-  Spec.Rc2.cbcEncryptUpdateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.encryptUpdate
-    stack := 600
-    verified := Proof.Rc2.Arm.Stream.encryptUpdate_framed },
-  Spec.Rc2.cbcDecryptUpdateApi.artifact Arm.target {
-    code := Impl.StackScratch.Arm.withStackScratchWiped 592 2 144 Impl.Rc2.Arm.Stream.decryptUpdate
-    stack := 600
-    verified := Proof.Rc2.Arm.Stream.decryptUpdate_framed },
   Spec.Rc2.cbcEncryptChainedApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 528 0 128 Impl.Rc2.Arm.Cbc.encrypt
     stack := 528
