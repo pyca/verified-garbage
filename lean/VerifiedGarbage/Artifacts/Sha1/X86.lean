@@ -6,12 +6,13 @@ public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.MdStream.X86.DigestInstances
 public import VerifiedGarbage.Proof.Sha1.X86.Variants.Interface
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
+public import VerifiedGarbage.Proof.Sha256.X86.Variants.Interface
+public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
 /-! # SHA-1 (FIPS 180-4) on x86 -/
 
 @[expose] public section
 
--- SHA-1's one-shot digest on x86, for every x86 SHA-1 backend
 namespace VG.Artifacts.Sha1.X86.Digest
 
 def artifactsFor (v : Proof.Sha1.X86.Variants.Backend) : List Artifact := [
@@ -34,6 +35,9 @@ def artifacts : List Artifact :=
   Digest.artifacts ++ [
   Spec.Sha1.initApi.artifact X86.target {
     code := Impl.Sha1.X86.Stream.init
-    verified := Proof.Sha1.X86.Shared.init }]
+    verified := Proof.Sha1.X86.Shared.init }] ++
+  (VG.Proof.Variants.Sha1.X86.variants.flatMap fun (v : Proof.Sha1.X86.Variants.Backend) =>
+    v.functions.map fun f =>
+      f.api.artifact X86.target { f.reg with suffix := v.suffix, features := v.features })
 
 end VG.Artifacts.Sha1.X86
