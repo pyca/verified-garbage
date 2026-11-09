@@ -20,15 +20,13 @@ def artifactsFor (v : Proof.Aes.X86_64.BlocksImpl) : List Artifact := [
     code := Impl.AesOfb.X86_64.crypt v.enc
     stack := 8
     verified := Proof.AesOfb.keyed (crypt_verified v)
-    spSafe := crypt_spSafe v
-    features := v.features },
+    spSafe := crypt_spSafe v },
   Spec.Ofb.aesFinalApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratchWiped 64 0 6 (Impl.AesOfb.X86_64.cryptFinal v.enc v.suffix)
     stack := 80
     verified := Proof.AesOfb.final_keyed (cryptFinal_framed v)
-    spSafe := cryptFinal_framed_spSafe v
-    features := v.features }]
+    spSafe := cryptFinal_framed_spSafe v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.AesBlocks.X86_64.variants.flatMap fun v => artifactsFor v

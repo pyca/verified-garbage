@@ -34,7 +34,6 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
       stack := 16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I
-      verified := v.pbkdf2F
-      features := v.features }]
+      verified := v.pbkdf2F }]
 
 end VG.Artifacts.Pbkdf2Md5.AArch64

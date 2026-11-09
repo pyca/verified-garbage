@@ -73,8 +73,7 @@ def artifacts (v : Proof.MillerRabin.AArch64.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 32
     code := Proof.Ffdh.AArch64.Generation.searchCode v
-    verified := Proof.Ffdh.AArch64.Generation.search_verified v
-    features := v.features }]
+    verified := Proof.Ffdh.AArch64.Generation.search_verified v }]
 
 end VG.Artifacts.Ffdh.AArch64.MillerRabin
 

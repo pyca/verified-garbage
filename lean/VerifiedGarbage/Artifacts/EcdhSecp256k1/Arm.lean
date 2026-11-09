@@ -55,7 +55,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Ecdh.Arm.exchangeSecp256k1U
-    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := Proof.Ecdh.Arm.Secp256k1.ecdhU_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhSecp256k1.Arm

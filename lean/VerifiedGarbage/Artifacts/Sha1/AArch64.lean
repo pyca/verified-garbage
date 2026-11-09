@@ -19,6 +19,6 @@ def artifacts : List Artifact := [
     verified := Proof.Sha1.AArch64.Shared.init }] ++
   (VG.Proof.Variants.MdHash.AArch64.sha1Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
     v.stream.map fun f =>
-      f.api.artifact AArch64.target { f.reg with suffix := v.suffix, features := v.features })
+      f.api.artifact AArch64.target { f.reg with suffix := v.suffix})
 
 end VG.Artifacts.Sha1.AArch64

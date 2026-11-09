@@ -2454,7 +2454,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_check_public_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
@@ -2473,7 +2473,7 @@ pub const VG_FFDH_CHECK_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::F
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -3056,7 +3056,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_exchange_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
 ///
@@ -3079,7 +3079,7 @@ pub const VG_FFDH_EXCHANGE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Featu
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_mr_adx_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -3638,7 +3638,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_check_private_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
@@ -3659,7 +3659,7 @@ pub const VG_FFDH_CHECK_PRIVATE_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -4283,7 +4283,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_derive_public_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
@@ -4304,7 +4304,7 @@ pub const VG_FFDH_DERIVE_PUBLIC_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_mr_adx_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -4924,7 +4924,7 @@ jmp 22f
 }
 
 /// The CPU features `vg_ffdh_check_domain_mr_adx_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
 
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
@@ -4940,7 +4940,7 @@ pub const VG_FFDH_CHECK_DOMAIN_MR_ADX_EXP_IFMA_FEATURES: verified_garbage_cpu::F
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `bmi2`, `adx`, `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma`, `avx`, `bmi2` and `adx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_mr_adx_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -5904,7 +5904,7 @@ jmp 281f
 }
 
 /// The CPU features `vg_ffdh_check_public_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Checks an imported finite-field Diffie–Hellman public value (SP 800-56A Rev. 3 §5.6.2.3.1, and §5.6.2.3.2 with q). With `domain` as `vg_ffdh_check_domain` takes it and y (`p_len` bytes, most significant first), returns 1 if `1 < y < p − 1` and, with q, `y^q mod p = 1`; otherwise 0.
 ///
@@ -5923,7 +5923,7 @@ pub const VG_FFDH_CHECK_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_public_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -7154,7 +7154,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_exchange_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Finite-field Diffie–Hellman (SP 800-56A Rev. 3 §5.7.1.1, PKCS #3 §8). With `domain` as `vg_ffdh_check_domain` takes it, the private scalar x (`x_len` bytes) and the peer's public value y (`p_len` bytes), most significant first, computes `z = y^x mod p`; returns 0 and writes zeros if z is 0, 1 or `p − 1`, and otherwise returns 1 and writes z (`p_len` bytes, most significant first) to `out`. Applies no KDF.
 ///
@@ -7177,7 +7177,7 @@ pub const VG_FFDH_EXCHANGE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = v
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `out` and `scratch` must not overlap each other, `domain`, `x`, `peer` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `domain`, `x`, `peer` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_exchange_exp_ifma(out: *mut u8, out_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, peer: *const u8, peer_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -8384,7 +8384,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_check_private_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Checks an imported finite-field Diffie–Hellman key pair (SP 800-56A Rev. 3 §5.6.2.1.2 and §5.6.2.1.4). With `domain` as `vg_ffdh_check_domain` takes it, y (`p_len` bytes) and x (`x_len` bytes), most significant first: returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if y is a valid public value (as `vg_ffdh_check_public` checks it) and `y = g^x mod p`; 0 otherwise.
 ///
@@ -8405,7 +8405,7 @@ pub const VG_FFDH_CHECK_PRIVATE_EXP_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain`, `y`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `domain`, `y`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_private_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, y: *const u8, y_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -9677,7 +9677,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_ffdh_derive_public_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Derives the public value of an imported finite-field Diffie–Hellman private key (SP 800-56A Rev. 3 §5.6.2.1.2 for x's range, §5.6.1.1 for `y = g^x mod p`). With `domain` as `vg_ffdh_check_domain` takes it and x (`x_len` bytes, most significant first): returns 2 if x is not in `1..q` (`1..p − 1` without q); 1 if `y = g^x mod p` is a valid public value (as `vg_ffdh_check_public` checks it), writing y (`p_len` bytes, most significant first) to `y`; 3 otherwise. Writes zeros to `y` unless it returns 1.
 ///
@@ -9698,7 +9698,7 @@ pub const VG_FFDH_DERIVE_PUBLIC_EXP_IFMA_FEATURES: verified_garbage_cpu::Feature
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `y` and `scratch` must not overlap each other, `domain`, `x` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `y`, `domain`, `x` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_derive_public_exp_ifma(y: *mut u8, y_len: usize, domain: *const u8, domain_len: usize, p_len: usize, x: *const u8, x_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -10966,7 +10966,7 @@ jmp 22f
 }
 
 /// The CPU features `vg_ffdh_check_domain_exp_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Checks imported finite-field Diffie–Hellman parameters (SP 800-56A Rev. 3 §5.5.2, without primality tests). `domain` is p, g and, if `domain_len` is `3 * p_len`, q, each `p_len` bytes, most significant first. Returns 1 if p has 512 to 8192 bits, its first byte is not zero and it is odd, `1 < g < p − 1`, and, with q, q is odd, `2 < q < p − 1`, q divides `p − 1` and `g^q mod p = 1`; otherwise 0. Does not test p or q for primality: the caller must establish their provenance.
 ///
@@ -10982,7 +10982,7 @@ pub const VG_FFDH_CHECK_DOMAIN_EXP_IFMA_FEATURES: verified_garbage_cpu::Features
 /// * The contents of `scratch` on return are unspecified and may contain secrets; the caller must destroy them after use.
 /// * `scratch` must not overlap `domain` (distinct Rust objects never do).
 /// * Neither `domain` nor `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma` and `avx512vl` target features.
+/// * The CPU must support the `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_check_domain_exp_ifma(domain: *const u8, domain_len: usize, p_len: usize, scratch: *mut u64, scratch_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -19520,7 +19520,7 @@ jmp 281f
 }
 
 /// The CPU features `vg_ffdh_generate_parameters_ifma` requires (`Artifact.features`).
-pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX);
+pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::BMI2 | verified_garbage_cpu::feature::ADX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL | verified_garbage_cpu::feature::AVX512IFMA | verified_garbage_cpu::feature::AVX);
 
 /// Run native finite-field Diffie–Hellman parameter generation, with RSA's trial-division sieve. The routine owns candidate retries, attempt limits, witness selection, primality rounds and entropy budgets. Initialize with `vg_ffdh_parameter_generation_init`. Returns 1 with the probable safe prime in `out`, 3 when a bound is exhausted, or 0 only when it needs more entropy. On 0, discard `used` bytes of `rand`, preserve its remaining suffix and extend that suffix to at least `state[3]` bytes before calling again. `state[1]` is the output width and `state[2]` the maximum tape length. The output is zero for 0 and 3. Accepted p and q pass the full 64/128 independent witness counts. Contract: `VG.Spec.Ffdh.sievedParameterSearchContract`. Timing may depend on the public tape and the first four controller words.
 ///
@@ -19537,7 +19537,7 @@ pub const VG_FFDH_GENERATE_PARAMETERS_IFMA_FEATURES: verified_garbage_cpu::Featu
 /// * The last twelve controller words and the scratch contents are private workspace.
 /// * `out`, `used`, `scratch` and `state` must not overlap each other, `rand` or the arguments on the stack (distinct Rust objects never do).
 /// * None of `out`, `used`, `rand`, `scratch` and `state` may overlap the return address on the stack or the 160 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx`, `avx512f`, `avx512ifma`, `avx512vl`, `bmi2` and `adx` target features.
+/// * The CPU must support the `bmi2`, `adx`, `avx512f`, `avx512vl`, `avx512ifma` and `avx` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_ffdh_generate_parameters_ifma(out: *mut u8, out_len: usize, used: *mut [u64; 1], bits: usize, generator: u32, rand: *const u8, rand_len: usize, scratch: *mut u64, scratch_len: usize, state: *mut [u64; 16]) -> u32 {
     core::arch::naked_asm!(

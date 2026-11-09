@@ -20,8 +20,7 @@ def artifacts : List Artifact :=
       code := Proof.Pbkdf2.Whole.X86.initCode Spec.Hmac.sha256I v.M.hmacInit v.F
       stack := 76 + Proof.Pbkdf2.Whole.X86.Any.anyFrame Spec.Hmac.sha256I
       verified := Proof.Pbkdf2.Whole.X86.Any.sha256_initF v
-      spSafe := Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v
-      features := v.features },
+      spSafe := Proof.Pbkdf2.Whole.X86.Any.sha256_initSp v },
     Spec.Hmac.sha256I.finalizeApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha256I) 5
@@ -29,7 +28,6 @@ def artifacts : List Artifact :=
       stack := 48 + Proof.Pbkdf2.Md.X86.finFrame Spec.Hmac.sha256I
       verified := Proof.Pbkdf2.Md.X86.finFramed v.hmacFin Proof.Hmac.sha256_local Proof.Pbkdf2.Md.X86.sha256_finFrameSat
         (Proof.Pbkdf2.Md.X86.noEsp_of v.finalizeNoSp) v.finalizeStack
-      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp
-      features := v.features }]
+      spSafe := Proof.Pbkdf2.Md.X86.withStackScratch_spSafe v.finSp }]
 
 end VG.Artifacts.HmacSha256.X86

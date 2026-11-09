@@ -30,8 +30,7 @@ def artifacts (v : Proof.ChaCha20.AArch64.XorImpl) : List Artifact := [
   Spec.ChaCha20.applyApi.artifact AArch64.target {
     suffix := v.callee.suffix
     code := Impl.ChaCha20.AArch64.Stream.apply v.callee
-    verified := Proof.ChaCha20.AArch64.Stream.apply_verified v
-    features := v.features }]
+    verified := Proof.ChaCha20.AArch64.Stream.apply_verified v }]
 
 end VG.Artifacts.ChaCha20.AArch64.ChaCha20Xor
 

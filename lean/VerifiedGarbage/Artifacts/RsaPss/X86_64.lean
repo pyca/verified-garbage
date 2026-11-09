@@ -29,8 +29,7 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       stack := signStack
       verified := sign_ok h (privOf c).ok (privOf c).ct (X86_64.SpSafe.of_all (privOf c).spSafe) (privOf c).depth
       spSafe := Code.all_of_allInstrs (signC_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
-        (X86_64.SpSafe.of_all (privOf c).spSafe))
-      features := c.features }]
+        (X86_64.SpSafe.of_all (privOf c).spSafe)) }]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
@@ -50,8 +49,7 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_6
       stack := verifyStack
       verified := verify_ok h c
       spSafe := Code.all_of_allInstrs (Proof.RsaPss.X86_64.Pc.codeC_spAll (fun i hi => (chk_safe h i hi).1)
-        (fun i hi => (chk_safe h i hi).2) c)
-      features := c.features }]
+        (fun i hi => (chk_safe h i hi).2) c) }]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash

@@ -31,8 +31,7 @@ def artifacts (v : Proof.MillerRabin.PPC64LE.RoundImpl) : List Artifact := [
     suffix := v.suffix
     stack := 1088
     code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
-    verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v
-    features := v.features }]
+    verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }]
 
 end VG.Artifacts.RsaKeyGen.PPC64LE.MillerRabin
 

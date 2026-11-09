@@ -71,8 +71,7 @@ def artifacts (v : CrtImpl) : List Artifact := [
     code := Impl.RsaPkcs1Sig.X86_64.Sign.code (Sgn.privName v) (Sgn.privCode v)
     stack := sigStack
     verified := Sgn.code_verified v
-    spSafe := Sgn.code_spSafe v
-    features := v.features }]
+    spSafe := Sgn.code_spSafe v }]
 
 end VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPrivateCrt
 
@@ -88,15 +87,13 @@ def artifacts (v : PublicImpl) : List Artifact := [
     code := Impl.RsaPkcs1Sig.X86_64.Precomputed.code v.name v.code
     stack := verStack
     verified := PcCT.code_verified v
-    spSafe := PcCT.code_spSafe v
-    features := v.features },
+    spSafe := PcCT.code_spSafe v },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact X86_64.target {
     suffix := v.suffix
     code := Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed.code v.name v.code
     stack := verStack
     verified := RecPcCT.code_verified v
-    spSafe := RecPcCT.code_spSafe v
-    features := v.features }]
+    spSafe := RecPcCT.code_spSafe v }]
 
 end VG.Artifacts.RsaPkcs1Sig.X86_64.RsaPublicPrecomputed
 

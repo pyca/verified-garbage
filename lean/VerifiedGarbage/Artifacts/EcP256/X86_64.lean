@@ -82,14 +82,12 @@ def artifacts : List Artifact :=
       suffix := if adx then "_adx" else ""
       code := code adx
       verified := verified hasLaw.inv adx
-      stack := 8
-      features := if adx then ["bmi2", "adx"] else [] },
+      stack := 8 },
     Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86_64.target {
       suffix := if adx then "_adx" else ""
       code := Proof.EcKey.Compressed.X86_64.P256Decompress.code adx
       verified := Proof.EcKey.Compressed.X86_64.P256Decompress.verified hasLaw.law hasLaw.inv adx
-      stack := 8
-      features := if adx then ["bmi2", "adx"] else [] }]
+      stack := 8 }]
 
 end VG.Artifacts.EcP256.X86_64.Compressed
 
@@ -105,8 +103,7 @@ def artifacts : List Artifact :=
       suffix := if adx then "_adx" else ""
       code := code adx
       verified := verified hasLaw.inv adx
-      stack := 8
-      features := if adx then ["bmi2", "adx"] else [] }
+      stack := 8 }
 
 end VG.Artifacts.EcP256.X86_64.Validate
 
@@ -126,8 +123,7 @@ def publicKey (adx : Bool) (code : Prog X86_64.isa)
     code
     stack := 8
     verified := hv
-    spSafe := hsp
-    features := if adx then ["bmi2", "adx", "avx", "avx2"] else [] }
+    spSafe := hsp }
 
 def artifacts : List Artifact :=
   Compressed.artifacts ++

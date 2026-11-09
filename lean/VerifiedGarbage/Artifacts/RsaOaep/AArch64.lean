@@ -45,8 +45,7 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.decrypt (fnsOf vs) (privOf c).name (privOf c).code
       stack := decStack (privOf c)
-      verified := dec_ok vs h c
-      features := c.features }]
+      verified := dec_ok vs h c }]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPrivateCrtAllMdHash
@@ -66,8 +65,7 @@ def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArc
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.AArch64.Precomputed.encrypt (fnsOf vs) (pdOf c).name (pdOf c).code
       stack := encStack (pdOf c)
-      verified := enc_ok vs h c
-      features := c.features }]
+      verified := enc_ok vs h c }]
   else []
 
 end VG.Artifacts.RsaOaep.AArch64.RsaPublicPrecomputedAllMdHash

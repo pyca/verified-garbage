@@ -24,15 +24,13 @@ def artifactsFor (v : CrtImpl) : List Artifact :=
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Proof.RsaOaep.Arm.Dec.decCode vars v
       stack := 3624
-      verified := dec_ok vars h v
-      features := v.features },
+      verified := dec_ok vars h v },
     Spec.RsaOaep.encryptTablesApi.artifact Arm.target {
       suffix := v.suffix
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Proof.RsaOaep.Arm.Enc.encryptCode vars (Proof.Rsa.Arm.pdOfCrt v)
       stack := 240
-      verified := enc_ok vars h (Proof.Rsa.Arm.pdOfCrt v)
-      features := v.features }]
+      verified := enc_ok vars h (Proof.Rsa.Arm.pdOfCrt v) }]
   else []
 
 def artifacts : List Artifact :=

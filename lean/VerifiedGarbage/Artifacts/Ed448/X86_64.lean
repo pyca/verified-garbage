@@ -104,7 +104,6 @@ namespace VG.Artifacts.Ed448.X86_64.PublicKey
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86_64.target {
     suffix := v.suffix
-    features := v.features
     code := Impl.Ed448.X86_64.publicKeyFor v
     stack := 104
     verified := Proof.Ed448.X86_64.PublicKey.publicKey_verified (v := v)
@@ -121,7 +120,6 @@ namespace VG.Artifacts.Ed448.X86_64.SignCached
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact X86_64.target {
     suffix := v.suffix
-    features := v.features
     code := Impl.Ed448.X86_64.SignCached.signCachedFor v
     stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified
@@ -139,7 +137,6 @@ namespace VG.Artifacts.Ed448.X86_64.Verify
 def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.verifyApi.artifact X86_64.target {
     suffix := v.suffix
-    features := v.features
     code := Impl.Ed448.X86_64.Verify.verifyFor v
     stack := 272
     verified := Proof.Ed448.X86_64.Verify.verify_verified

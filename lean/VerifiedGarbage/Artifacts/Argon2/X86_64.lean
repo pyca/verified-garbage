@@ -68,8 +68,7 @@ def artifactsFor (v : Proof.Blake2.X86_64.Backend) (c : Proof.Argon2.X86_64.Comp
       (Proof.Argon2.X86_64.HPrime.hash v)
     stack := 344
     verified := Proof.Argon2.X86_64.Derive.verified v _
-    spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _
-    features := v.features ++ c.features.filter (!v.features.contains ·) }]
+    spSafe := Proof.Argon2.X86_64.Derive.code_spSafe v _ }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Blake2b.X86_64.variants.flatMap fun v => VG.Proof.Variants.Argon2Compress.X86_64.variants.flatMap fun v2 => artifactsFor v v2

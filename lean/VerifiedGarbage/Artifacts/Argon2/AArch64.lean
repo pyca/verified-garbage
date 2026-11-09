@@ -21,8 +21,7 @@ def artifactsFor (v : Proof.Argon2.AArch64.HPrime.Backend) : List Artifact := [
       v.hash
     stack := 400
     verified := Proof.Argon2.AArch64.Derive.verified v _
-    spSafe := Proof.Argon2.AArch64.Derive.code_spSafe v _
-    features := v.features }]
+    spSafe := Proof.Argon2.AArch64.Derive.code_spSafe v _ }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Blake2b.AArch64.variants.flatMap fun v => artifactsFor v

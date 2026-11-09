@@ -30,7 +30,7 @@ call {vg_sm4_ctr32}
 }
 
 /// The CPU features `vg_sm4_gcm_stream_init_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Starts an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, makes the streaming state `*state` represent the message with the IV the `nonce_len` bytes at `nonce`, and no additional data or text yet. Continue with `vg_sm4_gcm_stream_aad`, then `vg_sm4_gcm_stream_encrypt` or `vg_sm4_gcm_stream_decrypt`, then `vg_sm4_gcm_stream_finish` or `vg_sm4_gcm_stream_verify`, with the same key context.
 ///
@@ -47,7 +47,7 @@ pub const VG_SM4_GCM_STREAM_INIT_PCLMUL_FEATURES: verified_garbage_cpu::Features
 /// * `state` must be valid for reads and writes of 80 bytes.
 /// * `state` must not overlap `ctx` or `nonce` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce` and `state` may overlap the arguments on the stack, overlap the return address on the stack or the 2608 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_init_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, state: *mut [u64; 10]) {
     core::arch::naked_asm!(
@@ -124,7 +124,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_sm4_gcm_stream_aad_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Absorbs additional data into an incremental SM4-GCM encryption or decryption: with the key context `*ctx`, if the streaming state `*state` represents a message with `aad_len` bytes (modulo 2⁶⁴) of additional data and no text yet, it then represents that message with the `len` bytes at `data` appended to its additional data. All of the additional data comes before the text (§7.1 step 5): after text, the state represents no message.
 ///
@@ -139,7 +139,7 @@ pub const VG_SM4_GCM_STREAM_AAD_PCLMUL_FEATURES: verified_garbage_cpu::Features 
 /// * `data` must be valid for reads of `len` bytes.
 /// * `state` must not overlap `ctx` or `data` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 2616 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_aad_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
@@ -195,7 +195,7 @@ jmp 21f
 }
 
 /// The CPU features `vg_sm4_gcm_stream_encrypt_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Encrypts the next piece of the text of an incremental SM4-GCM encryption (NIST SP 800-38D §7.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and the ciphertext of exactly `text_len` bytes of plaintext so far, encrypts the `len` bytes at `data` in place, as the continuation of that plaintext, and the state then represents the message with them appended.
 ///
@@ -212,7 +212,7 @@ pub const VG_SM4_GCM_STREAM_ENCRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_encrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -330,7 +330,7 @@ jmp 213f
 }
 
 /// The CPU features `vg_sm4_gcm_stream_decrypt_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Decrypts the next piece of the text of an incremental SM4-GCM decryption (NIST SP 800-38D §7.2): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext so far, decrypts the `len` bytes of ciphertext at `data` in place, as the continuation of that ciphertext, and the state then represents the message with them appended. The plaintext is not authenticated until `vg_sm4_gcm_stream_verify` has returned 1.
 ///
@@ -347,7 +347,7 @@ pub const VG_SM4_GCM_STREAM_DECRYPT_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `data` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_decrypt_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, data: *mut u8, len: usize) {
     core::arch::naked_asm!(
@@ -465,7 +465,7 @@ jmp 222f
 }
 
 /// The CPU features `vg_sm4_gcm_stream_finish_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Finishes an incremental SM4-GCM encryption or decryption (NIST SP 800-38D §7.1 steps 5–6, §7.2 steps 6–7): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, writes its 128-bit tag to `*tag`. A shorter tag is the first bytes of this one; to check a received tag, use `vg_sm4_gcm_stream_verify`.
 ///
@@ -481,7 +481,7 @@ pub const VG_SM4_GCM_STREAM_FINISH_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4132 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_finish_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -515,7 +515,7 @@ call {vg_sm4_ctr32}
 }
 
 /// The CPU features `vg_sm4_gcm_stream_verify_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// Finishes an incremental SM4-GCM decryption and checks its tag (NIST SP 800-38D §7.2 steps 6–8): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, if the streaming state `*state` represents a message with `aad_len` bytes of additional data and exactly `text_len` bytes of ciphertext, returns 1 if `tag_len` is between 4 and 16 and the received tag is the first `tag_len` bytes of the message's 128-bit tag, and 0 otherwise. The tags are compared without a branch.
 ///
@@ -531,7 +531,7 @@ pub const VG_SM4_GCM_STREAM_VERIFY_PCLMUL_FEATURES: verified_garbage_cpu::Featur
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `state` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_stream_verify_pclmul(ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -591,7 +591,7 @@ jmp 25f
 }
 
 /// The CPU features `vg_sm4_gcm_seal_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// SM4-GCM authenticated encryption (NIST SP 800-38D §7.1, GCM-AE, with a 128-bit tag; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote, encrypts the `len` bytes at `data` in place, under the IV the `nonce_len` bytes at `nonce`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`. A shorter tag is the first bytes of this one.
 ///
@@ -610,7 +610,7 @@ pub const VG_SM4_GCM_SEAL_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `data` and `tag` must not overlap each other, `ctx`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4136 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_seal_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
@@ -845,7 +845,7 @@ call {vg_sm4_ctr32}
 }
 
 /// The CPU features `vg_sm4_gcm_open_pclmul` requires (`Artifact.features`).
-pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::PCLMULQDQ | verified_garbage_cpu::feature::SSSE3);
+pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SSSE3 | verified_garbage_cpu::feature::PCLMULQDQ);
 
 /// SM4-GCM authenticated decryption (NIST SP 800-38D §7.2, GCM-AD; RFC 8998 §3.5.1): with the key context `*ctx` that `vg_sm4_gcm_init` wrote and the received tag the `tag_len` bytes at `tag`, returns 1 if `tag_len` is between 4 and 16 and the tag is the first `tag_len` bytes of that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, under the IV the `nonce_len` bytes at `nonce`, having then decrypted the ciphertext in place; otherwise returns 0, and the bytes at `data` are unchanged. The tags are compared without a branch.
 ///
@@ -864,7 +864,7 @@ pub const VG_SM4_GCM_OPEN_PCLMUL_FEATURES: verified_garbage_cpu::Features = veri
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * `data` must not overlap `ctx`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
 /// * None of `ctx`, `nonce`, `aad`, `data` and `tag` may overlap the arguments on the stack, overlap the return address on the stack or the 4140 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `pclmulqdq` and `ssse3` target features.
+/// * The CPU must support the `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sm4_gcm_open_pclmul(ctx: *const [u64; 32], nonce: *const u8, nonce_len: usize, aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const u8, tag_len: usize) -> u32 {
     core::arch::naked_asm!(

@@ -30,8 +30,7 @@ def artifacts : List Artifact := [
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.Arm.verifyP384CombU
     stack := 96
-    verified := Proof.Ecdsa.Verify.Arm.P384.verifyHashU_verified hasLaw.law
-    features := ["umaal"] },
+    verified := Proof.Ecdsa.Verify.Arm.P384.verifyHashU_verified hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (p384CombCurve hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
@@ -42,7 +41,6 @@ def artifacts : List Artifact := [
     tables := [("hmac", tables vars)]
     code := signCodeT (p384CombCurveU hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries vars
     stack := stackT
-    verified := p384UT_verified hasLaw.law
-    features := ["umaal"] }]
+    verified := p384UT_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaP384.Arm

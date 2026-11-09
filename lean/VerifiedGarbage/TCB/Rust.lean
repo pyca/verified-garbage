@@ -557,68 +557,6 @@ def featureCheck (name doc : String) (required declared : List String) :
     | parts => unless parts.getLast!.startsWith "Safety\n" do
         throw s!"{name} needs CPU features but its doc does not end with its `# Safety` section"
 
-/-- The value of `f` on the code of each call of `calls` (`Code.calls`), in
-order, but for a call whose value is that of the first call of the same
-function.
-
-`calls` holds a function once per call of it, through every function that
-calls it, and its code is usually the same value in memory at each of them:
-`withPtrEq` finds that at once, without computing `f` again (which, on the
-code of every call, was most of the time of the checks using this). -/
-def distinctCalls {I C β : Type} [BEq β] [LawfulBEq β] (f : Code I C → β)
-    (calls : List (String × Code I C)) : List β := Id.run do
-  -- The first call of each function so far, with its code and its value.
-  let mut first : List {p : String × Code I C × β // p.2.2 = f p.2.1} := []
-  let mut values : List β := []
-  for (n, body) in calls do
-    match first.find? (·.1.1 == n) with
-    | some ⟨(_, body₀, v₀), h₀⟩ =>
-      unless withPtrEq body body₀ (fun _ => f body == v₀) (fun h => by simp_all) do
-        values := f body :: values
-    | none =>
-      let v := f body
-      first := ⟨(n, body, v), rfl⟩ :: first
-      values := v :: values
-  return values.reverse
-
-/-- The features that the instructions of `c` require, but not those of the
-functions it calls, each once, in first-seen order after those of `acc`. -/
-def ownRequires {I C : Type} (req : I → List String) : List String → Code I C → List String
-  | acc, .block is => is.foldl (fun acc i => add acc (req i)) acc
-  | acc, .seq a b => ownRequires req (ownRequires req acc a) b
-  | acc, .ite _ t e => ownRequires req (ownRequires req acc t) e
-  | acc, .loop b _ => ownRequires req acc b
-  | acc, .call _ _ => acc
-  | acc, .frame i b j => add (ownRequires req (add acc (req i)) b) (req j)
-  | acc, .icall i _ _ n => ownRequires req (add acc (req i)) n
-where
-  add (acc fs : List String) : List String :=
-    fs.foldl (fun acc f => if acc.contains f then acc else acc ++ [f]) acc
-
-/-- The calls in `c`, and in the functions it calls, as `Code.calls`, but
-not those of an indirect call (`Code.icall`), nor any in the functions it
-may reach: the calls whose code's features `Code.requires` counts. -/
-def reqCalls {I C : Type} : Code I C → List (String × Code I C)
-  | .block _ => []
-  | .seq a b => reqCalls a ++ reqCalls b
-  | .ite _ t e => reqCalls t ++ reqCalls e
-  | .loop b _ => reqCalls b
-  | .call n b => (n, b) :: reqCalls b
-  | .frame _ b _ => reqCalls b
-  | .icall _ _ _ nx => reqCalls nx
-
-/-- The features that the instructions of `c`, and of the functions it
-calls, require (`Code.requires`), each once: those of the instructions of
-`c` outside its calls (`ownRequires`), then those of the code of each call
-(`reqCalls`, which has every call, those in the code of a call too, but not
-the functions an indirect call may reach),
-skipping a call whose code requires what the first call of the same
-function's does (`distinctCalls`). These are the features of
-`dedup (c.requires req)`, without building the list with repetitions or
-going through the code of a function once per call of it. -/
-def requiresDedup {I C : Type} (req : I → List String) (c : Code I C) : List String :=
-  (distinctCalls (ownRequires req []) (reqCalls c)).foldl ownRequires.add (ownRequires req [] c)
-
 /-- The first `some` of `f` over the instructions of `c`, but not those of
 the functions it calls. -/
 def ownFirstSome? {I C : Type} (f : I → Option String) : Code I C → Option String
@@ -637,7 +575,7 @@ calls, if there is one: the first of those of `c` outside its calls
 call whose value is the first call of the same function's is skipped
 (`distinctCalls`): that value is `none`, or the first call's was found. -/
 def firstSome? {I C : Type} (f : I → Option String) (c : Code I C) : Option String :=
-  ownFirstSome? f c <|> (distinctCalls (ownFirstSome? f) c.calls).findSome? id
+  ownFirstSome? f c <|> (Code.distinctCalls (ownFirstSome? f) c.calls).findSome? id
 
 /-- `doc` with the paragraphs `notes` inserted before its `# Safety` section. -/
 def insertNotes (doc : String) : List String → String
@@ -937,7 +875,7 @@ where
 (`featureCheck`). -/
 def checkFeatures (p : Prepared) : Except String Unit :=
   let a := p.art
-  featureCheck s!"{a.target.name}: {a.name}" a.doc (requiresDedup a.target.isa.requires a.code)
+  featureCheck s!"{a.target.name}: {a.name}" a.doc (Code.requiresDedup a.target.isa.requires a.code)
     a.features
 
 /-- The target's printer can encode every instruction of the code of `p`'s
@@ -1063,7 +1001,7 @@ structure Internal where
   tables : List (String × List (BitVec 64))
   syms : List String
   lines_eq : lines = fn.1.printer.function fn.2
-  features_eq : features = requiresDedup fn.1.isa.requires fn.2
+  features_eq : features = Code.requiresDedup fn.1.isa.requires fn.2
   tables_eq : tables = fn.1.printer.codeTables fn.2
   syms_eq : syms = dedup (lines.filterMap fun | .sym _ _ n => some n | _ => none)
 

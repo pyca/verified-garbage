@@ -19,8 +19,7 @@ def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
     code := Impl.Scrypt.X86.scrypt (pbkName v) (pbkOf v)
     stack := 116
     verified := scrypt_verified v
-    spSafe := scrypt_spSafe v
-    features := v.features }]
+    spSafe := scrypt_spSafe v }]
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Sha256.X86.variants.flatMap fun v => artifactsFor v

@@ -28,8 +28,7 @@ def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.S
       code := Proof.RsaPss.X86.Vf.verifyCode (mvars vs1 vs256) (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
       stack := Proof.RsaPss.X86.Vf.stackBytes
       verified := verify_ok _ _ h Proof.RsaPkcs1Sig.X86.Ver.baseline
-      spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline
-      features := [] }]
+      spSafe := Proof.RsaPss.X86.Vf.code_sp h Proof.RsaPkcs1Sig.X86.Ver.baseline }]
   else []
 
 end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
@@ -50,8 +49,7 @@ def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86
       code := Proof.RsaPss.X86.Sg.signCode (mvars vs1 vs256) (vars vs1 vs256) c
       stack := Proof.RsaPss.X86.Sg.stackBytes
       verified := sign_ok _ _ h c
-      spSafe := Proof.RsaPss.X86.Sg.code_sp h c
-      features := c.features }]
+      spSafe := Proof.RsaPss.X86.Sg.code_sp h c }]
   else []
 
 end VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
