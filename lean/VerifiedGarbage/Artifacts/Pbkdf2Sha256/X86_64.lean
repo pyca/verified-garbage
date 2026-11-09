@@ -28,22 +28,20 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
-/-! # PBKDF2-HMAC (RFC 8018) over a Merkle–Damgård hash function on x86-64 -/
+/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86-64: the iteration and the whole derivation -/
 
 @[expose] public section
 
-namespace VG.Artifacts.Pbkdf2.X86_64
-
-def artifactsFor (v : Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact := [
-  v.I.pbkdf2Api.artifact X86_64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
-    stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
-    verified := v.pbkdf2F
-    spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp
-    features := v.features }]
+namespace VG.Artifacts.Pbkdf2Sha256.X86_64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.X86_64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.MdHash.X86_64.sha256Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) => [
+    v.I.pbkdf2Api.artifact X86_64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.X86_64.withStackArgScratch (Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I) 1 v.H.pbkdf2
+      stack := 24 + Proof.Pbkdf2.Md.X86_64.pbkdf2Frame v.I
+      verified := v.pbkdf2F
+      spSafe := X86_64.withStackArgScratch_spSafe v.pbkdf2Sp
+      features := v.features }]
 
-end VG.Artifacts.Pbkdf2.X86_64
+end VG.Artifacts.Pbkdf2Sha256.X86_64

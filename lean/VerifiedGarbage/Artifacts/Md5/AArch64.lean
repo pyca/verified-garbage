@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.Md5.AArch64.Shared
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 /-! # MD5 (RFC 1321) on AArch64 -/
 
@@ -21,6 +23,9 @@ def artifacts : List Artifact := [
   Spec.Md5.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
     stack := 16 + 112
-    verified := Proof.Md5.AArch64.Shared.finalize }]
+    verified := Proof.Md5.AArch64.Shared.finalize }] ++
+  (VG.Proof.Variants.MdHash.AArch64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
+    v.stream.map fun f =>
+      f.api.artifact AArch64.target { f.reg with suffix := v.suffix, features := v.features })
 
 end VG.Artifacts.Md5.AArch64
