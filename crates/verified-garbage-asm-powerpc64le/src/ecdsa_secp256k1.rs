@@ -1100,7 +1100,7 @@ bl {vg_secp256k1_sub_mod_n}
         vg_secp256k1_add_mod_p = sym super::ec_secp256k1::vg_secp256k1_add_mod_p::vg_secp256k1_add_mod_p,
         vg_secp256k1_sub_mod_p = sym super::ec_secp256k1::vg_secp256k1_sub_mod_p::vg_secp256k1_sub_mod_p,
         vg_secp256k1_mul_mod_n = sym super::ecdsa_secp256k1::vg_secp256k1_mul_mod_n::vg_secp256k1_mul_mod_n,
-        vg_secp256k1_point_add = sym super::ecdsa_secp256k1::vg_secp256k1_point_add::vg_secp256k1_point_add,
+        vg_secp256k1_point_add = sym super::ec_secp256k1::vg_secp256k1_point_add::vg_secp256k1_point_add,
         vg_secp256k1_point_double = sym super::ecdsa_secp256k1::vg_secp256k1_point_double::vg_secp256k1_point_double,
         vg_secp256k1_sub_mod_n = sym super::ecdsa_secp256k1::vg_secp256k1_sub_mod_n::vg_secp256k1_sub_mod_n,
     )
@@ -1203,10 +1203,6 @@ pub(crate) mod vg_secp256k1_add_mod_n;
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_mul_mod_n.rs"]
 pub(crate) mod vg_secp256k1_mul_mod_n;
-
-#[rustfmt::skip]
-#[path = "internal/vg_secp256k1_point_add.rs"]
-pub(crate) mod vg_secp256k1_point_add;
 
 #[rustfmt::skip]
 #[path = "internal/vg_secp256k1_point_double.rs"]
