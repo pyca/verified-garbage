@@ -62,16 +62,23 @@ impl Domain {
         if ok != 1 {
             return None;
         }
-        let precomputed = super::precomputed::Precomputed::new(dit, &bytes, p_len, &mut ws);
         Some(Self {
             bytes,
             p_len,
-            precomputed,
+            precomputed: super::precomputed::Precomputed::new(),
         })
     }
 
-    pub(super) fn exponent_len(&self) -> usize {
-        self.precomputed.exponent_len()
+    /// The key-generation context's words (`vg_ffdh_generate_key_precompute`),
+    /// computed at the first call on this domain or a clone of it.
+    fn context(&self, dit: crate::dit::Dit<'_>) -> &[u64] {
+        self.precomputed.words(dit, &self.bytes, self.p_len)
+    }
+
+    /// The context's public maximum encoding length of a generated scalar,
+    /// not a scalar's actual length.
+    pub(super) fn exponent_len(&self, dit: crate::dit::Dit<'_>) -> usize {
+        self.context(dit)[1] as usize
     }
 
     /// Whether `y` (without leading zeros) is a valid public value
@@ -175,6 +182,7 @@ impl Domain {
         y: &mut [u8],
     ) -> (u32, usize, usize) {
         assert!(x.len() == self.p_len && y.len() == self.p_len);
+        let context = self.context(dit);
         let mut ws = scratch(self.p_len);
         let mut used = [0u64; 1];
         // SAFETY: `state` came from `key_state` for this domain and has only
@@ -201,8 +209,8 @@ impl Domain {
                 ws.as_mut_ptr(),
                 ws.len(),
                 state,
-                self.precomputed.words().as_ptr(),
-                self.precomputed.words().len(),
+                context.as_ptr(),
+                context.len(),
             )
         };
         (status, used[0] as usize, state[3] as usize)
@@ -221,6 +229,7 @@ impl Domain {
         y: &mut [u8],
     ) -> u32 {
         assert!(rand.len() == self.p_len && x.len() == self.p_len && y.len() == self.p_len);
+        let context = self.context(dit);
         let mut ws = scratch(self.p_len);
         // SAFETY: `x`, `y` and `rand` are `p_len` bytes each, the domain,
         // `ws` and the dispatcher as in `check_public`; all are distinct
@@ -239,8 +248,8 @@ impl Domain {
                 rand.len(),
                 ws.as_mut_ptr(),
                 ws.len(),
-                self.precomputed.words().as_ptr(),
-                self.precomputed.words().len(),
+                context.as_ptr(),
+                context.len(),
             )
         }
     }
@@ -300,10 +309,14 @@ mod cache_tests {
         p[63] = 1;
         let domain = Domain::new(dit, &p, &[2], None).unwrap();
         let cloned = domain.clone();
+        // The context is computed at the first key generation, by any clone.
+        assert!(!domain.precomputed.computed());
         assert!(domain.precomputed.shares_allocation(&cloned.precomputed));
-        assert_eq!(domain.precomputed.words().len(), 3 + 34 * 8);
-        assert_eq!(domain.exponent_len(), 64);
-        let expected = domain.precomputed.words().to_vec();
+        assert_eq!(domain.exponent_len(dit), 64);
+        assert!(cloned.precomputed.computed());
+        let expected = domain.context(dit).to_vec();
+        assert_eq!(expected.len(), 3 + 34 * 8);
+        assert_eq!(cloned.context(dit).as_ptr(), domain.context(dit).as_ptr());
         drop(domain);
         let mut draw = alloc::vec![0; 64];
         draw[63] = 3;
@@ -312,7 +325,19 @@ mod cache_tests {
             assert_eq!(cloned.generate_key(dit, &draw, &mut x, &mut y), 1);
             assert_eq!(x, draw);
             assert_eq!(super::super::arithmetic::canonical(&y), &[8]);
-            assert_eq!(cloned.precomputed.words(), expected);
+            assert_eq!(cloned.context(dit), expected);
         }
+    }
+
+    /// A domain dropped before any key generation never computes its context.
+    #[test]
+    fn unused_context_is_never_computed() {
+        let dit = crate::dit::public(crate::dit::Why::Test);
+        let mut p = alloc::vec![0; 64];
+        p[0] = 0x80;
+        p[63] = 1;
+        let domain = Domain::new(dit, &p, &[2], None).unwrap();
+        assert!(!domain.clone().precomputed.computed());
+        assert!(!domain.precomputed.computed());
     }
 }

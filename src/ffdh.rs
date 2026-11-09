@@ -101,8 +101,9 @@ impl Parameters {
     /// with q, also odd 2<q<p-1, q|(p-1) and g^q mod p=1. Does not
     /// primality-test imported parameters.
     ///
-    /// This also initializes reusable public key-generation data (about 34
-    /// times p's byte length). Clones share that allocation.
+    /// Key generation's reusable public data (about 34 times p's byte
+    /// length) is computed at the first key generation from these
+    /// parameters or a clone of them, which all share it.
     pub fn from_components(p: &[u8], g: &[u8], q: Option<&[u8]>) -> Result<Self, Error> {
         crate::dit::enter!(dit);
         Self::from_components_with(dit, p, g, q)
@@ -180,7 +181,7 @@ impl Parameters {
         fill: impl FnMut(&mut [u8]) -> Result<(), E>,
     ) -> Result<PrivateKey, Error> {
         let len = self.p.len();
-        let exponent_len = self.domain.exponent_len();
+        let exponent_len = self.domain.exponent_len(dit);
         let mut x = alloc::vec![0; len];
         let mut y = alloc::vec![0; len];
         let mut state = self.domain.key_state(dit);

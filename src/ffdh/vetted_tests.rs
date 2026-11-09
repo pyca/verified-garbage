@@ -62,7 +62,12 @@ fn generate_from(dit: crate::dit::Dit<'_>, params: &Parameters, draw: &[u8]) -> 
         .unwrap();
     assert_eq!(calls, 1);
     // The retained schedule is a public encoding width, even for x = 3.
-    assert_eq!(key.exponent_len, params.domain.exponent_len());
+    assert_eq!(
+        key.exponent_len,
+        params
+            .domain
+            .exponent_len(crate::dit::public(crate::dit::Why::Test))
+    );
     key
 }
 
