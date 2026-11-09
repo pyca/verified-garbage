@@ -2175,7 +2175,7 @@ bl {vg_p521_sub_mod_n}
         vg_p521_add_mod_p = sym super::ec_p521::vg_p521_add_mod_p::vg_p521_add_mod_p,
         vg_p521_sub_mod_p = sym super::ec_p521::vg_p521_sub_mod_p::vg_p521_sub_mod_p,
         vg_p521_mul_mod_n = sym super::ecdsa_p521::vg_p521_mul_mod_n::vg_p521_mul_mod_n,
-        vg_p521_mul = sym super::ec_p521::vg_p521_mul::vg_p521_mul,
+        vg_p521_mul = sym super::ecdsa_p521::vg_p521_mul::vg_p521_mul,
         vg_p521_sub_mod_n = sym super::ecdsa_p521::vg_p521_sub_mod_n::vg_p521_sub_mod_n,
     )
 }
@@ -2277,6 +2277,10 @@ pub(crate) mod vg_ecdsa_p521_sign_k;
 #[rustfmt::skip]
 #[path = "internal/vg_p521_add_mod_n.rs"]
 pub(crate) mod vg_p521_add_mod_n;
+
+#[rustfmt::skip]
+#[path = "internal/vg_p521_mul.rs"]
+pub(crate) mod vg_p521_mul;
 
 #[rustfmt::skip]
 #[path = "internal/vg_p521_mul_mod_n.rs"]
