@@ -23,6 +23,8 @@ pub(crate) unsafe extern "sysv64" fn vg_md5_init(state: *mut [u8; 80]) {
 ///
 /// Contract: `VG.Spec.Md5.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 80 bytes.
@@ -111,7 +113,7 @@ call {vg_md5_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYtfQEmLb0hNi2dQTYtvWE2Ld2BNi39oSI1kJHjD"
+.base64 "SYtfQEmLb0hNi2dQTYtvWE2Ld2BNi39oSI1kJHhIjWQkgEiNpCSAAAAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
@@ -120,6 +122,8 @@ jne 20b
 /// Finishes an MD5 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the MD5 digest of that message to `*out`.
 ///
 /// Contract: `VG.Spec.Md5.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -190,7 +194,7 @@ jmp 219f
 call {vg_md5_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19ASYtvSE2LZ1BNi29YTYt3YE2Lf2hIjWQkeMM="
+.base64 "iwOJRQCLQwSJRQSLQwiJRQiLQwyJRQxJi19ASYtvSE2LZ1BNi29YTYt3YE2Lf2hIjWQkeGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0iNZCSASI2kJIAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_md5_compress = sym super::md5::vg_md5_compress::vg_md5_compress,
     )
