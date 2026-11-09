@@ -24,9 +24,9 @@ working space as the fifth argument (`modeContract`, whose data is `st`
 bytes a step: 8, or 1 for CFB8), meet the contracts with a scratch buffer of
 72 words (`Proof.TripleDes.cbcEncChainedScratchContract`,
 `fbScratchContract`, `cfb8ScratchContract`). CBC and CFB64 decryption run
-over the core on 64 blocks (`Mode.wideCoreSpec`), 64 blocks a step, then
-one by the block function (`Mode.wideOne_ok`), with a scratch buffer of 200
-words.
+over the core on 64 blocks (`Mode.wideCoreSpec`), by the groups of
+`levels` (64, then 32, 16, 8 and 4 blocks a step), then one by the block
+function (`Mode.wideOne_ok`), with a scratch buffer of 200 words.
 -/
 
 @[expose] public section
@@ -159,7 +159,7 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 8 cbcEncPost).
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContractW 200 8 cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContractW 200 8 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cbcDecWideWith_wp (wideCoreSpec .decrypt) (wideOne_ok .decrypt) (lg := 6) (by decide) (by decide) (by decide)
+  WP.mono (Proof.Modes.PPC64LE.cbcDecLevelsWith_wp (wideCoreSpec .decrypt) (wideOne_ok .decrypt) (by decide)
     (seqPreW_of .decrypt (M := Mode.cbcDecChained 2) rfl (by decide) (by decide) hs)
     (keyArgsW_of .decrypt (M := Mode.cbcDecChained 2) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,
@@ -182,7 +182,7 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract 8 cfbEncPost).pre s) 
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContractW 200 8 cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContractW 200 8 cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.cfbDecWideWith_wp (wideCoreSpec .encrypt) (wideOne_ok .encrypt) (lg := 6) (by decide) (by decide) (by decide)
+  WP.mono (Proof.Modes.PPC64LE.cfbDecLevelsWith_wp (wideCoreSpec .encrypt) (wideOne_ok .encrypt) (by decide)
     (seqPreW_of .encrypt (M := Mode.cfbDecEarly 2) rfl (by decide) (by decide) hs)
     (keyArgsW_of .encrypt (M := Mode.cfbDecEarly 2) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, by rw [dataAt, dataAt, cbcBlocksAt_eq, cbcBlocksAt_eq]; exact h2,

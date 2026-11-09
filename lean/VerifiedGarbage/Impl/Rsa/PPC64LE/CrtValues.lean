@@ -16,7 +16,7 @@ them (`p` is the 0th). As on ARMv7 (`Impl/Rsa/Arm/CrtValues.lean`):
 only branch on data). Then, with `w = ⌈n_len / 4⌉` digits of 32 bits:
 
 * `n`, `p`, `q` and `d` are read into arrays, and `n` divided by `p`
-  (`Div.lean`): `p q = n` is `p` odd, `n / p = q` and `n mod p = 0` (as `n`
+  (`Div.lean`, `divP`: at the divisor's width): `p q = n` is `p` odd, `n / p = q` and `n mod p = 0` (as `n`
   is odd).
 * `qInv` is the inverse of `q` modulo `p | 1` (`InvBatch.lean`), which exists
   if the gcd it computes is 1, at the primes' width: `⌈max(p_len, q_len) / 4⌉`
@@ -161,12 +161,12 @@ def invSetup : List (Prog isa) := [copy 0 aQ, copy aM aP, .block (orOne aM ++ se
 /-- `p` odd, `n` divided by `p`, the checks of `p q = n` and of the inverse,
 `qInv` computed, and `d` divided by `p - 1` and by `q - 1`. -/
 def arith : Prog isa := seqs ([
-  copy aDD aP, .block (bitOf sPodd aP), div aDQ aDR aDD aDT,
+  copy aDD aP, .block (bitOf sPodd aP ++ [.addi .r12 .r20 0]), divP aDQ aDR aDD aDT,
   eqS sE1 aDQ aQ, eqS sE2 aDR aZero] ++ invSetup ++ [
   VG.Impl.Rsa.PPC64LE.InvBatch.inverse, eqS sE3 1 aOne,
   .block (andS sMask sPodd sE1 ++ andS sMask sMask sE2 ++ andS sMask sMask sE3),
-  copy aDQ aD, copy aDD aP, .block (clrLow aDD), div aDQ aDR2 aDD aDT,
-  copy aDQ aD, copy aDD aQ, .block (clrLow aDD), div aDQ aDR3 aDD aDT])
+  copy aDQ aD, copy aDD aP, .block (clrLow aDD ++ [.addi .r12 .r20 0]), divP aDQ aDR2 aDD aDT,
+  copy aDQ aD, copy aDD aQ, .block (clrLow aDD ++ [.addi .r12 .r22 0]), divP aDQ aDR3 aDD aDT])
 
 /-- `[j]`'s low `r8` bytes to `r5`, most significant first, masked by `r9`. -/
 def storeBytes (j : Nat) : Prog isa :=

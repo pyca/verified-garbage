@@ -23,7 +23,8 @@ Then every check is computed whatever its outcome, and and'ed into the
 header's `sMask`, which is returned:
 
 * `p q = n`: `p` odd, `n / p = q` and `n mod p = 0`, by the fixed-iteration
-  division (`Impl/Rsa/PPC64LE/Div.lean`). Then `p` and `q` are odd, and
+  division (`Impl/Rsa/PPC64LE/Div.lean`, `divP`: at the divisor's width,
+  from its length). Then `p` and `q` are odd, and
   clearing their low bits gives `p - 1` and `q - 1`.
 * `dP < p - 1`, `dQ < q - 1` and `qInv < p`: the borrow of a subtraction.
 * `e dP ≡ 1 (mod p - 1)`, `e dQ ≡ 1 (mod q - 1)`: `mulMod` over the 33 bits
@@ -129,8 +130,10 @@ def ltA (a b : Nat) : List (Prog isa) := [sub3 aW a b, .block (stBorrow sF ++ ac
 /-- `[a] = [b]`. -/
 def eqA (a b : Nat) : List (Prog isa) := [eqS sF a b, .block acc]
 
-/-- The division of `[a]` by `[d]`. -/
-def divA (a d : Nat) : List (Prog isa) := [copy aVQ a, copy aVD d, div aVQ aVR aVD aVT]
+/-- The division of `[a]` by `[d]`, a divisor of as many bytes as `len`
+holds (`divP`). -/
+def divA (len : Reg) (a d : Nat) : List (Prog isa) :=
+  [copy aVQ a, copy aVD d, .block [.addi .r12 len 0], divP aVQ aVR aVD aVT]
 
 /-- `[aA] := ([y] mod 2^r4) [x] mod [m]`, `r4` set by `cnt`. -/
 def mulA (y x m : Nat) (cnt : List Instr) : List (Prog isa) :=
@@ -142,7 +145,7 @@ def cnt33 : List Instr := [.li .r4 33]
 def cntQ : List Instr := [.lsl .r4 .r21 3]
 
 /-- `1`, the mask `p` odd, and `n` divided by `p`. -/
-def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA aN aP
+def start : List (Prog isa) := [.block (setOne aOne ++ bitOf sMask aP)] ++ divA .r19 aN aP
 
 /-- After the division: `n / p = q`, `n mod p = 0`, `p - 1` and `q - 1`, and
 the checks of `dP`, `dQ` and `qInv`. -/
@@ -154,7 +157,7 @@ def crtChecks : List (Prog isa) := eqA aVQ aQ ++ eqA aVR aZ ++
 
 /-- The checks of `d`: `d < n`, `d mod (p - 1) = dP` and `d mod (q - 1) = dQ`. -/
 def dChecks : List (Prog isa) :=
-  ltA aD aN ++ divA aD aM1 ++ eqA aVR aDP ++ divA aD aM2 ++ eqA aVR aDQ
+  ltA aD aN ++ divA .r19 aD aM1 ++ eqA aVR aDP ++ divA .r21 aD aM2 ++ eqA aVR aDQ
 
 /-! ## Exit -/
 

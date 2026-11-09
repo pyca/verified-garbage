@@ -15,9 +15,9 @@ pub(crate) unsafe extern "C" fn vg_mldsa_rej_ntt_poly() {
 bl {vg_keccak_absorb_scratch}
 .base64 "AACjOAAAfzioAIA4HwDAOMgA/zg="
 bl {vg_keccak_pad_scratch}
-.base64 "AAB/OKgAgDgAAKA4SAPfOPAD4DjIAB85"
+.base64 "AAB/OKgAgDgAAKA4SAPfOEgD4DjIAB85"
 bl {vg_keccak_squeeze_scratch}
-.base64 "SAN/OAAAnjgAAKA4UAHAOH8A4DwB4Odg"
+.base64 "SAN/OAAAnjgAAKA4GAHAOH8A4DwB4Odg"
 20:
 .base64 "AAADiQEAI4kCAEOJ5EUpeYbJSnlgukp5FEpKfRRCSn1QUId94A+MeQD/ZTngD2t5OFiMfQAALCg="
 beq %cr0, 21f
@@ -27,6 +27,27 @@ b 22f
 22:
 .base64 "AwBjOP//xjgAACYo"
 bne %cr0, 20b
+.base64 "AP+FOQAALCg="
+beq %cr0, 23f
+.base64 "AAAAOAAAH/gIAB/4EAAf+BgAH/ggAB/4KAAf+DAAH/g4AB/4QAAf+EgAH/hQAB/4WAAf+GAAH/hoAB/4cAAf+HgAH/iAAB/4iAAf+JAAH/iYAB/4oAAf+KgAH/iwAB/4uAAf+MAAH/gAAH84qACAOAAAoDgAAN04AAD8OMgAHzk="
+bl {vg_keccak_absorb_scratch}
+.base64 "AACjOAAAfzioAIA4HwDAOMgA/zg="
+bl {vg_keccak_pad_scratch}
+.base64 "AAB/OKgAgDgAAKA4SAPfOPAD4DjIAB85"
+bl {vg_keccak_squeeze_scratch}
+.base64 "SAN/OAAAnjgAAKA4UAHAOH8A4DwB4Odg"
+25:
+.base64 "AAADiQEAI4kCAEOJ5EUpeYbJSnlgukp5FEpKfRRCSn1QUId94A+MeQD/ZTngD2t5OFiMfQAALCg="
+beq %cr0, 26f
+.base64 "AABEkQQAhDgBAKU4"
+b 27f
+26:
+27:
+.base64 "AwBjOP//xjgAACYo"
+bne %cr0, 25b
+b 24f
+23:
+24:
 .base64 "AsKjePgHH+imAwh80Ad/69gHn+vgB7/r6Aff6/AH/+sgAIBO""#,
         vg_keccak_absorb_scratch = sym crate::ed448::vg_keccak_absorb_scratch::vg_keccak_absorb_scratch,
         vg_keccak_pad_scratch = sym crate::ed448::vg_keccak_pad_scratch::vg_keccak_pad_scratch,
