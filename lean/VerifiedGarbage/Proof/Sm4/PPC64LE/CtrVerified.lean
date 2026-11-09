@@ -55,11 +55,21 @@ theorem ctr_constantTime {post : State → State → Prop} :
     (by taint_decide_sum [prepSum, cryptSum])
 
 theorem ctr_correct (s : State) (hs : (modeContract 16 ctrPost).pre s) :
-    ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctrPost).post s s' :=
-  WP.mono (Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide) (by decide)
-    (seqPre_of (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctrEarly) rfl hs)
-    (keyArgs_of (dirCore .encrypt) rfl (M := Mode.ctrEarly) rfl hs))
-    fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩
+    ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract 16 ctrPost).post s s' := by
+  refine pick_correct fun v => ?_
+  obtain ⟨-, eP, eD, eN, eM, -, -⟩ := Proof.Modes.PPC64LE.args_write_r8 s v
+  split
+  · refine WP.mono (Proof.Modes.PPC64LE.ctrSeq_wp Serial.coreSpec rfl
+      ((seqPre_of Serial.core rfl rfl Serial.coreSpec.layout (M := Mode.ctrEarly) rfl hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of Serial.core rfl (M := Mode.ctrEarly) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_ser] at h2 h3
+    exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
+  · refine WP.mono (Proof.Modes.PPC64LE.ctrWide_wp (dirCoreSpec .encrypt) (lg := 4) rfl (by decide) (by decide)
+      (by decide) ((seqPre_of (dirCore .encrypt) rfl rfl (dirCoreSpec .encrypt).layout (M := Mode.ctrEarly) rfl
+        hs).write_r8 v)
+      (keyArgs_r8 v (keyArgs_of (dirCore .encrypt) rfl (M := Mode.ctrEarly) rfl hs))) fun _ ⟨h1, h2, h3, _⟩ => ?_
+    simp only [Proof.Modes.PPC64LE.iv0, Proof.Modes.PPC64LE.blocks0, eP, eD, eN, eM, cipher_enc] at h2 h3
+    exact ⟨Proof.Modes.PPC64LE.abiPreserved_r8 h1, h2, h3⟩
 
 theorem ctr_verified : Verified target ctr (Proof.Sm4.ctrScratchContract abi (slots + 6)) := by
   refine Verified.of_correct ctr_correct ctr_constantTime ?_

@@ -62,7 +62,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov r11, QWORD PTR [rsp+440]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -117,7 +117,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -213,7 +213,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -496,7 +496,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -592,7 +592,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -876,7 +876,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -972,7 +972,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -1256,7 +1256,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -1352,7 +1352,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -1636,7 +1636,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -1732,7 +1732,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2016,7 +2016,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2112,7 +2112,7 @@ vg_rsa_oaep_decrypt_crt_ifma:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2412,7 +2412,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov r11, QWORD PTR [rsp+440]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -2467,7 +2467,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2563,7 +2563,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2846,7 +2846,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -2942,7 +2942,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -3226,7 +3226,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -3322,7 +3322,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -3606,7 +3606,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -3702,7 +3702,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -3986,7 +3986,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -4082,7 +4082,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -4366,7 +4366,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -4462,7 +4462,7 @@ vg_rsa_oaep_decrypt_crt_adx:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -4762,7 +4762,7 @@ vg_rsa_oaep_decrypt:
 	mov r11, QWORD PTR [rsp+440]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -4817,7 +4817,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -4913,7 +4913,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -5196,7 +5196,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -5292,7 +5292,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -5576,7 +5576,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -5672,7 +5672,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -5956,7 +5956,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -6052,7 +6052,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -6336,7 +6336,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -6432,7 +6432,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -6716,7 +6716,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -6812,7 +6812,7 @@ vg_rsa_oaep_decrypt:
 	mov rax, QWORD PTR [rsp+448]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7078,7 +7078,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov r11, QWORD PTR [rsp+384]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -7189,7 +7189,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7285,7 +7285,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7513,7 +7513,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7609,7 +7609,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7838,7 +7838,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -7934,7 +7934,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8163,7 +8163,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8259,7 +8259,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8488,7 +8488,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8584,7 +8584,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8813,7 +8813,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -8909,7 +8909,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9064,7 +9064,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov r11, QWORD PTR [rsp+384]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -9175,7 +9175,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9271,7 +9271,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9499,7 +9499,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9595,7 +9595,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9824,7 +9824,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -9920,7 +9920,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10149,7 +10149,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10245,7 +10245,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10474,7 +10474,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10570,7 +10570,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10799,7 +10799,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -10895,7 +10895,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_adx:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11050,7 +11050,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov r11, QWORD PTR [rsp+384]
 	mov QWORD PTR [rsp+280], r11
 	mov r11, QWORD PTR [rsp+280]
-	mov r11, QWORD PTR [r11+32]
+	mov r11, QWORD PTR [r11+48]
 	cmp r11, 16
 	je 20f
 	cmp r11, 20
@@ -11161,7 +11161,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11257,7 +11257,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11485,7 +11485,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11581,7 +11581,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11810,7 +11810,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -11906,7 +11906,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12135,7 +12135,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12231,7 +12231,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12460,7 +12460,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12556,7 +12556,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12785,7 +12785,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax
@@ -12881,7 +12881,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov rax, QWORD PTR [rsp+392]
 	mov QWORD PTR [rsp+280], rax
 	mov rax, QWORD PTR [rsp+280]
-	mov rax, QWORD PTR [rax+32]
+	mov rax, QWORD PTR [rax+48]
 	mov QWORD PTR [rsp+288], rax
 	mov eax, 0
 	mov QWORD PTR [rsp+152], rax

@@ -372,8 +372,8 @@ theorem withQ_rel : RelCT isa (Two fun d s => E5 d s ∧ s.gpr .r0 = 0) withQ (T
   exact two_ite (Φ := E9) (fix_mask fun _ _ h => h.2.2.2)
     (two_post (two_taint _ (pins_base (Φ := fun d s => E9 d s ∧ s.gpr .r26 = 0) fun _ _ h => h.1.1.base)
       (by taint_decide)) fun _ _ h => TK0 (Φ := fun d s => E9 d s ∧ s.gpr .r26 = 0) (fun _ _ h => h.1.1.base) h)
-    (two_post (two_taint _ (pins_base (Φ := fun d s => E9 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h => h.1.1.base)
-      (by taint_decide)) fun _ _ h => DS h)
+    (two_post (subgroup_rel (Φ := fun d s => E9 d s ∧ s.gpr .r26 ≠ 0) fun _ _ h =>
+      ⟨h.1.1.base, h.1.2.1, h.1.1.p0, h.1.1.valid⟩) fun _ _ h => DS h)
 
 theorem withoutQ_rel : RelCT isa (Two fun d s => E5 d s ∧ s.gpr .r0 ≠ 0) withoutQ (Two CF) := by
   unfold withoutQ

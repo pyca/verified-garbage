@@ -28,8 +28,8 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 public import VerifiedGarbage.Proof.Weierstrass.PPC64LE.TComb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
 meta import VerifiedGarbage.Proof.Framework.ConstMem
 import VerifiedGarbage.Proof.BrainpoolP384r1.PPC64LE.Comb
@@ -49,7 +49,7 @@ constant (`abi.withConsts brainpoolp384r1CombConsts`), and `[v]Q` by the windows
 `a`, as P-256's (`Proof/Ecdsa/Verify/PPC64LE/P256Comb.lean`, `Verified.lean`):
 `combPts_ok`, `pointsBrainpoolP384r1` as `PtsOk` states; `verify_ppc`, from
 `verifyWith_ok`; `verify_ct`: the time depends only on the pointers and the
-table's address (`taint_decide` with `taintSym` on the code's literal).
+table's address (`taint_decide` with `vectorTaintSym` on the code's literal).
 -/
 
 @[expose] public section
@@ -277,7 +277,7 @@ theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve) (s : State)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifyBrainpoolP384r1 :=
-  VG.Taint.constantTime (A := taintSym [brainpoolp384r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  VG.Taint.constantTime (A := vectorTaintSym [brainpoolp384r1Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

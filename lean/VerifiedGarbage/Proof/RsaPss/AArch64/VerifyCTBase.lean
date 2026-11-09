@@ -19,7 +19,7 @@ meta import VerifiedGarbage.Proof.RsaPkcs1Sig.Mem
 # RSASSA-PSS verification on AArch64: constant time, the public data
 
 The pointers, the lengths, the bytes of `n` and `e` and the precomputed
-values are public (`PubV`, from `verifyPrecomputedTableContract.pub`); the
+values are public (`PubV`, from `verifyPrecomputedMdTableContract.pub`); the
 digest and the signature are secret. Two runs with the same public data as an
 anchor `a` (`E`) are related at each point of the code by what correctness
 says there; a failed check of the modulus' first byte returns 0

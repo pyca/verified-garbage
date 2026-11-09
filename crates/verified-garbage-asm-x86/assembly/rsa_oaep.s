@@ -11,7 +11,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	push edi
 	lea esp, [esp-144]
 	mov edx, DWORD PTR [esp+228]
-	mov edx, DWORD PTR [edx+16]
+	mov edx, DWORD PTR [edx+24]
 	cmp edx, 20
 	je 20f
 	cmp edx, 28
@@ -150,7 +150,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -271,7 +271,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -545,7 +545,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -666,7 +666,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -941,7 +941,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1062,7 +1062,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1337,7 +1337,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1458,7 +1458,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1733,7 +1733,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1854,7 +1854,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2129,7 +2129,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2250,7 +2250,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+232]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2458,7 +2458,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+76], eax
 	call {vg_rsa_private_checked}
 	mov edx, DWORD PTR [esp+256]
-	mov edx, DWORD PTR [edx+16]
+	mov edx, DWORD PTR [edx+24]
 	cmp edx, 20
 	je 20f
 	cmp edx, 28
@@ -2535,7 +2535,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2656,7 +2656,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3008,7 +3008,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3129,7 +3129,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3482,7 +3482,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3603,7 +3603,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3956,7 +3956,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4077,7 +4077,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4430,7 +4430,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4551,7 +4551,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4904,7 +4904,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -5025,7 +5025,7 @@ vg_rsa_oaep_decrypt:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+260]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax

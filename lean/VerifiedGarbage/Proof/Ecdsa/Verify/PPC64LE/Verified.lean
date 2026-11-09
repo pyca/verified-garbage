@@ -11,9 +11,9 @@ import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P256Comb
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Contract
 public import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
@@ -25,9 +25,9 @@ meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.P256Comb
 import VerifiedGarbage.Proof.P256.PPC64LE.Comb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.ConstMem
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Ecdsa.Verify.PPC64LE.Contract
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.P256.PPC64LE
@@ -46,7 +46,7 @@ public import VerifiedGarbage.Spec.Ecdsa.Verify.Generic
 `vg_ecdsa_p256_verify` with `[u]G` by the comb, from its table, a constant
 (`abi.withConsts p256CombConsts`): `verify_ppc`, from `verifyWith_ok` and
 `combPts_ok`; `verify_ct`: the time depends only on the pointers and the
-table's address (`taint_decide` with `taintSym` on the code's literal).
+table's address (`taint_decide` with `vectorTaintSym` on the code's literal).
 -/
 
 @[expose] public section
@@ -122,7 +122,7 @@ theorem verify_ppc (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : vPC.
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩
 
 theorem verify_ct : ConstantTime isa vPC.pre vPC.pub verifyP256 :=
-  VG.Taint.constantTime (A := taintSym [p256Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+  VG.Taint.constantTime (A := vectorTaintSym [p256Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5, h6⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl

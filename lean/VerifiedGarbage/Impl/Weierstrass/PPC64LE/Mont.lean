@@ -62,10 +62,18 @@ def mod (n m : Nat) : Mod := { n := n, mo := moAt n, tmp := tmpAt n, minv := Bit
 /-- The offsets zero-extended from their low 32 bits. -/
 def zext : List Instr := [.rotr .w .r4 .r4 0, .rotr .w .r5 .r5 0, .rotr .w .r6 .r6 0]
 
+/-- A Mersenne modulus `2^(64 (n - 1) + k) - 1` stored at `[r3 + o]` (`n`
+words): all ones, then `2^k - 1`, a word at a time through `r11`. -/
+def setMers (n k o : Nat) : List Instr :=
+  movImm64 .r11 (2 ^ 64 - 1) ++ (List.range (n - 1)).map (fun j => .store .d .r11 wb (o + 8 * j)) ++
+  movImm64 .r11 (2 ^ k - 1) ++ ([.store .d .r11 wb (o + 8 * (n - 1))] : List Instr)
+
 /-- The pointers `r4 = ws + o`, `r5 = ws + a`, `r6 = ws + b`, and, for
-more than four words, the modulus stored (through `r11`). -/
+more than four words, the modulus stored (through `r11`): by `setMers` for a
+Mersenne modulus (P-521's `p`), else by `setConst`. -/
 def entry (n m : Nat) : List Instr :=
-  [.add .r4 wb .r4, .add .r5 wb .r5, .add .r6 wb .r6] ++ if n ≤ 4 then [] else setConst n (moAt n) m
+  [.add .r4 wb .r4, .add .r5 wb .r5, .add .r6 wb .r6] ++
+    if n ≤ 4 then [] else if 0 < mersK n m then setMers n (mersK n m) (moAt n) else setConst n (moAt n) m
 
 /-- The function of the operation `op`: the offsets zero-extended, the
 entry, then `op`. -/

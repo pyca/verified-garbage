@@ -55,7 +55,7 @@ vg_rsa_oaep_decrypt_umaal:
 	ldr r3, [sp, #184]
 	bl {vg_rsa_private_checked_umaal}
 	ldr r1, [sp, #260]
-	ldr r1, [r1, #16]
+	ldr r1, [r1, #24]
 	cmp r1, #16
 	beq 20f
 	cmp r1, #20
@@ -136,7 +136,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -272,7 +272,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -679,7 +679,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -815,7 +815,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1223,7 +1223,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1359,7 +1359,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1767,7 +1767,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -1903,7 +1903,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2311,7 +2311,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2447,7 +2447,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2855,7 +2855,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -2991,7 +2991,7 @@ vg_rsa_oaep_decrypt_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -3344,7 +3344,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	ldr r1, [sp, #232]
-	ldr r1, [r1, #16]
+	ldr r1, [r1, #24]
 	cmp r1, #16
 	beq 20f
 	cmp r1, #20
@@ -3496,7 +3496,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -3632,7 +3632,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -3932,7 +3932,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4068,7 +4068,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4369,7 +4369,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4505,7 +4505,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4806,7 +4806,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -4942,7 +4942,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5243,7 +5243,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5379,7 +5379,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5680,7 +5680,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -5816,7 +5816,7 @@ vg_rsa_oaep_encrypt_precomputed_umaal:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -6038,7 +6038,7 @@ vg_rsa_oaep_decrypt:
 	ldr r3, [sp, #184]
 	bl {vg_rsa_private_checked}
 	ldr r1, [sp, #260]
-	ldr r1, [r1, #16]
+	ldr r1, [r1, #24]
 	cmp r1, #16
 	beq 20f
 	cmp r1, #20
@@ -6119,7 +6119,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -6255,7 +6255,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -6662,7 +6662,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -6798,7 +6798,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -7206,7 +7206,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -7342,7 +7342,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -7750,7 +7750,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -7886,7 +7886,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -8294,7 +8294,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -8430,7 +8430,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -8838,7 +8838,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -8974,7 +8974,7 @@ vg_rsa_oaep_decrypt:
 	add r12, sp, #0
 	ldr r0, [sp, #264]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -9327,7 +9327,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, lr}
 	sub sp, sp, #128
 	ldr r1, [sp, #232]
-	ldr r1, [r1, #16]
+	ldr r1, [r1, #24]
 	cmp r1, #16
 	beq 20f
 	cmp r1, #20
@@ -9479,7 +9479,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -9615,7 +9615,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -9915,7 +9915,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10051,7 +10051,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10352,7 +10352,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10488,7 +10488,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10789,7 +10789,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -10925,7 +10925,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11226,7 +11226,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11362,7 +11362,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11663,7 +11663,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0
@@ -11799,7 +11799,7 @@ vg_rsa_oaep_encrypt_precomputed:
 	add r12, sp, #0
 	ldr r0, [sp, #236]
 	str r0, [r12, #120]
-	ldr r0, [r0, #16]
+	ldr r0, [r0, #24]
 	str r0, [r12, #124]
 	add r12, sp, #0
 	movw r0, #0

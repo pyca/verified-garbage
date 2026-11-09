@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # RSASSA-PSS (RFC 8017) on PPC64LE -/
@@ -12,21 +12,18 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaPss.PPC64LE
 
 open VG.Proof.RsaPss.PPC64LE (OK verify_ok' sign_ok')
-open VG.Proof.MdHashTable.PPC64LE (mvars)
-open VG.Proof.HashTable.PPC64LE (vars)
+open VG.Proof.MdHashTable.PPC64LE (mvars tables fnsOf fns3)
 
 def artifacts : List Artifact :=
-  if h : OK mvars vars then [
-    Spec.RsaPss.verifyPrecomputedTableApi.artifact PPC64LE.target {
-      tables := [("hash", Proof.MdHashTable.PPC64LE.tables mvars), ("mgf1", Proof.HashTable.PPC64LE.tables vars)]
-      code := Impl.RsaPss.PPC64LE.verifyPrecomputed (Proof.MdHashTable.PPC64LE.fnsOf mvars)
-        (Proof.HashTable.PPC64LE.fnsOf vars)
+  if h : OK mvars mvars then [
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaPss.PPC64LE.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
       stack := 304
       verified := verify_ok' h },
-    Spec.RsaPss.signTableApi.artifact PPC64LE.target {
-      tables := [("hash", Proof.MdHashTable.PPC64LE.tables mvars), ("mgf1", Proof.HashTable.PPC64LE.tables vars)]
-      code := Impl.RsaPss.PPC64LE.Sign.sign (Proof.MdHashTable.PPC64LE.fnsOf mvars)
-        (Proof.HashTable.PPC64LE.fnsOf vars)
+    Spec.RsaPss.signMdTableApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaPss.PPC64LE.Sign.sign (fnsOf mvars) (fns3 mvars)
       stack := 3776
       verified := sign_ok' h }]
   else []

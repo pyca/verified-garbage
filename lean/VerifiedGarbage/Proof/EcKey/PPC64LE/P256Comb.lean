@@ -6,7 +6,7 @@ public import VerifiedGarbage.Spec.EcKey.P256
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LEComb
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+public import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
@@ -22,7 +22,7 @@ meta import VerifiedGarbage.Spec.EcKey.P256
 meta import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LEComb
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Consts
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintSym
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.VectorTaintSym
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.Proof.EcKey.PPC64LE.Main
@@ -126,7 +126,7 @@ theorem combPk_ok (hL : Weierstrass.Law Spec.P256.curve) (s : State) (hs : pkPC.
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, post_of hpost⟩
 
 theorem combPk_ct : ConstantTime isa pkPC.pre pkPC.pub Impl.EcKey.PPC64LE.publicKeyP256Comb :=
-  VG.Taint.constantTime (A := taintSym [p256Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
+  VG.Taint.constantTime (A := vectorTaintSym [p256Comb.tsym]) (Taint.ofRegs [.r3, .r4, .r5])
     (fun _ _ _ _ ⟨⟨hsp, h3, h4, h5⟩, sy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl

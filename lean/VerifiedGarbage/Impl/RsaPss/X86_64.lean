@@ -45,7 +45,7 @@ never on `ℓ`, which verification computes from the signature:
 
 With `DB` at `scratch + oEm + lo` (`sEb`), `dbLen` bytes (`sDb`), and `H`
 after it: `Impl.Mgf1.X86_64`'s MGF1 with the streaming functions of the
-table of `Hash` (`mgfRound`): for each counter `c`, the digest of
+table of `MdHash` (`mgfRound`): for each counter `c`, the digest of
 `H ‖ I2OSP(c, 4)`, whose first `min(hLen, dbLen - c hLen)` bytes are XORed
 into `DB` at `c hLen`.
 
@@ -175,12 +175,12 @@ def oRsa : Nat := 8192
 
 `encode` and `checkEncoding` take the hash function as a table of the
 interface `MdHash` (`Spec/MdHashTable.lean`), their stack argument 2, and
-MGF1's as a table of `Hash` (`Spec/HashTable.lean`), their stack argument
+MGF1's as a table of `MdHash` too, their stack argument
 3. On entry they copy the words of the tables they use to slots (`hSlots`, `gSlots`,
 in the part of the frame that only their callers use for the RSA
 operation's arguments): the former's `init` (word 0), compression function
 (word 3) and digest of a hash value (word 4), and the latter's `init`,
-`update` and `finalize` and digest length (words 0, 1, 2 and 4). Each call
+`update` and `finalize` and digest length (words 0, 1, 2 and 6). Each call
 of one of them is indirect (`scall`: the slot into `r11`, then `call r11`,
 of whichever of the functions the list names is at that address). -/
 
@@ -207,11 +207,11 @@ def hSlots : List Instr :=
   [.mov .rax (.mem (at_ .r11 0)), .store (sp sIniH) .rax, .mov .rax (.mem (at_ .r11 24)), .store (sp sCmpH) .rax,
     .mov .rax (.mem (at_ .r11 32)), .store (sp sDigH) .rax]
 
-/-- The `Hash` table's words 0, 1, 2 and 4 (the table at `r11`) to their
+/-- The MGF1 table's words 0, 1, 2 and 6 (the table at `r11`) to their
 slots. -/
 def gSlots : List Instr :=
   [.mov .rax (.mem (at_ .r11 0)), .store (sp sIniG) .rax, .mov .rax (.mem (at_ .r11 8)), .store (sp sUpdG) .rax,
-    .mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax, .mov .rax (.mem (at_ .r11 32)), .store (sp sDG) .rax]
+    .mov .rax (.mem (at_ .r11 16)), .store (sp sFinG) .rax, .mov .rax (.mem (at_ .r11 48)), .store (sp sDG) .rax]
 
 /-- The call of the function whose address is in the slot `s`, among `ts`. -/
 def scall (s : Nat) (ts : List (String × Prog isa)) : Prog isa :=
@@ -314,7 +314,7 @@ def ctHash : Prog isa := ctHashWith f H (pad80 H)
 
 /-! ## MGF1
 
-`Impl.Mgf1.X86_64`'s, with the hash function `G` of the table of `Hash`
+`Impl.Mgf1.X86_64`'s, with the hash function `G` of the table of `MdHash`
 whose words `gSlots` copied: its seed `H`, `hLen` bytes at `DB + dbLen`,
 and its mask `DB` (`dbLen` bytes at `sEb`), in the slots `sB` and `sFb`
 (free while MGF1 runs) and `sEb` and `sDb`; its state at `scratch + oSt`,

@@ -95,8 +95,8 @@ theorem head_ct (ts : List FnTable) {S : Nat} (hS : 15 ≤ S) :
   subst ea eb
   obtain ⟨hL₁, hT₁, hd₁⟩ := spec_tab h₁
   obtain ⟨hL₂, hT₂, hd₂⟩ := spec_tab h₂
-  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq] at hp
@@ -211,7 +211,7 @@ theorem lenLoad_ct {S : Nat} (hS : 15 ≤ S) :
     RelCT isa (Two S (tables vs) (WithL (tables vs) (tableOf w₁) SlotI)) (.block lenLoad)
       (Two S (tables vs) (WithL (tables vs) (tableOf w₁) (LenI w₁.H.D))) := by
   refine two_wp (fun e => ?_) fun L g vv m₀ t hL hP h => ?_
-  · show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 32])) _
+  · show RelCT isa _ (.block ([.ldrSp .x16 sTab] ++ [.ldr .x .x16 .x16 48])) _
     refine (RelCT.block_append (pw_seq_tr (X := fun W _ => W 32 = e.L.tabL) [.x16] (fun _ => e.L.tabL)
       (by taint_decide) (by taint_decide) fun g vv m₀ t V W hL hP hc R hS h32 => ?_)).mono
       (fun _ _ ⟨hL, hP, _, f₁, f₂⟩ => ⟨hL, hP, f₁.1, f₂.1⟩) fun _ _ h => h

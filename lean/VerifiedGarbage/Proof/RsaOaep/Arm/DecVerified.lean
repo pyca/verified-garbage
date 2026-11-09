@@ -104,7 +104,7 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
   obtain ⟨tR, tRo, tC⟩ := tblL_of hi₀
   have keep : ∀ σ s v, R2 P σ s → R2 P σ (s.setReg .r1 v) := fun σ s v ⟨hc, hi, he, r0, hk⟩ =>
     ⟨Ctx.setReg_iff.mpr hc, hi, he, by simp only [VG.Arm.RegUpd.gpr_setReg, reduceCtorEq, ↓reduceIte]; exact r0, hk⟩
-  show VP _ (.block ([Impl.RsaPss.Arm.ld .r1 (Impl.RsaPss.Arm.arg 23)] ++ [.ldr .r1 .r1 16])) _
+  show VP _ (.block ([Impl.RsaPss.Arm.ld .r1 (Impl.RsaPss.Arm.arg 23)] ++ [.ldr .r1 .r1 24])) _
   refine VP.block_append (G := fun σ s => R2 P σ s ∧ s.gpr .r1 = P.tabL)
     (VP.ldrSp (c := [(.r1, Impl.RsaPss.Arm.arg 23)]) (fun _ _ _ _ h₁ h₂ => h₁.1.st.sp.trans h₂.1.st.sp.symm)
       fun σ s hs => ?_)
@@ -123,8 +123,8 @@ theorem len_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.ta
   · simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2, h₂.2]
   · obtain ⟨hr2, h1⟩ := hs
     have T := hTL σ hr2.2.1.tabTL
-    refine WP.mono (wp_ldrT (by decide) h1 (St_roR hr2.1.st tRo (tC 16 (by decide)))
-      ((St_roW hr2.1.st tRo (tC 16 (by decide))).trans T.d)) fun t e => ?_
+    refine WP.mono (wp_ldrT (by decide) h1 (St_roR hr2.1.st tRo (tC 24 (by decide)))
+      ((St_roW hr2.1.st tRo (tC 24 (by decide))).trans T.d)) fun t e => ?_
     subst e
     exact ⟨keep σ s _ hr2, by simp only [VG.Arm.RegUpd.gpr_setReg, ↓reduceIte]⟩
 
@@ -224,8 +224,8 @@ theorem code_ok (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) {s : State} (hs : (dsp
   · rw [pushRegion_eq (F := frameBytes) (A := 84) (C := 3440) (argv := (epw (vs := vs) s s w w₁).argv)
       (ro := (epw (vs := vs) s s w w₁).lay.ro) (rw := (epw (vs := vs) s s w w₁).lay.rw) hsp']
     exact hin.ok.push_apart r hr
-  · sig_post [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  · sig_post [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val]
     intro H G hH hG
     rw [show BitVec.setWidth 64 (stackArg s 19) = State.addr (stackArg s 19) from rfl, hashAt_tableOf hfitL hidxL,
@@ -266,8 +266,8 @@ theorem code_ct (hc : Coh vs) (v : Proof.Rsa.Arm.CrtImpl) :
   obtain ⟨⟨T₁, hT₁, hhL₁⟩, ⟨T, hT, hh₁⟩, -, -, -⟩ := spec_tab h₁
   obtain ⟨w₁, hw₁, rfl⟩ := List.mem_map.mp hT₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hT
-  sig_pub [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pub [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argRegs, reduceClassify, Loc.val] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp

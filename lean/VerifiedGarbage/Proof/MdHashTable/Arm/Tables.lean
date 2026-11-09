@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_224
 public import VerifiedGarbage.Proof.RsaPss.Arm.Hashes.Sha512_256
 public import VerifiedGarbage.Proof.HashTable.Basic
-import VerifiedGarbage.Proof.HashTable.Arm
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 public import VerifiedGarbage.Spec.MdHashTable
 import VerifiedGarbage.Proof.Framework.Arm.Exec
@@ -155,7 +154,14 @@ variable {F A C : Nat} {argv : List (BitVec 32)} {ro rw : List Region} {s : Stat
 /-- A word of a buffer only read, after the entry, as before it. -/
 theorem entered_roW (h : (layOf F A argv ro rw s C).Ok (entered F s)) (hsp : 56 + F ≤ s.sp.toNat)
     {R : Region} (hR : R ∈ ro) {a : Addr} (hc : R.Contains a 4) :
-    (entered F s).mem.readW a 32 = s.mem.readW a 32 := Proof.HashTable.Arm.entered_roW h hsp hR hc
+    (entered F s).mem.readW a 32 = s.mem.readW a 32 := by
+  have hpush : Frame [VG.Arm.FrameStack.belowA s.sp 56] s.mem (entered F s).mem :=
+    VG.Arm.FrameStack.pushed_frameA (rs := Impl.RsaPkcs1Sig.Arm.pushRegs) (by show 56 ≤ s.sp.toNat; omega)
+  refine hpush.readW hc (fun r hr => ?_) (by decide)
+  simp only [List.mem_singleton] at hr; subst hr
+  show Region.Disjoint _ ⟨State.addr (s.sp - BitVec.ofNat 32 56), 56⟩
+  rw [← Proof.RsaPkcs1Sig.Arm.layOf_PUSH (A := A) (C := C) (argv := argv) (ro := ro) (rw := rw) hsp]
+  exact ((h.stk R (List.mem_append_left _ hR)).sub_left (Proof.RsaPkcs1Sig.Arm.Lay.sub_stk (Nat.le_refl _))).symm
 
 /-- What `ctHash` needs of the table of `w` at `p`, one of the buffers only
 read, after the entry. -/

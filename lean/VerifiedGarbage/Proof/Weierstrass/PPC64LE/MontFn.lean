@@ -90,6 +90,84 @@ theorem zext_wp (s : State) : WP isa (.block zext) s (· = zextState s) := by
     (wp_step (exec_rotr_w (by decide)) (WP.block_nil ?_)))
   simp only [zextState, lo, write_gpr, reduceCtorEq, ite_false, ext_lo]
 
+/-- `r11` stored at `[r3 + o + 8j]` for `j < k`. -/
+theorem stores_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) (h3 : At s base .r3 0)
+    {o : Nat} (ho4 : o % 4 = 0) : ∀ {k : Nat}, o + 8 * k ≤ size →
+    WP isa (.block ((List.range k).map fun j => .store .d .r11 wb (o + 8 * j))) s fun u =>
+      (∀ j < k, word u.mem base (o + 8 * j) = s.gpr .r11) ∧ Outside base o (8 * k) s.mem u.mem ∧ Kp [] s u
+  | 0, _ => WP.block_nil ⟨fun _ h => absurd h (Nat.not_lt_zero _), Outside.refl _ _ _ _, Kp.refl _ _⟩
+  | k + 1, hk => by
+    have hs15 := hs.small
+    have hn := hs.nowrap
+    rw [List.range_succ, List.map_append, List.map_cons, List.map_nil]
+    refine WP.block_append (WP.mono (stores_ok hs h3 ho4 (k := k) (by omega)) fun s₁ ⟨V₁, O₁, K₁⟩ => ?_)
+    refine wp_step (std_ok (K₁.ws hs) (K₁.at h3 (by simp)) (by decide) (by omega) (d := o + 8 * k) (by omega))
+      (WP.block_nil ?_)
+    rw [Nat.zero_add, K₁.gpr _ (by simp)]
+    refine ⟨fun j hj => ?_, ?_, ⟨fun r _ => K₁.gpr r (by simp), K₁.rd, K₁.wr, K₁.sp, K₁.lr⟩⟩
+    · rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+      · show word (s₁.mem.writeW _ _) base _ = _
+        rw [(writeW_outside s₁.mem base _ (by omega)).word (by omega) (by omega), V₁ j hj]
+      · exact word_writeW_self _ _ _ _
+    · exact (O₁.mono (Nat.le_refl _) (by omega)).trans
+        ((writeW_outside s₁.mem base (d := o + 8 * k) _ (by omega)).mono (by omega) (by omega))
+
+theorem wordsVal_ones {mem : Mem} {base : Addr} {o : Nat} :
+    ∀ {k : Nat}, (∀ j < k, word mem base (o + 8 * j) = BitVec.ofNat 64 (2 ^ 64 - 1)) →
+      wordsVal mem base o k + 1 = 2 ^ (64 * k)
+  | 0, _ => rfl
+  | k + 1, h => by
+    rw [wordsVal_succ_top, h k (by omega), BitVec.toNat_ofNat, Nat.add_right_comm,
+      wordsVal_ones fun j hj => h j (by omega), show 64 * (k + 1) = 64 * k + 64 by omega, Nat.pow_add]
+    have : (2 ^ 64 - 1) % 2 ^ 64 = 2 ^ 64 - 1 := by decide
+    rw [this]
+    have : 1 ≤ 2 ^ 64 := by decide
+    generalize 2 ^ (64 * k) = P
+    grind
+
+/-- `setMers`: the Mersenne modulus `m = 2^(64 (n - 1) + k) - 1` stored, as
+`setConst` stores it. -/
+theorem setMers_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n k o m : Nat}
+    (h3 : At s base .r3 0) (ho : o + 8 * n ≤ size) (ho4 : o % 4 = 0) (hn : 2 ≤ n) (hk : k < 64)
+    (hm : m + 1 = 2 ^ (64 * (n - 1) + k)) :
+    WP isa (.block (setMers n k o)) s fun u =>
+      Outside base o (8 * n) s.mem u.mem ∧ val32 u.mem base o (2 * n) = m ∧ Kp [.r11] s u := by
+  have hs15 := hs.small
+  obtain ⟨N, rfl⟩ : ∃ N, n = N + 1 := ⟨n - 1, by omega⟩
+  rw [Nat.add_sub_cancel] at hm
+  have hk1 : 2 ^ k - 1 < 2 ^ 64 := by
+    have : 2 ^ k ≤ 2 ^ 64 := Nat.pow_le_pow_right (by decide) (by omega)
+    omega
+  simp only [setMers, Nat.add_sub_cancel, List.append_assoc]
+  refine movImm64_ok (by decide) ?_
+  refine WP.block_append (WP.mono (stores_ok (hs.write _ _) (h3.write _) ho4 (k := N) (by omega))
+    fun s₁ ⟨V₁, O₁, K₁⟩ => ?_)
+  refine movImm64_ok hk1 ?_
+  have hs₁ : Ws (s₁.write .r11 (BitVec.ofNat 64 (2 ^ k - 1))) base size := (K₁.ws (hs.write _ _)).write _ _
+  have h3₁ : At (s₁.write .r11 (BitVec.ofNat 64 (2 ^ k - 1))) base .r3 0 := (K₁.at (h3.write _) (by simp)).write _
+  refine wp_step (std_ok hs₁ h3₁ (by decide) (by omega) (d := o + 8 * N) (by omega)) (WP.block_nil ?_)
+  simp only [write_mem, write_gpr, ite_true, Nat.zero_add]
+  refine ⟨?_, ?_, ?_⟩
+  · exact (O₁.mono (Nat.le_refl _) (by omega)).trans
+      ((writeW_outside s₁.mem base (d := o + 8 * N) _ (by have := hs.nowrap; omega)).mono (by omega) (by omega))
+  · rw [← wordsVal_eq_val32, wordsVal_succ_top, word_writeW_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk1]
+    have hlow : wordsVal (s₁.mem.writeW (off base (o + 8 * N)) (BitVec.ofNat 64 (2 ^ k - 1))) base o N =
+        wordsVal s₁.mem base o N :=
+      (writeW_outside s₁.mem base _ (by have := hs.nowrap; omega)).wordsVal (by omega) (by have := hs.nowrap; omega)
+    rw [hlow]
+    have hw := wordsVal_ones (mem := s₁.mem) (base := base) (o := o) (k := N) fun j hj => by
+      rw [V₁ j hj]; simp only [write_gpr, ite_true]
+    rw [Nat.pow_add] at hm
+    have : 1 ≤ 2 ^ k := Nat.one_le_two_pow
+    generalize 2 ^ (64 * N) = P at *
+    generalize 2 ^ k = K at *
+    generalize wordsVal s₁.mem base o N = W at *
+    have : P * (K - 1) + P = P * K := by
+      rw [Nat.mul_sub, Nat.mul_one]; have := Nat.le_mul_of_pos_right P (show 0 < K by omega); omega
+    omega
+  · exact ((Kp.write _ _ (by simp)).trans (K₁.mono (by simp))).trans ((Kp.write _ _ (by simp)).trans
+      ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩)
+
 /-- What the entry leaves. -/
 theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
     WP isa (.block (entry n m)) (zextState s) fun u =>
@@ -118,10 +196,29 @@ theorem entry_ok {n m : Nat} (hM : ModOk n m) {s : State} (hp : Pre n s) :
     · rw [At]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
     · rw [At]; simp only [write_gpr, reduceCtorEq, ite_false, ite_true]
   rename_i h4
-  refine WP.mono (setConst_ok ((((((hs.write _ _).write _ _).write _ _).write _ _).write _ _).write _ _)
-    ((((((h3.write _).write _).write _).write _).write _).write _)
-    (o := moAt n) (n := n) (x := m) (by simp only [moAt, tmpAt]; omega) hM.m_lt) fun u ⟨O, V, K⟩ => ?_
-  simp only [write_mem] at O V
+  have hstore : WP isa (.block (if 0 < mersK n m then setMers n (mersK n m) (moAt n) else setConst n (moAt n) m))
+      (((((((s.write .r4 (BitVec.ofNat 64 (lo s .r4))).write .r5 (BitVec.ofNat 64 (lo s .r5))).write .r6
+        (BitVec.ofNat 64 (lo s .r6))).write .r4 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r4))).write .r5
+        (s.gpr .r3 + BitVec.ofNat 64 (lo s .r5))).write .r6 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r6))))
+      fun u => Outside (s.gpr .r3) (moAt n) (8 * n) s.mem u.mem ∧ val32 u.mem (s.gpr .r3) (moAt n) (2 * n) = m ∧
+        Kp [.r11] (((((((s.write .r4 (BitVec.ofNat 64 (lo s .r4))).write .r5 (BitVec.ofNat 64 (lo s .r5))).write .r6
+          (BitVec.ofNat 64 (lo s .r6))).write .r4 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r4))).write .r5
+          (s.gpr .r3 + BitVec.ofNat 64 (lo s .r5))).write .r6 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r6)))) u := by
+    have h3₀ : At (((((((s.write .r4 (BitVec.ofNat 64 (lo s .r4))).write .r5 (BitVec.ofNat 64 (lo s .r5))).write .r6
+        (BitVec.ofNat 64 (lo s .r6))).write .r4 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r4))).write .r5
+        (s.gpr .r3 + BitVec.ofNat 64 (lo s .r5))).write .r6 (s.gpr .r3 + BitVec.ofNat 64 (lo s .r6)))) (s.gpr .r3) .r3 0 :=
+      ((((((h3.write _).write _).write _).write _).write _).write _)
+    split
+    · rename_i hF
+      obtain ⟨hn2, hk64, hmk⟩ := mersK_spec hF
+      have ho : moAt n + 8 * n ≤ 4096 := by simp only [moAt, tmpAt]; omega
+      have ho4 : moAt n % 4 = 0 := by
+        simp only [moAt, tmpAt, own, Impl.Weierstrass.Mont.ownAt, Impl.Weierstrass.Mont.ownBytes]; omega
+      exact setMers_ok ((((((hs.write _ _).write _ _).write _ _).write _ _).write _ _).write _ _) h3₀ ho ho4
+        hn2 hk64 hmk
+    · exact setConst_ok ((((((hs.write _ _).write _ _).write _ _).write _ _).write _ _).write _ _) h3₀
+        (o := moAt n) (n := n) (x := m) (by simp only [moAt, tmpAt]; omega) hM.m_lt
+  refine WP.mono hstore fun u ⟨O, V, K⟩ => ?_
   have K₀ : Kp fnClob s u := (((((((Kp.write s _ (by decide)).trans (Kp.write _ _ (by decide))).trans
     (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans (Kp.write _ _ (by decide))).trans
     (Kp.write _ _ (by decide)))).trans (K.mono (by decide))

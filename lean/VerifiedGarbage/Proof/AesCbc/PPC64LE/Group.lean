@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesCbc.PPC64LE.CT
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.PPC64LE.RelCT
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
+import VerifiedGarbage.Proof.Framework.PPC64LE.Vector
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
@@ -538,45 +539,85 @@ def GroupOk (M : Mode) (group : Prog isa) : Prop :=
   ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k + 8 ≤ N s₀ → ∀ {s : State}, LInv M s₀ k s →
     WP isa group s (LInv M s₀ (k + 8))
 
+/-- One run of `group` takes the invariant from `k` blocks to `k + 8`, as
+`GroupOk`, and keeps `X`, a property of the vector registers, which `pre`
+establishes before the first group (`PreOk`): what the groups need that
+the blocks left after them, one at a time, do not. -/
+def GroupOkX (M : Mode) (X : State → (VReg → BitVec 128) → Prop) (group : Prog isa) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat}, k + 8 ≤ N s₀ → ∀ {s : State}, LInv M s₀ k s → X s₀ s.vpr →
+    WP isa group s fun t => LInv M s₀ (k + 8) t ∧ X s₀ t.vpr
+
+theorem GroupOk.toX {M : Mode} {group : Prog isa} (hg : GroupOk M group) :
+    GroupOkX M (fun _ _ => True) group :=
+  fun {_} hp {_} hk {_} h _ => WP.mono (hg hp hk h) fun _ h => ⟨h, trivial⟩
+
+/-- `pre`, before the first group, keeps the invariant and establishes `X`. -/
+def PreOk (M : Mode) (X : State → (VReg → BitVec 128) → Prop) (pre : List Instr) : Prop :=
+  ∀ {s₀ : State}, UPre s₀ → ∀ {k : Nat} {s : State}, LInv M s₀ k s →
+    WP isa (.block pre) s fun t => LInv M s₀ k t ∧ X s₀ t.vpr
+
+theorem preOk_nil (M : Mode) : PreOk M (fun _ _ => True) [] :=
+  fun {_} _ {_} {_} h => WP.block_nil ⟨h, trivial⟩
+
+/-- `count_wp`, which leaves the vector registers as they were. -/
+theorem count_wpV {M : Mode} {s₀ : State} {k : Nat} {s : State} (h : LInv M s₀ k s) :
+    WP isa (.block countG) s fun s' =>
+      LInv M s₀ k s' ∧ s'.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k) / 8) ∧ s'.vpr = s.vpr := by
+  have hN : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
+  unfold countG
+  refine WP.cons (exec_lsr_d (by decide)) (wp_nil ⟨h.upd9 (Upd.write _ _ _), ?_, vpr_write _ _ _⟩)
+  rw [(Upd.write _ _ _).gpr, h.r18, ofNat_shr3 (by omega)]
+
 /-- The groups, from `k₀` blocks: the invariant after some `k` blocks with
 fewer than eight left. -/
-theorem groupLoop_wp {M : Mode} {group : Prog isa} (hg : GroupOk M group) {s₀ : State} (hp : UPre s₀)
+theorem groupLoop_wp {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group : Prog isa} {pre : List Instr}
+    (hg : GroupOkX M X group) (hpre : PreOk M X pre) {s₀ : State} (hp : UPre s₀)
     {k₀ : Nat} (hk₀ : k₀ ≤ N s₀) {s : State} (h : LInv M s₀ k₀ s)
     (h9 : s.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k₀) / 8)) :
-    WP isa (.ite (.zero .d .r9) (.block []) (.loop (.seq group (.block countG)) (.nonzero .d .r9))) s
+    WP isa (.ite (.zero .d .r9) (.block [])
+        (.seq (.block pre) (.loop (.seq group (.block countG)) (.nonzero .d .r9)))) s
       fun s' => ∃ k, k ≤ N s₀ ∧ N s₀ - k < 8 ∧ LInv M s₀ k s' := by
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
   refine WP.ite (decide ((N s₀ - k₀) / 8 = 0)) (eval_zero_ofNat s .r9 (div8_lt (by omega)) h9)
     (fun hb => ?_) (fun hb => ?_)
   · exact WP.block_nil ⟨k₀, hk₀, by simp at hb; omega, h⟩
-  · let I : Nat → State → Prop := fun m s => ∃ k, m = N s₀ - k ∧ k + 8 ≤ N s₀ ∧ LInv M s₀ k s
+  · refine WP.seq (WP.mono (hpre hp h) fun s₁ ⟨h₁, x₁⟩ => ?_)
+    let I : Nat → State → Prop := fun m s =>
+      ∃ k, m = N s₀ - k ∧ k + 8 ≤ N s₀ ∧ LInv M s₀ k s ∧ X s₀ s.vpr
     have hstep : ∀ m s, I m s → WP isa (.seq group (.block countG)) s (fun s' =>
         (isa.eval (.nonzero .d .r9) s' = some false ∧ ∃ k, k ≤ N s₀ ∧ N s₀ - k < 8 ∧ LInv M s₀ k s') ∨
         (isa.eval (.nonzero .d .r9) s' = some true ∧ ∃ m' < m, I m' s')) := by
-      rintro m s ⟨k, rfl, hk, hI⟩
-      refine WP.seq (WP.mono (hg hp hk hI) fun s₁ h₁ => WP.mono (count_wp h₁) fun s₂ ⟨h₂, r9₂⟩ => ?_)
+      rintro m s ⟨k, rfl, hk, hI, hX⟩
+      refine WP.seq (WP.mono (hg hp hk hI hX) fun s₁ ⟨h₁, x₁⟩ =>
+        WP.mono (count_wpV h₁) fun s₂ ⟨h₂, r9₂, v₂⟩ => ?_)
       have ev := eval_nonzero_ofNat' s₂ .r9 (div8_lt (by omega)) r9₂
       by_cases hlt : (N s₀ - (k + 8)) / 8 = 0
       · exact .inl ⟨by rw [ev]; simp [hlt], k + 8, hk, by omega, h₂⟩
-      · exact .inr ⟨by rw [ev]; simp [hlt], N s₀ - (k + 8), by omega, k + 8, rfl, by omega, h₂⟩
-    exact WP.loop (M := isa) I hstep (N s₀ - k₀) s ⟨k₀, rfl, by simp at hb; omega, h⟩
+      · exact .inr ⟨by rw [ev]; simp [hlt], N s₀ - (k + 8), by omega, k + 8, rfl, by omega, h₂, v₂ ▸ x₁⟩
+    exact WP.loop (M := isa) I hstep (N s₀ - k₀) s₁ ⟨k₀, rfl, by simp at hb; omega, h₁, x₁⟩
 
-/-- `groups group one` takes the invariant from no blocks to all of them. -/
-theorem groups_wp {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hb : BodyOk M one)
+/-- `groups group one pre` takes the invariant from no blocks to all of them. -/
+theorem groups_wp {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group one : Prog isa}
+    {pre : List Instr} (hg : GroupOkX M X group) (hpre : PreOk M X pre) (hb : BodyOk M one)
     {s₀ : State} (hp : UPre s₀) {s : State} (h : LInv M s₀ 0 s) :
-    WP isa (groups group one) s (LInv M s₀ (N s₀)) := by
+    WP isa (groups group one pre) s (LInv M s₀ (N s₀)) := by
   have hN : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
   refine WP.seq (WP.mono (count_wp h) fun s₁ ⟨h₁, r9₁⟩ => ?_)
-  refine WP.seq (WP.mono (groupLoop_wp hg hp (Nat.zero_le _) h₁ r9₁) fun s₂ ⟨k, hk, _, h₂⟩ => ?_)
+  refine WP.seq (WP.mono (groupLoop_wp hg hpre hp (Nat.zero_le _) h₁ r9₁) fun s₂ ⟨k, hk, _, h₂⟩ => ?_)
   have ev := eval_zero_ofNat s₂ .r18 (k := N s₀ - k) (by omega) h₂.r18
   refine WP.ite (decide (N s₀ - k = 0)) ev (fun hz => ?_) (fun hz => ?_)
   · have : k = N s₀ := by simp at hz; omega
     exact WP.block_nil (this ▸ h₂)
   · exact loop_ok hb hp (by simp at hz; omega) h₂
 
+theorem batchedX_wp {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group one : Prog isa}
+    {pre : List Instr} (hg : GroupOkX M X group) (hpre : PreOk M X pre) (hb : BodyOk M one)
+    {s₀ : State} (h0 : (modePPC64LE M).pre s₀) : WP isa (batched group one pre) s₀ (Done M s₀) :=
+  ends_wp h0 fun hp _ _ h => groups_wp hg hpre hb hp h
+
 theorem batched_wp {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hb : BodyOk M one)
     {s₀ : State} (h0 : (modePPC64LE M).pre s₀) : WP isa (batched group one) s₀ (Done M s₀) :=
-  ends_wp h0 fun hp _ _ h => groups_wp hg hb hp h
+  batchedX_wp (X := fun _ _ => True) hg.toX (preOk_nil M) hb h0
 
 /-! ## The arguments of a call on eight blocks, and on to the next group -/
 
@@ -755,21 +796,44 @@ theorem count_rel {M : Mode} {s₀ s₀' : State} (hq : (modePPC64LE M).pub s₀
        WP.mono (wp_sp (count_wp (hP a b h).2.1)) fun s ⟨⟨l, r9⟩, e⟩ =>
         ⟨⟨l, e.trans (hP a b h).2.2⟩, by rw [r9, pub_N hq]⟩⟩).mono (fun _ _ h => h) fun _ _ h => h.2
 
+/-- `count_rel`, keeping `X` of both runs' vector registers. -/
+theorem count_relV {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {s₀ s₀' : State}
+    (hq : (modePPC64LE M).pub s₀ s₀') (k : Nat) {P : State → State → Prop}
+    (hP : ∀ a b, P a b → (LS M s₀ k a ∧ X s₀ a.vpr) ∧ (LS M s₀' k b ∧ X s₀' b.vpr)) :
+    RelCT isa P (.block countG) fun a b =>
+      ((LS M s₀ k a ∧ X s₀ a.vpr) ∧ a.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k) / 8)) ∧
+      ((LS M s₀' k b ∧ X s₀' b.vpr) ∧ b.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k) / 8)) := by
+  obtain ⟨_, hc⟩ := count_taint
+  have t := taintRegs (P := P) [.r18] (fun a b (h : P a b) => ⟨by
+      rw [(hP a b h).1.1.2, (hP a b h).2.1.2, pub_sp hq],
+    fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [(hP a b h).1.1.1.r18, (hP a b h).2.1.1.r18, pub_N hq]⟩) hc
+  refine (t.wp (F₁ := fun (s : State) => (LS M s₀ k s ∧ X s₀ s.vpr) ∧ s.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k) / 8))
+    (F₂ := fun (s : State) => (LS M s₀' k s ∧ X s₀' s.vpr) ∧ s.gpr .r9 = BitVec.ofNat 64 ((N s₀ - k) / 8))
+    fun a b (h : P a b) =>
+      ⟨WP.mono (wp_sp (count_wpV (hP a b h).1.1.1)) fun s ⟨⟨l, r9, v⟩, e⟩ =>
+        ⟨⟨⟨l, e.trans (hP a b h).1.1.2⟩, v ▸ (hP a b h).1.2⟩, r9⟩,
+       WP.mono (wp_sp (count_wpV (hP a b h).2.1.1)) fun s ⟨⟨l, r9, v⟩, e⟩ =>
+        ⟨⟨⟨l, e.trans (hP a b h).2.1.2⟩, v ▸ (hP a b h).2.2⟩, by rw [r9, pub_N hq]⟩⟩).mono
+    (fun _ _ h => h) fun _ _ h => h.2
+
 /-- The groups' loop relation, with the number of iterations left. -/
-def GRel (M : Mode) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
-  ∃ k, n = N s₀ - k ∧ k + 8 ≤ N s₀ ∧ LS M s₀ k s₁ ∧ LS M s₀' k s₂
+def GRel (M : Mode) (X : State → (VReg → BitVec 128) → Prop) (s₀ s₀' : State) (n : Nat) (s₁ s₂ : State) : Prop :=
+  ∃ k, n = N s₀ - k ∧ k + 8 ≤ N s₀ ∧ (LS M s₀ k s₁ ∧ X s₀ s₁.vpr) ∧ (LS M s₀' k s₂ ∧ X s₀' s₂.vpr)
 
 /-- Both runs after `k` blocks, with fewer than eight left. -/
 def GDone (M : Mode) (s₀ s₀' : State) (s₁ s₂ : State) : Prop :=
   ∃ k, k ≤ N s₀ ∧ N s₀ - k < 8 ∧ LS M s₀ k s₁ ∧ LS M s₀' k s₂
 
-theorem groupLoop_ct {M : Mode} {group : Prog isa} (hg : GroupOk M group) (hc : GroupCt M group)
+theorem groupLoop_ct {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group : Prog isa}
+    (hg : GroupOkX M X group) (hc : GroupCt M group)
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modePPC64LE M).pub s₀ s₀') (n : Nat) :
-    RelCT isa (GRel M s₀ s₀' n) (.loop (.seq group (.block countG)) (.nonzero .d .r9)) (GDone M s₀ s₀') := by
-  refine RelCT.loop (M := isa) (GRel M s₀ s₀') (fun n => ?_) n
+    RelCT isa (GRel M X s₀ s₀' n) (.loop (.seq group (.block countG)) (.nonzero .d .r9)) (GDone M s₀ s₀') := by
+  refine RelCT.loop (M := isa) (GRel M X s₀ s₀') (fun n => ?_) n
   have hN := pub_N hq
   have hb₀ : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
-  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : GRel M s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
+  refine (RelCT.exists_ fun k => ?_).mono (fun s₁ s₂ (h : GRel M X s₀ s₀' n s₁ s₂) => h) fun _ _ h => h
   by_cases hn : n = N s₀ - k
   swap
   · exact RelCT.of_false fun _ _ h => hn h.1
@@ -777,27 +841,45 @@ theorem groupLoop_ct {M : Mode} {group : Prog isa} (hg : GroupOk M group) (hc : 
   by_cases hk : k + 8 ≤ N s₀
   swap
   · exact RelCT.of_false fun _ _ h => hk h.2.1
-  have ct := (hc hp hp' hq k).wp (F₁ := LS M s₀ (k + 8)) (F₂ := LS M s₀' (k + 8))
-    fun _ _ h => ⟨WP.mono (wp_sp (hg hp h.1 h.2.1.1)) fun _ ⟨l, e⟩ => ⟨l, e.trans h.2.1.2⟩,
-      WP.mono (wp_sp (hg hp' (by rw [← hN]; exact h.1) h.2.2.1)) fun _ ⟨l, e⟩ => ⟨l, e.trans h.2.2.2⟩⟩
-  have cnt := count_rel hq (k + 8) (P := fun a b => True ∧ LS M s₀ (k + 8) a ∧ LS M s₀' (k + 8) b)
+  have ct := ((hc hp hp' hq k).mono (P' := fun (s₁ s₂ : State) => N s₀ - k = N s₀ - k ∧ k + 8 ≤ N s₀ ∧
+      (LS M s₀ k s₁ ∧ X s₀ s₁.vpr) ∧ (LS M s₀' k s₂ ∧ X s₀' s₂.vpr))
+      (fun _ _ h => ⟨h.2.1, h.2.2.1.1, h.2.2.2.1⟩) fun _ _ h => h).wp
+    (F₁ := fun (s : State) => LS M s₀ (k + 8) s ∧ X s₀ s.vpr)
+    (F₂ := fun (s : State) => LS M s₀' (k + 8) s ∧ X s₀' s.vpr)
+    fun _ _ h => ⟨WP.mono (wp_sp (hg hp h.2.1 h.2.2.1.1.1 h.2.2.1.2)) fun _ ⟨⟨l, x⟩, e⟩ =>
+        ⟨⟨l, e.trans h.2.2.1.1.2⟩, x⟩,
+      WP.mono (wp_sp (hg hp' (by rw [← hN]; exact h.2.1) h.2.2.2.1.1 h.2.2.2.2)) fun _ ⟨⟨l, x⟩, e⟩ =>
+        ⟨⟨l, e.trans h.2.2.2.1.2⟩, x⟩⟩
+  have cnt := count_relV (X := X) hq (k + 8)
+    (P := fun a b => True ∧ (LS M s₀ (k + 8) a ∧ X s₀ a.vpr) ∧ (LS M s₀' (k + 8) b ∧ X s₀' b.vpr))
     fun _ _ h => ⟨h.2.1, h.2.2⟩
-  refine ((ct.mono (fun _ _ h => h) fun _ _ h => h).seq cnt).mono (fun _ _ h => h.2) fun s₁ s₂ h => ?_
+  refine ((ct.mono (fun _ _ h => h) fun _ _ h => h).seq cnt).mono (fun _ _ h => h) fun s₁ s₂ h => ?_
   obtain ⟨⟨l₁, r9₁⟩, ⟨l₂, r9₂⟩⟩ := h
   have e₁ := eval_nonzero_ofNat' s₁ .r9 (div8_lt (by omega)) r9₁
   have e₂ := eval_nonzero_ofNat' s₂ .r9 (div8_lt (by omega)) r9₂
   refine ⟨by rw [e₁, e₂], fun hf => ?_, fun ht => ?_⟩
   · rw [e₁] at hf
     have : (N s₀ - (k + 8)) / 8 = 0 := by simpa using hf
-    exact ⟨k + 8, hk, by omega, l₁, l₂⟩
+    exact ⟨k + 8, hk, by omega, l₁.1, l₂.1⟩
   · rw [e₁] at ht
     have : (N s₀ - (k + 8)) / 8 ≠ 0 := by simpa using ht
     exact ⟨N s₀ - (k + 8), by omega, k + 8, rfl, by omega, l₁, l₂⟩
 
-theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc : GroupCt M group)
-    (hb : BodyOk M one) (hbc : BodyCt M one)
+/-- `pre`'s timing depends on public values only. -/
+def PreCt (M : Mode) (pre : List Instr) : Prop :=
+  ∀ {s₀ s₀' : State}, UPre s₀ → UPre s₀' → (modePPC64LE M).pub s₀ s₀' → ∀ k : Nat,
+    RelCT isa (fun s₁ s₂ => LS M s₀ k s₁ ∧ LS M s₀' k s₂) (.block pre) fun _ _ => True
+
+theorem preCt_nil (M : Mode) : PreCt M [] := fun {_} {_} _ _ hq _ => by
+  obtain ⟨_, hnil⟩ := nil_taint
+  exact (taintRegs (P := fun a b => LS M _ _ a ∧ LS M _ _ b) [] (fun _ _ h =>
+    ⟨by rw [h.1.2, h.2.2, pub_sp hq], fun r hr => by simp at hr⟩) hnil).mono (fun _ _ h => h) fun _ _ _ => trivial
+
+theorem groups_rel {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group one : Prog isa}
+    {pre : List Instr} (hg : GroupOkX M X group) (hgc : GroupCt M group)
+    (hpre : PreOk M X pre) (hprc : PreCt M pre) (hb : BodyOk M one) (hbc : BodyCt M one)
     {s₀ s₀' : State} (hp : UPre s₀) (hp' : UPre s₀') (hq : (modePPC64LE M).pub s₀ s₀') :
-    RelCT isa (fun a b => LS M s₀ 0 a ∧ LS M s₀' 0 b) (groups group one)
+    RelCT isa (fun a b => LS M s₀ 0 a ∧ LS M s₀' 0 b) (groups group one pre)
       fun a b => LS M s₀ (N s₀) a ∧ LS M s₀' (N s₀') b := by
   have hN := pub_N hq
   have hb₀ : N s₀ < 2 ^ 64 := (s₀.gpr .r7).isLt
@@ -807,7 +889,8 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
   have loop : RelCT isa (fun a b =>
       (LS M s₀ 0 a ∧ a.gpr .r9 = BitVec.ofNat 64 ((N s₀ - 0) / 8)) ∧
       (LS M s₀' 0 b ∧ b.gpr .r9 = BitVec.ofNat 64 ((N s₀ - 0) / 8)))
-      (.ite (.zero .d .r9) (.block []) (.loop (.seq group (.block countG)) (.nonzero .d .r9)))
+      (.ite (.zero .d .r9) (.block [])
+        (.seq (.block pre) (.loop (.seq group (.block countG)) (.nonzero .d .r9))))
       (GDone M s₀ s₀') := by
     refine RelCT.ite (fun a b h => by
       rw [eval_zero_ofNat a .r9 (div8_lt (by omega)) h.1.2, eval_zero_ofNat b .r9 (div8_lt (by omega)) h.2.2])
@@ -822,10 +905,22 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
             have : (N s₀ - 0) / 8 = 0 := by simpa using this
             omega⟩, WP.block_nil h.1.2.1⟩
       exact nil'.mono (fun _ _ h => h) fun _ _ h => ⟨0, Nat.zero_le _, h.2.1.2, h.2.1.1, h.2.2⟩
-    · exact (groupLoop_ct hg hgc hp hp' hq (N s₀ - 0)).mono (fun a b h => ⟨0, rfl, by
-        have := h.2; rw [eval_zero_ofNat a .r9 (div8_lt (by omega)) h.1.1.2] at this
-        have : (N s₀ - 0) / 8 ≠ 0 := by simpa using this
-        omega, h.1.1.1, h.1.2.1⟩) fun _ _ h => h
+    · have pre' := ((hprc hp hp' hq 0).mono (P' := fun (a b : State) => ((LS M s₀ 0 a ∧
+          a.gpr .r9 = BitVec.ofNat 64 ((N s₀ - 0) / 8)) ∧ (LS M s₀' 0 b ∧
+          b.gpr .r9 = BitVec.ofNat 64 ((N s₀ - 0) / 8))) ∧ isa.eval (.zero .d .r9) a = some false)
+          (fun _ _ h => ⟨h.1.1.1, h.1.2.1⟩) fun _ _ h => h).wp
+        (F₁ := fun (a : State) => 8 ≤ N s₀ ∧ LS M s₀ 0 a ∧ X s₀ a.vpr)
+        (F₂ := fun (b : State) => LS M s₀' 0 b ∧ X s₀' b.vpr)
+        fun a b h => by
+          have h8 : 8 ≤ N s₀ := by
+            have := h.2; rw [eval_zero_ofNat a .r9 (div8_lt (by omega)) h.1.1.2] at this
+            have : (N s₀ - 0) / 8 ≠ 0 := by simpa using this
+            omega
+          exact ⟨WP.mono (wp_sp (hpre hp h.1.1.1.1)) fun _ ⟨⟨l, x⟩, e⟩ => ⟨h8, ⟨l, e.trans h.1.1.1.2⟩, x⟩,
+            WP.mono (wp_sp (hpre hp' h.1.2.1.1)) fun _ ⟨⟨l, x⟩, e⟩ => ⟨⟨l, e.trans h.1.2.1.2⟩, x⟩⟩
+      exact (pre'.mono (fun _ _ h => h) fun _ _ h => h.2).seq
+        ((groupLoop_ct hg hgc hp hp' hq (N s₀ - 0)).mono (fun a b h => ⟨0, rfl, by have := h.1.1; omega,
+          h.1.2, h.2⟩) fun _ _ h => h)
   -- The blocks left, one at a time.
   have tail : RelCT isa (GDone M s₀ s₀') (.ite (.zero .d .r18) (.block []) (.loop one (.nonzero .d .r18)))
       fun a b => LS M s₀ (N s₀) a ∧ LS M s₀' (N s₀') b := by
@@ -853,10 +948,17 @@ theorem groups_rel {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
         omega, h.1.2.2.1, h.1.2.2.2⟩) fun _ _ h => h
   exact (cnt.mono (fun _ _ h => h) fun _ _ h => h).seq (loop.seq tail)
 
+theorem batchedX_ct {M : Mode} {X : State → (VReg → BitVec 128) → Prop} {group one : Prog isa}
+    {pre : List Instr} (hg : GroupOkX M X group) (hgc : GroupCt M group) (hpre : PreOk M X pre)
+    (hprc : PreCt M pre) (hb : BodyOk M one) (hbc : BodyCt M one) :
+    ConstantTime isa (modePPC64LE M).pre (modePPC64LE M).pub (batched group one pre) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
+    (ends_rel h₁ h₂ hq (fun hp hp' _ => groups_rel hg hgc hpre hprc hb hbc hp hp' hq) _ _ _ _ _ _ ⟨rfl, rfl⟩
+      e₁ e₂).1
+
 theorem batched_ct {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc : GroupCt M group)
     (hb : BodyOk M one) (hbc : BodyCt M one) :
     ConstantTime isa (modePPC64LE M).pre (modePPC64LE M).pub (batched group one) :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ =>
-    (ends_rel h₁ h₂ hq (fun hp hp' _ => groups_rel hg hgc hb hbc hp hp' hq) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+  batchedX_ct (X := fun _ _ => True) hg.toX hgc (preOk_nil M) (preCt_nil M) hb hbc
 
 end VG.Proof.AesCbc.PPC64LE

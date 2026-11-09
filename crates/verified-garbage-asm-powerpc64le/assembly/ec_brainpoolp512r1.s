@@ -1149,102 +1149,14 @@ vg_ec_brainpoolp512r1_public_key:
 	li %r4, 8192
 	mulld %r4, %r4, %r31
 	add %r8, %r8, %r4
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1344(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1348(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1352(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1356(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1360(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1364(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1368(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1372(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1376(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1380(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1384(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1388(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1392(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1396(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1400(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1404(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1408(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1412(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1416(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1420(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1424(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1428(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1432(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1436(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1440(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1444(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1448(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1452(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1456(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1460(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1464(%r3)
-	lis %r11, 0
-	ori %r11, %r11, 0
-	stw %r11, 1468(%r3)
+	vxor %v0, %v0, %v0
+	vxor %v1, %v1, %v1
+	vxor %v2, %v2, %v2
+	vxor %v3, %v3, %v3
+	vxor %v4, %v4, %v4
+	vxor %v5, %v5, %v5
+	vxor %v6, %v6, %v6
+	vxor %v7, %v7, %v7
 	li %r7, 1
 26:
 	xor %r10, %r9, %r7
@@ -1252,107 +1164,52 @@ vg_ec_brainpoolp512r1_public_key:
 	rldicl %r10, %r10, 1, 63
 	li %r5, 0
 	subf %r10, %r10, %r5
-	ld %r4, 1344(%r3)
-	ld %r5, 0(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1344(%r3)
-	ld %r4, 1352(%r3)
-	ld %r5, 8(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1352(%r3)
-	ld %r4, 1360(%r3)
-	ld %r5, 16(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1360(%r3)
-	ld %r4, 1368(%r3)
-	ld %r5, 24(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1368(%r3)
-	ld %r4, 1376(%r3)
-	ld %r5, 32(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1376(%r3)
-	ld %r4, 1384(%r3)
-	ld %r5, 40(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1384(%r3)
-	ld %r4, 1392(%r3)
-	ld %r5, 48(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1392(%r3)
-	ld %r4, 1400(%r3)
-	ld %r5, 56(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1400(%r3)
-	ld %r4, 1408(%r3)
-	ld %r5, 64(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1408(%r3)
-	ld %r4, 1416(%r3)
-	ld %r5, 72(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1416(%r3)
-	ld %r4, 1424(%r3)
-	ld %r5, 80(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1424(%r3)
-	ld %r4, 1432(%r3)
-	ld %r5, 88(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1432(%r3)
-	ld %r4, 1440(%r3)
-	ld %r5, 96(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1440(%r3)
-	ld %r4, 1448(%r3)
-	ld %r5, 104(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1448(%r3)
-	ld %r4, 1456(%r3)
-	ld %r5, 112(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1456(%r3)
-	ld %r4, 1464(%r3)
-	ld %r5, 120(%r8)
-	xor %r5, %r5, %r4
-	and %r5, %r5, %r10
-	xor %r4, %r4, %r5
-	std %r4, 1464(%r3)
-	addi %r8, %r8, 128
+	mtvsrd 51, %r10
+	vspltw %v19, %v19, 0
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v0, %v0, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v1, %v1, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v2, %v2, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v3, %v3, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v4, %v4, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v5, %v5, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v6, %v6, %v18, %v19
+	lxvd2x 50, %r8, %r5
+	addi %r8, %r8, 16
+	vsel %v7, %v7, %v18, %v19
 	addi %r7, %r7, 1
 	addi %r6, %r7, -65
 	cmpldi %cr0, %r6, 0
 	bne %cr0, 26b
+	li %r4, 1344
+	stxvd2x 32, %r3, %r4
+	li %r4, 1360
+	stxvd2x 33, %r3, %r4
+	li %r4, 1376
+	stxvd2x 34, %r3, %r4
+	li %r4, 1392
+	stxvd2x 35, %r3, %r4
+	li %r4, 1408
+	stxvd2x 36, %r3, %r4
+	li %r4, 1424
+	stxvd2x 37, %r3, %r4
+	li %r4, 1440
+	stxvd2x 38, %r3, %r4
+	li %r4, 1456
+	stxvd2x 39, %r3, %r4
 	lis %r11, -22587
 	ori %r11, %r11, 46861
 	stw %r11, 1472(%r3)

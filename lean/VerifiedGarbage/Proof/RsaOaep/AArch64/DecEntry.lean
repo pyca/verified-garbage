@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecLay
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.Bytes
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -30,16 +30,16 @@ open VG.Proof.RsaPkcs1Enc.AArch64.Enc (q_add add_add read8 write8 toNat_sub_k pr
 /-- The shared contract, with both hash functions each one of the tables
 `ts` and `P + 288` bytes of stack. -/
 abbrev decSpec (ts : List FnTable) (P : Nat) : Contract isa :=
-  Spec.RsaOaep.decryptTablesContract (AArch64.abi.withTables Spec.RsaOaep.decryptTablesSig
+  Spec.RsaOaep.decryptMdTablesContract (AArch64.abi.withTables Spec.RsaOaep.decryptMdTablesSig
     [("hash", ts), ("mgf1", ts)]) (P + 288)
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "dec_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
-  sig_pre [Spec.RsaOaep.decryptTablesContract, Spec.RsaOaep.decryptTablesSig, Spec.RsaOaep.decryptSig,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.decryptMdTablesContract, Spec.RsaOaep.decryptMdTablesSig, Spec.RsaOaep.decryptSig,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))

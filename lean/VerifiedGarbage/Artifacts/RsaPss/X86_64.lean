@@ -21,9 +21,9 @@ open VG.Proof.RsaPss.X86_64 (signStack sign_ok signC_spAll enc_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.signTableApi.artifact X86_64.target {
+    Spec.RsaPss.signMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.HashTable.X86_64.tables vs)]
+      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.signC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         (privOf c).name (privOf c).code
       stack := signStack
@@ -41,9 +41,9 @@ open VG.Proof.RsaPss.X86_64 (verifyStack verify_ok chk_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.verifyPrecomputedTableApi.artifact X86_64.target {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target {
       suffix := qualifiedName "" [("rsa", c.suffix)]
-      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.HashTable.X86_64.tables vs)]
+      tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         c.name c.code
       stack := verifyStack

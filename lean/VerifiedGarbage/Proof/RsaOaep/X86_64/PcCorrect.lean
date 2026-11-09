@@ -39,8 +39,8 @@ def post (H G : Spec.Mgf1.Hash) (s u : State) : Prop := Consistent s → (encK H
 
 /-- `post` for the hash functions the tables name. -/
 def postT (s u : State) : Prop :=
-  ∀ H G, Spec.HashTable.hashAt 64 s.mem (stackArg s 10) = some H →
-    Spec.HashTable.hashAt 64 s.mem (stackArg s 11) = some G → post H G s u
+  ∀ H G, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 10) = some H →
+    Spec.MdHashTable.hashAt 64 s.mem (stackArg s 11) = some G → post H G s u
 
 /-- What the function's caller sees of the registers and the stack, from a
 state in the frame. -/
@@ -70,9 +70,9 @@ include hH hG mH mG in
 theorem encMain_ok (v : PublicImpl) {f : Fns} (hgi : Table.FnsGood f.init) (hgu : Table.FnsGood f.upd)
     (hgf : Table.FnsGood f.fin) {s t : State} (hp : PPreT mH.G s) (he : EnvE s t) (hsy : t.syms = s.syms)
     (okL : Table.TabOK Hl.stream f s.syms) (hmL : Table.TabMem Hl.stream s.syms (stackArg s 10) s.mem)
-    (hDmL : s.mem.readW (off (stackArg s 10) 32) 64 = BitVec.ofNat 64 Hl.D)
+    (hDmL : s.mem.readW (off (stackArg s 10) 48) 64 = BitVec.ofNat 64 Hl.D)
     (ok : Table.TabOK Gm.stream f s.syms) (hm : Table.TabMem Gm.stream s.syms (stackArg s 11) s.mem)
-    (hDm : s.mem.readW (off (stackArg s 11) 32) 64 = BitVec.ofNat 64 Gm.D)
+    (hDm : s.mem.readW (off (stackArg s 11) 48) 64 = BitVec.ofNat 64 Gm.D)
     (L : Lay t (fb s) (stackArg s 6)) {V : Nat → Byte} {W : Nat → BitVec 64}
     (R : Rep t.mem (fb s) (stackArg s 6) V W) (hW : ArgsW s W)
     (hk : 2 * Hl.D + 2 + (stackArg s 3).toNat ≤ (s.gpr .rcx).toNat) :
@@ -125,8 +125,8 @@ theorem code_correct (v : PublicImpl) (s : State) (h : (encC (tables vs)).pre s)
   have okL := tabOK_of hc hd hw₁
   have ok := tabOK_of hc hd hw
   obtain ⟨hgi, hgu, hgf⟩ := fnsGood_of vs
-  have hHa : Spec.HashTable.hashAt 64 s.mem (stackArg s 10) = some w₁.mgf.G := hashAt_tableOf hidxL
-  have hGa : Spec.HashTable.hashAt 64 s.mem (stackArg s 11) = some w.mgf.G := hashAt_tableOf hidx
+  have hHa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 10) = some w₁.mgf.G := hashAt_tableOf hidxL
+  have hGa : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 11) = some w.mgf.G := hashAt_tableOf hidx
   have hp : PPreT w₁.mgf.G s := preT_of h hHa
   have hk1 := hp.k1; have hk2 := hp.k2
   have hlen : w₁.mgf.G.len = w₁.H.D := w₁.mgf.len

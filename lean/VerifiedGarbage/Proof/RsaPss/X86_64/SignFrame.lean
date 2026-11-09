@@ -26,7 +26,7 @@ structure SPre (s : State) : Prop where
   tabH : ∃ T ∈ tsH, Abi.tableHeld 64 s.mem (stackArg s 16) (FnTable.words isa s T)
   tabG : ∃ T ∈ tsG, Abi.tableHeld 64 s.mem (stackArg s 17) (FnTable.words isa s T)
   hsy : (tabFns tsH ++ tabFns tsG).Pairwise (fun f g => f ≠ g → s.syms f ≠ s.syms g)
-  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 88⟩, ⟨stackArg s 17, 40⟩, ⟨stackArgAddr s 0, 144⟩]
+  hrd : s.rd = [⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩, ⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, (stackArg s 3).toNat⟩, ⟨stackArg s 4, (stackArg s 5).toNat⟩, ⟨stackArg s 6, (stackArg s 7).toNat⟩, ⟨stackArg s 8, (stackArg s 9).toNat⟩, ⟨stackArg s 10, (stackArg s 11).toNat⟩, ⟨stackArg s 12, (stackArg s 13).toNat⟩, ⟨stackArg s 16, 88⟩, ⟨stackArg s 17, 88⟩, ⟨stackArgAddr s 0, 144⟩]
   hwr : s.wr = [⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩, ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩]
   dOn : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
   dOe : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨s.gpr .r8, (s.gpr .r9).toNat⟩
@@ -39,7 +39,7 @@ structure SPre (s : State) : Prop where
   dOsa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 12, (stackArg s 13).toNat⟩
   dOs : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   dOtH : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 16, 88⟩
-  dOtG : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 17, 40⟩
+  dOtG : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArg s 17, 88⟩
   dOa : (⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
   dns : (⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   des : (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
@@ -51,7 +51,7 @@ structure SPre (s : State) : Prop where
   ddgs : (⟨stackArg s 10, (stackArg s 11).toNat⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   dsas : (⟨stackArg s 12, (stackArg s 13).toNat⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   dstH : (⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 16, 88⟩
-  dstG : (⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 17, 40⟩
+  dstG : (⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ : Region).Disjoint ⟨stackArg s 17, 88⟩
   dsa : (⟨stackArg s 14, (stackArg s 15).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
   dRo : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   dRn : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -65,7 +65,7 @@ structure SPre (s : State) : Prop where
   dRsa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 12, (stackArg s 13).toNat⟩
   dRs : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   dRtH : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 16, 88⟩
-  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 17, 40⟩
+  dRtG : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 17, 88⟩
   dRa : (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
   dKo : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
   dKn : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨s.gpr .rdx, (s.gpr .rcx).toNat⟩
@@ -79,7 +79,7 @@ structure SPre (s : State) : Prop where
   dKsa : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArg s 12, (stackArg s 13).toNat⟩
   dKs : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArg s 14, (stackArg s 15).toNat * 8⟩
   dKtH : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArg s 16, 88⟩
-  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArg s 17, 40⟩
+  dKtG : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArg s 17, 88⟩
   dKa : (⟨s.gpr .rsp - BitVec.ofNat 64 signStack, signStack⟩ : Region).Disjoint ⟨stackArgAddr s 0, 144⟩
   wO : (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64
   wN : (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64
@@ -93,7 +93,7 @@ structure SPre (s : State) : Prop where
   wSa : (stackArg s 12).toNat + (stackArg s 13).toNat ≤ 2 ^ 64
   wS : (stackArg s 14).toNat + (stackArg s 15).toNat * 8 ≤ 2 ^ 64
   wTH : (stackArg s 16).toNat + 88 ≤ 2 ^ 64
-  wTG : (stackArg s 17).toNat + 40 ≤ 2 ^ 64
+  wTG : (stackArg s 17).toNat + 88 ≤ 2 ^ 64
   lv : Spec.Rsa.lenValid (s.gpr .rcx).toNat
   hsi : (s.gpr .rsi).toNat = (s.gpr .rcx).toNat
   L1 : 1 ≤ (s.gpr .r9).toNat

@@ -21,7 +21,7 @@ As on ARMv7 (`Proof/RsaPss/Arm/VfVerified.lean`), with the hash functions as
 tables, as for signing (`SgVerified.lean`): the index of the hash function
 of the table of `MdHash` at the argument 14 (`idx_vp`) chooses the tail for
 it among those of `idxs` (`byLen_vq`, `body_vq'`), whose code for the index
-is that for its sizes, with MGF1's of the table of `Hash` at 15. The body
+is that for its sizes, with MGF1's of the table of `MdHash` at 15. The body
 writes `esp` only through the frames of its calls (`body_noSp`); with the
 frames around it (`wrap_ok`, `wrap_ct`) and the result as the shared
 contract states it: `vg_rsa_pss_verify_precomputed`, calling a precomputed
@@ -285,9 +285,9 @@ theorem code_ok (hok : Sg.OK vs gs) (c : Ver.PublicImpl) {s : State} (hs : (vspe
   · have ok := hin.ok
     rw [← hD, ep_lay] at ok
     have ro := fun {R : Region} (hR : R ∈ (epw vs gs s s w wg).ro (arg s 5).toNat) => entered_ro hsp ok hR
-    sig_post [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+    sig_post [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
       Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi,
       argSlots, argVal, argBytes]
     intro H G hH hG
     rw [Proof.MdHashTable.X86.hashAt_tableOf hfitH hidxH, Option.some.injEq] at hH
@@ -314,9 +314,9 @@ theorem code_ct (hok : Sg.OK vs gs) (c : Ver.PublicImpl) :
   obtain ⟨⟨TH, hTH, hhH₁⟩, ⟨T, hT, hh₁⟩, -, -, -, -⟩ := spec_tab h₁
   obtain ⟨w, hw, rfl⟩ := List.mem_map.mp hTH
   obtain ⟨wg, hwg, rfl⟩ := List.mem_map.mp hT
-  sig_pub [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
+  sig_pub [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex, abi,
     argSlots, argVal, argBytes] at hp
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at hp

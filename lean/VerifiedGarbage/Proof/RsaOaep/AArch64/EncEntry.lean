@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.EncLay
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.Proof.RsaOaep.AArch64.DecEntry
 import VerifiedGarbage.Proof.RsaPkcs1Enc.AArch64.EncEntry
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -28,16 +28,16 @@ open VG.Proof.RsaOaep.AArch64.Dec (moveMem MoveOk moveMem_frame moveMem_read mov
 /-- The shared contract, with the label's hash function and MGF1's each one
 of the tables `ts` and `P + 288` bytes of stack. -/
 abbrev encSpec (ts : List FnTable) (P : Nat) : Contract isa :=
-  Spec.RsaOaep.encryptTablesContract (AArch64.abi.withTables Spec.RsaOaep.encryptTablesSig
+  Spec.RsaOaep.encryptMdTablesContract (AArch64.abi.withTables Spec.RsaOaep.encryptMdTablesSig
     [("hash", ts), ("mgf1", ts)]) (P + 288)
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "enc_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
-  sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -45,7 +45,7 @@ macro "enc_pre" " at " h:ident : tactic => `(tactic| (
 /-- `pre` and the two tables, the only buffers the function reads beyond its
 other arguments. -/
 def preX (s : State) : List Region :=
-  [⟨stackArg s 6, (stackArg s 7).toNat * 8⟩, Sig.tableRegion 64 (stackArg s 8) 5, Sig.tableRegion 64 (stackArg s 9) 5]
+  [⟨stackArg s 6, (stackArg s 7).toNat * 8⟩, Sig.tableRegion 64 (stackArg s 8) 11, Sig.tableRegion 64 (stackArg s 9) 11]
 
 /-- The layout of a call from `s`, with `D` bytes of seed and `P` bytes of
 stack for the calls: 80 bytes of stack arguments. -/
@@ -74,7 +74,7 @@ theorem forall_ro {L : ELay} {F : Region → Prop} (h : F L.N ∧ F L.E ∧ F L.
 /-- What the shared contract says of the layout, the regions, `pre_len` and
 the stack. -/
 theorem lay_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
     (lay H.len P s).Ok ∧
       s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG,
         (lay H.len P s).SD] ++ preX s ++ [(lay H.len P s).ARGS] ∧
@@ -113,7 +113,7 @@ theorem lay_pre {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (
     rfl
 
 theorem lay_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) : (lay H.len P s).Ok :=
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) : (lay H.len P s).Ok :=
   (lay_pre h hH).1
 
 /-! ## The prologue -/
@@ -172,13 +172,13 @@ theorem spec_tab {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).p
   exact ⟨h.2.2.1, h.2.2.2.1, h.2.2.2.2.1.sublist (List.sublist_append_left _ _)⟩
 
 theorem spec_rdwr {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
     s.rd = [(lay H.len P s).N, (lay H.len P s).E, (lay H.len P s).LAB, (lay H.len P s).MSG, (lay H.len P s).SD] ++
       (lay H.len P s).X ++ [(lay H.len P s).ARGS] ∧ s.wr = [(lay H.len P s).OUT, (lay H.len P s).SCR] :=
   ⟨(lay_pre h hH).2.1, (lay_pre h hH).2.2.1⟩
 
 theorem prologue_ok {H : Spec.Mgf1.Hash} {ts : List FnTable} {P : Nat} {s : State} (h : (encSpec ts P).pre s)
-    (hH : Spec.HashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
+    (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 8) = some H) :
     WP isa (.block encPrologue) (entered s) fun t => Ctx (lay H.len P s) s.gpr s.v s.mem t ∧
       t.gpr .x9 = (lay H.len P s).Q ∧ Slots (lay H.len P s) (fun j => word t.mem (lay H.len P s).Q (8 * j)) := by
   have hL := lay_ok h hH

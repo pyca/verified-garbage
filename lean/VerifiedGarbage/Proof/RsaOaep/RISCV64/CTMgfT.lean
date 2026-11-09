@@ -105,7 +105,7 @@ include X A in
 /-- The load of the table's word `k` into `d`, which is `v` of the anchor in
 every run. -/
 theorem tword_two {Φ : State × Nat → State → Prop} (hb : ∀ ac t, Φ ac t → BT S vf Pre Pub ac.1 t) {d : Reg}
-    (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) {k : Nat} (hk : k < 5) {v : State → BitVec 64}
+    (hd : d = .a6 ∨ d = .t1 ∨ d = .a0) {k : Nat} (hk : k < 7) {v : State → BitVec 64}
     (hv : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * k)) 64 = v a) :
     RelCT isa (Two Φ) (.block (tword d j k))
       (Two fun ac u => ∃ t, Φ ac t ∧ Only [d] t u ∧ u.syms = t.syms ∧ u.gpr d = v ac.1) := by
@@ -346,12 +346,12 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     exact WP.mono (finT_ok (X.fits P) (A.tab P) hG hF b y (by rw [h0, (X.S p)]) (by rw [h2, (X.S p)]))
       fun t' ⟨⟨b', g', _⟩, y'⟩ => hm.keep ⟨s, P, p, b', y'⟩ (pres g')
   -- Into `dst`, and the next counter.
-  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 4)) 64 =
+  have bD : ∀ {a s}, Pre s → Pub a s → s.mem.readW (stackArg s j + BitVec.ofNat 64 (8 * 6)) 64 =
       BitVec.ofNat 64 G.D := fun P _ => (A.tab P).d
   have xo : RelCT isa (Two M) (xorOutT j) fun _ _ => True := by
-    show RelCT isa _ (.seq (.block (tword .a6 j 4 ++ xorRest)) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) _
+    show RelCT isa _ (.seq (.block (tword .a6 j 6 ++ xorRest)) (Impl.Bignum.RISCV64.countLoop .a6 xorBody)) _
     refine RelCT.seq_block_append (RelCT.seq (tword_two X A (Φ := M) (fun ac t h => h.1) (d := .a6) (.inl rfl)
-      (k := 4) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
+      (k := 6) (by decide) (v := fun _ => BitVec.ofNat 64 G.D) bD) (xorRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _, e₁⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _, e₂⟩ := hu₂
     obtain ⟨hsp, hr⟩ := (mgfRT_pins X (fun _ _ h => h)) ac t₁ t₂ h₁ h₂
@@ -362,8 +362,8 @@ theorem roundT_ct {f : Fns} {j : Nat} (A : TabA G f j S Pre Pub) :
     all_goals rw [o₁.get _ (by decide), o₂.get _ (by decide)]; exact hr _ (by decide)
   have nc : RelCT isa (Two fun (ac : State × Nat) t => BT S vf Pre Pub ac.1 t) (.block (nextCtrT j))
       fun _ _ => True := by
-    show RelCT isa _ (.block (tword .t1 j 4 ++ nextRest)) _
-    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .t1) (.inr (.inl rfl)) (k := 4) (by decide)
+    show RelCT isa _ (.block (tword .t1 j 6 ++ nextRest)) _
+    refine RelCT.block_append (RelCT.seq (tword_two X A (fun _ _ h => h) (d := .t1) (.inr (.inl rfl)) (k := 6) (by decide)
       (v := fun _ => BitVec.ofNat 64 G.D) bD) (nextRest_taint fun ac u₁ u₂ hu₁ hu₂ => ?_))
     obtain ⟨t₁, h₁, o₁, _⟩ := hu₁
     obtain ⟨t₂, h₂, o₂, _⟩ := hu₂

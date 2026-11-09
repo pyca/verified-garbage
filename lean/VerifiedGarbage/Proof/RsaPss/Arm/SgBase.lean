@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Entry
 import VerifiedGarbage.Proof.RsaPkcs1Sig.Arm.Mem
 public import VerifiedGarbage.Spec.RsaPss
 public import VerifiedGarbage.Spec.RsaPss.Contract
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Proof.RsaPss.Arm.TabCall
 public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.RsaPss.Arm.Step
@@ -18,7 +18,7 @@ import VerifiedGarbage.Proof.Framework.Arm.Exec
 `EP`: what two runs share (the frame's base `B`, the pointers, the lengths,
 the public key's bytes `nB` and `eB`, and the tables: the hash function's of
 `MdHash`, `hd`, with what each run's entry state holds of it, `HT`, and
-MGF1's of `Hash`, `tab`, its functions at `ai`, `au` and `af`, and `T`), and
+MGF1's of `MdHash`, `tab`, its functions at `ai`, `au` and `af`, and `T`), and
 its layout (`EP.lay`), with the 3440 bytes below the frame that the call of
 `vg_rsa_private_checked` uses. `In P σ`: the state `σ` the body starts
 from. The shared contract, with the tables one of those it lists and the
@@ -81,7 +81,7 @@ abbrev DIG : Region := ⟨State.addr P.dig, D⟩
 abbrev SALT : Region := ⟨State.addr P.salt, P.sl⟩
 abbrev SCR : Region := ⟨State.addr P.scr, P.scl * 8⟩
 abbrev HTAB : Region := Sig.tableRegion 32 (State.addr P.hd) 11
-abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 5
+abbrev TAB : Region := Sig.tableRegion 32 (State.addr P.tab) 11
 
 /-- The arguments, in order. -/
 abbrev argv : List (BitVec 32) :=
@@ -145,12 +145,12 @@ theorem htbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (RsaOa
   rw [VG.Arm.addr_add (by omega_arith)]
   exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
-/-- The table of `Hash`, in a buffer only read. -/
-theorem tbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 20 → R.Contains (RsaOaep.Arm.tA P.tab o) 4 := by
+/-- The table of `MdHash`, in a buffer only read. -/
+theorem tbl : ∃ R ∈ (P.lay D).ro, ∀ o, o + 4 ≤ 44 → R.Contains (RsaOaep.Arm.tA P.tab o) 4 := by
   have hf := h.ok.fits P.TAB (by simp)
   simp only [Sig.tableRegion, Proof.X25519.Arm.addr_toNat] at hf
   refine ⟨P.TAB, by simp, fun o ho => ?_⟩
-  show (⟨State.addr P.tab, 5 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
+  show (⟨State.addr P.tab, 11 * (32 / 8)⟩ : Region).Contains (State.addr (P.tab + BitVec.ofNat 32 o)) 4
   rw [VG.Arm.addr_add (by omega_arith)]
   exact Offset.contains_base _ (by omega_arith) (by omega_arith)
 
@@ -164,18 +164,16 @@ abbrev stackBytes : Nat := 56 + frameBytes + 3440
 /-- The shared contract, with the hash function one of the tables `hs`,
 MGF1's one of `ts`, and that stack. -/
 abbrev spec (hs ts : List FnTable) : Contract isa :=
-  Spec.RsaPss.signTableContract (abi.withTables Spec.RsaPss.signTableSig [("hash", hs), ("mgf1", ts)]) stackBytes
+  Spec.RsaPss.signMdTableContract (abi.withTables Spec.RsaPss.signMdTableSig [("hash", hs), ("mgf1", ts)]) stackBytes
 
 /-- Unfolds the contract's precondition at `h`. -/
 macro "sign_pre" " at " h:ident : tactic => `(tactic| (
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val] at $h:ident
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-      Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-      Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argRegs, reduceClassify, Loc.val] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, reduceClassify, Loc.val] at $h:ident
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, reduceClassify, Loc.val] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
 

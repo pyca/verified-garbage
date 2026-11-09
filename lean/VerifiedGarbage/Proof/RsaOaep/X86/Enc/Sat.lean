@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # RSAES-OAEP encryption with a precomputed public key on x86: the contract is satisfiable
 
-A state that meets `encryptTablesContract` (`encrypt_sat`), with both
+A state that meets `encryptMdTablesContract` (`encrypt_sat`), with both
 hash functions' tables that of any variant `w` of `vs`: a modulus of 64 bytes, `e` of one byte, an empty label and
 message, the seed, the working space it needs, the precomputed values' 16
 words, the arguments above `esp = 0x20000`, and the table at `0x300000`
@@ -21,7 +21,7 @@ namespace VG.Proof.RsaOaep.X86.Enc
 open VG
 open VG.X86 hiding frameBytes
 open VG.Impl.RsaPss.X86 (frameBytes)
-open VG.Proof.HashTable.X86 (TVar tables tableOf names withTable withTable_arg withTable_held hashAt_tableOf held_tableOf)
+open VG.Proof.HashTable.X86 (TVar tables tableOf names withTable withTable_arg withTable_held held_twL hashAt_tableOf held_tableOf)
 open VG.Proof.HashTable (symsOf32_distinct2)
 
 /-- The state, for a seed of `D` bytes, but for the tables. -/
@@ -32,13 +32,13 @@ def satState (D : Nat) : State where
   sf := none
   of := none
   mem a := if a = 131077 then 0x10 else if a = 131080 then 0x40 else if a = 131085 then 0x20 else if a = 131088 then 0x40 else if a = 131093 then 0x21 else if a = 131096 then 0x1 else if a = 131101 then 0x30 else if a = 131109 then 0x31 else if a = 131117 then 0x32 else if a = 131120 then BitVec.ofNat 8 D else if a = 131126 then 0x1 else if a = 131128 then 0x20 else if a = 131129 then 0x8 else if a = 131133 then 0x70 else if a = 131136 then 0x10 else if a = 131142 then 0x30 else if a = 131146 then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, D⟩, ⟨0x7000, 128⟩, ⟨0x300000, 20⟩,
-    ⟨0x300000, 20⟩]
+  rd := [⟨0x2000, 64⟩, ⟨0x2100, 1⟩, ⟨0x3000, 0⟩, ⟨0x3100, 0⟩, ⟨0x3200, D⟩, ⟨0x7000, 128⟩, ⟨0x300000, 44⟩,
+    ⟨0x300000, 44⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x10000, 2080 * 8⟩, ⟨0x20004, 72⟩]
 
 theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs).length < 2 ^ 24) :
     ∃ s, (spec (tables vs)).pre s := by
-  have hha : ∀ s : State, Spec.HashTable.hashAt 32 (withTable s vs w).mem ((0x300000 : BitVec 32).setWidth 64) =
+  have hha : ∀ s : State, Spec.MdHashTable.hashAt 32 (withTable s vs w).mem ((0x300000 : BitVec 32).setWidth 64) =
       some w.g.G := fun s => hashAt_tableOf (by decide) (held_tableOf (by decide) (withTable_held s vs w)).2.1
   have hl' : w.g.G.len ∈ Impl.RsaOaep.X86.lens := w.g.glen ▸ w.g.lens
   generalize hDd : w.g.G.len = D at hl'
@@ -68,8 +68,8 @@ theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs)
   simp only [Impl.RsaOaep.X86.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
   rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals
-    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argSlots, argVal, argBytes, stackBelow]
     simp only [withTable_arg _ vs w (hA' 0 (by decide)), withTable_arg _ vs w (hA' 1 (by decide)),
       withTable_arg _ vs w (hA' 2 (by decide)), withTable_arg _ vs w (hA' 3 (by decide)),
@@ -83,15 +83,15 @@ theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs)
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
       List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
       a12, a13, a14, a15, a16, a17, e]
-    sig_pre [Spec.RsaOaep.encryptTablesContract, Spec.RsaOaep.encryptTablesSig, Spec.RsaOaep.seedLenOk,
-      Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex,
+    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
       abi, argSlots, argVal, argBytes, stackBelow]
     sig_and_intros
     all_goals first
+      | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
       | rfl
       | decide
       | exact Region.disjoint_of_sep (by decide)
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, withTable_held _ _ _⟩
       | (intro H' hH'
          obtain rfl := Option.some.inj (hha'.symm.trans hH')
          rw [hDd]; rfl)

@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Spec.RsaPss.Table
+public import VerifiedGarbage.Spec.RsaPss.MdTable
 public import VerifiedGarbage.Impl.RsaPss.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.RsaPkcs1Sig.AArch64.SignPre
@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 /-!
 # RSASSA-PSS signing on AArch64: the precondition and the frame
 
-`PreS tsH tsG K s`: the contract's precondition (`signTableContract`, with
+`PreS tsH tsG K s`: the contract's precondition (`signMdTableContract`, with
 the stack `stk K` of the frame and a callee using `K` bytes), by name
 (`preS_of`). The frame of `frameBytes` bytes is at `fb s`, below which the
 callee uses `K` bytes.
@@ -41,12 +41,12 @@ abbrev dgR (s : State) : Region := ⟨stackArg s 8, (stackArg s 9).toNat⟩
 abbrev slR (s : State) : Region := ⟨stackArg s 10, (stackArg s 11).toNat⟩
 abbrev sR (s : State) : Region := ⟨stackArg s 12, (stackArg s 13).toNat * 8⟩
 abbrev tHR (s : State) : Region := Sig.tableRegion 64 (stackArg s 14) 11
-abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 5
+abbrev tGR (s : State) : Region := Sig.tableRegion 64 (stackArg s 15) 11
 abbrev aR (s : State) : Region := ⟨stackArgAddr s 0, 128⟩
 abbrev kR (K : Nat) (s : State) : Region := ⟨s.sp - BitVec.ofNat 64 (stk K), stk K⟩
 
-/-- What the code needs of `signTableContract.pre`, by name, for the tables
-`tsH` of `MdHash` and `tsG` of `Hash`. -/
+/-- What the code needs of `signMdTableContract.pre`, by name, for the tables
+`tsH` of `MdHash` and `tsG` of `MdHash`. -/
 structure PreS (tsH tsG : List FnTable) (K : Nat) (s : State) : Prop where
   sp1 : stk K ≤ s.sp.toNat
   sp2 : s.sp.toNat + 128 ≤ 2 ^ 64
@@ -107,7 +107,7 @@ structure PreS (tsH tsG : List FnTable) (K : Nat) (s : State) : Prop where
   wsl : (stackArg s 10).toNat + (stackArg s 11).toNat ≤ 2 ^ 64
   ws : (stackArg s 12).toNat + (stackArg s 13).toNat * 8 ≤ 2 ^ 64
   wtH : (stackArg s 14).toNat + 88 ≤ 2 ^ 64
-  wtG : (stackArg s 15).toNat + 40 ≤ 2 ^ 64
+  wtG : (stackArg s 15).toNat + 88 ≤ 2 ^ 64
   k1 : 64 ≤ (s.gpr .x3).toNat
   k2 : (s.gpr .x3).toNat ≤ 1024
   ol : (s.gpr .x1).toNat = (s.gpr .x3).toNat
@@ -125,16 +125,15 @@ structure PreS (tsH tsG : List FnTable) (K : Nat) (s : State) : Prop where
 
 /-- The ABI the contract states, with the tables. -/
 abbrev signAbi (tsH tsG : List FnTable) : Abi isa :=
-  abi.withTables Spec.RsaPss.signTableSig [("hash", tsH), ("mgf1", tsG)]
+  abi.withTables Spec.RsaPss.signMdTableSig [("hash", tsH), ("mgf1", tsG)]
 
 theorem preS_of {tsH tsG : List FnTable} {K : Nat} {s : State}
-    (h : (Spec.RsaPss.signTableContract (signAbi tsH tsG) (stk K)).pre s) : PreS tsH tsG K s := by
+    (h : (Spec.RsaPss.signMdTableContract (signAbi tsH tsG) (stk K)).pre s) : PreS tsH tsG K s := by
   have e : stk K = (frameBytes + K - 1) + 1 := by unfold stk frameBytes; omega
   rw [e] at h
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param, Spec.HashTable.param,
-    Spec.MdHashTable.wordCount, Spec.HashTable.wordCount, Spec.MdHashTable.fns, Spec.HashTable.fns,
-    Spec.MdHashTable.dataWords, Spec.HashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    List.append_eq, _root_.List.range, _root_.List.range.loop] at h
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, List.append_eq, _root_.List.range, _root_.List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
     Option.some.injEq, exists_eq_left'] at h
   sig_split h

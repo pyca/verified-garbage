@@ -2,7 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.PPC64LE.Inst
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
 /-! # RSAES-OAEP (RFC 8017) on PPC64LE -/
@@ -12,20 +13,20 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 namespace VG.Artifacts.RsaOaep.PPC64LE
 
 open VG.Proof.RsaOaep.PPC64LE (OK enc_ok dec_ok)
-open VG.Proof.HashTable.PPC64LE (vars tables fnsOf)
+open VG.Proof.MdHashTable.PPC64LE (mvars tables fns3)
 
 def artifacts : List Artifact :=
-  if h : OK vars then [
-    Spec.RsaOaep.decryptTablesApi.artifact PPC64LE.target {
-      tables := [("hash", tables vars), ("mgf1", tables vars)]
-      code := Impl.RsaOaep.PPC64LE.Dec.decrypt (fnsOf vars)
+  if h : OK mvars then [
+    Spec.RsaOaep.decryptMdTablesApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaOaep.PPC64LE.Dec.decrypt (fns3 mvars)
       stack := 3776
-      verified := dec_ok vars h },
-    Spec.RsaOaep.encryptTablesApi.artifact PPC64LE.target {
-      tables := [("hash", tables vars), ("mgf1", tables vars)]
-      code := Impl.RsaOaep.PPC64LE.encrypt (fnsOf vars)
+      verified := dec_ok mvars h },
+    Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target {
+      tables := [("hash", tables mvars), ("mgf1", tables mvars)]
+      code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
       stack := 304
-      verified := enc_ok vars h }]
+      verified := enc_ok mvars h }]
   else []
 
 end VG.Artifacts.RsaOaep.PPC64LE

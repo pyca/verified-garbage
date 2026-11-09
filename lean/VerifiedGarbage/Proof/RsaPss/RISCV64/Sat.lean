@@ -21,71 +21,30 @@ values), and the tables' functions at distinct addresses (`symsOf`):
 namespace VG.Proof.RsaPss.RISCV64
 
 open VG VG.RISCV64
-open VG.Proof.HashTable (symsOf symsOf_distinct readW_sep64)
+open VG.Proof.HashTable (symsOf symsOf_distinct readW_sep64 putWs putWs_out putWs_held)
 open VG.Proof.MdHashTable.RISCV64 (MVar)
-open VG.Proof.HashTable.RISCV64 (TVar)
-
-/-- The words `ws` written from `p`. -/
-def putWs (m : Mem) (p : Addr) : List (BitVec 64) → Mem
-  | [] => m
-  | w :: ws => putWs (m.writeW p w) (p + 8) ws
-
-theorem add8_toNat {p : Addr} (h : p.toNat + 8 < 2 ^ 64) : (p + 8).toNat = p.toNat + 8 := by
-  rw [BitVec.toNat_add, show (8 : Addr).toNat = 8 from rfl, Nat.mod_eq_of_lt h]
-
-/-- A word apart from the words `putWs` writes. -/
-theorem putWs_out {m : Mem} {a : Addr} : ∀ {p : Addr} {ws : List (BitVec 64)},
-    (a.toNat + 8 ≤ p.toNat ∨ p.toNat + 8 * ws.length ≤ a.toNat) → p.toNat + 8 * ws.length < 2 ^ 64 →
-    a.toNat + 8 ≤ 2 ^ 64 → (putWs m p ws).readW a 64 = m.readW a 64
-  | _, [], _, _, _ => rfl
-  | p, w :: ws, h, hp, ha => by
-    simp only [List.length_cons] at h hp
-    have h8 := add8_toNat (p := p) (by omega)
-    simp only [putWs]
-    rw [putWs_out (by rw [h8]; omega) (by rw [h8]; omega) ha, readW_sep64 (by omega) ha (by omega)]
-
-/-- The words `putWs` writes. -/
-theorem putWs_held {m : Mem} : ∀ {p : Addr} {ws : List (BitVec 64)}, p.toNat + 8 * ws.length < 2 ^ 64 →
-    Abi.tableHeld 64 (putWs m p ws) p ws
-  | _, [], _ => fun i hi => absurd hi (Nat.not_lt_zero _)
-  | p, w :: ws, hp => by
-    simp only [List.length_cons] at hp
-    have h8 := add8_toNat (p := p) (by omega)
-    intro i hi
-    simp only [putWs]
-    cases i with
-    | zero =>
-      rw [show p + BitVec.ofNat 64 (64 / 8 * 0) = p from BitVec.add_zero p,
-        putWs_out (.inl (by rw [h8])) (by rw [h8]; omega) (by omega), Mem.readW_writeW_self64]
-      simp
-    | succ i =>
-      have := putWs_held (m := m.writeW p w) (p := p + 8) (ws := ws) (by rw [h8]; omega) i
-        (by simp at hi; omega)
-      rw [show p + BitVec.ofNat 64 (64 / 8 * (i + 1)) = p + 8 + BitVec.ofNat 64 (64 / 8 * i) by
-        rw [BitVec.add_assoc]; congr 1; apply BitVec.eq_of_toNat_eq; simp; omega]
-      simpa using this
 
 /-- The words of a table, its functions at the addresses `symsOf ns`. -/
 def tw (ns : List String) (T : FnTable) : List (BitVec 64) := T.fns.map (symsOf ns) ++ T.data
 
 /-- The names of the tables' functions. -/
-def allNames (vs : List MVar) (gs : List TVar) : List String :=
-  MdHashTable.RISCV64.names vs ++ HashTable.RISCV64.names gs
+def allNames (vs : List MVar) (gs : List MVar) : List String :=
+  MdHashTable.RISCV64.names vs ++ MdHashTable.RISCV64.names gs
 
 /-- The memory `m` with the tables of `v` at `0x300000` and of `w` at
 `0x300100`, and `m` itself below `0x300000`. -/
-def tabMem (m : Mem) (vs : List MVar) (gs : List TVar) (v : MVar) (w : TVar) : Mem := fun a =>
+def tabMem (m : Mem) (vs : List MVar) (gs : List MVar) (v : MVar) (w : MVar) : Mem := fun a =>
   bif Nat.blt a.toNat 0x300000 then m a
   else putWs (putWs m 0x300000 (tw (allNames vs gs) (MdHashTable.RISCV64.tableOf v))) 0x300100
-    (tw (allNames vs gs) (HashTable.RISCV64.tableOf w)) a
+    (tw (allNames vs gs) (MdHashTable.RISCV64.tableOf w)) a
 
 /-- A state with `s`'s registers and regions, the tables of `v` at `0x300000`
 and of `w` at `0x300100`, and the tables' functions at distinct addresses. -/
-def withTabs (s : State) (vs : List MVar) (gs : List TVar) (v : MVar) (w : TVar) : State :=
+def withTabs (s : State) (vs : List MVar) (gs : List MVar) (v : MVar) (w : MVar) : State :=
   { s with mem := tabMem s.mem vs gs v w, syms := symsOf (allNames vs gs) }
 
 section
-variable {vs : List MVar} {gs : List TVar} {v : MVar} {w : TVar}
+variable {vs : List MVar} {gs : List MVar} {v : MVar} {w : MVar}
 
 theorem withTabs_arg (s : State) {j : Nat} (hj : (stackArgAddr s j).toNat + 8 ≤ 0x300000) :
     stackArg (withTabs s vs gs v w) j = stackArg s j := by
@@ -99,7 +58,7 @@ theorem withTabs_arg (s : State) {j : Nat} (hj : (stackArgAddr s j).toNat + 8 �
 theorem tabMem_above {m : Mem} {p : Addr} {ws : List (BitVec 64)}
     (hp : 0x300000 ≤ p.toNat) (hl : p.toNat + 8 * ws.length < 2 ^ 64)
     (h : Abi.tableHeld 64 (putWs (putWs m 0x300000 (tw (allNames vs gs) (MdHashTable.RISCV64.tableOf v))) 0x300100
-      (tw (allNames vs gs) (HashTable.RISCV64.tableOf w))) p ws) :
+      (tw (allNames vs gs) (MdHashTable.RISCV64.tableOf w))) p ws) :
     Abi.tableHeld 64 (tabMem m vs gs v w) p ws := by
   intro i hi
   rw [← h i hi]
@@ -118,19 +77,19 @@ theorem withTabs_heldH (s : State) :
   have c1 : (0x300000 : Addr).toNat = 0x300000 := rfl
   have c2 : (0x300100 : Addr).toNat = 0x300100 := rfl
   refine tabMem_above (by rw [c1]) (by simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf,
-    Spec.HashTable.dataOf]) fun i hi => ?_
+    Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]) fun i hi => ?_
   have hi' : i < 11 := by
     simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf] at hi; omega
   rw [putWs_out (.inl (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega))
-    (by simp [tw, HashTable.RISCV64.tableOf, Spec.HashTable.dataOf])
+    (by simp [tw, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
     (by simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega)]
   exact putWs_held (by rw [hl]; decide) i (by rw [hl]; exact hi')
 
 theorem withTabs_heldG (s : State) :
     Abi.tableHeld 64 (withTabs s vs gs v w).mem 0x300100
-      (FnTable.words isa (withTabs s vs gs v w) (HashTable.RISCV64.tableOf w)) :=
-  tabMem_above (by decide) (by simp [FnTable.words, HashTable.RISCV64.tableOf, Spec.HashTable.dataOf])
-    (putWs_held (by simp [tw, HashTable.RISCV64.tableOf, Spec.HashTable.dataOf]))
+      (FnTable.words isa (withTabs s vs gs v w) (MdHashTable.RISCV64.tableOf w)) :=
+  tabMem_above (by decide) (by simp [FnTable.words, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf])
+    (putWs_held (by simp [tw, MdHashTable.RISCV64.tableOf, Spec.MdHashTable.dataOf, Spec.HashTable.dataOf]))
 
 end
 
@@ -152,7 +111,7 @@ def verifySatBase (dl : Nat) : State where
     else bif Nat.beq a.toNat 0x10019 then 0x08 else bif Nat.beq a.toNat 0x10021 then 0x50
     else bif Nat.beq a.toNat 0x10028 then 16 else bif Nat.beq a.toNat 0x10032 then 0x30
     else bif Nat.beq a.toNat 0x10039 then 0x01 else bif Nat.beq a.toNat 0x1003A then 0x30 else 0
-  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, dl⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩, ⟨0x300100, 40⟩,
+  rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4600, dl⟩, ⟨0x4000, 64⟩, ⟨0x5000, 128⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩,
     ⟨0x10000, 64⟩]
   wr := [⟨0x20000, 2080 * 8⟩]
 
@@ -178,9 +137,8 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
   have e : Proof.RsaOaep.RISCV64.stackBytes = 335 + 1 := rfl
   unfold verSpec
   rw [e]
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, stackArgs_eight, List.append_eq, Sig.tableRegion]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
@@ -189,9 +147,8 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), hg, hsp, hrd, hwr, hA, verifyArgs, verifySatBase]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
-  sig_pre [Spec.RsaPss.verifyPrecomputedTableContract, Spec.RsaPss.verifyPrecomputedTableSig,
-    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Spec.HashTable.param, Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi,
+  sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
     argRegs, stackArgs_eight, List.append_eq, Sig.tableRegion]
   sig_and_intros
   all_goals first
@@ -205,12 +162,12 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     | (rw [hdl']; simp; omega)
     | skip
 
-variable {vs : List MVar} {gs : List TVar}
+variable {vs : List MVar} {gs : List MVar}
 
-theorem verify_sat_of {v : MVar} (hv : v ∈ vs) {w : TVar} (hw : w ∈ gs) (hl : (allNames vs gs).length < 2 ^ 32)
+theorem verify_sat_of {v : MVar} (hv : v ∈ vs) {w : MVar} (hw : w ∈ gs) (hl : (allNames vs gs).length < 2 ^ 32)
     {dl : Nat} (hdl : dl ≤ 64) (hlen : v.w.l.G.len = dl)
     (hb : ∀ j < 8, stackArg (verifySatBase dl) j = verifyArgs j) :
-    (verSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)).pre (withTabs (verifySatBase dl) vs gs v w) :=
+    (verSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre (withTabs (verifySatBase dl) vs gs v w) :=
   verify_pre_of hdl rfl rfl (fun j hj => (withTabs_arg _ (verifySat_args dl j hj)).trans (hb j hj)) rfl rfl
     ⟨_, List.mem_map_of_mem hv, withTabs_heldH _⟩ ⟨_, List.mem_map_of_mem hw, withTabs_heldG _⟩
     (symsOf_distinct hl) fun H hH => by
@@ -229,7 +186,7 @@ theorem lens_of (v : MVar) : v.w.l.G.len ∈ [16, 20, 28, 32, 48, 64] := by
   rcases hm with e | e | e | e | e | e | e | e <;> rw [e] <;> decide
 
 theorem verify_sat (hok : OK vs gs) :
-    ∃ s, (verSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)).pre s := by
+    ∃ s, (verSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre s := by
   obtain ⟨-, -, -, hl, hv, hw⟩ := hok
   obtain ⟨v, hv⟩ := List.exists_mem_of_ne_nil vs hv
   obtain ⟨w, hw⟩ := List.exists_mem_of_ne_nil gs hw
@@ -240,7 +197,7 @@ theorem verify_sat (hok : OK vs gs) :
 /-- `vg_rsa_pss_verify_precomputed`, with the tables of `vs` and `gs`. -/
 theorem verify_ok (hok : OK vs gs) :
     Verified RISCV64.target (Impl.RsaPss.RISCV64.verifyPrecomputed (MdHashTable.RISCV64.fnsOf vs)
-      (HashTable.RISCV64.fnsOf gs)) (verSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)) :=
+      (MdHashTable.RISCV64.fns3 gs)) (verSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)) :=
   ⟨code_correct hok, code_constantTime hok, verify_sat hok⟩
 
 /-! ## Signing -/
@@ -264,7 +221,7 @@ def signSatBase (dl : Nat) : State where
     else bif Nat.beq a.toNat 0x10069 then 0x08 else bif Nat.beq a.toNat 0x10072 then 0x30
     else bif Nat.beq a.toNat 0x10079 then 0x01 else bif Nat.beq a.toNat 0x1007A then 0x30 else 0
   rd := [⟨0x2000, 64⟩, ⟨0x3000, 1⟩, ⟨0x4200, 1⟩, ⟨0x4300, 1⟩, ⟨0x4400, 1⟩, ⟨0x4500, 1⟩, ⟨0x4600, 1⟩,
-    ⟨0x4100, dl⟩, ⟨0x4700, 0⟩, ⟨0x300000, 88⟩, ⟨0x300100, 40⟩, ⟨0x10000, 128⟩]
+    ⟨0x4100, dl⟩, ⟨0x4700, 0⟩, ⟨0x300000, 88⟩, ⟨0x300100, 88⟩, ⟨0x10000, 128⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x20000, 2080 * 8⟩]
 
 /-- The stack arguments of `signSatBase dl`. -/
@@ -291,10 +248,9 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
   have e : Sg.stackBytes = 3471 + 1 := rfl
   unfold Sg.signSpec
   rw [e]
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
     simp only [stackArgAddr, hsp]
@@ -304,10 +260,9 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     hwr, hA, signArgs, signSatBase]
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
-  sig_pre [Spec.RsaPss.signTableContract, Spec.RsaPss.signTableSig, Spec.MdHashTable.param,
-    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.HashTable.param,
-    Spec.HashTable.wordCount, Spec.HashTable.fns, Abi.withTables, Sig.wordIndex, abi, argRegs,
-    Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+  sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
+    Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
+    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
   sig_and_intros
   all_goals first
     | rfl
@@ -320,10 +275,10 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     | (rw [hdl']; simp; omega)
     | skip
 
-theorem sign_sat_of {v : MVar} (hv : v ∈ vs) {w : TVar} (hw : w ∈ gs) (hl : (allNames vs gs).length < 2 ^ 32)
+theorem sign_sat_of {v : MVar} (hv : v ∈ vs) {w : MVar} (hw : w ∈ gs) (hl : (allNames vs gs).length < 2 ^ 32)
     {dl : Nat} (hdl : dl ≤ 64) (hlen : v.w.l.G.len = dl)
     (hb : ∀ j < 16, stackArg (signSatBase dl) j = signArgs dl j) :
-    (Sg.signSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)).pre
+    (Sg.signSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre
       (withTabs (signSatBase dl) vs gs v w) :=
   sign_pre_of hdl rfl rfl (fun j hj => (withTabs_arg _ (signSat_args dl j hj)).trans (hb j hj)) rfl rfl
     ⟨_, List.mem_map_of_mem hv, withTabs_heldH _⟩ ⟨_, List.mem_map_of_mem hw, withTabs_heldG _⟩
@@ -338,7 +293,7 @@ theorem signSat_b : ∀ dl ∈ [16, 20, 28, 32, 48, 64], ∀ j < 16, stackArg (s
   decide
 
 theorem sign_sat (hok : OK vs gs) :
-    ∃ s, (Sg.signSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)).pre s := by
+    ∃ s, (Sg.signSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)).pre s := by
   obtain ⟨-, -, -, hl, hv, hw⟩ := hok
   obtain ⟨v, hv⟩ := List.exists_mem_of_ne_nil vs hv
   obtain ⟨w, hw⟩ := List.exists_mem_of_ne_nil gs hw
@@ -349,7 +304,7 @@ theorem sign_sat (hok : OK vs gs) :
 /-- `vg_rsa_pss_sign`, with the tables of `vs` and `gs`. -/
 theorem sign_ok (hok : OK vs gs) :
     Verified RISCV64.target (Impl.RsaPss.RISCV64.Sign.sign (MdHashTable.RISCV64.fnsOf vs)
-      (HashTable.RISCV64.fnsOf gs)) (Sg.signSpec (MdHashTable.RISCV64.tables vs) (HashTable.RISCV64.tables gs)) :=
+      (MdHashTable.RISCV64.fns3 gs)) (Sg.signSpec (MdHashTable.RISCV64.tables vs) (MdHashTable.RISCV64.tables gs)) :=
   ⟨Sg.code_correct hok, Sg.code_constantTime hok, sign_sat hok⟩
 
 end VG.Proof.RsaPss.RISCV64

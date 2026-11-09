@@ -3,7 +3,7 @@ module
 public import VerifiedGarbage.TCB.Emit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.RsaOaep.X86.Inst
-public import VerifiedGarbage.Spec.RsaOaep.Tables
+public import VerifiedGarbage.Spec.RsaOaep.MdTables
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
@@ -22,7 +22,7 @@ open VG.Proof.HashTable.X86 (vars tables)
 def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
     List Artifact :=
   if h : OK (vars vs1 vs256) then [
-    Spec.RsaOaep.encryptTablesApi.artifact X86.target {
+    Spec.RsaOaep.encryptMdTablesApi.artifact X86.target {
       suffix := qualifiedName "" []
       tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
       code := Proof.RsaOaep.X86.Enc.encryptCode (vars vs1 vs256) Proof.RsaPkcs1Sig.X86.Ver.baseline
@@ -42,7 +42,7 @@ open VG.Proof.HashTable.X86 (vars tables)
 def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
   if h : OK (vars vs1 vs256) then [
-    Spec.RsaOaep.decryptTablesApi.artifact X86.target {
+    Spec.RsaOaep.decryptMdTablesApi.artifact X86.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", tables (vars vs1 vs256)), ("mgf1", tables (vars vs1 vs256))]
       code := Proof.RsaOaep.X86.Dec.decCode (vars vs1 vs256) c

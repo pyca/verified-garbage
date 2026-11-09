@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.RsaOaep.AArch64.Mgf1.Table
 `decrypt` (here) and `encrypt` (`Impl/RsaOaep/AArch64/Precomputed.lean`),
 for a hash function `H` (the label's), an `Impl.Pbkdf2.Md.AArch64.Hash` (its
 streaming functions), with MGF1 over the hash function of a table of the
-interface `Hash` (`Spec/HashTable.lean`) that is the last argument (`mgfT`,
+interface `MdHash` (`Spec/MdHashTable.lean`) that is the last argument (`mgfT`,
 `Impl/RsaOaep/AArch64/Mgf1/Table.lean`), calling those functions, MGF1 and
 the RSA operation: the public-key operation within BoringSSL's limits
 (`vg_rsa_public_precomputed_checked`) when encrypting, the private-key
@@ -167,9 +167,9 @@ def hashLabelT (o : Nat) : Prog isa :=
 (through `x16`, which keeps `x0`). -/
 def tabSlot (j : Nat) : List Instr := [.ldrSp .x16 (arg j), .addSp .x9 0, .str .x .x16 .x9 sTab]
 
-/-- The digest length of the table whose address is in `sTab` (its word 4),
+/-- The digest length of the table whose address is in `sTab` (its word 6),
 to `x16`. -/
-def lenLoad : List Instr := [.ldrSp .x16 sTab, .ldr .x .x16 .x16 32]
+def lenLoad : List Instr := [.ldrSp .x16 sTab, .ldr .x .x16 .x16 48]
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,

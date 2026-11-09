@@ -73,7 +73,7 @@ theorem tws : s.mem.readW (off (stackArg s 2) 0) 64 = a.mem.readW (off (stackArg
     s.mem.readW (off (stackArg s 3) 0) 64 = a.mem.readW (off (stackArg a 3) 0) 64 ∧
     s.mem.readW (off (stackArg s 3) 8) 64 = a.mem.readW (off (stackArg a 3) 8) 64 ∧
     s.mem.readW (off (stackArg s 3) 16) 64 = a.mem.readW (off (stackArg a 3) 16) 64 ∧
-    s.mem.readW (off (stackArg s 3) 32) 64 = a.mem.readW (off (stackArg a 3) 32) 64 := by
+    s.mem.readW (off (stackArg s 3) 48) 64 = a.mem.readW (off (stackArg a 3) 48) 64 := by
   have := h.2.1.2.2.symm
   simp only [tabWords, List.cons.injEq, and_true] at this
   exact this
@@ -128,7 +128,7 @@ def sw (H : Hash) (s : State) (k : Nat) : BitVec 64 :=
   | 11 => s.mem.readW (off (stackArg s 3) 0) 64
   | 12 => s.mem.readW (off (stackArg s 3) 8) 64
   | 13 => s.mem.readW (off (stackArg s 3) 16) 64
-  | 14 => s.mem.readW (off (stackArg s 3) 32) 64
+  | 14 => s.mem.readW (off (stackArg s 3) 48) 64
   | 16 => s.gpr .rdi
   | 17 => s.gpr .rsi
   | 21 => stackArg s 0

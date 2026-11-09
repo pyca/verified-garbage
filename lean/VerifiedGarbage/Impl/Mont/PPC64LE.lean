@@ -135,12 +135,23 @@ def rmac (rs : Reg) (src rd dst j : Nat) : List Instr :=
 /-- `k` steps of a row. -/
 def rmacs (rs : Reg) (src rd dst k : Nat) : List Instr := (List.range k).flatMap (rmac rs src rd dst)
 
-/-- The row `T += u [b]`, for word `r5` of `[a]` (`[b]` at `r6`): `n` steps,
-then the carry word added into `treg n`, and the carry out, the top word,
-to `r12`. -/
+/-- The low (or high) word of `r9 · [r6 + 8j]` (through `r11`), added with
+CA into `treg (dd + j)`. -/
+def mStep (hi : Bool) (dd j : Nat) : List Instr :=
+  [.load .d .r11 .r6 (8 * j), if hi then .mulhu .r11 .r9 .r11 else .mul .r11 .r9 .r11,
+    carryOp false (j == 0) (treg (dd + j)) (treg (dd + j)) .r11]
+
+/-- `k` steps of a chain with `[b]` in memory. -/
+def mpass (hi : Bool) (dd k : Nat) : List Instr := (List.range k).flatMap (mStep hi dd)
+
+/-- The row `T += u [b]`, for word `r5` of `[a]` (`[b]` at `r6`), as two
+carry chains, as `qrowB` but with `[b]` read from memory: the low words of
+the products into `treg 0`, …, the carry into `treg n` and from it to
+`r12`, then the high words into `treg 1`, …, the carry into `r12`. -/
 def rrowB (n : Nat) : List Instr :=
-  [.load .d .r9 .r5 0, .li .r0 0] ++ rmacs .r6 0 0 0 n ++
-  ([.addc (treg n) (treg n) .r0, .li .r12 0, .addze .r12 .r12] : List Instr)
+  [.load .d .r9 .r5 0] ++ mpass false 0 n ++
+  ([.addze (treg n) (treg n), .li .r12 0, .addze .r12 .r12] : List Instr) ++
+  mpass true 1 n ++ ([.addze .r12 .r12] : List Instr)
 
 /-- `k` for a Mersenne modulus `m = 2^(64 (n - 1) + k) - 1` of `n ≥ 2`
 words with `0 < k < 64` (P-521's `p`, `k = 9`), else 0. -/
@@ -235,7 +246,9 @@ two carry chains (`pass`): the low words of the products `x y_j` added in
 one, then their high words one word up in another. A product's words then
 need no carry of their own: a step is a multiplication and an `adde`. The
 second row's high chain also moves the accumulator one register down. `m'`
-is at `[M.tmp]` until the reduction. -/
+is in `mpReg` (whose value is kept at `[M.tmp]` meanwhile), and the
+reduction computes `T - m` into `bReg`, free by then, and selects in
+registers. -/
 
 /-- The registers of `[b]`, after the accumulator's. -/
 def bReg (n j : Nat) : Reg := treg (n + 1 + j)
@@ -259,13 +272,16 @@ def qrowB (n : Nat) : List Instr :=
   ([.addze (treg n) (treg n), .li .r12 0, .addze .r12 .r12] : List Instr) ++
   pass true (bReg n) 1 1 n ++ ([.addze .r12 .r12] : List Instr)
 
-/-- `r9 = q = t₀ m' mod 2⁶⁴`: `t₀` itself for `m' = 1` (P-256's `p`), else
-`t₀` times `m'` from `[M.tmp]`. -/
-def qhead (M : Mod) : List Instr :=
-  if M.minv.toNat = 1 then [.ori .r9 (treg 0) 0] else [.load .d .r11 wb M.tmp, .mul .r9 (treg 0) .r11]
+/-- The register of `m'`: the first after `[b]`'s (`r24` for four words). -/
+def mpReg (n : Nat) : Reg := treg (2 * n + 1)
 
-/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` at
-`[M.tmp]`): the low words into `treg 0`, …, the carry into `treg n` and
+/-- `r9 = q = t₀ m' mod 2⁶⁴`: `t₀` itself for `m' = 1` (P-256's `p`), else
+`t₀` times `m'` from `mpReg`. -/
+def qhead (M : Mod) : List Instr :=
+  if M.minv.toNat = 1 then [.ori .r9 (treg 0) 0] else [.mul .r9 (treg 0) (mpReg M.n)]
+
+/-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` in
+`mpReg`): the low words into `treg 0`, …, the carry into `treg n` and
 `r12`, then the high words with the accumulator moved one register down,
 `r12` into `treg n`. -/
 def qrowM (M : Mod) : List Instr :=
@@ -276,16 +292,21 @@ def qrowM (M : Mod) : List Instr :=
 /-- An iteration of `rmul4`. -/
 def qrow (M : Mod) : List Instr := qrowB M.n ++ qrowM M ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)
 
-/-- Word `j` of `T - m` (`m` in registers), with CA, to `[M.tmp + 8j]`. -/
-def qsubStep (M : Mod) (j : Nat) : List Instr :=
-  [carryOp true (j == 0) .r11 (treg j) (mReg j), .store .d .r11 wb (M.tmp + 8 * j)]
+/-- Word `j` of `T - m` (both in registers), with CA, to `bReg n j` (free once
+the rows are done). -/
+def qsubRStep (n j : Nat) : List Instr := [carryOp true (j == 0) (bReg n j) (treg j) (mReg j)]
+
+/-- Word `k` of `T`, or of `T - m` where the mask `r10` is all ones, to `[r4 + 8k]`. -/
+def qselWord (n k : Nat) : List Instr :=
+  [.logic .xor .r12 (bReg n k) (treg k), .logic .and .r12 .r12 .r10,
+    .logic .xor .r11 (treg k) .r12, .store .d .r11 .r4 (8 * k)]
 
 /-- `T` (`n` words and the top word `treg n`, 0 or 1), below `2m`, reduced
-modulo `m` (in registers) into `[r4]`. -/
-def qcsub (M : Mod) : List Instr :=
-  (List.range M.n).flatMap (qsubStep M) ++
-  ([.addze .r10 (treg M.n), .li .r11 0, .sub .r10 .r11 .r10] : List Instr) ++
-  (List.range M.n).flatMap (rselWord M)
+modulo `m` (in registers) into `[r4]`, `T - m` in `bReg`. -/
+def qcsubR (n : Nat) : List Instr :=
+  (List.range n).flatMap (qsubRStep n) ++
+  ([.addze .r10 (treg n), .li .r11 0, .sub .r10 .r11 .r10] : List Instr) ++
+  (List.range n).flatMap (qselWord n)
 
 /-- `[b]` to its registers, then the modulus `m` to its, as immediates. -/
 def qload (M : Mod) (m : Nat) : List Instr :=
@@ -295,19 +316,21 @@ def qload (M : Mod) (m : Nat) : List Instr :=
 /-- `[r4] = [r5] [r6] R⁻¹ mod m` for `n ≤ 4`, the accumulator, `[b]` and
 the modulus in registers (`[r4]` may be `[r5]` or `[r6]`). -/
 def rmul4 (M : Mod) (m acc : Nat) : Prog isa :=
-  .seq (.block (setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M m ++ [.li .r8 M.n])) <|
+  .seq (.block (rsave (2 * M.n) acc ++ [.store .d (mpReg M.n) wb M.tmp] ++ movImm64 (mpReg M.n) M.minv.toNat ++
+      rzero M.n ++ qload M m ++ [.li .r8 M.n])) <|
   .seq (.loop (.block (qrow M)) (.nonzero .d .r8)) <|
-    .block (qcsub M ++ rrestore (2 * M.n) acc)
+    .block (qcsubR M.n ++ rrestore (2 * M.n) acc ++ [.load .d (mpReg M.n) wb M.tmp])
 
 /-- `rmul4` for at most four words, `rmul` for more: the two have the same
 shape, so the choice is inside the blocks (and the code's shape, its frames
 in particular, does not depend on it). -/
 def rmulSel (M : Mod) (m acc : Nat) : Prog isa :=
   .seq (.block (if M.n ≤ 4 then
-      setConst 1 M.tmp M.minv.toNat ++ rsave (2 * M.n) acc ++ rzero M.n ++ qload M m ++ [.li .r8 M.n]
+      rsave (2 * M.n) acc ++ [.store .d (mpReg M.n) wb M.tmp] ++ movImm64 (mpReg M.n) M.minv.toNat ++
+        rzero M.n ++ qload M m ++ [.li .r8 M.n]
     else setConst 1 (acc + 8 * (M.n + 1)) M.minv.toNat ++ rsave M.n acc ++ rzero M.n ++ [setMo M, .li .r8 M.n])) <|
   .seq (.loop (.block (if M.n ≤ 4 then qrow M else rrow M m acc)) (.nonzero .d .r8)) <|
-    .block (if M.n ≤ 4 then qcsub M ++ rrestore (2 * M.n) acc else rcsub M ++ rrestore M.n acc)
+    .block (if M.n ≤ 4 then qcsubR M.n ++ rrestore (2 * M.n) acc ++ [.load .d (mpReg M.n) wb M.tmp] else rcsub M ++ rrestore M.n acc)
 
 theorem rmulSel_eq (M : Mod) (m acc : Nat) : rmulSel M m acc = if M.n ≤ 4 then rmul4 M m acc else rmul M m acc := by
   unfold rmulSel rmul4 rmul; split <;> rfl

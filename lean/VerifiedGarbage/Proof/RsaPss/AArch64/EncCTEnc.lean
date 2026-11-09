@@ -453,7 +453,7 @@ theorem ht : HT T.H T.dn T.f (fb a) u.mem u.syms := by
   rw [sy]
   exact h1.stepW L0 fm
 
-/-- Where MGF1 works, and the table of `Hash`. -/
+/-- Where MGF1 works, and the table of `MdHash`. -/
 theorem env : Env T.G T.g u (fb a) (scr a) (stackArg a 1) := by
   obtain ⟨s, t₀, e, h0, fm, sy, hrd, hwr⟩ := h.ex
   have L0 := lay_of e.1 h0.e.sp h0.e.x20 h0.e.wr

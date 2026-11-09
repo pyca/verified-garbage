@@ -188,7 +188,7 @@ theorem ss_ht {s t : State} {ks : List Nat} {rs : List (Reg × BitVec 64)}
     (h10 : 10 ∈ ks := by decide) : HT T.H T.dn T.f W t.syms := by
   rw [v.sy]; exact hp.tabs.hf.ht ((hw 8 h8).trans hp.tabs.h0) ((hw 9 h9).trans hp.tabs.h3) ((hw 10 h10).trans hp.tabs.h4)
 
-/-- The slots of the table of `Hash`, in a run. -/
+/-- The slots of the table of `MdHash`, in a run. -/
 theorem ss_gt {s t : State} {ks : List Nat} {rs : List (Reg × BitVec 64)}
     {X : (Nat → Byte) → (Nat → BitVec 64) → Prop} (hp : Pre T s) (v : SS T.H s t ks rs X) {W : Nat → BitVec 64}
     (hw : ∀ k ∈ ks, W k = sw T.H s k) (h11 : 11 ∈ ks := by decide) (h12 : 12 ∈ ks := by decide)

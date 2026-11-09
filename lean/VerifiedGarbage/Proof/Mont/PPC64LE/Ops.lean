@@ -480,26 +480,6 @@ theorem regsVal_low (s : State) (d k : Nat) : regsVal s d (k + 1) % 2 ^ 64 = (s.
   rw [regsVal, Nat.add_mul_mod_self_left]
   exact Nat.mod_eq_of_lt (BitVec.isLt _)
 
-/-- The carry word `r0` added to `treg n`, the carry out to `r12`. -/
-theorem rtopB_ok {s : State} (n : Nat) :
-    WP isa (.block [.addc (treg n) (treg n) .r0, .li .r12 0, .addze .r12 .r12]) s fun u =>
-      (u.gpr (treg n)).toNat + 2 ^ 64 * (u.gpr .r12).toNat = (s.gpr (treg n)).toNat + (s.gpr .r0).toNat ∧
-      u.mem = s.mem ∧ Kp [treg n, .r12] s u := by
-  refine wp_step exec_addc ?_
-  refine wp_step (exec_li (by decide)) ?_
-  refine wp_step exec_addze (WP.block_nil ?_)
-  simp only [write_gpr, writeCarry_gpr, write_mem, RegUpd.mem_writeCarry, RegUpd.ca_writeCarry, RegUpd.ca_write,
-    ite_false, ite_true, treg_eq_r12, r12_eq_treg]
-  refine ⟨?_, trivial, ?_⟩
-  · simp only [BitVec.toNat_ofNat]
-    have := ca_split (v := (s.gpr (treg n)).toNat + (s.gpr .r0).toNat)
-      (by have := (s.gpr (treg n)).isLt; have := (s.gpr .r0).isLt; omega)
-    generalize (decide (2 ^ 64 ≤ (s.gpr (treg n)).toNat + (s.gpr .r0).toNat)).toNat = c at *
-    omega
-  · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [write_gpr, writeCarry_gpr, hr.1, hr.2, ite_false]
-
 /-- `q = treg 0 · [r3 + mi] mod 2⁶⁴` to `r9`, and the first step of its
 row: `treg 0 + q m₀` (`m₀` at `[r7]`), whose low word is dropped and high
 word goes to `r0`. -/
@@ -562,6 +542,291 @@ theorem rtopQ_ok {s : State} {e : Nat} (he : e + 1 < 10) :
   · refine ⟨fun r hr => ?_, rfl, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [writeCarry_gpr, hr.1, hr.2, ite_false]
+
+/-! ## The rows: registers, carries -/
+
+/-- The registers a row writes. -/
+def lrow (n : Nat) : List Reg := [.r9, .r11, .r12] ++ tregs 0 (n + 1)
+
+theorem lrow_of {n : Nat} {l : List Reg} (h : ∀ r ∈ l, r ∈ [Reg.r9, .r11, .r12] ∨ ∃ j ≤ n, r = treg j) :
+    ∀ r ∈ l, r ∈ lrow n := by
+  intro r hr
+  rcases h r hr with h | ⟨j, hj, rfl⟩
+  · exact List.mem_append_left _ h
+  · exact List.mem_append_right _ (by simpa using treg_mem_tregs (d := 0) (k := n + 1) (j := j) (by omega))
+
+theorem tregs_sub_lrow {n d k : Nat} (h : d + k ≤ n + 1) : ∀ r ∈ tregs d k, r ∈ [Reg.r9, .r11, .r12] ∨ ∃ j ≤ n, r = treg j := by
+  intro r hr
+  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
+  rw [List.mem_range] at hj
+  exact .inr ⟨d + j, by omega, rfl⟩
+
+theorem not_mem_lrow {n : Nat} {r : Reg} (h1 : r ∉ [Reg.r9, .r11, .r12]) (h2 : ∀ j ≤ n, r ≠ treg j) : r ∉ lrow n := by
+  intro h
+  rcases List.mem_append.mp h with h' | h'
+  · exact h1 h'
+  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h'
+    rw [List.mem_range] at hj
+    rw [Nat.zero_add] at e
+    exact h2 j (by omega) e.symm
+
+theorem cOf_pos {k : Nat} (hk : 0 < k) (c : Bool) : cOf false k c = c.toNat := by
+  simp [cOf, Nat.ne_of_gt hk]
+
+theorem cOfT_pos {k : Nat} (hk : 0 < k) (c : Bool) : cOf true k c = c.toNat := by
+  simp [cOf, Nat.ne_of_gt hk]
+
+theorem regsVal_top (s : State) (n : Nat) :
+    regsVal s 0 (n + 1) = regsVal s 0 n + 2 ^ (64 * n) * (s.gpr (treg n)).toNat := by
+  rw [regsVal_succ_top, Nat.zero_add]
+
+theorem regsVal_low' (s : State) (n : Nat) :
+    regsVal s 0 (n + 1) = (s.gpr (treg 0)).toNat + 2 ^ 64 * regsVal s 1 n := rfl
+
+theorem wp_gen {c : Prog isa} {s : State} {Q : State → Prop} (h : ∀ t, t = s → WP isa c t Q) : WP isa c s Q :=
+  h s rfl
+
+/-! ## The product row of more than four words: `[b]` in memory -/
+
+/-- The low (or high) words of `x · [b]`, `[b]` the `k` words at `B`, as a number. -/
+def pm (hi : Bool) (x : Nat) (mem : Mem) (base : Addr) (B : Nat) : Nat → Nat
+  | 0 => 0
+  | k + 1 => pm hi x mem base B k + 2 ^ (64 * k) *
+      (if hi then x * (word mem base (B + 8 * k)).toNat / 2 ^ 64 else x * (word mem base (B + 8 * k)).toNat % 2 ^ 64)
+
+theorem pm_split (x : Nat) (mem : Mem) (base : Addr) (B : Nat) :
+    ∀ k, pm false x mem base B k + 2 ^ 64 * pm true x mem base B k = x * wordsVal mem base B k
+  | 0 => rfl
+  | k + 1 => by
+    simp only [pm, ite_true, Bool.false_eq_true, ite_false]
+    rw [wordsVal_succ_top]
+    have ih := pm_split x mem base B k
+    have e := Nat.mod_add_div (x * (word mem base (B + 8 * k)).toNat) (2 ^ 64)
+    generalize 2 ^ (64 * k) = P at *
+    generalize x * (word mem base (B + 8 * k)).toNat % 2 ^ 64 = l at *
+    generalize x * (word mem base (B + 8 * k)).toNat / 2 ^ 64 = h at *
+    rw [Nat.mul_add x, ← ih, Nat.mul_left_comm x, ← e]
+    grind
+
+theorem mpass_succ (hi : Bool) (dd k : Nat) : mpass hi dd (k + 1) = mpass hi dd k ++ mStep hi dd k := by
+  simp only [mpass, List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- A chain with `[b]` in memory: the low (or high) words of `r9 · [r6 + 8j]`
+added with the carry into `treg (dd + j)`, the carry out to CA. -/
+theorem mpass_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {B : Nat} (h6 : At s base .r6 B)
+    {hi : Bool} {dd W : Nat} (hW : dd + W ≤ 10) (hB : B + 8 * W ≤ size) :
+    ∀ {k : Nat}, k ≤ W →
+    WP isa (.block (mpass hi dd k)) s fun u =>
+      regsVal u dd k + 2 ^ (64 * k) * cOf false k u.ca = regsVal s dd k + pm hi (s.gpr .r9).toNat s.mem base B k ∧
+      u.mem = s.mem ∧ Kp (.r11 :: tregs dd k) s u
+  | 0, _ => WP.block_nil ⟨by simp [regsVal, pm, cOf], rfl, Kp.refl _ _⟩
+  | k + 1, hk => by
+    have hs15 := hs.small
+    rw [mpass_succ]
+    refine WP.block_append (WP.mono (mpass_ok hs h6 hW hB (k := k) (by omega)) fun s₁ ⟨V₁, M₁, K₁⟩ => ?_)
+    have nt : ∀ r : Reg, r ∉ hiRegs → r ≠ .r11 → r ∉ (.r11 :: tregs dd k) := fun r h1 h2 =>
+      fun h => by
+        rcases List.mem_cons.mp h with e | e
+        · exact h2 e
+        · obtain ⟨j, -, e'⟩ := List.mem_map.mp e; exact h1 (e' ▸ treg_hi _)
+    have h9 : s₁.gpr .r9 = s.gpr .r9 := K₁.gpr _ (nt _ (by decide) (by decide))
+    have h6₁ : At s₁ base .r6 B := K₁.at h6 (nt _ (by decide) (by decide))
+    have htk : s₁.gpr (treg (dd + k)) = s.gpr (treg (dd + k)) := K₁.gpr _ (by
+      intro h
+      rcases List.mem_cons.mp h with e | e
+      · exact treg_ne (r := .r11) (by decide) _ e
+      · exact treg_not_mem_tregs (by omega) (by omega) (by omega) e)
+    simp only [mStep]
+    refine wp_step (ld_ok (K₁.ws hs) h6₁ (by decide) (by omega) (d := 8 * k) (by omega)) ?_
+    rw [M₁]
+    generalize hw : word s.mem base (B + 8 * k) = w
+    have hmul : ∃ v : BitVec 64, exec (if hi then Instr.mulhu .r11 .r9 .r11 else Instr.mul .r11 .r9 .r11)
+        (s₁.write .r11 w) = some (s₁.write .r11 v) ∧ v.toNat = (if hi then (s.gpr .r9).toNat * w.toNat / 2 ^ 64 else
+          (s.gpr .r9).toNat * w.toNat % 2 ^ 64) := by
+      cases hi
+      · refine ⟨_, by simp only [Bool.false_eq_true, ite_false]; rw [exec_mul, write_write], ?_⟩
+        simp only [Bool.false_eq_true, ite_false, BitVec.toNat_mul, write_gpr, ite_true, reduceCtorEq, h9]
+      · refine ⟨_, by simp only [ite_true]; rw [exec_mulhu, write_write], ?_⟩
+        simp only [ite_true, BitVec.toNat_ofNat, write_gpr, reduceCtorEq, ite_false, h9]
+        have := w.isLt
+        have : (s.gpr .r9).toNat * w.toNat < 2 ^ 64 * 2 ^ 64 := Nat.mul_lt_mul'' (s.gpr .r9).isLt this
+        exact Nat.mod_eq_of_lt (Nat.div_lt_of_lt_mul this)
+    obtain ⟨v, hv, hvv⟩ := hmul
+    refine wp_step hv ?_
+    refine wp_step (exec_carryOp _ _ _ _ _ _) (WP.block_nil ?_)
+    simp only [Bool.false_eq_true, ite_false, RegUpd.ca_write]
+    simp only [write_gpr, treg_eq_r11, ite_false, ite_true]
+    have hrk : regsVal (((s₁.write .r11 v).writeCarry (treg (dd + k)) ((s₁.gpr (treg (dd + k))).toNat + v.toNat +
+        cOf false k s₁.ca))) dd k = regsVal s₁ dd k := regsVal_congr fun j hj => by
+      simp only [writeCarry_gpr, write_gpr, treg_eq_r11, ite_false,
+        treg_ne_of (by omega) (by omega) (show dd + j ≠ dd + k by omega)]
+    have hc : cOf false k s₁.ca ≤ 1 := by unfold cOf; split <;> simp [Bool.toNat_le]
+    have e := RegUpd.toNat_add_ca (s₁.write .r11 v) (r := treg (dd + k))
+      (v := (s₁.gpr (treg (dd + k))).toNat + v.toNat + cOf false k s₁.ca)
+      (by have := (s₁.gpr (treg (dd + k))).isLt; have := v.isLt; omega)
+    refine ⟨?_, by rw [RegUpd.mem_writeCarry, write_mem, M₁], ?_⟩
+    · rw [regsVal_succ_top, regsVal_succ_top, hrk, pm, pow64_succ, show cOf false (k + 1) _ =
+        ((s₁.write .r11 v).writeCarry (treg (dd + k)) ((s₁.gpr (treg (dd + k))).toNat + v.toNat +
+          cOf false k s₁.ca)).ca.toNat from rfl, hw, ← hvv]
+      rw [htk] at e ⊢
+      generalize 2 ^ (64 * k) = P at *
+      generalize cOf false k s₁.ca = c at *
+      generalize ((s₁.write .r11 v).writeCarry _ _).ca.toNat = c' at *
+      generalize ((s₁.write .r11 v).writeCarry _ _).gpr (treg (dd + k)) = w' at *
+      have e2 := congrArg (P * ·) e
+      simp only [Nat.mul_add] at e2
+      grind
+    · refine (K₁.mono ?_).trans ((Kp.write _ _ ?_).trans (Kp.writeCarry _ _ ?_))
+      · intro r hr
+        rcases List.mem_cons.mp hr with h | h
+        · exact List.mem_cons.mpr (.inl h)
+        · exact List.mem_cons.mpr (.inr (by rw [tregs_succ]; exact List.mem_append_left _ h))
+      · exact List.mem_cons_self ..
+      · exact List.mem_cons.mpr (.inr (by rw [tregs_succ]; exact List.mem_append_right _ (List.mem_singleton_self _)))
+
+/-- The row `T += x [b]` of `rmul`, `[b]` in memory, the top word in `r12`. -/
+theorem mrowB_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {n K B : Nat}
+    (hn0 : 0 < n) (hn : n ≤ 9) (h5 : At t base .r5 K) (hK : K + 8 ≤ size) (h6 : At t base .r6 B)
+    (hB : B + 8 * n ≤ size)
+    (hb : regsVal t 0 (n + 1) + (word t.mem base K).toNat * wordsVal t.mem base B n < 2 ^ (64 * (n + 2))) :
+    WP isa (.block (rrowB n)) t fun u =>
+      regsVal u 0 (n + 1) + 2 ^ (64 * (n + 1)) * (u.gpr .r12).toNat =
+        regsVal t 0 (n + 1) + (word t.mem base K).toNat * wordsVal t.mem base B n ∧
+      u.mem = t.mem ∧ Kp (lrow n) t u := by
+  have hs15 := ht.small
+  simp only [rrowB, List.append_assoc, List.cons_append, List.nil_append]
+  refine wp_step (ld_ok ht h5 (by decide) (by decide) (d := 0) (by omega)) ?_
+  rw [Nat.add_zero]
+  generalize hx : word t.mem base K = x
+  generalize ht₁ : t.write .r9 x = t₁
+  have hr₁ : ∀ d k, regsVal t₁ d k = regsVal t d k := fun d k => regsVal_congr fun j _ => by
+    rw [← ht₁]; simp only [write_gpr, treg_eq_r9, ite_false]
+  have h9 : t₁.gpr .r9 = x := by rw [← ht₁]; simp only [write_gpr, ite_true]
+  have hm₁ : t₁.mem = t.mem := by rw [← ht₁]; rfl
+  have hs₁ : Ws t₁ base size := ht₁ ▸ ht.write _ _
+  have h6₁ : At t₁ base .r6 B := ht₁ ▸ h6.write _
+  -- The low words.
+  refine WP.block_append (WP.mono (mpass_ok hs₁ h6₁ (hi := false) (dd := 0) (W := n) (by omega) hB
+    (k := n) (Nat.le_refl _)) fun t₂ ⟨V₂, M₂, K₂⟩ => ?_)
+  rw [cOf_pos hn0, hr₁, h9, hm₁] at V₂
+  have nt2 : ∀ r : Reg, r ≠ .r11 → (∀ j < n, r ≠ treg j) → t₂.gpr r = t₁.gpr r := fun r h1 h2 =>
+    K₂.gpr _ (by
+      intro h; rcases List.mem_cons.mp h with e | e
+      · exact h1 e
+      · obtain ⟨j, hj, e'⟩ := List.mem_map.mp e; rw [List.mem_range] at hj; exact h2 j hj (by rw [← e', Nat.zero_add]))
+  have hxn2 : t₂.gpr (treg n) = t.gpr (treg n) := by
+    rw [nt2 _ (treg_ne (r := .r11) (by decide) _) fun j hj => treg_ne_of (by omega) (by omega) (by omega), ← ht₁]
+    simp only [write_gpr, treg_eq_r9, ite_false]
+  -- The carry into `treg n`, and from it into `r12`.
+  refine wp_step exec_addze ?_
+  refine wp_step (exec_li (by decide)) ?_
+  refine wp_step exec_addze ?_
+  refine wp_gen fun t₃ ht₃ => ?_
+  generalize hv : (t₂.gpr (treg n)).toNat + t₂.ca.toNat = v at ht₃
+  have e3 := RegUpd.toNat_add_ca t₂ (r := treg n) (v := v)
+    (by rw [← hv]; have := (t₂.gpr (treg n)).isLt; have := Bool.toNat_le t₂.ca; omega)
+  generalize ht₂' : t₂.writeCarry (treg n) v = t₂' at e3 ht₃
+  generalize hca' : t₂'.ca.toNat = ca' at e3
+  have hca1 : ca' ≤ 1 := hca' ▸ Bool.toNat_le _
+  have h12₃ : (t₃.gpr .r12).toNat = ca' := by
+    rw [ht₃]
+    simp only [RegUpd.ca_write, RegUpd.gpr_writeCarry_self, BitVec.toNat_ofNat, write_gpr, ite_true]
+    rw [Nat.zero_mod, Nat.zero_add, hca', Nat.mod_eq_of_lt (by omega)]
+  have hxn₃ : t₃.gpr (treg n) = t₂'.gpr (treg n) := by
+    rw [ht₃]; simp only [writeCarry_gpr, write_gpr, treg_eq_r12, ite_false]
+  have K₂₃ : Kp [treg n, .r12] t₂ t₃ := by
+    rw [ht₃, ← ht₂']
+    exact ((Kp.writeCarry _ _ (List.mem_cons_self ..)).trans (Kp.write _ _ (by simp))).trans
+      (Kp.writeCarry _ _ (by simp))
+  have hm₃ : t₃.mem = t₂.mem := by rw [ht₃, ← ht₂']; rfl
+  have hr₃ : regsVal t₃ 0 n = regsVal t₂ 0 n := regsVal_kp K₂₃ fun j hj => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, Nat.zero_add]
+    exact ⟨treg_ne_of (by omega) (by omega) (by omega), treg_ne (r := .r12) (by decide) _⟩
+  rw [← hxn₃] at e3
+  rw [hxn2] at hv
+  generalize hc2 : t₂.ca.toNat = c2 at V₂ hv
+  clear ht₃
+  -- The high words.
+  have h9₃ : t₃.gpr .r9 = x := by
+    rw [K₂₃.gpr _ (by simp), nt2 _ (by decide) fun j _ => (treg_ne (r := .r9) (by decide) j).symm, h9]
+  have hs₃ : Ws t₃ base size := K₂₃.ws (K₂.ws hs₁)
+  have h6₃ : At t₃ base .r6 B := K₂₃.at (K₂.at h6₁ (by simp [tregs])) (by simp)
+  refine WP.block_append (WP.mono (mpass_ok hs₃ h6₃ (hi := true) (dd := 1) (W := n) (by omega) hB
+    (k := n) (Nat.le_refl _)) fun t₄ ⟨V₄, M₄, K₄⟩ => ?_)
+  rw [cOf_pos hn0, h9₃, hm₃, M₂, hm₁] at V₄
+  refine wp_step exec_addze (WP.block_nil ?_)
+  have h12₄ : t₄.gpr .r12 = t₃.gpr .r12 := K₄.gpr _ (by simp [tregs])
+  have h0₄ : t₄.gpr (treg 0) = t₃.gpr (treg 0) := K₄.gpr _ (by
+    intro h; rcases List.mem_cons.mp h with e | e
+    · exact treg_ne (r := .r11) (by decide) _ e
+    · exact treg_not_mem_tregs (by omega) (by omega) (by omega) e)
+  have e5 := RegUpd.toNat_add_ca t₄ (r := .r12) (v := (t₄.gpr .r12).toNat + t₄.ca.toNat)
+    (by have := (t₄.gpr .r12).isLt; have := Bool.toNat_le t₄.ca; omega)
+  generalize ht₅ : t₄.writeCarry .r12 ((t₄.gpr .r12).toNat + t₄.ca.toNat) = t₅ at e5 ⊢
+  rw [h12₄, h12₃] at e5
+  generalize hc4 : t₄.ca.toNat = c4 at V₄ e5
+  have hr₅ : regsVal t₅ 0 (n + 1) = regsVal t₄ 0 (n + 1) := regsVal_congr fun j _ => by
+    rw [← ht₅]; simp only [writeCarry_gpr, treg_eq_r12, ite_false]
+  -- The values.
+  have hsplit := pm_split x.toNat t.mem base B n
+  have eT : regsVal t 0 (n + 1) = regsVal t 0 n + 2 ^ (64 * n) * (t.gpr (treg n)).toNat := regsVal_top t n
+  have e3T : regsVal t₃ 0 (n + 1) = regsVal t₂ 0 n + 2 ^ (64 * n) * (t₃.gpr (treg n)).toNat := by
+    rw [regsVal_top, hr₃]
+  have e3L := regsVal_low' t₃ n
+  have e4L := regsVal_low' t₄ n
+  rw [h0₄] at e4L
+  have hP2 : 2 ^ (64 * (n + 1)) = 2 ^ 64 * 2 ^ (64 * n) := pow64_succ n
+  have hP3 : 2 ^ (64 * (n + 2)) = 2 ^ 64 * (2 ^ 64 * 2 ^ (64 * n)) := by
+    rw [show n + 2 = (n + 1) + 1 by omega, pow64_succ, pow64_succ]
+  rw [hx] at hb
+  refine ⟨?_, by rw [← ht₅]; show t₄.mem = t.mem; rw [M₄, hm₃, M₂, ← ht₁]; rfl, ?_⟩
+  · rw [hr₅, hP2, ← hsplit, eT]
+    rw [← hsplit, eT, hP3] at hb
+    generalize 2 ^ (64 * n) = P at *
+    generalize (t₅.gpr .r12).toNat = w5 at *
+    generalize t₅.ca.toNat = c5 at *
+    generalize regsVal t₄ 0 (n + 1) = R4 at *
+    generalize regsVal t₄ 1 n = R41 at *
+    generalize regsVal t₃ 1 n = R31 at *
+    generalize regsVal t₃ 0 (n + 1) = R3 at *
+    generalize regsVal t₂ 0 n = R2 at *
+    generalize regsVal t 0 n = R0 at *
+    generalize pm false x.toNat t.mem base B n = PL at *
+    generalize pm true x.toNat t.mem base B n = PH at *
+    generalize (t.gpr (treg n)).toNat = xt at *
+    generalize (t₃.gpr (treg n)).toNat = x3 at *
+    generalize (t₃.gpr (treg 0)).toNat = T0 at *
+    have key : R4 + 2 ^ 64 * P * w5 + 2 ^ 64 * (2 ^ 64 * P) * c5 = R0 + P * xt + (PL + 2 ^ 64 * PH) := by
+      have e5' := congrArg (2 ^ 64 * P * ·) e5
+      have V₄' := congrArg (2 ^ 64 * ·) V₄
+      have e3' := congrArg (P * ·) e3
+      have hv' := congrArg (P * ·) hv
+      simp only [Nat.mul_add] at e5' V₄' e3' hv'
+      grind
+    have hc5 : c5 = 0 := by
+      rcases Nat.eq_zero_or_pos c5 with h | h
+      · exact h
+      · exfalso
+        have : 2 ^ 64 * (2 ^ 64 * P) ≤ 2 ^ 64 * (2 ^ 64 * P) * c5 := Nat.le_mul_of_pos_right _ h
+        omega
+    rw [hc5, Nat.mul_zero, Nat.add_zero] at key
+    exact key
+  · exact ((((ht₁ ▸ Kp.write t x (lrow_of (n := n) (l := [.r9]) (by simp) _ (List.mem_singleton_self _)) :
+        Kp (lrow n) t t₁).trans
+      (K₂.mono (lrow_of (n := n) fun r hr => by
+        rcases List.mem_cons.mp hr with h | h
+        · exact .inl (by simp [h])
+        · exact tregs_sub_lrow (d := 0) (k := n) (by omega) r h)))).trans
+      (K₂₃.mono (lrow_of (n := n) fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl
+        · exact .inr ⟨n, Nat.le_refl _, rfl⟩
+        · exact .inl (by simp)))).trans
+      ((K₄.mono (lrow_of (n := n) fun r hr => by
+        rcases List.mem_cons.mp hr with h | h
+        · exact .inl (by simp [h])
+        · exact tregs_sub_lrow (d := 1) (k := n) (by omega) r h)).trans
+      (by rw [← ht₅]; exact Kp.writeCarry _ _ (lrow_of (n := n) (l := [.r12]) (by simp) _ (List.mem_singleton_self _))))
 
 /-! ## An iteration -/
 
@@ -963,10 +1228,8 @@ theorem rred_ok {t₃ : State} {base : Addr} {size : Nat} {M : Mod} {acc a b m T
   · exact rredG_ok ht₃ h3₃ h7₃ hL hmem₃ hm hinv hT1v hrowb
 
 theorem rrow_eq (M : Mod) (m acc : Nat) : rrow M m acc =
-    ([.load .d .r9 .r5 0, .li .r0 0] : List Instr) ++ (rmacs .r6 0 0 0 M.n ++
-    (([.addc (treg M.n) (treg M.n) .r0, .li .r12 0, .addze .r12 .r12] : List Instr) ++
-    (rrowM M m acc ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)))) := by
-  simp only [rrow, rrowB, List.append_assoc]
+    rrowB M.n ++ (rrowM M m acc ++ ([.addi .r5 .r5 8, .subi .r8 .r8 1] : List Instr)) := by
+  simp only [rrow, List.append_assoc]
 
 /-- An iteration of the loop. -/
 theorem rrow_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {acc a b m k : Nat}
@@ -980,66 +1243,41 @@ theorem rrow_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M 
   obtain ⟨N, hN⟩ : ∃ N, M.n = N + 1 := ⟨M.n - 1, by omega⟩
   have ht := I.kp.ws hs
   rw [rrow_eq]
-  -- u
-  have hat : word t.mem base (a + 8 * k + 0) = word s.mem base (a + 8 * k) := by rw [I.mem, Nat.add_zero]
-  refine WP.block_append (wp_step (ld_ok ht I.r5 (by decide) (by decide) (d := 0) (by omega))
-    (wp_step (exec_li (by decide)) (WP.block_nil ?_)))
-  rw [hat]
-  generalize hu : word s.mem base (a + 8 * k) = u
   -- T += u [b]
-  refine WP.block_append (WP.mono (rmacs_ok ((ht.write _ _).write _ _) ((I.r6.write _).write _)
-    (rs := .r6) (src := 0) (rd := 0) (dst := 0) (W := M.n) (by decide) (by decide) (by decide) (by omega)
-    (Nat.le_refl _) (by omega) (Nat.le_refl _)) fun t₂ ⟨V₂, M₂, K₂⟩ => ?_)
-  simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true, Nat.add_zero] at V₂ M₂
-  rw [show (BitVec.ofNat 64 0 : BitVec 64).toNat = 0 from rfl, Nat.add_zero] at V₂
-  have hrt : regsVal ((t.write .r9 u).write .r0 (BitVec.ofNat 64 0)) 0 M.n = regsVal t 0 M.n :=
-    regsVal_congr fun j _ => by simp only [write_gpr, treg_eq_r0, treg_eq_r9, ite_false]
-  rw [hrt] at V₂
-  refine WP.block_append (WP.mono (rtopB_ok (s := t₂) M.n) fun t₃ ⟨V₃, M₃, K₃⟩ => ?_)
-  have K₁₃ : Kp (rclob M.n) t t₃ :=
-    (((Kp.write t _ (lo_sub_rclob (l := [.r9]) (by decide) M.n _ (by simp))).trans
-      (Kp.write _ _ (lo_sub_rclob (l := [.r0]) (by decide) M.n _ (by simp)))).trans
-      (K₂.mono (sub_rclob (by decide) (by omega)))).trans
-      (K₃.mono fun r hr => by
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact treg_mem_rclob (Nat.le_refl _)
-        · exact lo_sub_rclob (l := [.r12]) (by decide) M.n _ (by simp))
-  -- The accumulator after the first row, with its top word in `r12`: `T₁ = T + u B`.
   generalize hT : regsVal t 0 (M.n + 1) = T at I
   generalize hTB : wordsVal s.mem base b M.n = B at hB
+  generalize hu : word s.mem base (a + 8 * k) = u
+  have hut : word t.mem base (a + 8 * k) = u := by rw [I.mem, hu]
   have hbt : wordsVal t.mem base b M.n = B := by rw [← hTB, I.mem]
-  rw [hbt] at V₂
+  have hTlt : T < 2 * m := by rw [← hT]; exact I.lt
+  have hbnd : regsVal t 0 (M.n + 1) + (word t.mem base (a + 8 * k)).toNat * wordsVal t.mem base b M.n <
+      2 ^ (64 * (M.n + 2)) := by
+    rw [hut, hbt, hT]
+    have hml : m < 2 ^ (64 * M.n) := by rw [← hm]; exact wordsVal_lt _ _ _ _
+    have h1 := row_lt hTlt u.isLt hB (Nat.zero_lt_succ _ : 0 < 2 ^ 64)
+    rw [Nat.zero_mul, Nat.add_zero] at h1
+    have : 2 ^ 64 * (2 * m) ≤ 2 ^ (64 * (M.n + 2)) := by
+      rw [show 64 * (M.n + 2) = 64 + 64 * M.n + 64 by omega, Nat.pow_add, Nat.pow_add]
+      have : 2 * m ≤ 2 ^ (64 * M.n) * 2 ^ 64 := by
+        have : 2 ≤ 2 ^ 64 := by decide
+        have := Nat.mul_le_mul_left (2 ^ (64 * M.n)) this
+        omega
+      rw [Nat.mul_assoc]; exact Nat.mul_le_mul_left _ this
+    omega
+  refine WP.block_append (WP.mono (mrowB_ok ht n0 n9 I.r5 (by omega) I.r6 b_le hbnd) fun t₃ ⟨V₃, M₃, K₃⟩ => ?_)
+  rw [hut, hbt, hT] at V₃
+  have K₁₃ : Kp (rclob M.n) t t₃ := K₃.mono fun r hr => sub_rclob (l := [.r9, .r11, .r12]) (by decide) (by omega) r hr
   generalize hc₃ : (t₃.gpr .r12).toNat = c₃ at V₃
-  have hn2 : (t₂.gpr (treg M.n)) = t.gpr (treg M.n) := by
-    rw [K₂.gpr _ (by
-      simp only [List.mem_append, not_or]
-      exact ⟨by simp, treg_not_mem_tregs (by omega) (by omega) (by omega)⟩)]
-    simp only [write_gpr, treg_eq_r0, treg_eq_r9, ite_false]
-  rw [hn2] at V₃
-  have h3r : regsVal t₃ 0 M.n = regsVal t₂ 0 M.n := regsVal_kp K₃ fun j hj => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false, not_or, Nat.zero_add]
-    exact ⟨treg_ne_of (by omega) (by omega) (by omega), by simp⟩
-  have hT1 : regsVal t₃ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * c₃ = T + u.toNat * B := by
-    have e1 := regsVal_succ_top t₃ 0 M.n
-    have e2 := regsVal_succ_top t 0 M.n
-    rw [Nat.zero_add] at e1 e2
-    rw [h3r] at e1
-    rw [e1, ← hT, e2, show 64 * (M.n + 1) = 64 + 64 * M.n by omega, Nat.pow_add]
-    generalize 2 ^ (64 * M.n) = P at *
-    have e := congrArg (P * ·) V₃
-    simp only [Nat.mul_add] at e
-    grind
+  have hT1 := V₃
   generalize hT1v : regsVal t₃ 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * c₃ = T1 at hT1
   -- The reduction row.
   have ht₃ := K₁₃.ws ht
   have h3₃ : At t₃ base .r3 0 := K₁₃.at I.r3 (rclob_not_hi (by decide) (by decide) _)
-  have h7₃ : At t₃ base .r7 M.mo := by
-    rw [At, K₃.gpr _ (by simp), K₂.gpr _ (by simp [tregs]), write_gpr, write_gpr]; simp only [reduceCtorEq, ite_false]
-    exact I.r7
-  have hmem₃ : t₃.mem = s.mem := by rw [M₃, M₂, I.mem]
+  have h7₃ : At t₃ base .r7 M.mo :=
+    K₃.at I.r7 (not_mem_lrow (by decide) fun j _ => (treg_ne (r := .r7) (by decide) j).symm)
+  have hmem₃ : t₃.mem = s.mem := by rw [M₃, I.mem]
   have hrowb : ∀ q < 2 ^ 64, T1 + q * m < 2 ^ 64 * (2 * m) := fun q hq => by
-    rw [hT1]; exact row_lt (by rw [← hT]; exact I.lt) u.isLt hB hq
+    rw [hT1]; exact row_lt hTlt u.isLt hB hq
   rw [← hc₃] at hT1v
   refine WP.block_append (WP.mono (rred_ok ht₃ h3₃ h7₃ ⟨n0, n9, mi_le, mi4, a_le, b_le, mo_le⟩ hmem₃ hm hinv hT1v
     hrowb) fun t₆ ⟨q, hq64, hmath, M₆, K₃₆'⟩ => ?_)
@@ -1054,8 +1292,7 @@ theorem rrow_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M 
     rw [K₃₆'.gpr r (nm_tregs h1 h2 _ _)]
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h1
     obtain ⟨a0, a9, a10, a11, a12⟩ := h1
-    rw [K₃.gpr r (nm_treg h2 _ (by simp [a12])), K₂.gpr r (nm_tregs (by simp [a0, a10, a11]) h2 _ _)]
-    simp only [write_gpr, a0, a9, ite_false]
+    exact K₃.gpr r (not_mem_lrow (by simp [a9, a11, a12]) fun j _ => (treg_ne h2 j).symm)
   have hwr : ∀ (x y : BitVec 64) (j : Nat), ((t₆.write .r5 x).write .r8 y).gpr (treg j) = t₆.gpr (treg j) :=
     fun _ _ _ => by simp only [write_gpr, treg_eq_r5, treg_eq_r8, ite_false]
   have hrv : ∀ (x y : BitVec 64), regsVal ((t₆.write .r5 x).write .r8 y) 0 (M.n + 1) = regsVal t₆ 0 (M.n + 1) :=
@@ -1625,47 +1862,6 @@ theorem pass_ok {s : State} {hi : Bool} {y : Nat → Reg} {dd ds W : Nat} (hle :
 
 /-! ## The multiplication of at most four words: the rows -/
 
-/-- The registers a row writes. -/
-def lrow (n : Nat) : List Reg := [.r9, .r11, .r12] ++ tregs 0 (n + 1)
-
-theorem lrow_of {n : Nat} {l : List Reg} (h : ∀ r ∈ l, r ∈ [Reg.r9, .r11, .r12] ∨ ∃ j ≤ n, r = treg j) :
-    ∀ r ∈ l, r ∈ lrow n := by
-  intro r hr
-  rcases h r hr with h | ⟨j, hj, rfl⟩
-  · exact List.mem_append_left _ h
-  · exact List.mem_append_right _ (by simpa using treg_mem_tregs (d := 0) (k := n + 1) (j := j) (by omega))
-
-theorem tregs_sub_lrow {n d k : Nat} (h : d + k ≤ n + 1) : ∀ r ∈ tregs d k, r ∈ [Reg.r9, .r11, .r12] ∨ ∃ j ≤ n, r = treg j := by
-  intro r hr
-  obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
-  rw [List.mem_range] at hj
-  exact .inr ⟨d + j, by omega, rfl⟩
-
-theorem not_mem_lrow {n : Nat} {r : Reg} (h1 : r ∉ [Reg.r9, .r11, .r12]) (h2 : ∀ j ≤ n, r ≠ treg j) : r ∉ lrow n := by
-  intro h
-  rcases List.mem_append.mp h with h' | h'
-  · exact h1 h'
-  · obtain ⟨j, hj, e⟩ := List.mem_map.mp h'
-    rw [List.mem_range] at hj
-    rw [Nat.zero_add] at e
-    exact h2 j (by omega) e.symm
-
-theorem cOf_pos {k : Nat} (hk : 0 < k) (c : Bool) : cOf false k c = c.toNat := by
-  simp [cOf, Nat.ne_of_gt hk]
-
-theorem cOfT_pos {k : Nat} (hk : 0 < k) (c : Bool) : cOf true k c = c.toNat := by
-  simp [cOf, Nat.ne_of_gt hk]
-
-theorem regsVal_top (s : State) (n : Nat) :
-    regsVal s 0 (n + 1) = regsVal s 0 n + 2 ^ (64 * n) * (s.gpr (treg n)).toNat := by
-  rw [regsVal_succ_top, Nat.zero_add]
-
-theorem regsVal_low' (s : State) (n : Nat) :
-    regsVal s 0 (n + 1) = (s.gpr (treg 0)).toNat + 2 ^ 64 * regsVal s 1 n := rfl
-
-theorem wp_gen {c : Prog isa} {s : State} {Q : State → Prop} (h : ∀ t, t = s → WP isa c t Q) : WP isa c s Q :=
-  h s rfl
-
 /-- The row `T += x [b]`, `[b]` in `bReg n`, the top word in `r12`. -/
 theorem qrowB_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {n K : Nat}
     (hn0 : 0 < n) (hn : n ≤ 4) (h5 : At t base .r5 K) (hK : K + 8 ≤ size)
@@ -1852,16 +2048,15 @@ theorem regsVal_low0 (s : State) {k : Nat} (hk : 0 < k) : regsVal s 0 k % 2 ^ 64
   obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
   exact regsVal_low s 0 k'
 
-/-- `qhead`: `r9 = q`, `q = t₀ m' mod 2⁶⁴` for an `m'` with `m m' = -1 mod 2⁶⁴`. -/
-theorem qhead_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M : Mod} {m : Nat}
-    (h3 : At t base .r3 0) (htmp : M.tmp + 8 ≤ size) (htmp4 : M.tmp % 4 = 0)
-    (hinv : (m * (word t.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0)
-    (hone : M.minv.toNat = 1 → (word t.mem base M.tmp).toNat = 1) {rest : List Instr} {Q : State → Prop}
+/-- `qhead`: `r9 = q`, `q = t₀ m' mod 2⁶⁴` for an `m'` with `m m' = -1 mod 2⁶⁴`,
+`m'` in `mpReg n`. -/
+theorem qhead_ok {t : State} {M : Mod} {m : Nat}
+    (hinv : (m * (t.gpr (mpReg M.n)).toNat + 1) % 2 ^ 64 = 0)
+    (hone : M.minv.toNat = 1 → (t.gpr (mpReg M.n)).toNat = 1) {rest : List Instr} {Q : State → Prop}
     (k : ∀ (t₁ : State) (qv : BitVec 64) (mp : Nat), (m * mp + 1) % 2 ^ 64 = 0 →
       qv.toNat = (t.gpr (treg 0)).toNat * mp % 2 ^ 64 → t₁.gpr .r9 = qv → t₁.mem = t.mem →
       Kp [.r11, .r9] t t₁ → WP isa (.block rest) t₁ Q) :
     WP isa (.block (qhead M ++ rest)) t Q := by
-  have hs15 := ht.small
   unfold qhead
   split
   · rename_i h1
@@ -1872,18 +2067,16 @@ theorem qhead_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M
     rw [BitVec.toNat_or, Nat.mul_one, Nat.mod_eq_of_lt (BitVec.isLt _)]
     simp
   · simp only [List.cons_append, List.nil_append]
-    refine wp_step (ld0_ok ht h3 (by decide) htmp4 htmp) ?_
     refine wp_step exec_mul ?_
-    refine k _ (t.gpr (treg 0) * word t.mem base M.tmp) _ hinv ?_
-      (by simp only [write_gpr, ite_true, treg_eq_r11, ite_false]) rfl
-      ((Kp.write _ _ (by simp)).trans (Kp.write _ _ (by simp)))
+    refine k _ (t.gpr (treg 0) * t.gpr (mpReg M.n)) _ hinv ?_
+      (by simp only [write_gpr, ite_true]) rfl (Kp.write _ _ (by simp))
     simp only [BitVec.toNat_mul]
 
-/-- The row `T = (T + q m) / 2⁶⁴`, the modulus in `mReg`, `m'` at `[M.tmp]`. -/
+/-- The row `T = (T + q m) / 2⁶⁴`, the modulus in `mReg`, `m'` in `mpReg`. -/
 theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M : Mod} {m : Nat}
-    (hn0 : 0 < M.n) (hn : M.n ≤ 4) (h3 : At t base .r3 0) (htmp : M.tmp + 8 ≤ size) (htmp4 : M.tmp % 4 = 0)
-    (hm : gval t mReg M.n = m) (hinv : (m * (word t.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0)
-    (hone : M.minv.toNat = 1 → (word t.mem base M.tmp).toNat = 1)
+    (hn0 : 0 < M.n) (hn : M.n ≤ 4)
+    (hm : gval t mReg M.n = m) (hinv : (m * (t.gpr (mpReg M.n)).toNat + 1) % 2 ^ 64 = 0)
+    (hone : M.minv.toNat = 1 → (t.gpr (mpReg M.n)).toNat = 1)
     (hb : regsVal t 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t.gpr .r12).toNat + 2 ^ 64 * m < 2 ^ (64 * (M.n + 2))) :
     WP isa (.block (qrowM M)) t fun u =>
       (∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal u 0 (M.n + 1) =
@@ -1892,7 +2085,7 @@ theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M
   have hs15 := ht.small
   generalize hN : M.n = n at *
   simp only [qrowM, hN, List.append_assoc, List.cons_append, List.nil_append]
-  refine qhead_ok ht h3 htmp htmp4 hinv hone fun t₁ qv mp hinv hqv h9 M₁' K₁' => ?_
+  refine qhead_ok (M := M) (by rw [hN]; exact hinv) (by rw [hN]; exact hone) fun t₁ qv mp hinv hqv h9 M₁' K₁' => ?_
   have hq64 : qv.toNat < 2 ^ 64 := qv.isLt
   have nt1 : ∀ r : Reg, r ≠ .r11 → r ≠ .r9 → t₁.gpr r = t.gpr r := fun r h1 h2 =>
     K₁'.gpr _ (by simp [h1, h2])
@@ -2077,6 +2270,14 @@ theorem mReg_not_qclob {n j : Nat} (hj : j < 4) : mReg j ∉ qclob n := by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨(mReg_ne hj).2.1, (mReg_ne hj).1, (mReg_ne hj).2.2.1⟩) (fun i _ => mReg_ne_treg hj i) h
 
+theorem mpReg_not_qclob {n : Nat} (hn : n ≤ 4) : mpReg n ∉ qclob n := by
+  intro h
+  rcases List.mem_cons.mp h with e | h
+  · exact treg_ne (r := .r5) (by decide) _ e
+  rcases List.mem_cons.mp h with e | h
+  · exact treg_ne (r := .r8) (by decide) _ e
+  exact not_mem_lrow (n := n) (by simp) (fun i hi => treg_ne_of (by omega) (by omega) (by omega)) h
+
 theorem lo_not_qclob {n : Nat} {r : Reg} (h1 : r ∉ [Reg.r5, .r8, .r9, .r11, .r12]) (h2 : r ∉ hiRegs) : r ∉ qclob n := by
   intro h
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at h1
@@ -2102,12 +2303,10 @@ structure QPre (base : Addr) (M : Mod) (size a b m : Nat) (s : State) : Prop whe
   n0 : 0 < M.n
   n4 : M.n ≤ 4
   a_le : a + 8 * M.n ≤ size
-  tmp_le : M.tmp + 8 ≤ size
-  tmp4 : M.tmp % 4 = 0
   bv : gval s (bReg M.n) M.n = wordsVal s.mem base b M.n
   mv : gval s mReg M.n = m
-  inv : (m * (word s.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0
-  one : M.minv.toNat = 1 → (word s.mem base M.tmp).toNat = 1
+  inv : (m * (s.gpr (mpReg M.n)).toNat + 1) % 2 ^ 64 = 0
+  one : M.minv.toNat = 1 → (s.gpr (mpReg M.n)).toNat = 1
   b_lt : wordsVal s.mem base b M.n < m
   m_lt : m < 2 ^ (64 * M.n)
 
@@ -2150,14 +2349,13 @@ theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat}
   have hTlt := I.lt
   obtain ⟨U, hU⟩ := I.cong
   generalize hT : regsVal t 0 (M.n + 1) = T at V₁ hbnd hTlt hU
-  have h3₁ : At t₁ base .r3 0 := by
-    rw [At, K₁.gpr _ (not_mem_lrow (by decide) fun j _ e => treg_ne (r := .r3) (by decide) j e.symm),
-      I.kp.gpr _ (lo_not_qclob (by decide) (by decide))]; exact P.r3
   have hM₁ : gval t₁ mReg M.n = m := by
     rw [← hM]; exact gval_congr fun j hj => K₁.gpr _ (fun h => mReg_not_qclob (n := M.n) (by omega)
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))
-  have hmp : word t₁.mem base M.tmp = word s.mem base M.tmp := by rw [M₁, I.mem]
-  refine WP.block_append (WP.mono (qrowM_ok (K₁.ws ht) (m := m) hn0 hn4 h3₁ P.tmp_le P.tmp4 hM₁
+  have hmp : t₁.gpr (mpReg M.n) = s.gpr (mpReg M.n) := by
+    rw [K₁.gpr _ (fun h => mpReg_not_qclob hn4 (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h))),
+      I.kp.gpr _ (mpReg_not_qclob hn4)]
+  refine WP.block_append (WP.mono (qrowM_ok (K₁.ws ht) (m := m) hn0 hn4 hM₁
     (by rw [hmp]; exact P.inv) (by rw [hmp]; exact P.one) (by
       rw [V₁, hP2]
       have := I.lt
@@ -2214,128 +2412,158 @@ theorem qloop_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m : Nat} 
 
 /-! ## The multiplication of at most four words: the reduction -/
 
-theorem qsubs_succ (M : Mod) (k : Nat) :
-    (List.range (k + 1)).flatMap (qsubStep M) = (List.range k).flatMap (qsubStep M) ++ qsubStep M k := by
+theorem qsubRs_succ (n k : Nat) :
+    (List.range (k + 1)).flatMap (qsubRStep n) = (List.range k).flatMap (qsubRStep n) ++ qsubRStep n k := by
   simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
 
-/-- The low `k` words of `T + 2^(64 k) - m` (both in registers) to
-`[M.tmp]`, no borrow to CA. -/
-theorem qsubs_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {W : Nat}
-    (h3 : At s base .r3 0) (htmp4 : M.tmp % 4 = 0) (htmp : M.tmp + 8 * W ≤ size) (hW : W ≤ 4) :
-    ∀ {k : Nat}, k ≤ W →
-    WP isa (.block ((List.range k).flatMap (qsubStep M))) s fun u =>
-      Outside base M.tmp (8 * k) s.mem u.mem ∧
-      wordsVal u.mem base M.tmp k + 2 ^ (64 * k) * cOf true k u.ca + gval s mReg k =
+/-- The low `k` words of `T + 2^(64 k) - m` (both in registers) to `bReg`,
+no borrow to CA. -/
+theorem qsubRs_ok {s : State} {n : Nat} (hn : n ≤ 4) :
+    ∀ {k : Nat}, k ≤ n →
+    WP isa (.block ((List.range k).flatMap (qsubRStep n))) s fun u =>
+      gval u (bReg n) k + 2 ^ (64 * k) * cOf true k u.ca + gval s mReg k =
         regsVal s 0 k + (2 ^ (64 * k) - 1) + 1 ∧
-      Kp [.r11] s u
-  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by simp [wordsVal, regsVal, gval, cOf], Kp.refl _ _⟩
+      u.mem = s.mem ∧ Kp (tregs (n + 1) k) s u
+  | 0, _ => WP.block_nil ⟨by simp [regsVal, gval, cOf], rfl, Kp.refl _ _⟩
   | k + 1, hk => by
-    have hn := hs.nowrap
-    have hs15 := hs.small
-    rw [qsubs_succ]
-    refine WP.block_append (WP.mono (qsubs_ok hs h3 htmp4 htmp hW (k := k) (by omega))
-      fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-    have h3₁ := K₁.at h3
-    have hs₁ := K₁.ws hs
-    simp only [qsubStep]
-    refine wp_step (exec_carryOp _ _ _ _ _ _) ?_
-    refine wp_step (std_ok (hs₁.writeCarry _ _) (h3₁.writeCarry _)
-      (by decide) (by omega) (d := M.tmp + 8 * k) (by omega)) (WP.block_nil ?_)
-    simp only [ite_true, Nat.zero_add]
-    have ht : s₁.gpr (treg k) = s.gpr (treg k) := K₁.gpr _ (by simp)
-    have hy : s₁.gpr (mReg k) = s.gpr (mReg k) := K₁.gpr _ (by simp [(mReg_ne (show k < 4 by omega)).1])
+    rw [qsubRs_succ]
+    refine WP.block_append (WP.mono (qsubRs_ok hn (k := k) (by omega)) fun s₁ ⟨V₁, M₁, K₁⟩ => ?_)
+    simp only [qsubRStep]
+    refine wp_step (exec_carryOp _ _ _ _ _ _) (WP.block_nil ?_)
+    simp only [ite_true]
+    have ht : s₁.gpr (treg k) = s.gpr (treg k) := K₁.gpr _ (treg_not_mem_tregs (by omega) (by omega) (.inl (by omega)))
+    have hy : s₁.gpr (mReg k) = s.gpr (mReg k) := K₁.gpr _ (fun h => by
+      obtain ⟨j, -, e⟩ := List.mem_map.mp h; exact mReg_ne_treg (show k < 4 by omega) _ e.symm)
     generalize hv : (s₁.gpr (treg k)).toNat + (2 ^ 64 - 1 - (s₁.gpr (mReg k)).toNat) + cOf true k s₁.ca = v
-    have e := RegUpd.toNat_add_ca s₁ (r := .r11) (v := v)
+    have e := RegUpd.toNat_add_ca s₁ (r := bReg n k) (v := v)
       (by rw [← hv]; have := (s₁.gpr (treg k)).isLt; have : cOf true k s₁.ca ≤ 1 := by
             unfold cOf; split <;> exact Bool.toNat_le _
           omega)
-    generalize hlo : (s₁.writeCarry .r11 v).gpr .r11 = lo at e
-    have W := writeW_outside s₁.mem base (d := M.tmp + 8 * k) lo (by omega)
-    have hr₁ : regsVal s₁ 0 k = regsVal s 0 k := regsVal_kp K₁ fun j _ => by simp
+    have hg : gval (s₁.writeCarry (bReg n k) v) (bReg n) k = gval s₁ (bReg n) k := gval_congr fun j hj => by
+      simp only [writeCarry_gpr, bReg, treg_ne_of (show n + 1 + j < 10 by omega) (show n + 1 + k < 10 by omega)
+        (by omega), ite_false]
+    refine ⟨?_, by rw [RegUpd.mem_writeCarry, M₁], (K₁.mono fun r hr => by
+        rw [tregs_succ]; exact List.mem_append_left _ hr).trans
+      (Kp.writeCarry _ _ (by rw [tregs_succ]; exact List.mem_append_right _ (List.mem_singleton_self _)))⟩
+    rw [gval, hg, regsVal_succ_top, gval, pow64_succ, Nat.zero_add]
+    generalize hcb : (s₁.writeCarry (bReg n k) v).ca = cb at *
+    generalize hlo : (s₁.writeCarry (bReg n k) v).gpr (bReg n k) = lo at e
+    rw [ht, hy] at hv
+    have hc : cOf true k s₁.ca ≤ 1 := by unfold cOf; split <;> exact Bool.toNat_le _
+    generalize hcc : cOf true k s₁.ca = c at *
+    simp only [cOf, Nat.succ_ne_zero, ite_false]
+    have hP : 1 ≤ 2 ^ (64 * k) := Nat.one_le_two_pow
+    generalize 2 ^ (64 * k) = P at *
+    rw [← hv] at e
+    have e2 := congrArg (P * ·) e
+    simp only [Nat.mul_add] at e2
+    have hyl := (s.gpr (mReg k)).isLt
+    generalize (s.gpr (mReg k)).toNat = y at *
+    have hA : P * (2 ^ 64 - 1 - y) + P * y = 2 ^ 64 * P - P := by
+      rw [← Nat.mul_add, show 2 ^ 64 - 1 - y + y = 2 ^ 64 - 1 by omega, Nat.mul_sub, Nat.mul_one, Nat.mul_comm]
+    have hB : P * (2 ^ 64 * cb.toNat) = 2 ^ 64 * P * cb.toNat := by
+      rw [Nat.mul_left_comm, Nat.mul_assoc]
+    have hC : P ≤ 2 ^ 64 * P := Nat.le_mul_of_pos_left _ (by decide)
+    rw [hB] at e2
+    generalize P * (2 ^ 64 - 1 - y) = A at *
+    generalize P * y = B at *
+    generalize 2 ^ 64 * P * cb.toNat = D at *
+    generalize 2 ^ 64 * P = E at *
+    omega
+
+theorem qsels_succ (n k : Nat) :
+    (List.range (k + 1)).flatMap (qselWord n) = (List.range k).flatMap (qselWord n) ++ qselWord n k := by
+  simp only [List.range_succ, List.flatMap_append, List.flatMap_cons, List.flatMap_nil, List.append_nil]
+
+/-- The low `k` words of `T`, or of `T - m` (in `bReg`) where the mask `r10`
+is all ones, to `[r4]`. -/
+theorem qsels_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n O : Nat} (hn : n ≤ 4)
+    (h4 : At s base .r4 O) (hmk : s.gpr .r10 = 0 ∨ s.gpr .r10 = BitVec.allOnes 64) (hO : O + 8 * n ≤ size) :
+    ∀ {k : Nat}, k ≤ n →
+    WP isa (.block ((List.range k).flatMap (qselWord n))) s fun u =>
+      Outside base O (8 * k) s.mem u.mem ∧
+      wordsVal u.mem base O k = (if s.gpr .r10 = 0 then regsVal s 0 k else gval s (bReg n) k) ∧
+      Kp [.r11, .r12] s u
+  | 0, _ => WP.block_nil ⟨Outside.refl _ _ _ _, by simp [wordsVal, regsVal, gval], Kp.refl _ _⟩
+  | k + 1, hk => by
+    have hn' := hs.nowrap
+    have hs15 := hs.small
+    rw [qsels_succ]
+    refine WP.block_append (WP.mono (qsels_ok hs hn h4 hmk hO (k := k) (by omega))
+      fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
+    have hs₁ := K₁.ws hs
+    simp only [qselWord]
+    refine wp_step exec_logic ?_
+    refine wp_step exec_logic ?_
+    refine wp_step exec_logic ?_
+    refine wp_step (std_ok ((((hs₁.write _ _).write _ _).write _ _))
+      (((K₁.at h4).write _).write _ |>.write _) (by decide) (by omega) (d := 8 * k) (by omega))
+      (WP.block_nil ?_)
+    simp only [write_gpr, write_mem, reduceCtorEq, ite_false, ite_true, bReg, treg_eq_r12]
+    have ht : s₁.gpr (treg k) = s.gpr (treg k) := K₁.gpr _ (by simp)
+    have hb : s₁.gpr (treg (n + 1 + k)) = s.gpr (treg (n + 1 + k)) := K₁.gpr _ (by simp)
+    have h10 : s₁.gpr .r10 = s.gpr .r10 := K₁.g
+    rw [ht, hb, h10, sel_mask _ _ hmk]
+    generalize hv : (if s.gpr .r10 = 0 then s.gpr (treg k) else s.gpr (treg (n + 1 + k))) = v
+    have W := writeW_outside s₁.mem base (d := O + 8 * k) v (by omega)
     refine ⟨(O₁.mono (Nat.le_refl _) (by omega)).trans (W.mono (by omega) (by omega)), ?_, ?_⟩
-    · rw [show ({ s₁.writeCarry .r11 v with mem := _ } : State).ca = (s₁.writeCarry .r11 v).ca from rfl]
-      simp only [RegUpd.mem_writeCarry]
-      rw [regsVal_succ_top, wordsVal_succ_top, gval, W.wordsVal (by omega) (by omega), word_writeW_self,
-        pow64_succ, Nat.zero_add]
-      generalize hcb : (s₁.writeCarry .r11 v).ca = cb at *
-      rw [ht, hy] at hv
-      have hc : cOf true k s₁.ca ≤ 1 := by unfold cOf; split <;> exact Bool.toNat_le _
-      generalize hcc : cOf true k s₁.ca = c at *
-      simp only [cOf, Nat.succ_ne_zero, ite_false]
-      have hP : 1 ≤ 2 ^ (64 * k) := Nat.one_le_two_pow
-      generalize 2 ^ (64 * k) = P at *
-      rw [← hv] at e
-      have e2 := congrArg (P * ·) e
-      simp only [Nat.mul_add] at e2
-      have hyl := (s.gpr (mReg k)).isLt
-      generalize (s.gpr (mReg k)).toNat = y at *
-      have hA : P * (2 ^ 64 - 1 - y) + P * y = 2 ^ 64 * P - P := by
-        rw [← Nat.mul_add, show 2 ^ 64 - 1 - y + y = 2 ^ 64 - 1 by omega, Nat.mul_sub, Nat.mul_one, Nat.mul_comm]
-      have hB : P * (2 ^ 64 * cb.toNat) = 2 ^ 64 * P * cb.toNat := by
-        rw [Nat.mul_left_comm, Nat.mul_assoc]
-      have hC : P ≤ 2 ^ 64 * P := Nat.le_mul_of_pos_left _ (by decide)
-      rw [hB] at e2
-      generalize P * (2 ^ 64 - 1 - y) = A at *
-      generalize P * y = B at *
-      generalize 2 ^ 64 * P * cb.toNat = D at *
-      generalize 2 ^ 64 * P = E at *
-      omega
-    · exact K₁.trans ((Kp.writeCarry _ _ (by decide)).trans (Kp.store _ _ _))
+    · rw [wordsVal_succ_top, regsVal_succ_top, gval, W.wordsVal (by omega) (by omega), V₁,
+        word_writeW_self, ← hv, Nat.zero_add]
+      split <;> rfl
+    · exact K₁.trans ((((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide))).trans
+        (Kp.write _ _ (by decide))).trans (Kp.store _ _ _))
 
 /-- `[r4] = T mod m`, for `T` below `2m` in `treg 0`, …, `treg n` and the
-modulus in `mReg`. -/
-theorem qcsub_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {M : Mod} {O m : Nat}
-    (h3 : At s base .r3 0) (h4 : At s base .r4 O) (hn0 : 0 < M.n) (hn4 : M.n ≤ 4)
-    (tmp_le : M.tmp + 8 * M.n ≤ size) (o_le : O + 8 * M.n ≤ size) (tmp4 : M.tmp % 4 = 0)
-    (s4 : M.tmp + 8 * M.n ≤ O ∨ O + 8 * M.n ≤ M.tmp)
-    (hm : gval s mReg M.n = m) (hm0 : m < 2 ^ (64 * M.n)) (hN : regsVal s 0 (M.n + 1) < 2 * m) :
-    WP isa (.block (qcsub M)) s fun u =>
-      wordsVal u.mem base O M.n = regsVal s 0 (M.n + 1) % m ∧
-      Outs base [(M.tmp, 8 * M.n), (O, 8 * M.n)] s.mem u.mem ∧
-      Kp [.r10, .r11, .r12] s u := by
-  have hn := hs.nowrap
-  have hs15 := hs.small
-  simp only [qcsub, List.append_assoc]
-  refine WP.block_append (WP.mono (qsubs_ok (W := M.n) hs h3 tmp4 tmp_le hn4 (k := M.n) (Nat.le_refl _))
-    fun s₂ ⟨O₂, V₂, K₂⟩ => ?_)
-  rw [hm, show cOf true M.n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega] at V₂
+modulus in `mReg`, `T - m` through `bReg`. -/
+theorem qcsubR_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {n O m : Nat}
+    (h4 : At s base .r4 O) (hn0 : 0 < n) (hn4 : n ≤ 4) (o_le : O + 8 * n ≤ size)
+    (hm : gval s mReg n = m) (hm0 : m < 2 ^ (64 * n)) (hN : regsVal s 0 (n + 1) < 2 * m) :
+    WP isa (.block (qcsubR n)) s fun u =>
+      wordsVal u.mem base O n = regsVal s 0 (n + 1) % m ∧
+      Outside base O (8 * n) s.mem u.mem ∧
+      Kp (([.r10, .r11, .r12] : List Reg) ++ tregs (n + 1) n) s u := by
+  simp only [qcsubR, List.append_assoc]
+  refine WP.block_append (WP.mono (qsubRs_ok (s := s) hn4 (k := n) (Nat.le_refl _)) fun s₂ ⟨V₂, M₂, K₂⟩ => ?_)
+  rw [hm, show cOf true n s₂.ca = s₂.ca.toNat by simp only [cOf]; split <;> omega] at V₂
   have hs₂ := K₂.ws hs
   refine wp_step exec_addze ?_
   refine wp_step (exec_li (by decide)) ?_
   refine wp_step exec_sub ?_
   simp only [write_gpr, writeCarry_gpr, ite_true, reduceCtorEq, ite_false]
-  have htop : s₂.gpr (treg M.n) = s.gpr (treg M.n) := K₂.gpr _ (by simp)
+  have htop : s₂.gpr (treg n) = s.gpr (treg n) :=
+    K₂.gpr _ (treg_not_mem_tregs (by omega) (by omega) (.inl (by omega)))
   rw [htop]
   generalize hc : s₂.ca.toNat = c at V₂
-  generalize hT : (s.gpr (treg M.n)).toNat = top
-  have hL' : regsVal s₂ 0 M.n = regsVal s 0 M.n := regsVal_kp K₂ fun j _ => by simp
-  have hN' : regsVal s 0 M.n + 2 ^ (64 * M.n) * top < 2 * m := by
-    rw [← hT, show treg M.n = treg (0 + M.n) by rw [Nat.zero_add], ← regsVal_succ_top]; exact hN
+  generalize hT : (s.gpr (treg n)).toNat = top
+  have hL' : regsVal s₂ 0 n = regsVal s 0 n :=
+    regsVal_kp K₂ fun j _ => by rw [Nat.zero_add]; exact treg_not_mem_tregs (by omega) (by omega) (.inl (by omega))
+  have hN' : regsVal s 0 n + 2 ^ (64 * n) * top < 2 * m := by
+    rw [← hT, show treg n = treg (0 + n) by rw [Nat.zero_add], ← regsVal_succ_top]; exact hN
   have hc1 : c ≤ 1 := hc ▸ Bool.toNat_le _
-  obtain ⟨hct, hsel⟩ := csub_math hm0 hN' (wordsVal_lt s₂.mem base M.tmp M.n)
-    (by have := V₂; omega) hc1
+  obtain ⟨hct, hsel⟩ := csub_math hm0 hN' (gval_lt' s₂ (bReg n) n) (by have := V₂; omega) hc1
   have hadd : BitVec.ofNat 64 (top + c) = BitVec.ofNat 64 (c + top) := by rw [Nat.add_comm]
   rw [hadd]
-  have h3₂ := K₂.at h3
-  have h4₂ := K₂.at h4
-  refine WP.mono (rsels_ok (W := M.n) ((((hs₂.writeCarry _ _).write _ _).write _ _))
-    (((h3₂.writeCarry _).write _).write _) (((h4₂.writeCarry _).write _).write _) tmp4
-    (by simp only [write_gpr, ite_true]; exact neg_mask hct) tmp_le o_le s4 (k := M.n) (Nat.le_refl _))
+  have h4₂ := K₂.at h4 (by simp [tregs])
+  refine WP.mono (qsels_ok (n := n) ((((hs₂.writeCarry _ _).write _ _).write _ _)) hn4
+    (((h4₂.writeCarry _).write _).write _)
+    (by simp only [write_gpr, ite_true]; exact neg_mask hct) o_le (k := n) (Nat.le_refl _))
     fun u ⟨O₃, V₃, K₃⟩ => ⟨?_, ?_, ?_⟩
-  · simp only [write_gpr, ite_true, write_mem, RegUpd.mem_writeCarry] at V₃
+  · simp only [write_gpr, ite_true] at V₃
     have hr : regsVal (((s₂.writeCarry .r10 (top + c)).write .r11 (BitVec.ofNat 64 0)).write .r10
-        (BitVec.ofNat 64 0 - BitVec.ofNat 64 (c + top))) 0 M.n = regsVal s 0 M.n := by
+        (BitVec.ofNat 64 0 - BitVec.ofNat 64 (c + top))) 0 n = regsVal s 0 n := by
       rw [← hL']; exact regsVal_congr fun j _ => by
         simp only [write_gpr, writeCarry_gpr, treg_eq_r10, treg_eq_r11, ite_false]
-    rw [V₃, hr, regsVal_succ_top, Nat.zero_add, hT, ← hsel]
+    have hg : gval (((s₂.writeCarry .r10 (top + c)).write .r11 (BitVec.ofNat 64 0)).write .r10
+        (BitVec.ofNat 64 0 - BitVec.ofNat 64 (c + top))) (bReg n) n = gval s₂ (bReg n) n :=
+      gval_congr fun j _ => by
+        simp only [bReg, write_gpr, writeCarry_gpr, treg_eq_r10, treg_eq_r11, ite_false]
+    rw [V₃, hr, hg, regsVal_succ_top, Nat.zero_add, hT, ← hsel]
     simp only [neg_mask_zero hct]
   · simp only [write_mem, RegUpd.mem_writeCarry] at O₃
-    intro x hx
-    rw [O₃ x (hx (O, 8 * M.n) (by simp)), O₂ x (by
-      have := hx (M.tmp, 8 * M.n) (by simp)
-      simp only at this; omega)]
-  · exact (K₂.mono (by decide)).trans ((((Kp.writeCarry _ _ (by decide)).trans
-      ((Kp.write _ _ (by decide)).trans (Kp.write _ _ (by decide)))).trans (K₃.mono (by decide))))
+    rw [← M₂]; exact O₃
+  · exact (K₂.mono fun r hr => List.mem_append_right _ hr).trans ((((Kp.writeCarry _ _ (by simp)).trans
+      ((Kp.write _ _ (by simp)).trans (Kp.write _ _ (by simp)))).trans
+      (K₃.mono fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp)))
 
 /-! ## Constants of 64 bits in registers -/
 
@@ -2471,18 +2699,25 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
   obtain ⟨n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to⟩ := hL'
   refine WP.seq ?_
   simp only [rsave, rzero, qload, List.append_assoc]
-  -- `m'` at `[M.tmp]`.
-  refine WP.block_append (WP.mono (setConst_ok hp.ws hp.r3 (n := 1) (o := M.tmp) (x := M.minv.toNat)
-    (by omega) M.minv.isLt) fun s₁ ⟨O₁, V₁, K₁⟩ => ?_)
-  refine WP.block_append (WP.mono (rsave_ok (K₁.ws hp.ws) (K₁.at hp.r3) acc4 (acc := acc) (k := 2 * M.n + 1)
-    (by omega)) fun s₂ ⟨O₂, Z₂, K₂, G₂⟩ => ?_)
+  refine WP.block_append (WP.mono (rsave_ok hp.ws hp.r3 acc4 (acc := acc) (k := 2 * M.n + 1)
+    (by omega)) fun s₁ ⟨O₁, Z₁, K₁, G₁⟩ => ?_)
+  -- `mpReg` saved at `[M.tmp]`, then `m'` in it.
+  refine wp_step (std_ok (K₁.ws hp.ws) (K₁.at hp.r3) (by decide) tmp4 (d := M.tmp) (by omega)) ?_
+  refine movImm64_ok M.minv.isLt (wp_gen fun s₂ hs₂ => ?_)
+  have M₂ : s₂.mem = s₁.mem.writeW (off base M.tmp) (s.gpr (mpReg M.n)) := by
+    rw [hs₂, write_mem, G₁, Nat.zero_add]
+  have R₂ : ∀ r, s₂.gpr r = if r = mpReg M.n then BitVec.ofNat 64 M.minv.toNat else s.gpr r := fun r => by
+    rw [hs₂, write_gpr]; show (if _ then _ else s₁.gpr r) = _; rw [G₁]
+  have K₂ : Kp [mpReg M.n] s s₂ := by
+    rw [hs₂]; exact ((K₁.mono (by simp)).trans (Kp.store _ _ _)).trans (Kp.write _ _ (List.mem_singleton_self _))
+  have W₂ := writeW_outside s₁.mem base (d := M.tmp) (s.gpr (mpReg M.n)) (by omega)
   refine WP.block_append (WP.mono (rzero_ok (s := s₂) (k := M.n + 1) (by omega)) fun s₃ ⟨M₃, Z₃, K₃⟩ => ?_)
-  have keep3 : ∀ r : Reg, r ≠ .r11 → r ∉ hiRegs → s₃.gpr r = s.gpr r := fun r h1 h2 => by
-    rw [K₃.gpr _ (fun h => by obtain ⟨j, -, e⟩ := List.mem_map.mp h; exact h2 (e ▸ treg_hi _)), G₂,
-      K₁.gpr _ (by simp [h1])]
-  have hs₃ : Ws s₃ base size := K₃.ws (K₂.ws (K₁.ws hp.ws))
-  have h6₃ : At s₃ base .r6 B := by rw [At, keep3 _ (by decide) (by decide)]; exact hp.r6
-  have h3₃ : At s₃ base .r3 0 := by rw [At, keep3 _ (by decide) (by decide)]; exact hp.r3
+  have keep3 : ∀ r : Reg, r ∉ hiRegs → s₃.gpr r = s.gpr r := fun r h2 => by
+    rw [K₃.gpr _ (fun h => by obtain ⟨j, -, e⟩ := List.mem_map.mp h; exact h2 (e ▸ treg_hi _)),
+      K₂.gpr _ (fun h => h2 (by rw [List.mem_singleton.mp h]; exact treg_hi _))]
+  have hs₃ : Ws s₃ base size := K₃.ws (K₂.ws hp.ws)
+  have h6₃ : At s₃ base .r6 B := by rw [At, keep3 _ (by decide)]; exact hp.r6
+  have h3₃ : At s₃ base .r3 0 := by rw [At, keep3 _ (by decide)]; exact hp.r3
   refine WP.block_append (WP.mono (qloadB_ok hs₃ hn4 h6₃ b_le (k := M.n) (Nat.le_refl _)) fun s₄ ⟨M₄, Z₄, K₄⟩ => ?_)
   have h3₄ : At s₄ base .r3 0 := K₄.at h3₃ (by simp [tregs])
   refine WP.block_append (WP.mono (qimmM_ok (s := s₄) (m := m) hn4 (k := M.n) (Nat.le_refl _))
@@ -2501,30 +2736,28 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
     simp only [write_gpr, h1.2.2.2.1, ite_false]
     rw [nm5 _ (fun j hj => by
       have := (by decide : ∀ j < 4, mReg j = .r6 ∨ mReg j = .r7 ∨ mReg j = .r10 ∨ mReg j = .r0) j (by omega)
-      rcases this with e | e | e | e <;> rw [e] <;> simp_all), nb4 _ h2, keep3 _ h1.2.2.2.2.2 h2]
+      rcases this with e | e | e | e <;> rw [e] <;> simp_all), nb4 _ h2, keep3 _ h2]
   have Ous : Outs base (opOuts M acc O) s.mem u.mem := by
     rw [hum]
     have o₁ : Outs base (opOuts M acc O) s.mem s₁.mem :=
-      Outs.of_outside (O₁.mono (o' := M.tmp) (n' := 8 * M.n) (by omega) (by omega))
-        (by simp [opOuts])
-    have o₂ : Outs base (opOuts M acc O) s₁.mem s₂.mem :=
-      Outs.of_outside (O₂.mono (o' := acc) (n' := 4 * (4 * M.n + 2)) (Nat.le_refl _) (by omega))
+      Outs.of_outside (O₁.mono (o' := acc) (n' := 4 * (4 * M.n + 2)) (Nat.le_refl _) (by omega))
         (List.mem_cons_self ..)
+    have o₂ : Outs base (opOuts M acc O) s₁.mem s₂.mem := by
+      rw [M₂]; exact Outs.of_outside (W₂.mono (o' := M.tmp) (n' := 8 * M.n) (Nat.le_refl _) (by omega))
+        (by simp [opOuts])
     exact o₁.trans o₂
-  have hmp : (word u.mem base M.tmp).toNat = M.minv.toNat := by
-    rw [hum, O₂.word (by omega) (by omega), ← V₁, ← wordsVal_eq_val32]
-    simp only [wordsVal, Nat.mul_zero, Nat.add_zero, Nat.add_zero]
+  have hmpm : word u.mem base M.tmp = s.gpr (mpReg M.n) := by rw [hum, M₂, word_writeW_self]
   have hAu : wordsVal u.mem base A M.n = wordsVal s.mem base A M.n := by
-    rw [hum, O₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
+    rw [hum, M₂, W₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
   have hBu : wordsVal u.mem base B M.n = wordsVal s.mem base B M.n := by
-    rw [hum, O₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
+    rw [hum, M₂, W₂.wordsVal (by omega) (by omega), O₁.wordsVal (by omega) (by omega)]
   have hsv : ∀ j < 2 * M.n + 1, word u.mem base (acc + 8 * j) = s.gpr (treg j) := fun j hj => by
-    rw [hum, Z₂ j hj, K₁.gpr _ (by simp)]
+    rw [hum, M₂, W₂.word (by omega) (by omega), Z₁ j hj]
   have hws : Ws u base size := by rw [← hu]; exact (K₅.ws (K₄.ws hs₃)).write _ _
   have hreg : ∀ r : Reg, r ≠ .r8 → u.gpr r = s₅.gpr r := fun r h => by
     rw [← hu]; simp only [write_gpr, h, ite_false]
   have hBv : gval u (bReg M.n) M.n = wordsVal u.mem base B M.n := by
-    rw [hBu, ← O₁.wordsVal (by omega) (by omega), ← O₂.wordsVal (by omega) (by omega), ← M₃]
+    rw [hBu, ← O₁.wordsVal (by omega) (by omega), ← W₂.wordsVal (by omega) (by omega), ← M₂, ← M₃]
     refine gval_of_words fun j hj => ?_
     rw [hreg (bReg M.n j) (treg_ne (r := .r8) (by decide) _),
       nm5 (bReg M.n j) (fun i hi e => mReg_ne_treg (by omega) _ e.symm), Z₄ j hj]
@@ -2537,8 +2770,15 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
         K₄.gpr _ (treg_not_mem_tregs (by omega) (by omega) (by omega))]
       exact Z₃ j hj
     exact regsVal_zero_of this
+  have hmp : (u.gpr (mpReg M.n)).toNat = M.minv.toNat := by
+    rw [hreg (mpReg M.n) (treg_ne (r := .r8) (by decide) _),
+      nm5 (mpReg M.n) (fun j hj e => mReg_ne_treg (by omega) _ e.symm),
+      K₄.gpr (mpReg M.n) (treg_not_mem_tregs (i := 2 * M.n + 1) (by omega) (by omega) (.inr (by omega))),
+      K₃.gpr (mpReg M.n) (treg_not_mem_tregs (i := 2 * M.n + 1) (by omega) (by omega) (.inr (by omega))), R₂,
+      ite_eq_left rfl,
+      BitVec.toNat_ofNat, Nat.mod_eq_of_lt M.minv.isLt]
   have P : QPre base M size A B m u := ⟨hws, by rw [At, keep _ (by decide) (by decide)]; exact hp.r3, n0, hn4, a_le,
-    by omega, tmp4, by rw [hBv], hMv, by rw [hmp]; exact hinv, fun h => hmp.trans h, by rw [hBu]; exact hb, hm⟩
+    by rw [hBv], hMv, by rw [hmp]; exact hinv, fun h => hmp.trans h, by rw [hBu]; exact hb, hm⟩
   -- The invariant at word 0.
   have h0 : QLoopInv base M A B m 0 u u := by
     refine ⟨?_, ?_, rfl, Kp.refl _ _, ?_, ?_⟩
@@ -2555,45 +2795,52 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
     rw [At, I.kp.gpr _ (lo_not_qclob (by decide) (by decide)), keep _ (by decide) (by decide)]; exact hp.r4
   have hMt : gval t mReg M.n = m := by
     rw [← hMv]; exact gval_congr fun j hj => I.kp.gpr _ (mReg_not_qclob (by omega))
-  refine WP.block_append (WP.mono (qcsub_ok (I.kp.ws hws) h3t h4t n0 hn4 tmp_le o_le tmp4 to hMt
-    hm I.lt) fun v ⟨V₃, O₃, Kc⟩ => ?_)
-  refine WP.mono (rrestore_ok (Kc.ws (I.kp.ws hws)) (Kc.at h3t) acc4 (k := 2 * M.n + 1) (by omega) (by omega))
-    fun w ⟨M₆, R₆, K₆⟩ => ⟨?_, ?_, ?_, ?_⟩
-  · rw [M₆, V₃]; exact Nat.mod_lt _ hp.m0
-  · rw [M₆, V₃, Nat.mod_mul_mod, Nat.mul_comm, hU, hAu, hBu, Nat.add_mul_mod_self_right]
-  · rw [M₆]
-    refine (Ous.trans ?_).trans (outs_tail O₃)
+  refine WP.block_append (WP.mono (qcsubR_ok (I.kp.ws hws) h4t n0 hn4 o_le hMt hm I.lt) fun v ⟨V₃, O₃, Kc⟩ => ?_)
+  have hsv' : ∀ j < 2 * M.n + 1, word v.mem base (acc + 8 * j) = s.gpr (treg j) := fun j hj => by
+    rw [O₃.word (by omega) (by omega), I.mem, hsv j hj]
+  have hmpv : word v.mem base M.tmp = s.gpr (mpReg M.n) := by
+    rw [O₃.word (by omega) (by omega), I.mem, hmpm]
+  have hwv := Kc.ws (I.kp.ws hws)
+  have h3v : At v base .r3 0 := Kc.at h3t (by simp [tregs])
+  refine WP.block_append (WP.mono (rrestore_ok hwv h3v acc4 (k := 2 * M.n + 1) (by omega) (by omega))
+    fun w ⟨M₆, R₆, K₆⟩ => ?_)
+  refine wp_step (ld0_ok (K₆.ws hwv) (K₆.at h3v (by simp [tregs])) (by decide) tmp4 (by omega))
+    (WP.block_nil ⟨?_, ?_, ?_, ?_⟩)
+  · rw [write_mem, M₆, V₃]; exact Nat.mod_lt _ hp.m0
+  · rw [write_mem, M₆, V₃, Nat.mod_mul_mod, Nat.mul_comm, hU, hAu, hBu, Nat.add_mul_mod_self_right]
+  · rw [write_mem, M₆]
+    refine (Ous.trans ?_).trans (Outs.of_outside O₃ (by simp [opOuts]))
     rw [I.mem]; exact Outs.refl _ _ _
-  · have hrest : ∀ j < 2 * M.n + 1, w.gpr (treg j) = s.gpr (treg j) := fun j hj => by
-      rw [R₆ j hj, ← hsv j hj]
-      have : word v.mem base (acc + 8 * j) = word t.mem base (acc + 8 * j) := by
-        exact Outs.word O₃ (by
-          intro r hr
-          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> dsimp only <;> omega) (by omega)
-      rw [this, I.mem]
-    have memL : ∀ r, (r ∈ [Reg.r0, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] ∨ ∃ j ≤ 2 * M.n, r = treg j) →
-        r ∈ (.r6 :: opClob) ++ tregs 0 (2 * M.n + 1) := by
+  · have hrest : ∀ j < 2 * M.n + 2, (w.write (mpReg M.n) (word w.mem base M.tmp)).gpr (treg j) = s.gpr (treg j) :=
+      fun j hj => by
+        rw [write_gpr]
+        rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
+        · rw [ite_eq_right (show treg j ≠ mpReg M.n from treg_ne_of (by omega) (by omega) (by omega)), R₆ j hj,
+            hsv' j hj]
+        · rw [ite_eq_left (show treg (2 * M.n + 1) = mpReg M.n from rfl), M₆, hmpv]; rfl
+    have memL : ∀ r, (r ∈ [Reg.r0, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12] ∨ ∃ j ≤ 2 * M.n + 1, r = treg j) →
+        r ∈ (.r6 :: opClob) ++ tregs 0 (2 * M.n + 2) := by
       intro r h
       rcases h with h | ⟨j, hj, rfl⟩
       · exact List.mem_append_left _ (by revert h; revert r; decide)
-      · exact List.mem_append_right _ (by simpa using treg_mem_tregs (d := 0) (k := 2 * M.n + 1) (j := j) (by omega))
-    have tsub : ∀ d k, d + k ≤ 2 * M.n + 1 → ∀ r ∈ tregs d k, r ∈ (.r6 :: opClob) ++ tregs 0 (2 * M.n + 1) :=
+      · exact List.mem_append_right _ (by simpa using treg_mem_tregs (d := 0) (k := 2 * M.n + 2) (j := j) (by omega))
+    have tsub : ∀ d k, d + k ≤ 2 * M.n + 2 → ∀ r ∈ tregs d k, r ∈ (.r6 :: opClob) ++ tregs 0 (2 * M.n + 2) :=
       fun d k hk r hr => by
         obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
         rw [List.mem_range] at hj
         exact memL _ (.inr ⟨d + j, by omega, rfl⟩)
-    have K₀u : Kp ((.r6 :: opClob) ++ tregs 0 (2 * M.n + 1)) s u := by
+    have K₀u : Kp ((.r6 :: opClob) ++ tregs 0 (2 * M.n + 2)) s u := by
       rw [← hu]
-      refine ((((K₁.mono fun r hr => memL r (.inl (by simp at hr; simp [hr]))).trans
-        (K₂.mono (by simp))).trans (K₃.mono (tsub 0 (M.n + 1) (by omega)))).trans
+      refine (((K₂.mono fun r hr => by
+          rw [List.mem_singleton.mp hr]; exact memL _ (.inr ⟨2 * M.n + 1, Nat.le_refl _, rfl⟩)).trans
+        (K₃.mono (tsub 0 (M.n + 1) (by omega)))).trans
         (K₄.mono (tsub (M.n + 1) M.n (by omega)))).trans
         ((K₅.mono fun r hr => ?_).trans (Kp.write _ _ (memL _ (.inl (by simp)))))
       obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hr
       rw [List.mem_range] at hj
       exact memL _ (.inl ((by decide : ∀ j < 4, mReg j ∈ [Reg.r0, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12]) j (by omega)))
-    have Kall : Kp ((.r6 :: opClob) ++ tregs 0 (2 * M.n + 1)) s w :=
-      ((K₀u.trans (I.kp.mono fun r hr => by
+    have Kall : Kp ((.r6 :: opClob) ++ tregs 0 (2 * M.n + 2)) s (w.write (mpReg M.n) (word w.mem base M.tmp)) :=
+      (((K₀u.trans (I.kp.mono fun r hr => by
           rcases List.mem_cons.mp hr with h | hr
           · exact memL _ (.inl (by simp [h]))
           rcases List.mem_cons.mp hr with h | hr
@@ -2601,10 +2848,13 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
           rcases List.mem_append.mp hr with h | h
           · exact memL _ (.inl (by simp at h; rcases h with rfl | rfl | rfl <;> simp))
           · exact tsub 0 (M.n + 1) (by omega) r h)).trans
-        (Kc.mono fun r hr => memL _ (.inl (by simp at hr; rcases hr with rfl | rfl | rfl <;> simp)))).trans
-        (K₆.mono (tsub 0 (2 * M.n + 1) (by omega)))
+        (Kc.mono fun r hr => (List.mem_append.mp hr).elim
+          (fun h => memL _ (.inl (by simp at h; rcases h with rfl | rfl | rfl <;> simp)))
+          (tsub (M.n + 1) M.n (by omega) r))).trans
+        (K₆.mono (tsub 0 (2 * M.n + 1) (by omega)))).trans
+        (Kp.write _ _ (memL _ (.inr ⟨2 * M.n + 1, Nat.le_refl _, rfl⟩)))
     refine ⟨fun r hr => ?_, Kall.rd, Kall.wr, Kall.sp, Kall.lr⟩
-    by_cases ht : r ∈ tregs 0 (2 * M.n + 1)
+    by_cases ht : r ∈ tregs 0 (2 * M.n + 2)
     · obtain ⟨j, hj, rfl⟩ := List.mem_map.mp ht
       rw [List.mem_range] at hj
       rw [Nat.zero_add]; exact hrest j hj

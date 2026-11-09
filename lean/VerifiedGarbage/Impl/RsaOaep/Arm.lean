@@ -7,7 +7,7 @@ public import VerifiedGarbage.Impl.ICall
 # RSAES-OAEP (RFC 8017 §7.1) on ARMv7
 
 `encryptPrecomputed` and `decrypt`, with the label's hash function `H` and
-MGF1's those of two tables of the interface `Hash` (`Spec/HashTable.lean`),
+MGF1's those of two tables of the interface `MdHash` (`Spec/MdHashTable.lean`),
 the last two arguments, each a streaming hash function's `init`, `update`
 and `finalize` (`Impl.Pbkdf2.Stream.Arm.Hash`), and, for the code that
 depends on it, branching on `H`'s digest length (`byLen`, among `lens`),
@@ -36,7 +36,7 @@ frame.
 that is our argument `j`, the addresses and lengths in the slots `sSrc`,
 `sSrcLen`, `sDst`, `sDstLen`, as on AArch64
 (`Impl/RsaOaep/AArch64/Mgf1/Table.lean`). The table's address is copied to
-the slot `sTab`, and its digest length `hLen` (its word 4) to `sHl`; the
+the slot `sTab`, and its digest length `hLen` (its word 6) to `sHl`; the
 hash function's `init`, `update` and `finalize` are the table's functions
 0, 1 and 2, which it calls indirectly (`tcall`: their address, the table's
 word `j`, into `r4`, then `blx r4`, in the frame of their stack arguments,
@@ -222,8 +222,8 @@ def mgfRound : Prog isa :=
     .block xorSet, countLoop Impl.RsaPss.Arm.xorBody, .block mgfNext]
 
 /-- The table that is our argument `j` to `sTab`, and its digest length (its
-word 4) to `sHl`. -/
-def tabArgs (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab, .ldr .r0 .r0 16, st .r0 sHl]
+word 6) to `sHl`. -/
+def tabArgs (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab, .ldr .r0 .r0 24, st .r0 sHl]
 
 /-- `dst ⊕= MGF1(src, dstLen)`, for `dstLen > 0`, with the hash function of
 the table that is our argument `j`. -/
@@ -272,9 +272,9 @@ end Common
 /-- The table that is our argument `j` to `sTab`. -/
 def tabSlot (j : Nat) : List Instr := [sp0, ld .r0 (arg j), st .r0 sTab]
 
-/-- The digest length of the table that is our argument `j` (its word 4),
+/-- The digest length of the table that is our argument `j` (its word 6),
 to `r1` (which keeps `r0`). -/
-def lenLoad (j : Nat) : List Instr := [ld .r1 (arg j), .ldr .r1 .r1 16]
+def lenLoad (j : Nat) : List Instr := [ld .r1 (arg j), .ldr .r1 .r1 24]
 
 /-- The digest lengths of the hash functions whose tables the functions take
 (MD5, SHA-1, SHA-224 and SHA-512/224, SHA-256 and SHA-512/256, SHA-384,

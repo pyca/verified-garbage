@@ -136,7 +136,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -891,7 +891,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -1647,7 +1647,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -2403,7 +2403,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3159,7 +3159,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -3911,7 +3911,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -4663,7 +4663,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -5415,7 +5415,7 @@ vg_rsa_pss_verify_precomputed:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+224]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -6388,7 +6388,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -6864,7 +6864,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -7341,7 +7341,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -7818,7 +7818,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -8293,7 +8293,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -8768,7 +8768,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -9243,7 +9243,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax
@@ -9716,7 +9716,7 @@ vg_rsa_pss_sign:
 	mov DWORD PTR [esp+84], eax
 	mov eax, DWORD PTR [esp+256]
 	mov DWORD PTR [esp+132], eax
-	mov eax, DWORD PTR [eax+16]
+	mov eax, DWORD PTR [eax+24]
 	mov DWORD PTR [esp+136], eax
 	mov eax, 0
 	mov DWORD PTR [esp+104], eax

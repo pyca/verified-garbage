@@ -35,7 +35,7 @@ open VG.Proof.RsaOaep.PPC64LE (Base Fits off fx hiRegs OkS BT B sc_cov sdis cR_d
 open VG.Proof.RsaPkcs1Sig.PPC64LE (Only Two two_post wp_addSp wp_ld wp_nil)
 
 /-- The tables' hash functions and their functions, which the proofs take:
-MGF1's `G` with the functions `g` of the tables of `Hash`, and the hash
+MGF1's `G` with the functions `g` of the tables of `MdHash`, and the hash
 function `H`, whose compression function `cn` (of code `cc`) and digest `dn`
 (of code `dc`) its table names, with the functions `f` of the tables of
 `MdHash`. -/

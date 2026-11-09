@@ -15,13 +15,14 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 
 namespace VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 
-open VG.Proof.RsaPss.X86 (mvars verify_ok)
+open VG.Proof.RsaPss.X86 (verify_ok)
+open VG.Proof.MdHashTable.X86 (mvars)
 open VG.Proof.HashTable.X86 (vars)
 
 def artifacts (vs1 : List Proof.Sha1.X86.Variants.Backend) (vs256 : List Proof.Sha256.X86.Variants.Backend) :
     List Artifact :=
   if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
-    Spec.RsaPss.verifyPrecomputedTableApi.artifact X86.target {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86.target {
       suffix := qualifiedName "" []
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
@@ -36,13 +37,14 @@ end VG.Artifacts.RsaPss.X86.AllSha1AllSha256
 -- RSASSA-PSS signing on x86, with the hash functions as tables
 namespace VG.Artifacts.RsaPss.X86.RsaPrivateCrtAllSha1AllSha256
 
-open VG.Proof.RsaPss.X86 (mvars sign_ok)
+open VG.Proof.RsaPss.X86 (sign_ok)
+open VG.Proof.MdHashTable.X86 (mvars)
 open VG.Proof.HashTable.X86 (vars)
 
 def artifacts (c : Proof.Rsa.X86.PrivChecked.CrtImpl) (vs1 : List Proof.Sha1.X86.Variants.Backend)
     (vs256 : List Proof.Sha256.X86.Variants.Backend) : List Artifact :=
   if h : Proof.RsaPss.X86.Sg.OK (mvars vs1 vs256) (vars vs1 vs256) then [
-    Spec.RsaPss.signTableApi.artifact X86.target {
+    Spec.RsaPss.signMdTableApi.artifact X86.target {
       suffix := qualifiedName "" [("crt", c.suffix)]
       tables := [("hash", Proof.MdHashTable.X86.tables (mvars vs1 vs256)),
         ("mgf1", Proof.HashTable.X86.tables (vars vs1 vs256))]
