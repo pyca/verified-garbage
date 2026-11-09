@@ -71,6 +71,7 @@ theorem comb_config (hC : Law Spec.P521.curve) :
   coverBits := by decide
   bitsOff := by decide
   row := by decide
+  n18 := by decide
 
 set_option exponentiation.threshold 1024 in
 theorem comb_words_eq : tableWords p521Comb Spec.P521.curve p521Comb7 = p521CombWords := by

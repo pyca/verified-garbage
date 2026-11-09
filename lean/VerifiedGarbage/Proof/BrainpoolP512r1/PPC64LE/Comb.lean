@@ -71,6 +71,7 @@ theorem comb_config (hC : Law Spec.BrainpoolP512r1.curve) :
   coverBits := by decide
   bitsOff := by decide
   row := by decide
+  n18 := by decide
 
 set_option exponentiation.threshold 1024 in
 theorem comb_words_eq : tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve comb7 = brainpoolp512r1CombWords := by
