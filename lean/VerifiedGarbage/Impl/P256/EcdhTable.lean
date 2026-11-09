@@ -16,11 +16,6 @@ def operations (doubling : Bool) :=
 
 def raw (doubling : Bool) : List Instr := (operations doubling).flatMap VerifySparse.op
 
-/-- Retain the point, its cached powers of Z, and the values needed by the next table step. -/
-def keep (doubling : Bool) (off : Nat) : Bool :=
-  (704≤off && off<800) || (5400≤off && off<5464) ||
-    (if doubling then 864≤off && off<928 else 608≤off && off<672)
-
 def code (doubling : Bool) : List Instr :=
   if doubling then EcdhAllocatedCode.dblu else EcdhAllocatedCode.zaddu
 
