@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Shared
 public import VerifiedGarbage.Proof.Sha512.AArch64.Sha3.Compress
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
+public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Variant
+public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on AArch64 -/
 
@@ -23,6 +25,12 @@ def artifacts : List Artifact := [
     verified := Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_224 },
   Spec.Sha512.init512_256Api.artifact AArch64.target {
     code := Impl.Sha512.AArch64.Stream.init Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_256 }]
+    verified := Proof.Sha512.AArch64.Shared.init Spec.Sha512.H0_512_256 }] ++
+  ((VG.Proof.Variants.MdHash.AArch64.sha384Variants ++
+      VG.Proof.Variants.MdHash.AArch64.sha512Variants ++
+      VG.Proof.Variants.MdHash.AArch64.sha512_224Variants ++
+      VG.Proof.Variants.MdHash.AArch64.sha512_256Variants).flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
+    v.stream.map fun f =>
+      f.api.artifact AArch64.target { f.reg with suffix := v.suffix, features := v.features })
 
 end VG.Artifacts.Sha512.AArch64

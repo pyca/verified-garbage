@@ -22,27 +22,19 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Stream.Init
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
-/-! # HMAC (RFC 2104) over a Merkle–Damgård hash function on AArch64 -/
+/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on AArch64: the iteration and the whole derivation -/
 
 @[expose] public section
 
-namespace VG.Artifacts.Hmac.AArch64
-
-def artifactsFor (v : Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact := [
-  v.I.initAnyKeyApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Proof.Pbkdf2.Md.AArch64.initCode v.H v.I
-    stack := 16 + Proof.Pbkdf2.Md.AArch64.anyFrame v.I
-    verified := v.hmacInitF
-    features := v.features },
-  v.I.finalizeApi.artifact AArch64.target {
-    suffix := v.suffix
-    code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.hmacFrame v.I) .x4 v.H.hmacFin
-    stack := 16 + Proof.Pbkdf2.Md.AArch64.hmacFrame v.I
-    verified := v.hmacFinF
-    features := v.features }]
+namespace VG.Artifacts.Pbkdf2Sha256.AArch64
 
 def artifacts : List Artifact :=
-  VG.Proof.Variants.MdHash.AArch64.variants.flatMap fun v => artifactsFor v
+  VG.Proof.Variants.MdHash.AArch64.sha256Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) => [
+    v.I.pbkdf2Api.artifact AArch64.target {
+      suffix := v.suffix
+      code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
+      stack := 16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I
+      verified := v.pbkdf2F
+      features := v.features }]
 
-end VG.Artifacts.Hmac.AArch64
+end VG.Artifacts.Pbkdf2Sha256.AArch64

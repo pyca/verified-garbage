@@ -6,6 +6,25 @@ public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Sha512.X86_64.Avx2Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.Rolled.Lit
 import VerifiedGarbage.Proof.Sha512.X86_64.ShaNi.Lit
+public import VerifiedGarbage.Proof.Blake2.X86_64.Backend
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
+public import VerifiedGarbage.Proof.Blake2.Spec
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Init
+public import VerifiedGarbage.Proof.Blake2.X86_64.Stream.Verified
+public import VerifiedGarbage.Proof.Framework.AddrArith
+public import VerifiedGarbage.Proof.Framework.Offset
+public import VerifiedGarbage.Proof.Framework.RegSetOrder
+public import VerifiedGarbage.Proof.Framework.RegionsSub
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.Masked
+public import VerifiedGarbage.Proof.Framework.X86_64.RelCT
+public import VerifiedGarbage.Proof.Sha256.Stream
+public import VerifiedGarbage.Proof.Variants.Blake2b.X86_64
+public import VerifiedGarbage.Proof.Blake2.X86_64.BackendS
+public import VerifiedGarbage.Proof.Variants.Blake2s.X86_64
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
+public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
 /-! # SHA-384, SHA-512, SHA-512/224 and SHA-512/256 (FIPS 180-4) on x86-64 -/
 
@@ -25,6 +44,12 @@ def artifacts : List Artifact := [
     verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_224 },
   Spec.Sha512.init512_256Api.artifact X86_64.target {
     code := Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512_256
-    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_256 }]
+    verified := Proof.Sha512.X86_64.Shared.init Spec.Sha512.H0_512_256 }] ++
+  ((VG.Proof.Variants.MdHash.X86_64.sha384Variants ++
+      VG.Proof.Variants.MdHash.X86_64.sha512Variants ++
+      VG.Proof.Variants.MdHash.X86_64.sha512_224Variants ++
+      VG.Proof.Variants.MdHash.X86_64.sha512_256Variants).flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
+    v.stream.map fun f =>
+      f.api.artifact X86_64.target { f.reg with suffix := v.suffix, features := v.features })
 
 end VG.Artifacts.Sha512.X86_64
