@@ -194,4 +194,38 @@ def core : Modes.PPC64LE.Core where
   G := 1
   bw := 4
 
+/-! ## Decryption
+
+Decryption is encryption with the subkeys in reverse (RFC 3713 §2.3.3).
+`decPrepare` copies the schedule's words, in the order decryption uses
+them, to the scratch buffer's first slots, once per call; `decCrypt` saves
+`r3` in the slot after them, points `r3` at the copy, runs `crypt`, and
+loads `r3` back. -/
+
+/-- The schedule's word that decryption uses `i`-th, for `g` groups of six
+rounds: `kw3, kw4`, the words between `kw2` and `kw3` from the last back,
+then `kw1, kw2`. -/
+def decIdx (g i : Nat) : Nat :=
+  if i < 2 then 8 * g + i else if i < 8 * g then 8 * g + 1 - i else i - 8 * g
+
+/-- The slot that keeps `r3` while `decCrypt` runs, after the copy's 34. -/
+def keepSlot : Nat := 34
+
+/-- The `8 g + 2` words of the schedule, in decryption's order, to the
+scratch buffer's first slots. -/
+def copyWords (g : Nat) : List Instr :=
+  (List.range (8 * g + 2)).flatMap fun i => [.load .d .r4 .r3 (8 * decIdx g i), .store .d .r4 sb (8 * i)]
+
+/-- The copy, of 18 rounds' words or 24's (`r28`). -/
+def decPrepare : Prog isa :=
+  .seq (.block [.subi .r9 .r28 18]) (.ite (.zero .d .r9) (.block (copyWords 3)) (.block (copyWords 4)))
+
+/-- `crypt` on the copy, `r3` kept in its slot meanwhile. -/
+def decCrypt : Prog isa :=
+  .seq (.block [.store .d .r3 sb (8 * keepSlot), Modes.PPC64LE.mov .r3 sb])
+    (.seq crypt (.block [.load .d .r3 sb (8 * keepSlot)]))
+
+/-- The single-block core for decryption. -/
+def decCore : Modes.PPC64LE.Core := { core with prepare := decPrepare, crypt := decCrypt }
+
 end VG.Impl.Camellia.PPC64LE.Serial

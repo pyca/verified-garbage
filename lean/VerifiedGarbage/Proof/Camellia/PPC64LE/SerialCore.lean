@@ -1290,20 +1290,26 @@ theorem cipher_words {s : State} {k : Nat × List (BitVec 64)} {p : Addr} (hp : 
   rw [hws, Proof.Camellia.schedWords_getD _ _ (by rcases hR with h | h <;> simp [h, Spec.Camellia.scheduleLength] at hi ⊢ <;> omega),
     keyWord, hp]
 
-theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
-    (hs : ScrIn s B core.total) (hk : Ready s B ws k) :
-    WP isa core.crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
-      Frame [coreRegion core B] s.mem t.mem ∧
-      (∀ j < core.G, Spec.Aes.bytesAt t.mem (blkAddr core B j) (4 * core.bw) =
-        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
-          (Spec.Aes.bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
-      t.rd = s.rd ∧ t.wr = s.wr := by
-  have hk' := hk
-  obtain ⟨p, hp, h28, hR, hws, hin, hfit, hdis⟩ := hk'
+/-- The registers `crypt` writes. -/
+def cWrites : List Reg := [.r0, .r4, .r6, .r7, .r8, .r9, .r10, .r11, .r12]
+
+theorem cWrites_ne : ∀ r : Reg, r ∉ cWrites →
+    r ∉ rWrites ∧ r ≠ .r12 ∧ r ≠ .r0 ∧ r ≠ .r4 ∧ r ≠ .r6 ∧ r ≠ .r7 := by
+  intro r; cases r <;> decide
+
+theorem kept_cWrites : ∀ r ∈ kept, r ∉ cWrites := by decide
+
+/-- `crypt` with the schedule's words at `r3`, wherever they are: the block
+enciphered with them (`cryptWords`). -/
+theorem crypt_run {s : State} {B : Addr} {R : Nat} (hB : s.gpr sb = B) (hs : ScrIn s B core.total)
+    (keyIn : KeyIn s) (h28 : s.gpr .r28 = BitVec.ofNat 64 R) (hR : R = 18 ∨ R = 24) :
+    WP isa crypt s fun u => (∀ r, r ∉ cWrites → u.gpr r = s.gpr r) ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
+      Frame [⟨blkA s, 16⟩] s.mem u.mem ∧
+      Spec.Aes.bytesAt u.mem (blkA s) 16 =
+        (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (R / 6) (keyWord s)
+          (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))))).toList := by
   have hwr : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region) ∈ s.wr := hs.wr
   have hfB : B.toNat + 8 * (Impl.Camellia.PPC64LE.slots + 8) ≤ 2 ^ 64 := hs.fit
-  have keyIn : KeyIn s := fun i hi => by
-    rw [hp]; exact ⟨_, List.mem_append_left _ hin, VG.Offset.contains_base p (by omega) (by omega)⟩
   have blkA_eq : blkA s = B + BitVec.ofNat 64 (8 * Impl.Camellia.PPC64LE.tailSlot) := by rw [blkA, hB]
   have hbw : ∀ d, d = 0 ∨ d = 8 → InRegions s.wr (blkA s + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [blkA_eq, VG.Offset.add_add]
@@ -1311,15 +1317,8 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (Bit
       (by rw [tailSlot_val]; omega)⟩
   have hbr : ∀ d, d = 0 ∨ d = 8 → InRegions (s.rd ++ s.wr) (blkA s + BitVec.ofNat 64 d) 8 := fun d hd => by
     obtain ⟨r, hr, hc⟩ := hbw d hd; exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have hblk : blkAddr core B 0 = blkA s := by
-    rw [blkA_eq]; show B + BitVec.ofNat 64 (8 * Impl.Camellia.PPC64LE.tailSlot) + BitVec.ofNat 64 (4 * 4 * 0) = _
-    rw [VG.Offset.add_add, Nat.mul_zero, Nat.add_zero]
-  have hsub : Region.Sub ⟨blkA s, 16⟩ (coreRegion core B) := by
-    rw [blkA_eq]
-    exact VG.Offset.sub_base B (by show 8 * Impl.Camellia.PPC64LE.tailSlot + 16 ≤ 8 * Impl.Camellia.PPC64LE.slots
-                                   rw [tailSlot_val, slots_val]; omega)
-  have hg : 2 < k.1 / 6 := by rcases hR with h | h <;> rw [h] <;> decide
-  obtain ⟨t, te, th, t9, tg, tc, tm, trd, twr, tsp, tsy⟩ := prefix_run (k.1 / 6) hg keyIn hbr
+  have hg : 2 < R / 6 := by rcases hR with h | h <;> rw [h] <;> decide
+  obtain ⟨t, te, th, t9, tg, tc, tm, trd, twr, tsp, tsy⟩ := prefix_run (R / 6) hg keyIn hbr
   have tsb : t.gpr sb = s.gpr sb := tg _ (by decide) (by decide)
   have t3 : t.gpr .r3 = s.gpr .r3 := tg _ (by decide) (by decide)
   have tk : KeyIn t := keyIn.of_eq t3 trd twr
@@ -1327,41 +1326,16 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (Bit
   have tb : blkA t = blkA s := by rw [blkA, blkA, tsb]
   have tbw : ∀ d, d = 0 ∨ d = 8 → InRegions t.wr (blkA t + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [tb, twr]; exact hbw d hd
-  -- What every branch's end state meets.
-  have finish : ∀ u : State, u.gpr sb = s.gpr sb → (∀ r ∈ kept, u.gpr r = s.gpr r) → u.rd = s.rd → u.wr = s.wr →
-      Frame [⟨blkA s, 16⟩] s.mem u.mem →
-      Spec.Aes.bytesAt u.mem (blkA s) 16 =
-        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2) (Spec.Aes.bytesAt s.mem (blkA s) 16) →
-      u.gpr sb = B ∧ (∀ r ∈ kept, u.gpr r = s.gpr r) ∧ Ready u B ws k ∧
-      Frame [coreRegion core B] s.mem u.mem ∧
-      (∀ j < core.G, Spec.Aes.bytesAt u.mem (blkAddr core B j) (4 * core.bw) =
-        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
-          (Spec.Aes.bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
-      u.rd = s.rd ∧ u.wr = s.wr := by
-    intro u usb uk urd uwr uf ub
-    have fc : Frame [coreRegion core B] s.mem u.mem := uf.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, hsub⟩
-    refine ⟨usb.trans hB, uk, ?_, fc, fun j hj => ?_, urd, uwr⟩
-    · refine Proof.Camellia.PPC64LE.Mode.keyArgs_congr hk (fun r hr _ _ _ => uk r hr) urd
-        (fc.sub fun r hr => ?_)
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-    · have hj0 : j = 0 := by have : j < 1 := hj; omega
-      subst hj0
-      show Spec.Aes.bytesAt u.mem (blkAddr core B 0) 16 =
-        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2) (Spec.Aes.bytesAt s.mem (blkAddr core B 0) 16)
-      rw [hblk]; exact ub
   change WP isa (.seq (.block _) (.ite _ _ _)) s _
   refine VG.WP.seq (WP.of_runBlock ⟨t, te, ?_⟩)
-  have t9' : t.gpr .r9 = BitVec.ofNat 64 (k.1 - 18) := by
+  have t9' : t.gpr .r9 = BitVec.ofNat 64 (R - 18) := by
     rw [t9, h28]; rcases hR with h | h <;> rw [h] <;> rfl
-  refine VG.WP.ite (decide (k.1 - 18 = 0)) (eval_zero_ofNat t .r9 (by rcases hR with h | h <;> rw [h] <;> decide) t9')
+  refine VG.WP.ite (decide (R - 18 = 0)) (eval_zero_ofNat t .r9 (by rcases hR with h | h <;> rw [h] <;> decide) t9')
     (fun h18 => ?_) (fun h24 => ?_)
-  · have e18 : k.1 = 18 := by rcases hR with h | h <;> simp [h] at h18 ⊢
+  · have e18 : R = 18 := by rcases hR with h | h <;> simp [h] at h18 ⊢
     obtain ⟨u, ue, ub, uf, ug, _, urd, uwr, _, _⟩ := whitening_run (w := 24) (by decide) tk tbw
-    refine WP.of_runBlock ⟨u, ue, finish u ?_ ?_ (urd.trans trd) (uwr.trans twr) ?_ ?_⟩
-    · rw [ug _ (by decide) (by decide) (by decide) (by decide), tsb]
-    · intro r hr
-      have h := kept_ne r hr
+    refine WP.of_runBlock ⟨u, ue, fun r hr => ?_, urd.trans trd, uwr.trans twr, ?_, ?_⟩
+    · have h := cWrites_ne r hr
       rw [ug r h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2, tg r h.1 h.2.1]
     · rw [← tm, ← tb]; exact uf
     · have cw : Proof.Camellia.cryptWords 3 (keyWord s) (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))) =
@@ -1369,9 +1343,9 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (Bit
             ((Proof.Camellia.groups 3 (keyWord s) (start s)).1 ^^^ keyWord s 25) := rfl
       have hh : halves t = _ := th
       rw [e18, show (18 : Nat) / 6 = 3 from rfl] at hh
-      rw [cipher_words hp hR hws, e18, show (18 : Nat) / 6 = 3 from rfl, cw, groups3, ← hh, ← tb, ub, tkey]
+      rw [e18, show (18 : Nat) / 6 = 3 from rfl, cw, groups3, ← hh, ← tb, ub, tkey]
       rfl
-  · have e24 : k.1 = 24 := by rcases hR with h | h <;> simp [h] at h24 ⊢
+  · have e24 : R = 24 := by rcases hR with h | h <;> simp [h] at h24 ⊢
     obtain ⟨x, xe, xh, xg, xc, _, xm, xrd, xwr, xsp, xsy⟩ := flPair_run (w := 24) (by decide) tc tk
     have kx : Keeps t x := ⟨xg, xc, xm, xrd, xwr, xsp, xsy⟩
     obtain ⟨y, ye, yh, ky⟩ := groupLast_run (s := x) 4 3 (by decide) (by decide) xc (kx.keyIn tk)
@@ -1380,13 +1354,11 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (Bit
     obtain ⟨u, ue, ub, uf, ug, _, urd, uwr, _, _⟩ := whitening_run (s := y) (w := 32) (by decide) (kxy.keyIn tk)
       (fun d hd => by rw [yb, kxy.wr]; exact tbw d hd)
     have ye' : runBlock isa (six 26) x = some y := ye
-    refine WP.of_runBlock ⟨u, ?_, finish u ?_ ?_ (urd.trans (kxy.rd.trans trd)) (uwr.trans (kxy.wr.trans twr))
-      ?_ ?_⟩
+    refine WP.of_runBlock ⟨u, ?_, fun r hr => ?_, urd.trans (kxy.rd.trans trd), uwr.trans (kxy.wr.trans twr),
+      ?_, ?_⟩
     · rw [VG.Interleave.runBlock_append, VG.Interleave.runBlock_append, xe, Option.bind_some, ye', Option.bind_some,
         ue]
-    · rw [ug _ (by decide) (by decide) (by decide) (by decide), kxy.gpr _ (by decide), tsb]
-    · intro r hr
-      have h := kept_ne r hr
+    · have h := cWrites_ne r hr
       rw [ug r h.2.2.1 h.2.2.2.1 h.2.2.2.2.1 h.2.2.2.2.2, kxy.gpr r h.1, tg r h.1 h.2.1]
     · rw [← tm, ← kxy.mem, ← tb, ← yb]; exact uf
     · have cw : Proof.Camellia.cryptWords 4 (keyWord s) (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt s.mem (blkA s))) =
@@ -1398,9 +1370,42 @@ theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (Bit
       have ykey : keyWord y = keyWord s := funext fun w => (kxy.key w).trans (congrFun tkey w)
       rw [tkey] at xh
       rw [xkey] at yh
-      rw [cipher_words hp hR hws, e24, show (24 : Nat) / 6 = 4 from rfl, cw, groups4, group4_2, ← hh, ← xh, ← yh,
+      rw [e24, show (24 : Nat) / 6 = 4 from rfl, cw, groups4, group4_2, ← hh, ← xh, ← yh,
         ← tb, ← yb, ub, ykey]
       rfl
+
+theorem crypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
+    (hs : ScrIn s B core.total) (hk : Ready s B ws k) :
+    WP isa core.crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ Ready t B ws k ∧
+      Frame [coreRegion core B] s.mem t.mem ∧
+      (∀ j < core.G, Spec.Aes.bytesAt t.mem (blkAddr core B j) (4 * core.bw) =
+        Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2)
+          (Spec.Aes.bytesAt s.mem (blkAddr core B j) (4 * core.bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  have hk' := hk
+  obtain ⟨p, hp, h28, hR, hws, hin, hfit, -⟩ := hk'
+  have keyIn : KeyIn s := fun i hi => by
+    rw [hp]; exact ⟨_, List.mem_append_left _ hin, VG.Offset.contains_base p (by omega) (by omega)⟩
+  have hblk : blkAddr core B 0 = blkA s := by
+    rw [blkA, hB]; show B + BitVec.ofNat 64 (8 * Impl.Camellia.PPC64LE.tailSlot) + BitVec.ofNat 64 (4 * 4 * 0) = _
+    rw [VG.Offset.add_add, Nat.mul_zero, Nat.add_zero]
+  have hsub : Region.Sub ⟨blkA s, 16⟩ (coreRegion core B) := by
+    rw [blkA, hB]
+    exact VG.Offset.sub_base B (by show 8 * Impl.Camellia.PPC64LE.tailSlot + 16 ≤ 8 * Impl.Camellia.PPC64LE.slots
+                                   rw [tailSlot_val, slots_val]; omega)
+  refine WP.mono (crypt_run hB hs keyIn h28 hR) fun u ⟨ug, urd, uwr, uf, ub⟩ => ?_
+  have uk : ∀ r ∈ kept, u.gpr r = s.gpr r := fun r hr => ug r (kept_cWrites r hr)
+  have fc : Frame [coreRegion core B] s.mem u.mem := uf.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, hsub⟩
+  refine ⟨(ug _ (by decide)).trans hB, uk, ?_, fc, fun j hj => ?_, urd, uwr⟩
+  · refine Proof.Camellia.PPC64LE.Mode.keyArgs_congr hk (fun r hr _ _ _ => uk r hr) urd
+      (fc.sub fun r hr => ?_)
+    simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+  · have hj0 : j = 0 := by have : j < 1 := hj; omega
+    subst hj0
+    show Spec.Aes.bytesAt u.mem (blkAddr core B 0) 16 =
+      Spec.Camellia.cipher (Spec.Camellia.subkeysOfWords k.1 k.2) (Spec.Aes.bytesAt s.mem (blkAddr core B 0) 16)
+    rw [hblk, ub, cipher_words hp hR hws]
 
 theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (BitVec 64)}
     (hB : s.gpr sb = B) (hR : (⟨B, 8 * core.total⟩ : Region) ∈ rs)
@@ -1441,5 +1446,279 @@ def coreSpec : CoreSpec core where
   ready_frame h e r _ _ f hs hd := ready_frame h e r f hs hd
   prepare_wp hB _ hR hk := prepare_wp hB hR hk
   crypt_wp hB hs hk := crypt_wp hB hs hk
+
+/-! ## Decryption
+
+`decCore` copies the schedule's words in decryption's order to the scratch
+buffer's first slots (`copy_run`, `decPrepare_wp`), and runs `crypt` on the
+copy (`decCrypt_wp`, by `crypt_run`), `r3` kept in `keepSlot` meanwhile. -/
+
+theorem decIdx_eq : decIdx = Proof.Camellia.decPerm := rfl
+
+theorem decIdx_lt (g : Nat) (hg : g = 3 ∨ g = 4) : ∀ i < 8 * g + 2, decIdx g i < 8 * g + 2 := by
+  rcases hg with rfl | rfl <;> decide
+
+/-- Decryption on a block in memory: `cryptWords` on the words in `decPerm`'s order. -/
+theorem invCipher_bytes {R : Nat} (hR : R = 18 ∨ R = 24) (ws : List (BitVec 64)) (m : Mem) (p : Addr) :
+    Spec.Camellia.invCipher (Spec.Camellia.subkeysOfWords R ws) (Spec.Aes.bytesAt m p 16) =
+      (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (R / 6)
+        (fun i => ws.getD (Proof.Camellia.decPerm (R / 6) i) 0)
+        (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt m p)))).toList := by
+  rw [Spec.Camellia.invCipher, Proof.Camellia.bytesAt_eq_blockAt, Proof.Camellia.ofFn_toList,
+    Spec.Camellia.decryptBlock, Proof.Camellia.decryptWith_eq hR]
+
+/-- The decryption core's key is ready: as `Ready`, and the words in
+decryption's order at the scratch buffer's first slots. -/
+def DecReady (s : State) (B : Addr) (ws : List Region) (k : Nat × List (BitVec 64)) : Prop :=
+  Ready s B ws k ∧ ∀ i < 8 * (k.1 / 6) + 2,
+    Spec.Camellia.wordAt s.mem (B + BitVec.ofNat 64 (8 * i)) = k.2.getD (Proof.Camellia.decPerm (k.1 / 6) i) 0
+
+/-- The copy's first `n` words. -/
+theorem copy_run {s : State} {g : Nat} (hg : g = 3 ∨ g = 4) {p B : Addr} (hp : s.gpr .r3 = p)
+    (hB : s.gpr sb = B) (hin : (⟨p, 272⟩ : Region) ∈ s.rd)
+    (hwr : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region) ∈ s.wr)
+    (hd : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩) :
+    ∀ n ≤ 8 * g + 2, ∃ t, runBlock isa ((List.range n).flatMap fun i =>
+        ([.load .d .r4 .r3 (8 * decIdx g i), .store .d .r4 sb (8 * i)] : List Instr)) s = some t ∧
+      (∀ r, r ≠ .r4 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [⟨B, 8 * n⟩] s.mem t.mem ∧
+      ∀ i < n, t.mem.readW (B + BitVec.ofNat 64 (8 * i)) 64 =
+        s.mem.readW (p + BitVec.ofNat 64 (8 * decIdx g i)) 64 := by
+  have hsl := slots_val
+  have hg34 : 8 * g + 2 ≤ 34 := by rcases hg with rfl | rfl <;> decide
+  intro n
+  induction n with
+  | zero => intro _; exact ⟨s, rfl, fun _ _ => rfl, rfl, rfl, Frame.refl _ _, fun i hi => absurd hi (Nat.not_lt_zero _)⟩
+  | succ n ih =>
+    intro hn
+    obtain ⟨t, te, tg, trd, twr, tf, tr⟩ := ih (by omega)
+    have hdn : decIdx g n < 8 * g + 2 := decIdx_lt g hg n (by omega)
+    have t3 : t.gpr .r3 = p := (tg _ (by decide)).trans hp
+    have tB : t.gpr sb = B := (tg _ (by decide)).trans hB
+    have hsrc : (⟨p, 272⟩ : Region).Contains (p + BitVec.ofNat 64 (8 * decIdx g n)) 8 :=
+      VG.Offset.contains_base p (by omega) (by omega)
+    have hdst : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region).Contains (B + BitVec.ofNat 64 (8 * n)) 8 :=
+      VG.Offset.contains_base B (by rw [hsl]; omega) (by omega)
+    have hl : InRegions (t.rd ++ t.wr) (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 8 := by
+      rw [t3, trd]; exact ⟨_, List.mem_append_left _ hin, hsrc⟩
+    have tdis : ∀ r' ∈ [(⟨B, 8 * n⟩ : Region)], Region.Disjoint ⟨p, 272⟩ r' := fun r' hr' => by
+      simp only [List.mem_singleton] at hr'; subst hr'
+      exact hd.sub_right (Region.sub_prefix (by rw [hsl]; omega))
+    have tv : t.mem.readW (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 64 =
+        s.mem.readW (p + BitVec.ofNat 64 (8 * decIdx g n)) 64 := by
+      rw [t3]; exact tf.readW hsrc tdis (by decide)
+    have hs : InRegions (t.write .r4 (t.mem.readW (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 64)).wr
+        ((t.write .r4 (t.mem.readW (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 64)).gpr sb +
+          BitVec.ofNat 64 (8 * n)) 8 := by
+      rw [gpr_write_of_ne _ _ (by decide), tB]; exact ⟨_, twr ▸ hwr, hdst⟩
+    refine ⟨{ t.write .r4 (t.mem.readW (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 64) with
+        mem := t.mem.writeW (B + BitVec.ofNat 64 (8 * n)) (t.mem.readW (t.gpr .r3 + BitVec.ofNat 64 (8 * decIdx g n)) 64) },
+      ?_, fun r hr => ?_, trd, twr, ?_, fun i hi => ?_⟩
+    · rw [List.range_succ, List.flatMap_append, VG.Interleave.runBlock_append, te, Option.bind_some,
+        List.flatMap_cons, List.flatMap_nil, List.append_nil, runBlock_cons,
+        exec_load_d (by decide) ⟨by omega, by omega⟩ hl, runStep_some, runBlock_cons,
+        exec_store_d (by decide) ⟨by omega, by omega⟩ hs, runStep_some, runBlock_nil,
+        gpr_write_of_ne _ _ (by decide), tB, gpr_write_self]
+      rfl
+    · exact (gpr_write_of_ne _ _ hr).trans (tg r hr)
+    · refine (tf.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩).writeW (List.mem_singleton_self _) _
+        (VG.Offset.contains_base B (by omega) (by omega))
+      simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by omega)
+    · show (t.mem.writeW _ _).readW _ 64 = _
+      by_cases hin' : i < n
+      · rw [Mem.readW_writeW_sep (VG.Offset.sep B (.inl (by omega)) (by omega) (by omega)) (by decide)]
+        exact tr i hin'
+      · obtain rfl : i = n := by omega
+        rw [Mem.readW_writeW_self64, tv]
+
+theorem kept_r4_r9 : ∀ r ∈ kept, r ≠ .r4 ∧ r ≠ .r9 := by decide
+
+theorem decPrepare_wp {s : State} {B : Addr} {rs : List Region} {k : Nat × List (BitVec 64)}
+    (hB : s.gpr sb = B) (hs : ScrIn s B decCore.total) (hR' : (⟨B, 8 * decCore.total⟩ : Region) ∈ rs)
+    (hk : Proof.Camellia.PPC64LE.Mode.KeyArgs s rs k) :
+    WP isa decCore.prepare s fun s' => DecReady s' B rs k ∧ s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+      Frame [coreRegion decCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hk0 := hk
+  obtain ⟨p, hp, h28, hR, hws, hin, hfit, hdis⟩ := hk0
+  have hsl := slots_val
+  have hwr : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region) ∈ s.wr := hs.wr
+  have hd : Region.Disjoint ⟨p, 272⟩ ⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ := hdis _ hR'
+  have hkc : Proof.Camellia.PPC64LE.Mode.KeyArgs s (coreRegion core B :: rs) k := by
+    refine ⟨p, hp, h28, hR, hws, hin, hfit, fun r hr => ?_⟩
+    simp only [List.mem_cons] at hr
+    rcases hr with rfl | hr
+    · exact hd.sub_right (Region.sub_prefix (by show 8 * Impl.Camellia.PPC64LE.slots ≤ 8 * (Impl.Camellia.PPC64LE.slots + 8); omega))
+    · exact hdis r hr
+  have fin : ∀ g, g = 3 ∨ g = 4 → k.1 / 6 = g →
+      WP isa (.block (copyWords g)) (s.write .r9 (s.gpr .r28 - BitVec.ofNat 64 18)) fun s' =>
+        DecReady s' B rs k ∧ s'.gpr sb = B ∧ (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧
+        Frame [coreRegion decCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+    intro g hg hkg
+    have hg34 : 8 * g + 2 ≤ 34 := by rcases hg with rfl | rfl <;> decide
+    obtain ⟨t, te, tg, trd, twr, tf, tr⟩ := copy_run (s := s.write .r9 (s.gpr .r28 - BitVec.ofNat 64 18)) hg
+      ((gpr_write_of_ne _ _ (by decide)).trans hp) ((gpr_write_of_ne _ _ (by decide)).trans hB) hin hwr hd
+      (8 * g + 2) (Nat.le_refl _)
+    have tg' : ∀ r, r ≠ .r4 → r ≠ .r9 → t.gpr r = s.gpr r := fun r h4 h9 =>
+      (tg r h4).trans (gpr_write_of_ne _ _ h9)
+    have fc : Frame [coreRegion core B] s.mem t.mem := tf.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _,
+        Region.sub_prefix (by show _ ≤ 8 * Impl.Camellia.PPC64LE.slots; rw [hsl]; omega)⟩
+    refine WP.of_runBlock ⟨t, te, ⟨?_, fun i hi => ?_⟩, (tg' _ (by decide) (by decide)).trans hB,
+      fun r hr => tg' r (kept_r4_r9 r hr).1 (kept_r4_r9 r hr).2, fc, trd, twr⟩
+    · exact Proof.Camellia.PPC64LE.Mode.keyArgs_congr hkc
+        (fun r hr _ _ _ => tg' r (kept_r4_r9 r hr).1 (kept_r4_r9 r hr).2) trd
+        (fc.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self)
+    · rw [hkg] at hi ⊢
+      have hl : decIdx g i < Spec.Camellia.scheduleLength k.1 := by
+        simp only [Spec.Camellia.scheduleLength, hkg]; exact decIdx_lt g hg i hi
+      rw [← readBE, tr i hi, readBE, hws, ← decIdx_eq, Proof.Camellia.schedWords_getD _ _ hl]
+      rfl
+  change WP isa (.seq (.block [.subi .r9 .r28 18]) (.ite (.zero .d .r9) (.block (copyWords 3)) (.block (copyWords 4))))
+    s _
+  refine VG.WP.seq (WP.of_runBlock ⟨s.write .r9 (s.gpr .r28 - BitVec.ofNat 64 18), ?_, ?_⟩)
+  · rw [runBlock_cons, exec_subi (by decide) (by decide), runStep_some, runBlock_nil]
+  have a9 : (s.write .r9 (s.gpr .r28 - BitVec.ofNat 64 18)).gpr .r9 = BitVec.ofNat 64 (k.1 - 18) := by
+    rw [gpr_write_self, h28]; rcases hR with h | h <;> rw [h] <;> rfl
+  refine VG.WP.ite (decide (k.1 - 18 = 0))
+    (eval_zero_ofNat _ .r9 (by rcases hR with h | h <;> rw [h] <;> decide) a9) (fun h18 => ?_) (fun h24 => ?_)
+  · exact fin 3 (.inl rfl) (by rcases hR with h | h <;> simp [h] at h18 ⊢)
+  · exact fin 4 (.inr rfl) (by rcases hR with h | h <;> simp [h] at h24 ⊢)
+
+theorem decCrypt_wp {s : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)} (hB : s.gpr sb = B)
+    (hs : ScrIn s B decCore.total) (hk : DecReady s B ws k) :
+    WP isa decCore.crypt s fun t => t.gpr sb = B ∧ (∀ r ∈ kept, t.gpr r = s.gpr r) ∧ DecReady t B ws k ∧
+      Frame [coreRegion decCore B] s.mem t.mem ∧
+      (∀ j < decCore.G, Spec.Aes.bytesAt t.mem (blkAddr decCore B j) (4 * decCore.bw) =
+        Spec.Camellia.invCipher (Spec.Camellia.subkeysOfWords k.1 k.2)
+          (Spec.Aes.bytesAt s.mem (blkAddr decCore B j) (4 * decCore.bw))) ∧
+      t.rd = s.rd ∧ t.wr = s.wr := by
+  obtain ⟨hk, hw⟩ := hk
+  have hk' := hk
+  obtain ⟨p, hp, h28, hR, hws, hin, hfit, -⟩ := hk'
+  have hsl := slots_val
+  have hts := tailSlot_val
+  have hfB : B.toNat + 8 * (Impl.Camellia.PPC64LE.slots + 8) ≤ 2 ^ 64 := hs.fit
+  have hwr : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region) ∈ s.wr := hs.wr
+  have hg : k.1 / 6 = 3 ∨ k.1 / 6 = 4 := by rcases hR with h | h <;> rw [h] <;> decide
+  have hg34 : 8 * (k.1 / 6) + 2 ≤ 34 := by rcases hg with h | h <;> rw [h] <;> decide
+  have hkS : (8 * keepSlot : Nat) = 272 := rfl
+  have kA : (⟨B, 8 * (Impl.Camellia.PPC64LE.slots + 8)⟩ : Region).Contains (B + BitVec.ofNat 64 (8 * keepSlot)) 8 :=
+    VG.Offset.contains_base B (by rw [hsl, hkS]; decide) (by rw [hkS]; decide)
+  have hst : InRegions s.wr (s.gpr sb + BitVec.ofNat 64 (8 * keepSlot)) 8 := by rw [hB]; exact ⟨_, hwr, kA⟩
+  -- the state that runs `crypt`: `r3` in its slot, and the copy's address in `r3`
+  let a₁ : State := { s with mem := s.mem.writeW (s.gpr sb + BitVec.ofNat 64 (8 * keepSlot)) (s.gpr .r3) }
+  have aM : a₁.mem = s.mem.writeW (B + BitVec.ofNat 64 (8 * keepSlot)) (s.gpr .r3) := by
+    show s.mem.writeW (s.gpr sb + _) _ = _; rw [hB]
+  have aB : (a₁.write .r3 (a₁.gpr sb)).gpr sb = B := (gpr_write_of_ne _ _ (by decide)).trans hB
+  have a3 : (a₁.write .r3 (a₁.gpr sb)).gpr .r3 = B := (gpr_write_self _ _ _).trans hB
+  have a28 : (a₁.write .r3 (a₁.gpr sb)).gpr .r28 = BitVec.ofNat 64 k.1 := (gpr_write_of_ne _ _ (by decide)).trans h28
+  have ag : ∀ r, r ≠ .r3 → (a₁.write .r3 (a₁.gpr sb)).gpr r = s.gpr r := fun r h => gpr_write_of_ne _ _ h
+  have keyIn : KeyIn (a₁.write .r3 (a₁.gpr sb)) := fun i hi => by
+    rw [a3]; exact ⟨_, List.mem_append_right _ hwr, VG.Offset.contains_base B (by rw [hsl]; omega) (by omega)⟩
+  have hsA : ScrIn (a₁.write .r3 (a₁.gpr sb)) B core.total := ⟨hwr, hfB⟩
+  -- the regions `decCrypt` writes
+  let W : Region := ⟨B + BitVec.ofNat 64 (8 * keepSlot), 8⟩
+  have eblk : blkA s = B + BitVec.ofNat 64 (8 * 386) := by rw [blkA, hB, hts]
+  have ba : blkA (a₁.write .r3 (a₁.gpr sb)) = blkA s := by rw [blkA, blkA, aB, hB]
+  have fa : Frame [W] s.mem a₁.mem := by
+    rw [aM]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
+  have wd : ∀ i, i < 34 → Region.Disjoint ⟨B + BitVec.ofNat 64 (8 * i), 8⟩ W := fun i hi =>
+    VG.Offset.disjoint B (.inl (by rw [hkS]; omega)) (by omega) (by rw [hkS]; decide)
+  have bd : Region.Disjoint ⟨blkA s, 16⟩ W := by
+    rw [eblk]; exact VG.Offset.disjoint B (.inr (by rw [hkS]; decide)) (by decide) (by rw [hkS]; decide)
+  change WP isa (.seq (.block [.store .d .r3 sb (8 * keepSlot), .logic .or .r3 sb sb])
+    (.seq crypt (.block [.load .d .r3 sb (8 * keepSlot)]))) s _
+  refine VG.WP.seq (WP.of_runBlock ⟨a₁.write .r3 (a₁.gpr sb), ?_,
+    VG.WP.seq (WP.mono (crypt_run aB hsA keyIn a28 hR) fun u ⟨ug, urd, uwr, uf, ub⟩ => ?_)⟩)
+  · rw [runBlock_cons, exec_store_d (by decide) ⟨by decide, by decide⟩ hst, runStep_some, runBlock_cons,
+      exec_or_self, runStep_some, runBlock_nil]
+  have uB : u.gpr sb = B := (ug sb (by decide)).trans aB
+  rw [ba] at uf ub
+  have hl : InRegions (u.rd ++ u.wr) (u.gpr sb + BitVec.ofNat 64 (8 * keepSlot)) 8 := by
+    rw [uB, uwr]; exact ⟨_, List.mem_append_right _ hwr, kA⟩
+  have uR3 : u.mem.readW (B + BitVec.ofNat 64 (8 * keepSlot)) 64 = s.gpr .r3 := by
+    rw [uf.readW (Region.contains_self _ _) (fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact bd.symm) (by decide)]
+    show a₁.mem.readW _ 64 = _
+    rw [aM, Mem.readW_writeW_self64]
+  have fsu : Frame [W, ⟨blkA s, 16⟩] s.mem u.mem :=
+    (fa.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self).trans
+      (uf.mono fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_of_mem _ List.mem_cons_self)
+  have fc : Frame [coreRegion decCore B] s.mem u.mem := fsu.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    refine ⟨_, List.mem_singleton_self _, ?_⟩
+    rcases hr with rfl | rfl
+    · exact VG.Offset.sub_base B (by show 8 * keepSlot + 8 ≤ 8 * Impl.Camellia.PPC64LE.slots; rw [hsl, hkS]; decide)
+    · rw [eblk]; exact VG.Offset.sub_base B (by show 8 * 386 + 16 ≤ 8 * Impl.Camellia.PPC64LE.slots; rw [hsl]; decide)
+  have vg : ∀ r ∈ kept, (u.write .r3 (u.mem.readW (u.gpr sb + BitVec.ofNat 64 (8 * keepSlot)) 64)).gpr r = s.gpr r := by
+    intro r hr
+    by_cases h3 : r = .r3
+    · subst h3; rw [gpr_write_self, uB, uR3]
+    · rw [gpr_write_of_ne _ _ h3, ug r (kept_cWrites r hr), ag r h3]
+  refine WP.of_runBlock ⟨u.write .r3 (u.mem.readW (u.gpr sb + BitVec.ofNat 64 (8 * keepSlot)) 64), ?_,
+    (gpr_write_of_ne _ _ (by decide)).trans uB, vg, ⟨?_, fun i hi => ?_⟩, fc, fun j hj => ?_, urd, uwr⟩
+  · rw [runBlock_cons, exec_load_d (by decide) ⟨by decide, by decide⟩ hl, runStep_some, runBlock_nil]
+  · exact Proof.Camellia.PPC64LE.Mode.keyArgs_congr hk (fun r hr _ _ _ => vg r hr) urd
+      (fc.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact List.mem_cons_self)
+  · have hi34 : i < 34 := by omega
+    show Spec.Camellia.wordAt u.mem _ = _
+    rw [Proof.Camellia.wordAt_frame fsu fun r hr => ?_]
+    · exact hw i hi
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact wd i hi34
+      · rw [eblk]; exact VG.Offset.disjoint B (.inl (by omega)) (by omega) (by decide)
+  · have hj0 : j = 0 := by have : j < 1 := hj; omega
+    subst hj0
+    have hblk : blkAddr decCore B 0 = blkA s := by
+      rw [eblk]; show B + BitVec.ofNat 64 (8 * Impl.Camellia.PPC64LE.tailSlot) + BitVec.ofNat 64 (4 * 4 * 0) = _
+      rw [VG.Offset.add_add, hts]
+    have kw : ∀ i < 8 * (k.1 / 6) + 2, keyWord (a₁.write .r3 (a₁.gpr sb)) i =
+        k.2.getD (Proof.Camellia.decPerm (k.1 / 6) i) 0 := fun i hi => by
+      rw [keyWord, a3]
+      show Spec.Camellia.wordAt a₁.mem _ = _
+      rw [Proof.Camellia.wordAt_frame fa fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact wd i (by omega)]
+      exact hw i hi
+    have bl : Spec.Camellia.blockAt a₁.mem (blkA s) = Spec.Camellia.blockAt s.mem (blkA s) :=
+      congrArg Vector.ofFn (funext fun i => fa.bytes (R := ⟨blkA s, 16⟩) (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact bd) (by show (16 : Nat) ≤ 2 ^ 64; decide) i.isLt)
+    show Spec.Aes.bytesAt u.mem (blkAddr decCore B 0) 16 =
+      Spec.Camellia.invCipher (Spec.Camellia.subkeysOfWords k.1 k.2) (Spec.Aes.bytesAt s.mem (blkAddr decCore B 0) 16)
+    rw [hblk, ub, invCipher_bytes hR]
+    show (Spec.Camellia.encodeBlock (Proof.Camellia.cryptWords (k.1 / 6) (keyWord (a₁.write .r3 (a₁.gpr sb)))
+      (Spec.Camellia.decodeBlock (Spec.Camellia.blockAt a₁.mem (blkA s))))).toList = _
+    rw [bl, Proof.Camellia.Serial.cryptWords_congr (k.1 / 6) hg _ _ _ kw]
+
+theorem decReady_frame {s s' : State} {B : Addr} {ws : List Region} {k : Nat × List (BitVec 64)} {rs : List Region}
+    (h : DecReady s B ws k) (hk : KeptBut s s') (hrd : s'.rd = s.rd) (hf : Frame rs s.mem s'.mem)
+    (hsub : ∀ r ∈ rs, ∃ r' ∈ ws, Region.Sub r r')
+    (hd : ∀ r ∈ rs, Region.Disjoint (coreRegion decCore B) r ∨ Region.Sub r (blkRegion decCore B)) :
+    DecReady s' B ws k := by
+  refine ⟨ready_frame h.1 hk hrd hf hsub hd, fun i hi => ?_⟩
+  obtain ⟨-, -, -, hR, -⟩ := h.1
+  have hi34 : i < 34 := by rcases hR with e | e <;> rw [e] at hi <;> omega
+  have hsl := slots_val
+  rw [Proof.Camellia.wordAt_frame hf fun r hr => ?_]
+  · exact h.2 i hi
+  · rcases hd r hr with hc | hb
+    · exact hc.symm.sub_right (VG.Offset.sub_base B (by show 8 * i + 8 ≤ 8 * Impl.Camellia.PPC64LE.slots; rw [hsl]; omega)) |>.symm
+    · exact (VG.Offset.disjoint B (d := 8 * i) (n := 8) (e := 8 * 386) (k := 16) (.inl (by omega)) (by omega)
+        (by decide)).sub_right hb
+
+/-- The single-block decryption core meets what the modes need. -/
+def decCoreSpec : CoreSpec decCore where
+  Key := Nat × List (BitVec 64)
+  cipher k := Spec.Camellia.invCipher (Spec.Camellia.subkeysOfWords k.1 k.2)
+  KeyArgs := Proof.Camellia.PPC64LE.Mode.KeyArgs
+  Ready := DecReady
+  cipher_len _ _ := by simp [Spec.Camellia.invCipher, decCore, core]
+  layout := ⟨by decide, .inr rfl, by decide, by decide, by decide⟩
+  keyArgs_congr h e r _ _ f := Proof.Camellia.PPC64LE.Mode.keyArgs_congr h e r f
+  ready_frame h e r _ _ f hs hd := decReady_frame h e r f hs hd
+  prepare_wp hB hs hR hk := decPrepare_wp hB hs hR hk
+  crypt_wp hB hs hk := decCrypt_wp hB hs hk
 
 end VG.Proof.Camellia.PPC64LE.Serial
