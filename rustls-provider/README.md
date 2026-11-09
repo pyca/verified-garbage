@@ -27,9 +27,6 @@ Differences from the aws-lc-rs provider:
 * EC public keys in certificates must be uncompressed (verified-garbage has no
   point decompression); aws-lc-rs also accepts compressed ones.
 * ECDSA signatures are deterministic (RFC 6979).
-* ECDSA with a hash other than the curve's own (e.g. P-384 with SHA-256) is
-  verified through the curve's verified function, given the hash value that
-  FIPS 186-5 §6.4.2 derives (`e`, its leftmost bits or zero-extended).
 * Not FIPS-validated.
 
 ## Testing

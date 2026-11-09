@@ -8,7 +8,7 @@ use rustls::crypto::kx::{
     StartedKeyExchange, SupportedKxGroup,
 };
 use rustls::error::{Error, PeerMisbehaved};
-use verified_garbage::ecdh::{self, P256, P384};
+use verified_garbage::ec::{self, P256, P384};
 use verified_garbage::mlkem768::{DecapsulationKey768, EncapsulationKey768};
 use verified_garbage::mlkem1024::{DecapsulationKey1024, EncapsulationKey1024};
 use verified_garbage::x25519;
@@ -127,10 +127,10 @@ impl SupportedKxGroup for X25519Group {
         let priv_key = x25519::PrivateKey::generate().map_err(|_| GetRandomFailed)?;
         Ok(StartedKeyExchange::Single(Box::new(KeyExchange {
             group: NamedGroup::X25519,
-            pub_key: priv_key.public_key(),
+            pub_key: *priv_key.public_key().as_bytes(),
             priv_key,
             agree: |k, peer| {
-                let shared = Zeroizing::new(k.diffie_hellman(peer).ok()?);
+                let shared = Zeroizing::new(k.exchange(&x25519::PublicKey::from_bytes(peer)).ok()?);
                 Some(SharedSecret::from(&shared[..]))
             },
         })))
@@ -159,9 +159,9 @@ macro_rules! nist_group {
                 // private key if it is in [1, n − 1], which deriving its
                 // public key checks.
                 let (priv_key, pub_key) = loop {
-                    let k = ecdh::PrivateKey::<$curve>::from_bytes(&*random::<$len>()?);
+                    let k = ec::PrivateKey::<$curve>::from_bytes(&*random::<$len>()?);
                     if let Ok(pub_key) = k.public_key() {
-                        break (k, pub_key);
+                        break (k, *pub_key.as_bytes());
                     }
                 };
                 Ok(StartedKeyExchange::Single(Box::new(KeyExchange {
@@ -169,7 +169,8 @@ macro_rules! nist_group {
                     priv_key,
                     pub_key,
                     agree: |k, peer| {
-                        let shared = Zeroizing::new(k.diffie_hellman(peer).ok()?);
+                        let peer = ec::PublicKey::<$curve>::from_bytes(peer);
+                        let shared = Zeroizing::new(k.exchange(&peer).ok()?);
                         Some(SharedSecret::from(&shared[..]))
                     },
                 })))

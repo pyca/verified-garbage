@@ -61,6 +61,26 @@ fn trim(x: &[u8]) -> &[u8] {
     &x[z..]
 }
 
+/// `x` as the library takes a number: big-endian, with no leading zero.
+fn big(x: &[u8]) -> vg::rsa::BigUint<'_> {
+    vg::rsa::BigUint::from_be_bytes(trim(x))
+}
+
+/// The library's private key of a parsed `RSAPrivateKey`.
+fn vg_private_key(k: &RsaPrivateKey<'_>) -> vg::rsa::PrivateKey {
+    vg::rsa::PrivateKey::from_crt(
+        big(k.n.as_bytes()),
+        big(k.e.as_bytes()),
+        big(k.d.as_bytes()),
+        big(k.p.as_bytes()),
+        big(k.q.as_bytes()),
+        big(k.dp.as_bytes()),
+        big(k.dq.as_bytes()),
+        big(k.qinv.as_bytes()),
+    )
+    .unwrap()
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let dir = std::path::PathBuf::from(
@@ -85,9 +105,9 @@ fn main() {
             _ => &aead::CHACHA20_POLY1305,
         };
         let aws = aead::LessSafeKey::new(aead::UnboundKey::new(alg, &key).unwrap());
-        let gcm =
-            (klen == 16 || name == "AES-256-GCM").then(|| vg::aes_gcm::AesGcm::new(&key).unwrap());
-        let cp = vg::chacha20poly1305::ChaCha20Poly1305::new(&[7u8; 32]);
+        let gcm = (klen == 16 || name == "AES-256-GCM")
+            .then(|| vg::aead::aes_gcm::AesGcm::new(&key).unwrap());
+        let cp = vg::aead::chacha20poly1305::ChaCha20Poly1305::new(&[7u8; 32]);
         let sizes: &[usize] = if std::env::args().any(|a| a == "sweep") {
             &[64, 128, 192, 256, 384, 512, 640, 768, 1024, 1088, 2048]
         } else {
@@ -154,17 +174,7 @@ fn main() {
         let n = trim(k.n.as_bytes());
         let e = k.e.as_bytes();
         let aws_kp = signature::RsaKeyPair::from_der(&der).unwrap();
-        let vg_key = vg::rsa::PrivateKey::from_crt(
-            n,
-            e,
-            k.d.as_bytes(),
-            k.p.as_bytes(),
-            k.q.as_bytes(),
-            k.dp.as_bytes(),
-            k.dq.as_bytes(),
-            k.qinv.as_bytes(),
-        )
-        .unwrap();
+        let vg_key = vg_private_key(&k);
         let msg = [0x20u8; 130];
         let digest = vg::hashes::sha256::Sha256::digest(&msg);
         let rng = rand::SystemRandom::new();
@@ -176,14 +186,14 @@ fn main() {
         });
         let v = time(|| {
             black_box(
-                vg::rsa_pss::sign(
-                    &vg_key,
-                    &digest,
-                    vg::rsa_pss::Hash::Sha256,
-                    vg::rsa_pss::Hash::Sha256,
-                    32,
-                )
-                .unwrap(),
+                vg_key
+                    .sign_pss(
+                        &digest,
+                        vg::rsa::pss::Hash::Sha256,
+                        vg::rsa::pss::Hash::Sha256,
+                        32,
+                    )
+                    .unwrap(),
             );
         });
         row(&format!("RSA-{bits} PSS sign"), a, v);
@@ -191,30 +201,18 @@ fn main() {
             black_box(signature::RsaKeyPair::from_der(&der).unwrap());
         });
         let v = time(|| {
-            black_box(
-                vg::rsa::PrivateKey::from_crt(
-                    n,
-                    e,
-                    k.d.as_bytes(),
-                    k.p.as_bytes(),
-                    k.q.as_bytes(),
-                    k.dp.as_bytes(),
-                    k.dq.as_bytes(),
-                    k.qinv.as_bytes(),
-                )
-                .unwrap(),
-            );
+            black_box(vg_private_key(&k));
         });
         row(&format!("RSA-{bits} load private key"), a, v);
 
-        let sig = vg::rsa_pss::sign(
-            &vg_key,
-            &digest,
-            vg::rsa_pss::Hash::Sha256,
-            vg::rsa_pss::Hash::Sha256,
-            32,
-        )
-        .unwrap();
+        let sig = vg_key
+            .sign_pss(
+                &digest,
+                vg::rsa::pss::Hash::Sha256,
+                vg::rsa::pss::Hash::Sha256,
+                32,
+            )
+            .unwrap();
         let spki_key = aws_kp.public_key().as_ref().to_vec();
         let a = time(|| {
             signature::UnparsedPublicKey::new(&signature::RSA_PSS_2048_8192_SHA256, &spki_key)
@@ -222,35 +220,31 @@ fn main() {
                 .unwrap();
         });
         let v = time(|| {
-            let pk = vg::rsa::PublicKey::new(n, e).unwrap();
+            let pk = vg::rsa::PublicKey::new(big(n), big(e)).unwrap();
             let d = vg::hashes::sha256::Sha256::digest(&msg);
-            assert!(vg::rsa_pss::verify(
-                &pk,
+            pk.verify_pss(
                 &sig,
                 &d,
-                vg::rsa_pss::Hash::Sha256,
-                vg::rsa_pss::Hash::Sha256,
-                vg::rsa_pss::SaltLength::Len(32)
-            ));
+                vg::rsa::pss::Hash::Sha256,
+                vg::rsa::pss::Hash::Sha256,
+                vg::rsa::pss::SaltLength::Len(32),
+            )
+            .unwrap();
         });
         row(&format!("RSA-{bits} PSS verify (parse key + verify)"), a, v);
-        let pk = vg::rsa::PublicKey::new(n, e).unwrap();
+        let pk = vg::rsa::PublicKey::new(big(n), big(e)).unwrap();
         let v1 = time(|| {
-            black_box(vg::rsa::PublicKey::new(n, e).unwrap());
+            black_box(vg::rsa::PublicKey::new(big(n), big(e)).unwrap());
         });
         let v2 = time(|| {
-            assert!(vg::rsa_pss::verify(
-                &pk,
+            pk.verify_pss(
                 &sig,
                 &digest,
-                vg::rsa_pss::Hash::Sha256,
-                vg::rsa_pss::Hash::Sha256,
-                vg::rsa_pss::SaltLength::Len(32)
-            ));
-        });
-        let mut out = vec![0u8; n.len()];
-        let v3 = time(|| {
-            pk.public_op(&sig, &mut out).unwrap();
+                vg::rsa::pss::Hash::Sha256,
+                vg::rsa::pss::Hash::Sha256,
+                vg::rsa::pss::SaltLength::Len(32),
+            )
+            .unwrap();
         });
         row(
             &format!("  vg RSA-{bits} PublicKey::new (computes lazily)"),
@@ -261,11 +255,6 @@ fn main() {
             &format!("  vg RSA-{bits} rsa_pss::verify (precomputed)"),
             a,
             v2,
-        );
-        row(
-            &format!("  vg RSA-{bits} public_op (precomputed, ADX)"),
-            a,
-            v3,
         );
     }
 
@@ -278,20 +267,20 @@ fn main() {
     let d = [0x5au8; 32];
     let v = time(|| {
         black_box(
-            vg::ecdh::PrivateKey::<vg::ecdh::P256>::from_bytes(&d)
+            vg::ec::PrivateKey::<vg::ec::P256>::from_bytes(&d)
                 .public_key()
                 .unwrap(),
         );
     });
     row("P-256 keygen (fixed-base [k]G)", a, v);
-    let peer = vg::ecdh::PrivateKey::<vg::ecdh::P256>::from_bytes(&[0x33u8; 32])
+    let peer = vg::ec::PrivateKey::<vg::ec::P256>::from_bytes(&[0x33u8; 32])
         .public_key()
         .unwrap();
     let a = time(|| {
         let k = agreement::EphemeralPrivateKey::generate(&agreement::ECDH_P256, &rng).unwrap();
         agreement::agree_ephemeral(
             k,
-            agreement::UnparsedPublicKey::new(&agreement::ECDH_P256, &peer),
+            agreement::UnparsedPublicKey::new(&agreement::ECDH_P256, peer.as_bytes()),
             (),
             |s| {
                 black_box(s);
@@ -300,9 +289,9 @@ fn main() {
         )
         .unwrap();
     });
-    let vk = vg::ecdh::PrivateKey::<vg::ecdh::P256>::from_bytes(&d);
+    let vk = vg::ec::PrivateKey::<vg::ec::P256>::from_bytes(&d);
     let v = time(|| {
-        black_box(vk.diffie_hellman(&peer).unwrap());
+        black_box(vk.exchange(&peer).unwrap());
     });
     row("P-256 ECDH (aws: keygen + [k]P; vg: [k]P)", a, v);
     let pkcs8 =
@@ -317,7 +306,7 @@ fn main() {
     let a = time(|| {
         black_box(aws_ec.sign(&rng, &msg).unwrap());
     });
-    let sk = vg::ecdsa::SigningKey::<vg::ecdsa::P256>::from_bytes(&d);
+    let sk = vg::ec::PrivateKey::<vg::ec::P256>::from_bytes(&d);
     let v = time(|| {
         black_box(sk.sign::<vg::hashes::sha256::Sha256>(&msg).unwrap());
     });
@@ -329,9 +318,7 @@ fn main() {
             .verify(&msg, aws_sig.as_ref())
             .unwrap();
     });
-    let vk = vg::ecdsa::VerifyingKey::<vg::ecdsa::P256>::from_bytes(
-        aws_pub.as_slice().try_into().unwrap(),
-    );
+    let vk = vg::ec::PublicKey::<vg::ec::P256>::from_bytes(aws_pub.as_slice().try_into().unwrap());
     let s: [u8; 64] = aws_sig.as_ref().try_into().unwrap();
     let v = time(|| {
         vk.verify::<vg::hashes::sha256::Sha256>(&msg, &s).unwrap();
@@ -353,7 +340,7 @@ fn main() {
         let k = agreement::EphemeralPrivateKey::generate(&agreement::X25519, &rng).unwrap();
         agreement::agree_ephemeral(
             k,
-            agreement::UnparsedPublicKey::new(&agreement::X25519, &peer),
+            agreement::UnparsedPublicKey::new(&agreement::X25519, peer.as_bytes()),
             (),
             |s| {
                 black_box(s);
@@ -363,7 +350,7 @@ fn main() {
         .unwrap();
     });
     let v = time(|| {
-        black_box(xk.diffie_hellman(&peer).unwrap());
+        black_box(xk.exchange(&peer).unwrap());
     });
     row("X25519 DH (aws: keygen + DH; vg: DH)", a, v);
 
