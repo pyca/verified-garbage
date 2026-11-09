@@ -37,6 +37,32 @@ outputs:
 runs:
   using: composite
   steps:
+    # Lake builds about LEAN_NUM_THREADS modules at once (ci.yml), and the
+    # largest proofs (PPC64LE's P-521 and brainpoolP512r1 combs and
+    # verification, among others) each peak at 3-4.5 GB: when a change
+    # rebuilds several of them on one runner, together they can exceed its
+    # 16 GB, and the runner is shut down mid-build ("The runner has received
+    # a shutdown signal", exit 143) with no error from Lean. Swap lets those
+    # peaks page out instead; a build that fits in memory never touches it.
+    - name: Add swap
+      shell: bash
+      run: |
+        free -m
+        # The disk with the most room: /mnt where the runner has one.
+        dir=/
+        if [ -d /mnt ] && [ "$(df --output=avail -BG /mnt | tail -1 | tr -dc 0-9)" -gt \
+            "$(df --output=avail -BG / | tail -1 | tr -dc 0-9)" ]; then
+          dir=/mnt
+        fi
+        file=$dir/lean-swap
+        if sudo fallocate -l 16G "$file" && sudo chmod 600 "$file" && sudo mkswap "$file" > /dev/null &&
+            sudo swapon "$file"; then
+          free -m
+        else
+          # Only a safeguard: build without it rather than fail the job.
+          echo "::warning::Adding swap at $file failed."
+          sudo rm -f "$file"
+        fi
     # Installing elan and the toolchain, and listing the modules the proofs
     # import from outside the project, need nothing restored: they run in
     # the background while the build's archives restore, and `lean-setup`
