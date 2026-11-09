@@ -39,7 +39,8 @@ namespace VG.Proof.MlDsa.PPC64LE.Sample.RejBounded
 open VG VG.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.Sample
 open VG.Impl.MlDsa.PPC64LE.Sample
-open VG.Proof.MlDsa.Sample (hbTry rbStep rbFold hbOks rbFold_length_congr rbB halfByteOk_eq halfByteOk_le)
+open VG.Proof.MlDsa.Sample (hbTry rbStep rbFold hbOks rbFold_length_congr rbB halfByteOk_eq halfByteOk_le
+  rbFold_length_le)
 open VG.Proof.MlKem.PPC64LE (relct_noMem)
 open VG.Proof.MlKem.PPC64LE.Sample (taint_block relct_wp)
 open VG.Spec.MlDsa (Zq halfByteOk)
@@ -119,8 +120,10 @@ include hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks in
 /-- An iteration, in two runs. -/
 theorem body_ct {t : Nat} (ht : t < N) :
     RelCT isa (fun a b => Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b) (rbBody η)
-      fun a b => (Base σ₁ X₁ (t + 1) (Lf η X₁ (t + 1)) a ∧ (a.gpr .r6 != 0) = decide (t + 1 ≠ N)) ∧
-        (Base σ₂ X₂ (t + 1) (Lf η X₂ (t + 1)) b ∧ (b.gpr .r6 != 0) = decide (t + 1 ≠ N)) := by
+      fun a b => (Base σ₁ X₁ (t + 1) (Lf η X₁ (t + 1)) a ∧
+          (a.gpr .r12 != 0) = decide (t + 1 ≠ N ∧ (Lf η X₁ (t + 1)).length < 256)) ∧
+        (Base σ₂ X₂ (t + 1) (Lf η X₂ (t + 1)) b ∧
+          (b.gpr .r12 != 0) = decide (t + 1 ≠ N ∧ (Lf η X₂ (t + 1)).length < 256)) := by
   refine relct_wp ?_ fun a b hab => ⟨by
       have k := body_ok hp₁ hη (X := X₁) (by rw [hX₁]; exact ht) hab.1; rwa [hX₁] at k, by
       have k := body_ok hp₂ hη (X := X₂) (by rw [hX₂]; exact ht) hab.2; rwa [hX₂] at k⟩
@@ -149,28 +152,37 @@ theorem body_ct {t : Nat} (ht : t < N) :
   exact RelCT.seq (try_ct hp₁ hp₂ hsp h5 hη hl' hhi₁ hhi₂ hok.2) (relct_noMem rfl)
 
 include hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks in
-/-- The loop. -/
+/-- The loop, until the last byte or 256 coefficients, which are then those
+of all `N` bytes. -/
 theorem loop_ct (hN : 0 < N) :
-    RelCT isa (fun a b => Base σ₁ X₁ 0 (Lf η X₁ 0) a ∧ Base σ₂ X₂ 0 (Lf η X₂ 0) b) (.loop (rbBody η) (.nonzero .d .r6))
-      fun a b => Base σ₁ X₁ N (Lf η X₁ N) a ∧ Base σ₂ X₂ N (Lf η X₂ N) b := by
-  refine RelCT.mono (RelCT.loop (M := isa) (body := rbBody η) (c := .nonzero .d .r6)
-    (Q := fun a b => Base σ₁ X₁ N (Lf η X₁ N) a ∧ Base σ₂ X₂ N (Lf η X₂ N) b)
+    RelCT isa (fun a b => Base σ₁ X₁ 0 (Lf η X₁ 0) a ∧ Base σ₂ X₂ 0 (Lf η X₂ 0) b) (.loop (rbBody η) (.nonzero .d .r12))
+      fun a b => ∃ t, Base σ₁ X₁ t (Lf η X₁ N) a ∧ Base σ₂ X₂ t (Lf η X₂ N) b := by
+  refine RelCT.mono (RelCT.loop (M := isa) (body := rbBody η) (c := .nonzero .d .r12)
+    (Q := fun a b => ∃ t, Base σ₁ X₁ t (Lf η X₁ N) a ∧ Base σ₂ X₂ t (Lf η X₂ N) b)
     (fun n a b => ∃ t, t < N ∧ n = N - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
     (fun n => ?_) N) (fun a b hab => ⟨0, hN, rfl, hab⟩) (fun _ _ h => h)
   refine RelCT.mono (P := fun a b => ∃ t, t < N ∧ n = N - t ∧ Base σ₁ X₁ t (Lf η X₁ t) a ∧
       Base σ₂ X₂ t (Lf η X₂ t) b) (RelCT.exists_ fun t => ?_) (fun _ _ hab => hab) (fun _ _ h => h)
   by_cases ht : t < N
   · by_cases hn : n = N - t
-    · refine RelCT.mono (P := fun a b => Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
+    · have hl := len_eq oks (t + 1)
+      refine RelCT.mono (P := fun a b => Base σ₁ X₁ t (Lf η X₁ t) a ∧ Base σ₂ X₂ t (Lf η X₂ t) b)
         (body_ct hp₁ hp₂ hsp h5 h6 hη hX₁ hX₂ oks ht) (fun _ _ hab => hab.2.2)
         fun a b ⟨⟨i₁, z₁⟩, ⟨i₂, z₂⟩⟩ => ⟨?_, fun e => ?_, fun e => ?_⟩
-      · rw [eval_nonzero, eval_nonzero, z₁, z₂]
-      · have : t + 1 = N := by
-          have e' : (a.gpr .r6 != 0) = false := by rw [eval_nonzero] at e; exact Option.some.inj e
+      · rw [eval_nonzero, eval_nonzero, z₁, z₂, hl]
+      · have hc : ¬ (t + 1 ≠ N ∧ (Lf η X₁ (t + 1)).length < 256) := by
+          have e' : (a.gpr .r12 != 0) = false := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
-        rw [this] at i₁ i₂; exact ⟨i₁, i₂⟩
-      · have : t + 1 ≠ N := by
-          have e' : (a.gpr .r6 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
+        have hle₁ : (Lf η X₁ (t + 1)).length ≤ 256 := rbFold_length_le (by simp) _
+        have hstop : t + 1 = N ∨ (Lf η X₁ (t + 1)).length = 256 := by
+          by_cases e : t + 1 = N
+          · exact .inl e
+          · exact .inr (by have := not_and.mp hc e; omega)
+        refine ⟨t + 1, ?_, ?_⟩
+        · rw [Lf_stop (by omega) hstop]; exact i₁
+        · rw [Lf_stop (by omega) (hstop.imp id fun h => hl ▸ h)]; exact i₂
+      · have hc : t + 1 ≠ N ∧ (Lf η X₁ (t + 1)).length < 256 := by
+          have e' : (a.gpr .r12 != 0) = true := by rw [eval_nonzero] at e; exact Option.some.inj e
           rw [z₁] at e'; simpa using e'
         exact ⟨N - (t + 1), by omega_arith, t + 1, by omega_arith, rfl, i₁, i₂⟩
     · exact RelCT.of_false fun _ _ hab => hn hab.2.1

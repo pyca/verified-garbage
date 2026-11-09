@@ -18,8 +18,8 @@ fewer than 256 accepted with probability below 2⁻¹⁶ for `η = 4`, and far
 less for `η = 2`. The loop (`rbLoop η n`, one for each `η`, chosen by a
 branch on the public `η`) runs with `r3` at the byte of the iteration,
 `r4` at `a[j]`, `r5` = `j`, the number of coefficients sampled, `r6`
-counting down and `r7` = `q`: each half-byte `b` of the byte (low first, in
-`r9`) that `CoeffFromHalfByte` accepts (`b < 15` for `η = 2`, `b < 9` for
+counting down and `r7` = `q`, until no bytes are left or `j = 256`
+(`stepBlk`): each half-byte `b` of the byte (low first, in `r9`) that `CoeffFromHalfByte` accepts (`b < 15` for `η = 2`, `b < 9` for
 `η = 4`), while `j < 256`, gives the coefficient `η - (b mod 5)` or `η - b`,
 stored modulo `q` to `a[j]` (and `j` incremented). It returns `j >> 8`: 1 if
 `j = 256`, and 0 otherwise.
@@ -61,16 +61,21 @@ def rbBound : Nat → Nat
 accepted and `j < 256`. -/
 def rbHalf (η : Nat) : List Instr := testJ [.subi .r12 .r9 (rbBound η)] ++ rbVal η
 
+/-- The step to the next byte: `r12 ≠ 0` iff bytes are left and `j < 256`
+(the count times the sign bit of `j - 256`). -/
+def stepBlk : List Instr :=
+  [.addi .r3 .r3 1, .subi .r6 .r6 1, .subi .r11 .r5 256, .lsr .d .r11 .r11 63, .mul .r12 .r6 .r11]
+
 def rbBody (η : Nat) : Prog isa :=
   .seq (.block ([.lbz .r8 .r3 0, .lsl .r9 .r8 60, .lsr .d .r9 .r9 60] ++ rbHalf η))
     (.seq (accept .r10)
       (.seq (.block (.lsr .d .r9 .r8 4 :: rbHalf η))
-        (.seq (accept .r10) (.block [.addi .r3 .r3 1, .subi .r6 .r6 1]))))
+        (.seq (accept .r10) (.block stepBlk))))
 
 /-- The loop over `n` bytes, from the XOF output at `scratch + 840`. -/
 def rbLoop (η n : Nat) : Prog isa :=
   .seq (.block ([.addi .r3 .r31 840, mov .r4 .r30, .li .r5 0, .li .r6 n] ++ loadQ))
-    (.loop (rbBody η) (.nonzero .d .r6))
+    (.loop (rbBody η) (.nonzero .d .r12))
 
 /-- `n` bytes squeezed, and the loop over them for `η`. -/
 def rbTry (n : Nat) : Prog isa :=

@@ -28,7 +28,7 @@ open VG VG.PPC64LE
 open VG.Proof.MlDsa.PPC64LE.Sample
 open VG.Impl.MlDsa.PPC64LE.Sample
 open VG.Impl.Sha3.PPC64LE.Stream (mov)
-open VG.Proof.MlDsa.Sample (Stored stored_nil H_eq rbFold ifT ifF)
+open VG.Proof.MlDsa.Sample (Stored stored_nil H_eq rbFold ifT ifF rbFold_length_le)
 open VG.Proof.MlKem.PPC64LE (wp_loop_nz)
 open VG.Spec.MlDsa (Zq H)
 open VG.Spec.Sha3 (bytesAt)
@@ -63,14 +63,30 @@ theorem init_ok {n : Nat} (hn : n ≤ 544) {s : State} (h : SJ n σ s) :
     (gp _ (by decide)).trans e27, (gp _ (by decide)).trans h.j0.r28, (gp _ (by decide)).trans h.j0.r29, ?_⟩
   exact ⟨by rw [g4]; exact (BitVec.add_zero _).symm, g5, by simp, stored_nil _ _⟩
 
-/-- The loop for `η`, over `n` bytes. -/
+/-- The loop for `η`, over `n` bytes: it stops after the last byte or once
+there are 256 coefficients, which are then those of all `n` bytes. -/
 theorem loop_ok {η : Nat} (hη : η = 2 ∨ η = 4) {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) {s : State}
-    (h : SJ n σ s) : WP isa (rbLoop η n) s (Base σ (X n σ) n (Lf η (X n σ) n)) :=
-  WP.seq (WP.mono (init_ok hp hn h) fun _ h0 =>
-    wp_loop_nz (fun t s => Base σ (X n σ) t (Lf η (X n σ) t) s) (N := n) hn0
-      (fun _ ht _ hs => by
-        have := body_ok hp hη (X := X n σ) (by rw [X_length]; exact ht) hs
-        rwa [X_length] at this) (fun _ h => h) h0)
+    (h : SJ n σ s) : WP isa (rbLoop η n) s fun s' => ∃ t, Base σ (X n σ) t (Lf η (X n σ) n) s' := by
+  refine WP.seq (WP.mono (init_ok hp hn h) fun s0 h0 => ?_)
+  refine WP.loop (M := isa) (c := .nonzero .d .r12) (fun m s => ∃ i, i < n ∧ m = n - i ∧
+    Base σ (X n σ) i (Lf η (X n σ) i) s ∧ (Lf η (X n σ) i).length < 256) ?_ n s0
+    ⟨0, hn0, rfl, by simpa [Lf, rbFold] using h0, by simp [Lf, rbFold]⟩
+  rintro m s ⟨i, hi, rfl, hs, -⟩
+  refine WP.mono (body_ok hp hη (X := X n σ) (by rw [X_length]; exact hi) hs) fun s' ⟨hs', hz⟩ => ?_
+  rw [X_length] at hz
+  have ev : isa.eval (.nonzero .d .r12) s' =
+      some (decide (i + 1 ≠ n ∧ (Lf η (X n σ) (i + 1)).length < 256)) := by rw [eval_nonzero, hz]
+  by_cases hc : i + 1 ≠ n ∧ (Lf η (X n σ) (i + 1)).length < 256
+  · exact .inr ⟨by rw [ev, decide_eq_true hc], n - (i + 1), by omega, i + 1, by omega, rfl, hs', hc.2⟩
+  · refine .inl ⟨by rw [ev, decide_eq_false hc], i + 1, ?_⟩
+    have hle := rbFold_length_le (η := η) (a := []) (by simp) ((X n σ).take (i + 1))
+    rw [Lf_stop (show i + 1 ≤ n by omega) (by
+      by_cases e : i + 1 = n
+      · exact .inl e
+      · have h1 := not_and.mp hc e
+        have hle' : (Lf η (X n σ) (i + 1)).length ≤ 256 := hle
+        exact .inr (by omega))]
+    exact hs'
 
 omit hp in
 /-- The test of `η = 2`. -/
@@ -98,7 +114,7 @@ theorem cmp_ok {n : Nat} {s : State} (h : SJ n σ s) :
 theorem sel_ok (hη : etaOf σ = 2 ∨ etaOf σ = 4) {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) {s : State}
     (h : SJ n σ s) :
     WP isa (.seq (.block [.subi .r12 .r27 2]) (.ite (.zero .d .r12) (rbLoop 2 n) (rbLoop 4 n))) s
-      (Base σ (X n σ) n (Lf (etaOf σ) (X n σ) n)) := by
+      fun s' => ∃ t, Base σ (X n σ) t (Lf (etaOf σ) (X n σ) n) s' := by
   refine WP.seq (WP.mono (cmp_ok hp h) fun s1 ⟨h1, e12⟩ => ?_)
   refine WP.ite _ (by rw [eval_zero, e12, eta_test]) (fun he => ?_) (fun he => ?_)
   · simp only [decide_eq_true_eq] at he
@@ -112,7 +128,7 @@ theorem sel_ok (hη : etaOf σ = 2 ∨ etaOf σ = 4) {n : Nat} (hn0 : 0 < n) (hn
 `η` in `r27`. -/
 theorem rbTry_ok (hη : etaOf σ = 2 ∨ etaOf σ = 4) {n : Nat} (hn0 : 0 < n) (hn : n ≤ 544) {s : State}
     (j0 : J0 (spOf σ) σ s) (e27 : s.gpr .r27 = zx (σ.gpr .r4)) :
-    WP isa (rbTry n) s (Base σ (X n σ) n (Lf (etaOf σ) (X n σ) n)) :=
+    WP isa (rbTry n) s fun s' => ∃ t, Base σ (X n σ) t (Lf (etaOf σ) (X n σ) n) s' :=
   WP.seq (WP.mono (sponge_ok hp (rate := 136) (outlen := n) (by decide) (by omega) j0) fun _ h =>
     sel_ok hp hη hn0 hn ⟨⟨s, h⟩, (h.gp .r27 (by decide)).trans e27⟩)
 
@@ -145,8 +161,8 @@ theorem correct (hη : etaOf σ = 2 ∨ etaOf σ = 4) :
       Stored s'.mem (σ.gpr .r5) (Lr (etaOf σ) σ) ∧ abiPreserved σ s' := by
   unfold rejBounded
   refine WP.seq (WP.mono (pro_rb hp rfl rfl rfl rfl) fun s₀ ⟨j0, e27⟩ => ?_)
-  refine WP.seq (WP.mono (rbTry_ok hp hη (n := 272) (by decide) (by decide) j0 e27) fun s1 h1 => ?_)
-  have fin : ∀ {n s}, Base σ (X n σ) n (Lr (etaOf σ) σ) s →
+  refine WP.seq (WP.mono (rbTry_ok hp hη (n := 272) (by decide) (by decide) j0 e27) fun s1 ⟨t1, h1⟩ => ?_)
+  have fin : ∀ {X t s}, Base σ X t (Lr (etaOf σ) σ) s →
       WP isa (.block (retJ ++ epi)) s fun s' =>
         s'.gpr .r3 = (if (Lr (etaOf σ) σ).length = 256 then 1 else 0) ∧
         Stored s'.mem (σ.gpr .r5) (Lr (etaOf σ) σ) ∧ abiPreserved σ s' := fun h3 =>
@@ -155,11 +171,11 @@ theorem correct (hη : etaOf σ = 2 ∨ etaOf σ = 4) :
   refine WP.seq (WP.seq (WP.mono (jtest_ok hp h1) fun s2 ⟨h2, ev⟩ =>
     WP.ite _ ev (fun he => ?_) (fun he => ?_)))
   · simp only [decide_eq_true_eq] at he
-    refine WP.block_nil (fin (n := 272) ?_)
+    refine WP.block_nil (fin (X := X 272 σ) (t := t1) ?_)
     rw [Lr, ifT he]; exact h2
   · simp only [decide_eq_false_iff_not] at he
     exact WP.mono (rbTry_ok hp hη (n := 544) (by decide) (by decide) ⟨h2.env, h2.r29, h2.r28⟩ h2.r27)
-      fun s3 h3 => fin (n := 544) (by rw [Lr, ifF he]; exact h3)
+      fun s3 ⟨_, h3⟩ => fin (by rw [Lr, ifF he]; exact h3)
 
 end
 
