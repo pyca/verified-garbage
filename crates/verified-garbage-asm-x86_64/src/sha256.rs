@@ -511,6 +511,8 @@ pub const VG_SHA256_UPDATE_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `state` must be valid for reads and writes of 96 bytes.
@@ -600,7 +602,7 @@ call {vg_sha256_compress_shani}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjaQkkP3//0iNpCRwAgAAMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -612,6 +614,8 @@ pub const VG_SHA256_FINALIZE_SHANI_FEATURES: verified_garbage_cpu::Features = ve
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -683,7 +687,7 @@ jmp 219f
 call {vg_sha256_compress_shani}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9IjaQkkP3//0iNpCRwAgAAMcAxyTHSMfYx/0UxyUUx0sM="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -695,6 +699,8 @@ pub const VG_SHA256_DIGEST_SHANI_FEATURES: verified_garbage_cpu::Features = veri
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -759,7 +765,7 @@ call {vg_sha256_compress_shani}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress_shani}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkIP3///MPf0QkcPMPfwQkSI2kJOACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress_shani = sym super::sha256::vg_sha256_compress_shani::vg_sha256_compress_shani,
     )
@@ -771,6 +777,8 @@ pub const VG_SHA256_UPDATE_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -861,7 +869,7 @@ call {vg_sha256_compress_avx2}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkkP3///MPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJHACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
@@ -873,6 +881,8 @@ pub const VG_SHA256_FINALIZE_AVX2_FEATURES: verified_garbage_cpu::Features = ver
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -944,7 +954,7 @@ jmp 219f
 call {vg_sha256_compress_avx2}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkkP3///MPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPf0QkYPMPf0QkUPMPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJHACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
@@ -956,6 +966,8 @@ pub const VG_SHA256_DIGEST_AVX2_FEATURES: verified_garbage_cpu::Features = verif
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1020,7 +1032,7 @@ call {vg_sha256_compress_avx2}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress_avx2}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQkIP3///MPf4QkYAIAAPMPf4QkUAIAAPMPf4QkQAIAAPMPf4QkMAIAAPMPf4QkIAIAAPMPf4QkEAIAAPMPf4QkAAIAAPMPf4Qk8AEAAPMPf4Qk4AEAAPMPf4Qk0AEAAPMPf4QkwAEAAPMPf4QksAEAAPMPf4QkoAEAAPMPf4QkkAEAAPMPf4QkgAEAAPMPf4QkcAEAAPMPf4QkYAEAAPMPf4QkUAEAAPMPf4QkQAEAAPMPf4QkMAEAAPMPf4QkIAEAAPMPf4QkEAEAAPMPf4QkAAEAAPMPf4Qk8AAAAPMPf4Qk4AAAAPMPf4Qk0AAAAPMPf4QkwAAAAPMPf4QksAAAAPMPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPfwQkSI2kJOACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress_avx2 = sym super::sha256::vg_sha256_compress_avx2::vg_sha256_compress_avx2,
     )
@@ -1029,6 +1041,8 @@ call {vg_sha256_compress_avx2}
 /// Absorbs data into a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sha256.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1118,7 +1132,7 @@ call {vg_sha256_compress}
 226:
 .base64 "TYX2"
 jne 20b
-.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "SYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/ARTHbSI2kJJD9///zD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRwAgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -1127,6 +1141,8 @@ jne 20b
 /// Finishes a SHA-224 or SHA-256 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), hashed from an initial hash value, writes the final hash value `H⁽ᴺ⁾` of that message (32 bytes) to `*out`. The SHA-256 digest is all of it; the SHA-224 digest is its first 28 bytes.
 ///
 /// Contract: `VG.Spec.Sha256.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1197,7 +1213,7 @@ jmp 219f
 call {vg_sha256_compress}
 .base64 "SIn7SYnPQb0AAAAAQbkAAAAASYPuAQ=="
 je 22b
-.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAADD"
+.base64 "iwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJGgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkkP3///MPf0QkQPMPf0QkMPMPf0QkIPMPf0QkEPMPfwQkSI2kJHACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )
@@ -1206,6 +1222,8 @@ je 22b
 /// Computes the SHA-256 digest of the `len` bytes at `data` (32 bytes, `VG.Spec.Sha256.hash`) and writes it to `*out`, in one call: the same result as starting, updating and finishing a SHA-256 computation with that message.
 ///
 /// Contract: `VG.Spec.Sha256.digestContract` for `VG.Spec.Sha256.hash`. Constant time: only the pointers and `len` may affect timing, not the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1269,7 +1287,7 @@ call {vg_sha256_compress}
 215:
 .base64 "TIngSAHASAHASAHASA/IZkgPbvhmD3P/CPMPb0NQZg/rx/MPf0NQSIneSIPGIEiJ37oBAAAATIn5"
 call {vg_sha256_compress}
-.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAADD"
+.base64 "SIn7SYnPiwMPyIlFAItDBA/IiUUEi0MID8iJRQiLQwwPyIlFDItDEA/IiUUQi0MUD8iJRRSLQxgPyIlFGItDHA/IiUUcZg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQSYufMAIAAEmLrzgCAABNi6dAAgAATYuvSAIAAE2Lt1ACAABNi79YAgAASI2kJNgCAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkIP3///MPf4QkoAAAAPMPf4QkkAAAAPMPf4QkgAAAAPMPf0QkcPMPfwQkSI2kJOACAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_sha256_compress = sym super::sha256::vg_sha256_compress::vg_sha256_compress,
     )

@@ -41,11 +41,13 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_set_nonce(state: *mut [u64; 96]
 }
 
 /// The CPU features `vg_chacha20_apply_avx512vl` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
+pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX512VL);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -53,7 +55,7 @@ pub const VG_CHACHA20_APPLY_AVX512VL_FEATURES: verified_garbage_cpu::Features = 
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2`, `avx`, `avx512f` and `avx512vl` target features.
+/// * The CPU must support the `avx`, `avx2`, `avx512f` and `avx512vl` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512vl(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -118,7 +120,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -126,11 +128,13 @@ jmp 21f
 }
 
 /// The CPU features `vg_chacha20_apply_avx512` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX512F | verified_garbage_cpu::feature::AVX);
+pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX512F);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -138,7 +142,7 @@ pub const VG_CHACHA20_APPLY_AVX512_FEATURES: verified_garbage_cpu::Features = ve
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx512f` and `avx` target features.
+/// * The CPU must support the `avx` and `avx512f` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx512(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -203,7 +207,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_xor_avx512 = sym super::chacha20::vg_chacha20_xor_avx512::vg_chacha20_xor_avx512,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -211,11 +215,13 @@ jmp 21f
 }
 
 /// The CPU features `vg_chacha20_apply_avx2` requires (`Artifact.features`).
-pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX2 | verified_garbage_cpu::feature::AVX);
+pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2);
 
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -223,7 +229,7 @@ pub const VG_CHACHA20_APPLY_AVX2_FEATURES: verified_garbage_cpu::Features = veri
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `state` and `data` must not overlap each other (distinct Rust objects never do).
 /// * Neither `state` nor `data` may overlap the return address on the stack or the 24 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
-/// * The CPU must support the `avx2` and `avx` target features.
+/// * The CPU must support the `avx` and `avx2` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_apply_avx2(state: *mut [u64; 96], data: *mut u8, len: usize) -> u32 {
     core::arch::naked_asm!(
@@ -288,7 +294,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_xor_avx2 = sym super::chacha20::vg_chacha20_xor_avx2::vg_chacha20_xor_avx2,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -301,6 +307,8 @@ pub const VG_CHACHA20_APPLY_SSSE3_FEATURES: verified_garbage_cpu::Features = ver
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -373,7 +381,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym super::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
@@ -383,6 +391,8 @@ jmp 21f
 /// Applies a ChaCha20 keystream (RFC 8439 §2.4), encrypting or decrypting: if at least `len` bytes are left of the keystream that the streaming state `*state` represents, XORs the next `len` of them into the `len` bytes at `data`, keeps the rest in `*state`, and returns 1. Otherwise (the block counter would pass 2³² − 1) returns 0, and leaves the bytes at `data` and the keystream unchanged.
 ///
 /// Contract: `VG.Spec.ChaCha20.applyContract`. Constant time: only the pointers, `len` and the number of bytes of keystream left in `*state` (`VG.Spec.ChaCha20.leftAt`: 64 × (2³² − `c`) for the initial block counter `c`, less the bytes applied since) may affect timing, not the key, the nonce, the keystream or the data. The function may leak that number.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -454,7 +464,7 @@ jmp 21f
 20:
 .base64 "uAAAAAA="
 21:
-.base64 "ww=="
+.base64 "SI1kJOhIjWQkGInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_xor = sym super::chacha20::vg_chacha20_xor::vg_chacha20_xor,
         vg_chacha20_block = sym super::chacha20::vg_chacha20_block::vg_chacha20_block,
