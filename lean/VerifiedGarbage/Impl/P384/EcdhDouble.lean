@@ -12,13 +12,13 @@ window's doubling `dblJ` with its sums fused into three linear combinations
 (`Linear.lin`): `d = 12 xy² - 9 m²`, `x' = 4 xy² - d` and
 `y' = 3 d m - 8 y⁴`, for `m = (x + z²)(x - z²)`; and `z' = (y + z)² - z² - y²`.
 The other operations are `Ops.op`'s.
-The untrusted register allocator (`Impl/P256/VerifyRegisters.lean`, run by
-`lean/GenerateP384Ecdh.lean`) keeps its values in the registers `regs`
-(`x1`–`x17` and `x21`–`x25`, which ECDH saves on entry), stores only `b`'s
-coordinates (`keep`), and spills to `spill`: the slots of the window's entry
-`E`, the addition's temporaries and `tmp`, which hold nothing the window reads
-after its doublings. Its output, `Impl/P384/EcdhAllocatedCode.lean`, is
-checked against `raw` by certificates.
+The code that runs, `Impl/P384/EcdhAllocatedCode.lean`, is `raw` with its
+registers allocated (by `Impl/P256/VerifyRegisters.lean`, which is not
+trusted): it keeps its values in the registers `regs` (`x1`–`x17` and
+`x21`–`x25`, which ECDH saves on entry), stores only `b`'s coordinates
+(`keep`), and spills to `spill`: the slots of the window's entry `E`, the
+addition's temporaries and `tmp`, which hold nothing the window reads after
+its doublings. It is checked against `raw` by certificates.
 -/
 
 @[expose] public section

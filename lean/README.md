@@ -444,7 +444,7 @@ Run it yourself before what else reads them, which otherwise fails with
 
 * a file that is not a module and imports the project's modules, run with
   `lake env lean` or opened in the editor (`fill-private lean
-  GenerateP256Ecdh.lean`: a file's imports);
+  lean/Scratch.lean`: a file's imports);
 * a module with an `import all` of a module of this project (`fill-private`
   on that module).
 
