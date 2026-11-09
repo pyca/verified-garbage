@@ -1241,14 +1241,15 @@ theorem q_lay {K : TCombCfg} (h : Layout K) :
   omega
 
 /-- `y = -y` if the digit is negative: `-y` by the field's subtraction from
-zero, then the selection by the sign's mask. -/
-theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} (positive : Prop) [Decidable positive]
+zero, then the selection by the sign's mask, which `sm` computes. -/
+theorem negate_ok (K : TCombCfg) {s : State} {base : Addr} {m : Nat} {sm : Prog isa} (positive : Prop)
+    [Decidable positive]
     (h : Layout K) (hw : WsReg s base) (hm : K.F.m = m) (hn : K.F.k = K.L.M.n) (hM : ModOk K.L.M.n m)
     (hz : wordsVal s.mem base K.zero K.L.M.n = 0) (hy : wordsVal s.mem base K.Q.y K.L.M.n < m)
     (hmask : ∀ u, Rk fnClob s u → Unch base [(K.neg, 8 * K.L.M.n), (own K.L.M.n, 64 * K.L.M.n)] s.mem u.mem →
-      WP isa K.signMask u fun v =>
+      WP isa sm u fun v =>
         v.gpr .r10 = (if positive then 0 else BitVec.allOnes 64) ∧ Kp [.r4, .r6, .r10] u v ∧ v.mem = u.mem) :
-    WP isa (.seq (subCall K.F K.neg K.zero K.Q.y) (.seq K.signMask (.block (sel K.L.M.n K.Q.y K.Q.y K.neg)))) s
+    WP isa (.seq (subCall K.F K.neg K.zero K.Q.y) (.seq sm (.block (sel K.L.M.n K.Q.y K.Q.y K.neg)))) s
       fun t =>
       Rk fnClob s t ∧ Unch base (loopWrites K) s.mem t.mem ∧
       (∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z], wordsVal t.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n) ∧
