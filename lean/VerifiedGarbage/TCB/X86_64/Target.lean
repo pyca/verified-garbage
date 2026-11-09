@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.TCB.X86_64.Isa
 public import VerifiedGarbage.TCB.Artifact
+public import VerifiedGarbage.TCB.X86_64.Residue
 
 /-!
 # The x86-64 System V target
@@ -108,5 +109,6 @@ would see one per registration module rather than this one (`Rust.printsAs`). -/
   isa := isa
   abiPreserved := abiPreserved
   abi := abi
+  noResidue := some NoResidue
 
 end VG.X86_64
