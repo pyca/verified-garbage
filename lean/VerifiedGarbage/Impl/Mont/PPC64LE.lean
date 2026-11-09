@@ -237,12 +237,17 @@ def qrowB (n : Nat) : List Instr :=
   ([.addze (treg n) (treg n), .li .r12 0, .addze .r12 .r12] : List Instr) ++
   pass true (bReg n) 1 1 n ++ ([.addze .r12 .r12] : List Instr)
 
+/-- `r9 = q = t₀ m' mod 2⁶⁴`: `t₀` itself for `m' = 1` (P-256's `p`), else
+`t₀` times `m'` from `[M.tmp]`. -/
+def qhead (M : Mod) : List Instr :=
+  if M.minv.toNat = 1 then [.ori .r9 (treg 0) 0] else [.load .d .r11 wb M.tmp, .mul .r9 (treg 0) .r11]
+
 /-- The row `T = (T + q m) / 2⁶⁴` for `q = t₀ m' mod 2⁶⁴` (`m'` at
 `[M.tmp]`): the low words into `treg 0`, …, the carry into `treg n` and
 `r12`, then the high words with the accumulator moved one register down,
 `r12` into `treg n`. -/
 def qrowM (M : Mod) : List Instr :=
-  ([.load .d .r11 wb M.tmp, .mul .r9 (treg 0) .r11] : List Instr) ++ pass false mReg 0 0 M.n ++
+  qhead M ++ pass false mReg 0 0 M.n ++
   ([.addze (treg M.n) (treg M.n), .addze .r12 .r12] : List Instr) ++
   pass true mReg 0 1 M.n ++ ([.addze (treg M.n) .r12] : List Instr)
 

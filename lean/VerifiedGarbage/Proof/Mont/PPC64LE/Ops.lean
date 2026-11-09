@@ -1587,10 +1587,38 @@ theorem regsVal_low0 (s : State) {k : Nat} (hk : 0 < k) : regsVal s 0 k % 2 ^ 64
   obtain ⟨k', rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by omega⟩
   exact regsVal_low s 0 k'
 
+/-- `qhead`: `r9 = q`, `q = t₀ m' mod 2⁶⁴` for an `m'` with `m m' = -1 mod 2⁶⁴`. -/
+theorem qhead_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M : Mod} {m : Nat}
+    (h3 : At t base .r3 0) (htmp : M.tmp + 8 ≤ size) (htmp4 : M.tmp % 4 = 0)
+    (hinv : (m * (word t.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0)
+    (hone : M.minv.toNat = 1 → (word t.mem base M.tmp).toNat = 1) {rest : List Instr} {Q : State → Prop}
+    (k : ∀ (t₁ : State) (qv : BitVec 64) (mp : Nat), (m * mp + 1) % 2 ^ 64 = 0 →
+      qv.toNat = (t.gpr (treg 0)).toNat * mp % 2 ^ 64 → t₁.gpr .r9 = qv → t₁.mem = t.mem →
+      Kp [.r11, .r9] t t₁ → WP isa (.block rest) t₁ Q) :
+    WP isa (.block (qhead M ++ rest)) t Q := by
+  have hs15 := ht.small
+  unfold qhead
+  split
+  · rename_i h1
+    refine wp_step exec_ori ?_
+    refine k _ (t.gpr (treg 0) ||| (0 : BitVec 16).setWidth 64) 1 (by rw [hone h1] at hinv; exact hinv) ?_
+      (by simp only [write_gpr, ite_true]) rfl
+      (Kp.write _ _ (by simp))
+    rw [BitVec.toNat_or, Nat.mul_one, Nat.mod_eq_of_lt (BitVec.isLt _)]
+    simp
+  · simp only [List.cons_append, List.nil_append]
+    refine wp_step (ld0_ok ht h3 (by decide) htmp4 htmp) ?_
+    refine wp_step exec_mul ?_
+    refine k _ (t.gpr (treg 0) * word t.mem base M.tmp) _ hinv ?_
+      (by simp only [write_gpr, ite_true, treg_eq_r11, ite_false]) rfl
+      ((Kp.write _ _ (by simp)).trans (Kp.write _ _ (by simp)))
+    simp only [BitVec.toNat_mul]
+
 /-- The row `T = (T + q m) / 2⁶⁴`, the modulus in `mReg`, `m'` at `[M.tmp]`. -/
 theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M : Mod} {m : Nat}
     (hn0 : 0 < M.n) (hn : M.n ≤ 4) (h3 : At t base .r3 0) (htmp : M.tmp + 8 ≤ size) (htmp4 : M.tmp % 4 = 0)
     (hm : gval t mReg M.n = m) (hinv : (m * (word t.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0)
+    (hone : M.minv.toNat = 1 → (word t.mem base M.tmp).toNat = 1)
     (hb : regsVal t 0 (M.n + 1) + 2 ^ (64 * (M.n + 1)) * (t.gpr .r12).toNat + 2 ^ 64 * m < 2 ^ (64 * (M.n + 2))) :
     WP isa (.block (qrowM M)) t fun u =>
       (∃ q, q < 2 ^ 64 ∧ 2 ^ 64 * regsVal u 0 (M.n + 1) =
@@ -1599,21 +1627,14 @@ theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M
   have hs15 := ht.small
   generalize hN : M.n = n at *
   simp only [qrowM, hN, List.append_assoc, List.cons_append, List.nil_append]
-  refine wp_step (ld0_ok ht h3 (by decide) htmp4 htmp) ?_
-  refine wp_step exec_mul ?_
-  refine wp_gen fun t₁ ht₁ => ?_
-  simp only [write_gpr, treg_eq_r11, ite_false, ite_true] at ht₁
-  generalize hmp : word t.mem base M.tmp = mp at hinv ht₁
-  generalize hq : t.gpr (treg 0) * mp = qv at ht₁
+  refine qhead_ok ht h3 htmp htmp4 hinv hone fun t₁ qv mp hinv hqv h9 M₁' K₁' => ?_
   have hq64 : qv.toNat < 2 ^ 64 := qv.isLt
-  have hqv : qv.toNat = (t.gpr (treg 0)).toNat * mp.toNat % 2 ^ 64 := by rw [← hq, BitVec.toNat_mul]
-  have nt1 : ∀ r : Reg, r ≠ .r11 → r ≠ .r9 → t₁.gpr r = t.gpr r := fun r h1 h2 => by
-    rw [ht₁]; simp only [write_gpr, h1, h2, ite_false]
+  have nt1 : ∀ r : Reg, r ≠ .r11 → r ≠ .r9 → t₁.gpr r = t.gpr r := fun r h1 h2 =>
+    K₁'.gpr _ (by simp [h1, h2])
   have hr₁ : ∀ d k, regsVal t₁ d k = regsVal t d k := fun d k => regsVal_congr fun j _ =>
     nt1 _ (treg_ne (r := .r11) (by decide) _) (treg_ne (r := .r9) (by decide) _)
   have hm₁ : ∀ j < n, t₁.gpr (mReg j) = t.gpr (mReg j) := fun j hj =>
     nt1 _ (mReg_ne (by omega)).1 (mReg_ne (by omega)).2.1
-  have h9 : t₁.gpr .r9 = qv := by rw [ht₁]; simp only [write_gpr, ite_true]
   have hyM : ∀ d, ∀ j < n, mReg j ≠ .r11 ∧ mReg j ≠ .r9 ∧ ∀ i < n, mReg j ≠ treg (d + i) :=
     fun d j hj => ⟨(mReg_ne (by omega)).1, (mReg_ne (by omega)).2.1, fun i _ => mReg_ne_treg (by omega) _⟩
   -- The low words.
@@ -1746,11 +1767,9 @@ theorem qrowM_ok {t : State} {base : Addr} {size : Nat} (ht : Ws t base size) {M
         omega
     rw [hc, Nat.mul_zero, Nat.add_zero] at key
     exact key
-  · rw [← ht₅]; show t₄.mem = t.mem; rw [M₄, hm₃, M₂, ht₁]; rfl
+  · rw [← ht₅]; show t₄.mem = t.mem; rw [M₄, hm₃, M₂, M₁']
   · have k1 : Kp (lrow n) t t₁ := by
-      rw [ht₁]
-      exact (Kp.write _ _ (lrow_of (n := n) (l := [.r11]) (by simp) _ (List.mem_singleton_self _))).trans
-        (Kp.write _ _ (lrow_of (n := n) (l := [.r9]) (by simp) _ (List.mem_singleton_self _)))
+      exact K₁'.mono (lrow_of (n := n) (l := [.r11, .r9]) (by simp))
     have k2 : Kp (lrow n) t₁ t₂ := K₂.mono (lrow_of (n := n) fun r hr => by
       rcases List.mem_cons.mp hr with h | h
       · exact .inl (by simp [h])
@@ -1823,6 +1842,7 @@ structure QPre (base : Addr) (M : Mod) (size a b m : Nat) (s : State) : Prop whe
   bv : gval s (bReg M.n) M.n = wordsVal s.mem base b M.n
   mv : gval s mReg M.n = m
   inv : (m * (word s.mem base M.tmp).toNat + 1) % 2 ^ 64 = 0
+  one : M.minv.toNat = 1 → (word s.mem base M.tmp).toNat = 1
   b_lt : wordsVal s.mem base b M.n < m
   m_lt : m < 2 ^ (64 * M.n)
 
@@ -1873,7 +1893,7 @@ theorem qrow_ok {s : State} {base : Addr} {size : Nat} {M : Mod} {a b m k : Nat}
       (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)))
   have hmp : word t₁.mem base M.tmp = word s.mem base M.tmp := by rw [M₁, I.mem]
   refine WP.block_append (WP.mono (qrowM_ok (K₁.ws ht) (m := m) hn0 hn4 h3₁ P.tmp_le P.tmp4 hM₁
-    (by rw [hmp]; exact P.inv) (by
+    (by rw [hmp]; exact P.inv) (by rw [hmp]; exact P.one) (by
       rw [V₁, hP2]
       have := I.lt
       have : u.toNat * B ≤ (2 ^ 64 - 1) * m := Nat.mul_le_mul (by have := u.isLt; omega) (by omega)
@@ -2253,7 +2273,7 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
       exact Z₃ j hj
     exact regsVal_zero_of this
   have P : QPre base M size A B m u := ⟨hws, by rw [At, keep _ (by decide) (by decide)]; exact hp.r3, n0, hn4, a_le,
-    by omega, tmp4, by rw [hBv], hMv, by rw [hmp]; exact hinv, by rw [hBu]; exact hb, hm⟩
+    by omega, tmp4, by rw [hBv], hMv, by rw [hmp]; exact hinv, fun h => hmp.trans h, by rw [hBu]; exact hb, hm⟩
   -- The invariant at word 0.
   have h0 : QLoopInv base M A B m 0 u u := by
     refine ⟨?_, ?_, rfl, Kp.refl _ _, ?_, ?_⟩

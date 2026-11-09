@@ -71,8 +71,7 @@ vg_p256_mul_mod_p:
 	mulhdu %r11, %r9, %r23
 	adde %r19, %r19, %r11
 	addze %r12, %r12
-	ld %r11, 3912(%r3)
-	mulld %r9, %r15, %r11
+	ori %r9, %r15, 0
 	mulld %r11, %r9, %r6
 	addc %r15, %r15, %r11
 	mulld %r11, %r9, %r7
