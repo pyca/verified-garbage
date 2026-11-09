@@ -30,7 +30,7 @@ pub fn bench(c: &mut Criterion) {
     // for the other algorithms benchmarked by this process.
     let _legacy = Provider::try_load(None, "legacy", true).unwrap();
     let cipher = Cipher::from_nid(Nid::SEED_CFB128).unwrap();
-    let key: Vec<_> = (0..16).map(|i| (17 * i + 3) as u8).collect();
+    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 16];
     for (operation, encrypt, mode) in [
         ("encrypt", true, Mode::Encrypt),
@@ -46,11 +46,11 @@ pub fn bench(c: &mut Criterion) {
                     buffer.copy_from_slice(black_box(&data));
                     if encrypt {
                         let ctx =
-                            SeedCfb128Encryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                            SeedCfb128Encryptor::new(black_box(&key), &black_box(iv));
                         ctx.encrypt_final(black_box(&mut buffer));
                     } else {
                         let ctx =
-                            SeedCfb128Decryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                            SeedCfb128Decryptor::new(black_box(&key), &black_box(iv));
                         ctx.decrypt_final(black_box(&mut buffer));
                     }
                     black_box(&buffer);

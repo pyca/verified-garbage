@@ -34,7 +34,7 @@ pub fn bench(c: &mut Criterion) {
     // this process.
     let _legacy = Provider::try_load(None, "legacy", true).ok();
     let cipher = Cipher::from_nid(Nid::IDEA_CBC);
-    let key: Vec<_> = (0..16).map(|i| (17 * i + 3) as u8).collect();
+    let key: [u8; 16] = core::array::from_fn(|i| (17 * i + 3) as u8);
     let iv = [0x3c; 8];
     for (operation, encrypt, mode) in [
         ("encrypt", true, Mode::Encrypt),
@@ -50,11 +50,11 @@ pub fn bench(c: &mut Criterion) {
                     buffer.copy_from_slice(black_box(&data));
                     if encrypt {
                         let mut ctx =
-                            IdeaCbcEncryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                            IdeaCbcEncryptor::new(black_box(&key), &black_box(iv));
                         ctx.encrypt(black_box(&mut buffer)).unwrap();
                     } else {
                         let mut ctx =
-                            IdeaCbcDecryptor::new(black_box(&key), &black_box(iv)).unwrap();
+                            IdeaCbcDecryptor::new(black_box(&key), &black_box(iv));
                         ctx.decrypt(black_box(&mut buffer)).unwrap();
                     }
                     black_box(&buffer);

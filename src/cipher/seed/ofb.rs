@@ -12,7 +12,7 @@
 use crate::align::CacheAligned;
 use crate::arch::dispatch::seed::vg_seed_expand_key_auto;
 use crate::arch::dispatch::seed_ofb::{vg_seed_ofb_auto, vg_seed_ofb_final_auto};
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded SEED key.
@@ -38,11 +38,11 @@ pub struct SeedOfb {
 
 impl SeedOfb {
     /// Expands a 16-byte key, to process a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 16]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 16]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Encrypts or decrypts (the same operation) whole 16-byte blocks in
@@ -75,14 +75,13 @@ impl Drop for SeedOfb {
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 128]);
         crate::dit::enter!(dit);
         // SAFETY: key and schedule are separate valid buffers of the required
         // sizes.
         unsafe { vg_seed_expand_key_auto(dit, key, &mut schedule.0) };
-        Ok(Self { schedule })
+        Self { schedule }
     }
 
     /// Encrypts or decrypts (the same operation) the whole blocks of

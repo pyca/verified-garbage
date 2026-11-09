@@ -16,7 +16,7 @@ use crate::arch::dispatch::idea_cfb::{
     vg_idea_cfb64_decrypt_auto, vg_idea_cfb64_decrypt_final_auto, vg_idea_cfb64_encrypt_auto,
     vg_idea_cfb64_encrypt_final_auto,
 };
-use crate::error::{IncompleteBlock, InvalidKeyLength};
+use crate::error::IncompleteBlock;
 use crate::zeroize::zeroize;
 
 /// An expanded IDEA key.
@@ -41,11 +41,11 @@ pub struct IdeaCfb64Encryptor {
 
 impl IdeaCfb64Encryptor {
     /// Expands a 16-byte key, to encrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Encrypts whole 8-byte blocks in place, continuing the message.
@@ -94,11 +94,11 @@ pub struct IdeaCfb64Decryptor {
 
 impl IdeaCfb64Decryptor {
     /// Expands a 16-byte key, to decrypt a message from `iv`.
-    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
-        Ok(Self {
-            key: Key::new(key)?,
+    pub fn new(key: &[u8; 16], iv: &[u8; 8]) -> Self {
+        Self {
+            key: Key::new(key),
             iv: *iv,
-        })
+        }
     }
 
     /// Decrypts whole 8-byte blocks in place, continuing the message.
@@ -133,14 +133,13 @@ impl Drop for IdeaCfb64Decryptor {
 
 impl Key {
     /// Expands a 16-byte key.
-    fn new(key: &[u8]) -> Result<Self, InvalidKeyLength> {
-        let key: &[u8; 16] = key.try_into().map_err(|_| InvalidKeyLength)?;
+    fn new(key: &[u8; 16]) -> Self {
         let mut schedule = CacheAligned([0; 104]);
         crate::dit::enter!(dit);
         // SAFETY: the key and the schedule are separate valid buffers of the
         // required sizes.
         unsafe { vg_idea_expand_key_auto(dit, key, &mut schedule.0) };
-        Ok(Self { schedule })
+        Self { schedule }
     }
 
     /// Encrypts the whole blocks of `buffer` in place, from the block `iv`,
