@@ -21,6 +21,12 @@ which is public.
 `c.withOne one` (`c` with `one` as its code, which enciphers only the
 buffer's first block), for a core whose code costs as much on one block as
 on its `G`.
+
+`pick lg short long`: `short` if fewer than `2 ^ lg` steps are to be taken
+(the count in `r6`, shifted right by `lg`, is zero), `long` otherwise: for a
+function whose batched code costs a fixed amount per call (a key schedule to
+prepare), with a cheaper function for messages shorter than a batch. The
+branch is on the count, which is public; `r8` is scratch, as in the modes.
 -/
 
 @[expose] public section
@@ -59,5 +65,9 @@ def seq2With (one : Prog isa) (wide narrow : Mode) (lg : Nat) : Prog isa :=
   c.seqWith (.seq (c.loopWide wide lg) ((c.withOne one).steps narrow)) narrow.ivOut
 
 end Core
+
+/-- `short` for fewer than `2 ^ lg` steps, `long` otherwise. -/
+def pick (lg : Nat) (short long : Prog isa) : Prog isa :=
+  .seq (.block [.lsr .d .r8 .r6 lg]) (.ite (.zero .d .r8) short long)
 
 end VG.Impl.Modes.PPC64LE
