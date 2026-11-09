@@ -3,8 +3,9 @@ module
 public import VerifiedGarbage.TCB.AArch64.Isa
 public import VerifiedGarbage.Impl.AArch64Instrs
 
-/-! Lean-generated output of VerifyRegisters.optimize. These literal instruction
-blocks are untrusted input to the checked arithmetic certificates. -/
+/-! The field programs of P-256 verification (`VerifyAllocated.raw`) with their
+registers allocated. These literal instruction blocks are untrusted input to
+the checked arithmetic certificates. -/
 
 @[expose] public section
 

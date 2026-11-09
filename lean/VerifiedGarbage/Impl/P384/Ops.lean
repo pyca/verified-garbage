@@ -6,7 +6,7 @@ public import VerifiedGarbage.Impl.Ecdsa.P384.AArch64.Cfg
 # P-384's field operations inline on AArch64
 
 `op` is one field operation (`FOp`) on slots of the working space at `x0`,
-in a straight line, for the register allocator (`Impl/P256/VerifyRegisters.lean`):
+in a straight line, whose registers are then allocated (`EcdhAllocatedCode.lean`):
 a product or square by the cores of `vg_p384_mul_mod_p` and `vg_p384_sqr_mod_p`
 (`Impl/Mont/AArch64/P384Mul.lean`, `P384Sqr.lean`, adapted from s2n-bignum's
 `bignum_montmul_p384_alt` and `bignum_montsqr_p384_alt`), with the operands

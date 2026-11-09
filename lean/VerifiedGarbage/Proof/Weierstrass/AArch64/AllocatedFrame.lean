@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.P256.VerifyRegisters
+public import VerifiedGarbage.Impl.Weierstrass.AArch64.Forward
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.Fprog
 public import VerifiedGarbage.Proof.Weierstrass.Unch
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Unch
@@ -62,7 +62,9 @@ theorem scr {rs : List Reg} {base : Addr} {W : List (Nat × Nat)} {size : Nat} {
 end AllocatedFrame
 
 /-- Allocation never consumes the scratch pointer or the joint loop counter. -/
-def allocatedRegs : List Reg := VG.Impl.P256.VerifyRegisters.pool
+def allocatedRegs : List Reg :=
+  [.x1,.x2,.x3,.x4,.x5,.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13,.x14,.x15,.x16,.x17,
+   .x20,.x21,.x22,.x23,.x24,.x25,.x26,.x27,.x28,.x30]
 
 theorem allocatedRegs_x0 : Reg.x0∉allocatedRegs := by decide
 theorem allocatedRegs_x19 : Reg.x19∉allocatedRegs := by decide

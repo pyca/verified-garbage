@@ -13,10 +13,9 @@ window's doubling `dblJ` with its sums fused into three linear combinations
 `y' = 3 d m - 8 y⁴`, for `m = (x + z²)(x - z²)`; and `z' = (y + z)² - z² - y²`.
 The other operations are `Ops.op`'s.
 The code that runs, `Impl/P384/EcdhAllocatedCode.lean`, is `raw` with its
-registers allocated (by `Impl/P256/VerifyRegisters.lean`, which is not
-trusted): it keeps its values in the registers `regs` (`x1`–`x17` and
-`x21`–`x25`, which ECDH saves on entry), stores only `b`'s coordinates
-(`keep`), and spills to `spill`: the slots of the window's entry `E`, the
+registers allocated: it keeps its values in the registers `regs` (`x1`–`x17`
+and `x21`–`x25`, which ECDH saves on entry), stores only `b`'s coordinates,
+and spills to `spillSlots`: the slots of the window's entry `E`, the
 addition's temporaries and `tmp`, which hold nothing the window reads after
 its doublings. It is checked against `raw` by certificates.
 -/
@@ -45,19 +44,13 @@ def raw (a b : Pt) : List Instr :=
   (ops1 a b).flatMap Ops.op ++ Linear.lin b.y K.S.t3 b.y 12 9 ++ (ops2 b).flatMap Ops.op ++
     Linear.lin b.x K.S.t3 b.y 4 1 ++ Linear.lin b.y K.S.t1 K.S.t0 3 8
 
-/-- The words of the point at `b`. -/
-def keep (b : Pt) (off : Nat) : Bool := [b.x, b.y, b.z].any fun x => x ≤ off && off < x + 48
-
-/-- The registers the allocation may use. -/
+/-- The registers the allocated code uses. -/
 def regs : List Reg :=
   [.x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12, .x13, .x14, .x15, .x16, .x17,
    .x21, .x22, .x23, .x24, .x25]
 
-/-- The slots spills may use. -/
+/-- The slots the allocated code spills to. -/
 def spillSlots : List Nat :=
   [K.E.x, K.E.y, K.E.z, K.S.t0, K.S.t1, K.S.t2, K.S.t3, K.S.t4, K.S.t5, K.M.tmp]
-
-/-- Their words. -/
-def spill : List Nat := spillSlots.flatMap fun x => (List.range 6).map (x + 8 * ·)
 
 end VG.Impl.P384.EcdhDouble
