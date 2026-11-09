@@ -2567,6 +2567,48 @@ theorem qcsubR_ok {s : State} {base : Addr} {size : Nat} (hs : Ws s base size) {
 
 /-! ## Constants of 64 bits in registers -/
 
+theorem write_same (s : State) (d : Reg) : s.write d (s.gpr d) = s := by
+  cases s
+  simp only [State.write, State.mk.injEq, and_true]
+  funext r
+  split <;> simp_all
+
+theorem wp_movHi {s : State} {d : Reg} {x : BitVec 32} {is : List Instr} {Q : State → Prop}
+    (k : ∀ v : BitVec 64, v.toNat % 2 ^ 32 = x.toNat → WP isa (.block is) (s.write d v) Q) :
+    WP isa (.block (movHi d x ++ is)) s Q := by
+  unfold movHi
+  split
+  · rename_i h
+    refine wp_step (exec_li h) (k _ ?_)
+    rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega), Nat.mod_eq_of_lt (by omega)]
+  · exact wp_movImm k
+
+theorem wp_orisOpt {s : State} {d : Reg} {x : BitVec 64} {h : BitVec 16} {is : List Instr} {Q : State → Prop}
+    (k : WP isa (.block is) (s.write d (x ||| h.setWidth 64 <<< 16)) Q) :
+    WP isa (.block (orisOpt d h ++ is)) (s.write d x) Q := by
+  unfold orisOpt
+  split
+  · rename_i h0
+    subst h0
+    rw [List.nil_append]
+    simpa only [BitVec.setWidth_zero, BitVec.zero_shiftLeft, BitVec.or_zero] using k
+  · refine wp_step exec_oris ?_
+    rw [write_write]
+    simpa only [write_gpr, ite_true] using k
+
+theorem wp_oriOpt {s : State} {d : Reg} {x : BitVec 64} {h : BitVec 16} {is : List Instr} {Q : State → Prop}
+    (k : WP isa (.block is) (s.write d (x ||| h.setWidth 64)) Q) :
+    WP isa (.block (oriOpt d h ++ is)) (s.write d x) Q := by
+  unfold oriOpt
+  split
+  · rename_i h0
+    subst h0
+    rw [List.nil_append]
+    simpa only [BitVec.setWidth_zero, BitVec.or_zero] using k
+  · refine wp_step exec_ori ?_
+    rw [write_write]
+    simpa only [write_gpr, ite_true] using k
+
 theorem movImm64_ok {s : State} {d : Reg} {w : Nat} (hw : w < 2 ^ 64) {is : List Instr} {Q : State → Prop}
     (k : WP isa (.block is) (s.write d (BitVec.ofNat 64 w)) Q) : WP isa (.block (movImm64 d w ++ is)) s Q := by
   unfold movImm64
@@ -2581,11 +2623,29 @@ theorem movImm64_ok {s : State} {d : Reg} {w : Nat} (hw : w < 2 ^ 64) {is : List
     simp only [write_gpr, ite_true]
     exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)) =
       BitVec.ofNat 64 (2 ^ 64 - 1)) ▸ k
-  · simp only [List.append_assoc, List.cons_append, List.nil_append]
-    refine wp_movImm fun v hv => ?_
-    refine wp_step (exec_lsl (by decide)) (wp_step exec_oris (wp_step exec_ori ?_))
-    rw [write_write, write_write, write_write]
+  split
+  · rename_i _ _ h
+    subst h
+    refine wp_step exec_lis (wp_step exec_ori (wp_step (exec_lsl (by decide)) ?_))
+    rw [write_write, write_write]
     simp only [write_gpr, ite_true]
+    exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)
+      <<< 32) = BitVec.ofNat 64 (2 ^ 64 - 2 ^ 32)) ▸ k
+  split
+  · rename_i _ _ _ h
+    subst h
+    refine wp_step exec_lis (wp_step exec_ori (wp_step (exec_lsr_d (by decide)) ?_))
+    rw [write_write, write_write]
+    simp only [write_gpr, ite_true]
+    exact (by decide : ((((0xffff : BitVec 16) ++ (0 : BitVec 16)).signExtend 64 ||| (0xffff : BitVec 16).setWidth 64)
+      >>> 32) = BitVec.ofNat 64 (2 ^ 32 - 1)) ▸ k
+  · simp only [List.append_assoc, List.cons_append, List.nil_append]
+    refine wp_movHi fun v hv => ?_
+    refine wp_step (exec_lsl (by decide)) ?_
+    rw [write_write]
+    simp only [write_gpr, ite_true]
+    refine wp_orisOpt (wp_oriOpt ?_)
+    rw [write_write]
     have e : (v <<< 32 ||| BitVec.setWidth 64 (BitVec.ofNat 16 (w >>> 16)) <<< 16 |||
         BitVec.setWidth 64 (BitVec.ofNat 16 w)) = BitVec.ofNat 64 w := by
       apply BitVec.eq_of_toNat_eq
