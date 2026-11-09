@@ -24,8 +24,11 @@ for CBC decryption. `prepare` inlines the body of `vg_camellia_prepare_keys`
 subkeys, once; `crypt` calls `vg_camellia_crypt_prepared`, which transforms
 the eight blocks of the tail buffer in place: CBC and CFB decryption and
 CTR take eight blocks a step while eight are left, then one
-(`Impl/Modes/PPC64LE/Wide.lean`). The serial modes, CBC and CFB encryption
-and OFB, take one block a step, by the single-block core (`Serial.lean`),
+(`Impl/Modes/PPC64LE/Wide.lean`). Preparing the key costs about as much as
+a batch, so CFB decryption and CTR of fewer than eight blocks take them one
+a step by the single-block core instead (`Modes.PPC64LE.pick`). The serial
+modes, CBC and CFB encryption and OFB, take one block a step, by the
+single-block core (`Serial.lean`),
 which takes the same scratch buffer.
 
 Both functions use every callee-saved register, which they save in their
@@ -118,12 +121,17 @@ argument: one block a step, by the single-block core. -/
 def cfbEncrypt : Prog isa := wrap (Serial.core.seq (Modes.Mode.cfbEnc 4))
 
 /-- `vg_camellia_cfb128_decrypt`, with its scratch buffer as the sixth
-argument: eight blocks a step, then one. -/
+argument: eight blocks a step, then one; fewer than eight blocks one a step
+by the single-block core, without the bitsliced key. -/
 def cfbDecrypt : Prog isa :=
-  wrap ((dirCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 8) (Modes.Mode.cfbDecEarly 4) 3)
+  wrap (Modes.PPC64LE.pick 3 (Serial.core.seq (Modes.Mode.cfbDec 4))
+    ((dirCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 8) (Modes.Mode.cfbDecEarly 4) 3))
 
 /-- `vg_camellia_ctr`, with its scratch buffer as the sixth argument: eight
-blocks a step, then one. -/
-def ctr : Prog isa := wrap ((dirCore .encrypt).seq2 (Modes.Mode.ctrWide 8) Modes.Mode.ctrEarly 3)
+blocks a step, then one; fewer than eight blocks one a step by the
+single-block core, without the bitsliced key. -/
+def ctr : Prog isa :=
+  wrap (Modes.PPC64LE.pick 3 (Serial.core.seq Modes.Mode.ctrEarly)
+    ((dirCore .encrypt).seq2 (Modes.Mode.ctrWide 8) Modes.Mode.ctrEarly 3))
 
 end VG.Impl.Camellia.PPC64LE
