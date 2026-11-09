@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.TComb
+public import VerifiedGarbage.Impl.Weierstrass.PPC64LE.TCombJ
 public import VerifiedGarbage.Impl.Ecdsa.P256.PPC64LE
 public import VerifiedGarbage.Impl.P256.CombTable7
 public import VerifiedGarbage.Impl.Weierstrass.TCombWords
@@ -8,7 +8,8 @@ public import VerifiedGarbage.Impl.EcKey.PPC64LE
 
 /-! # P-256's generator by the signed seven-bit comb on PPC64LE
 
-The comb of `Impl/Weierstrass/PPC64LE/TComb.lean` with P-256's tables
+The Booth comb with Jacobian mixed additions of
+`Impl/Weierstrass/PPC64LE/TCombJ.lean` with P-256's tables
 (`Impl/P256/CombTable7.lean`, the other targets'), and public keys with it in
 place of the ladder for `[d]G`, and signatures with it for `[k]G`. -/
 
@@ -32,7 +33,7 @@ def p256Comb : TCombCfg :=
 def p256CombConsts : List (String × List (BitVec 64)) := [(p256Comb.tsym, p256CombWords)]
 
 /-- `R = [k]G` by the comb. -/
-def mulGeneratorP256 : Prog VG.PPC64LE.isa := p256Comb.comb
+def mulGeneratorP256 : Prog VG.PPC64LE.isa := p256Comb.combJ
 
 end VG.Impl.Weierstrass.PPC64LE
 
