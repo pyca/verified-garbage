@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.BrainpoolP512r1
 public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 
-/-! # ECDSA signatures over brainpoolP512r1 (FIPS 186-5 §6.4.1) on PPC64LE -/
+/-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on PPC64LE -/
 
 @[expose] public section
 

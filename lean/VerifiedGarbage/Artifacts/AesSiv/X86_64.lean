@@ -42,7 +42,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
-/-! # AES-SIV (RFC 5297) key setup on x86-64 -/
+/-! # AES-SIV (RFC 5297) on x86-64 -/
 
 @[expose] public section
 

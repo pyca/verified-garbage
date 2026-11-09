@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Camellia.X86_64.FbFinalLit
 
-/-! # Camellia-OFB artifacts on baseline x86-64 -/
+/-! # Camellia-OFB on x86-64 -/
 
 @[expose] public section
 

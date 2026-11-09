@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Blowfish.AArch64.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
+/-! # Blowfish on AArch64 -/
+
 @[expose] public section
 
 namespace VG.Artifacts.Blowfish.AArch64

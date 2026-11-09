@@ -13,7 +13,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 public import VerifiedGarbage.Proof.Dsa.PPC64LE.Gen.Instances
 public import VerifiedGarbage.Proof.Variants.MillerRabin.PPC64LE
 
-/-! # DSA on PPC64LE -/
+/-! # DSA (FIPS 186-4) on PPC64LE -/
 
 @[expose] public section
 

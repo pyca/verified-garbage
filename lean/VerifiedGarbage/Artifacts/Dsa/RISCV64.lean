@@ -9,7 +9,7 @@ public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
 
-/-! # DSA on RISC-V -/
+/-! # DSA (FIPS 186-4) on RISC-V -/
 
 @[expose] public section
 

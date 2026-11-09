@@ -28,7 +28,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
-/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86-64: the iteration and the whole derivation -/
+/-! # PBKDF2-HMAC-SHA-256 (RFC 8018) on x86-64 -/
 
 @[expose] public section
 

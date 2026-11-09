@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Argon2.AArch64.HPrime.Verified
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.Blake2b.AArch64
 
-/-! # Argon2 H′ for every ARM64 BLAKE2b backend -/
+/-! # Argon2 (RFC 9106) on AArch64 -/
 
 @[expose] public section
 

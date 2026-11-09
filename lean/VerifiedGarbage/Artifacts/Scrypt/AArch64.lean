@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.Sha256Compress.AArch64
 
-/-! # scrypt (RFC 7914 §6) on AArch64, over SHA-256 -/
+/-! # scrypt (RFC 7914) on AArch64 -/
 
 @[expose] public section
 

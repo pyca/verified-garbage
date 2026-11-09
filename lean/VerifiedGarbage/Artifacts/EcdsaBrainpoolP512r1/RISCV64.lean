@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.BrainpoolP512r1.RISCV64.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.RISCV64.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 
-/-! # ECDSA over brainpoolp512r1 (FIPS 186-5) on RISC-V -/
+/-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on RISC-V -/
 
 @[expose] public section
 

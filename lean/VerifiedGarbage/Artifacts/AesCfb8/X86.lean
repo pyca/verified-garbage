@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86
 
-/-! # AES-CFB8 (NIST SP 800-38A §6.3, with 8-bit segments) on x86 -/
+/-! # AES-CFB8 (NIST SP 800-38A §6.3) on x86 -/
 
 @[expose] public section
 

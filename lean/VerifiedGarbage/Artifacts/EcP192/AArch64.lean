@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.P192Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
-/-! # p192 on AArch64, generic over its proven group law and inversions -/
+/-! # P-192 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
 @[expose] public section
 

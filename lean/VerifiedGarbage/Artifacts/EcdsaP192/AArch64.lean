@@ -42,7 +42,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
-/-! # p192 on AArch64, generic over its proven group law and inversions -/
+/-! # ECDSA over P-192 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

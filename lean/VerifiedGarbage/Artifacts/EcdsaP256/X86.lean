@@ -97,7 +97,7 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86.P256
 public import VerifiedGarbage.Proof.Variants.Sha1.X86
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # ECDSA over P-256 (FIPS 186-5) on x86 (32-bit) -/
+/-! # ECDSA over P-256 (FIPS 186-5) on x86 -/
 
 @[expose] public section
 

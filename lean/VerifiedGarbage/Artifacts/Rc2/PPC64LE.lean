@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Rc2.PPC64LE.Stream.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # RC2 artifacts on PPC64LE -/
+/-! # RC2 on PPC64LE -/
 
 @[expose] public section
 

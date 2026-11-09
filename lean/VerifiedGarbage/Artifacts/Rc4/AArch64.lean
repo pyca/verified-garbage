@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Rc4.AArch64.VerifiedApply
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # Raw RC4 on baseline AArch64 -/
+/-! # RC4 on AArch64 -/
 
 @[expose] public section
 

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
-/-! # RSASSA-PSS on ARMv7, with the hash function and MGF1's as tables -/
+/-! # RSASSA-PSS (RFC 8017) on ARMv7 -/
 
 @[expose] public section
 

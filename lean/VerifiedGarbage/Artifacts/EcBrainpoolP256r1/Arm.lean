@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP256r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP256r1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.Law
 
-/-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # brainpoolP256r1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 

@@ -7,7 +7,7 @@ public import VerifiedGarbage.Spec.RsaOaep.Tables
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.Arm
 
-/-! # RSAES-OAEP on ARMv7, with both hash functions as tables -/
+/-! # RSAES-OAEP (RFC 8017) on ARMv7 -/
 
 @[expose] public section
 

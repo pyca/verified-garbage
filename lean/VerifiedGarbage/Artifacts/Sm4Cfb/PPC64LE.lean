@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Sm4.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.Lit
 import VerifiedGarbage.Proof.Sm4.PPC64LE.FbFinalLit
 
-/-! # SM4-CFB128 artifacts on baseline PPC64LE -/
+/-! # SM4-CFB128 on PPC64LE -/
 
 @[expose] public section
 

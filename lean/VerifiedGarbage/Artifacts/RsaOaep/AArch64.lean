@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-OAEP decryption on AArch64, with both hash functions as tables -/
+/-! # RSAES-OAEP (RFC 8017) on AArch64 -/
 
 @[expose] public section
 

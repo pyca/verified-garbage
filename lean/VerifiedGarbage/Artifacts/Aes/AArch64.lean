@@ -18,7 +18,7 @@ public import VerifiedGarbage.Proof.Framework.RegionsSub
 public import VerifiedGarbage.Proof.Gcm.Spec
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # AES on AArch64 -/
+/-! # AES (FIPS 197) on AArch64 -/
 
 @[expose] public section
 

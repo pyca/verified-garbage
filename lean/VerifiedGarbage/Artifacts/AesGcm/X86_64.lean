@@ -26,7 +26,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareZ
 public import VerifiedGarbage.Proof.Gcm.X86_64.PrepareAvx.Ok
 public import VerifiedGarbage.Proof.Gcm.X86_64.Prepare16
 
-/-! # AES-GCM's functions on x86-64 that call AES and GHASH but no stitched loop -/
+/-! # AES-GCM (NIST SP 800-38D) on x86-64 -/
 
 @[expose] public section
 

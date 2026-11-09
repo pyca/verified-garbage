@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 public import VerifiedGarbage.Proof.Variants.Sha256.X86
 
-/-! # HMAC-SHA-224 (RFC 2104) on x86, for every x86 SHA-256 backend -/
+/-! # HMAC-SHA-224 (RFC 2104) on x86 -/
 
 @[expose] public section
 

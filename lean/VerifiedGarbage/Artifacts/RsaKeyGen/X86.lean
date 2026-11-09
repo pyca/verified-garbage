@@ -9,7 +9,7 @@ public import VerifiedGarbage.Impl.RsaKeyGen.TrialTable32
 public import VerifiedGarbage.Proof.RsaKeyGen.X86.Generate.Verified
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
 
-/-! # RSA key generation (FIPS 186-5 A.1.3) on baseline i686 -/
+/-! # RSA key generation (FIPS 186-5 A.1.3) on x86 -/
 
 @[expose] public section
 

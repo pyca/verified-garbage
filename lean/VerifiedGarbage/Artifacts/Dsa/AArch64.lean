@@ -15,7 +15,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # DSA parameter search on AArch64 -/
+/-! # DSA (FIPS 186-4) on AArch64 -/
 
 @[expose] public section
 

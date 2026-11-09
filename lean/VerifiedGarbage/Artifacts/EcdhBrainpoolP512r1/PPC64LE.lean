@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Proof.BrainpoolP512r1.PPC64LE.Law
 
-/-! # ECDH over brainpoolP512r1 (SP 800-56A §5.7.1.2) on PPC64LE -/
+/-! # ECDH over brainpoolP512r1 (SP 800-56A) on PPC64LE -/
 
 @[expose] public section
 

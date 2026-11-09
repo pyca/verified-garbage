@@ -42,7 +42,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
-/-! # brainpoolP384r1 on AArch64, generic over its proven group law and inversions -/
+/-! # ECDSA over brainpoolP384r1 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

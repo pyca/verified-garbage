@@ -6,7 +6,7 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.Key
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # RC2 artifacts on baseline AArch64 -/
+/-! # RC2 on AArch64 -/
 
 @[expose] public section
 

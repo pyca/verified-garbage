@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.TripleDes.X86_64.FbFinalLit
 public import VerifiedGarbage.Proof.TripleDes.X86_64.Batch.Verified
 public import VerifiedGarbage.Proof.Variants.TripleDesEcb.X86_64
 
-/-! # Triple DES-CFB64 artifacts on baseline x86-64 -/
+/-! # Triple DES-CFB64 on x86-64 -/
 
 @[expose] public section
 

@@ -23,7 +23,7 @@ public import VerifiedGarbage.Proof.RsaPkcs1Sig.Recover
 public import VerifiedGarbage.Proof.RsaPkcs1Sig.Verify
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 
-/-! # RSASSA-PKCS1-v1_5 signing on AArch64, for each implementation of the CRT -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on AArch64 -/
 
 @[expose] public section
 

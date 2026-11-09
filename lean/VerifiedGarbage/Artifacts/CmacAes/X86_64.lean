@@ -31,7 +31,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesCtr32.X86_64
 public import VerifiedGarbage.Proof.Variants.CmacAesUpdate.X86_64
 
-/-! # AES-CMAC's chaining with AES-NI on x86-64 -/
+/-! # AES-CMAC (NIST SP 800-38B) on x86-64 -/
 
 @[expose] public section
 

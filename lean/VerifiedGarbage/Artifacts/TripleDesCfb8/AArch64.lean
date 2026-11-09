@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.TripleDes.AArch64.FbVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
-/-! # Triple DES-CFB8 artifacts on baseline AArch64 -/
+/-! # Triple DES-CFB8 on AArch64 -/
 
 @[expose] public section
 

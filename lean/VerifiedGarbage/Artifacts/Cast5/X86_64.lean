@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Cast5.X86_64.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
-/-! # CAST5 key expansion and ECB on baseline x86-64 -/
+/-! # CAST5 (RFC 2144) on x86-64 -/
 
 @[expose] public section
 

@@ -8,7 +8,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.ModesLit
 import VerifiedGarbage.Proof.Blowfish.PPC64LE.FbFinalLit
 
-/-! # Blowfish-CFB64 artifacts on baseline PPC64LE -/
+/-! # Blowfish-CFB64 on PPC64LE -/
 
 @[expose] public section
 

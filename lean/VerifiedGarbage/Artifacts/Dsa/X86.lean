@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # DSA key generation, private-key validation and signing with a sampled nonce, verification, and the start of the parameter search, on baseline i686 -/
+/-! # DSA (FIPS 186-4) on x86 -/
 
 @[expose] public section
 

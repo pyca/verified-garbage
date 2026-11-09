@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbFinalLit
 
-/-! # Triple DES-OFB artifacts on baseline AArch64 -/
+/-! # Triple DES-OFB on AArch64 -/
 
 @[expose] public section
 

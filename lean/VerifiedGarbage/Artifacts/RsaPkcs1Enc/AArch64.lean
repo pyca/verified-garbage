@@ -24,7 +24,7 @@ public import VerifiedGarbage.Spec.RsaPkcs1Enc.Random
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.AArch64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-PKCS1-v1_5 decryption with implicit rejection on AArch64 -/
+/-! # RSAES-PKCS1-v1_5 (RFC 8017) on AArch64 -/
 
 @[expose] public section
 

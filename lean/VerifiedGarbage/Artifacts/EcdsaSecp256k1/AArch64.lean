@@ -42,7 +42,7 @@ import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.SetLike
 public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 
-/-! # secp256k1 on AArch64, generic over its proven group law and inversions -/
+/-! # ECDSA over secp256k1 (FIPS 186-5) on AArch64 -/
 
 @[expose] public section
 

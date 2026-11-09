@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.Rc2.X86.Stream.Lit
 
-/-! # RC2 artifacts on baseline x86 -/
+/-! # RC2 on x86 -/
 
 @[expose] public section
 

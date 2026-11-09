@@ -17,7 +17,7 @@ public import VerifiedGarbage.Proof.P224.PPC64LE.Law
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.PPC64LE.P224
 public import VerifiedGarbage.Proof.HmacTable.PPC64LE.Vars
 
-/-! # ECDSA signatures over P-224 (FIPS 186-5 §6.4.1) on PPC64LE -/
+/-! # ECDSA over P-224 (FIPS 186-5) on PPC64LE -/
 
 @[expose] public section
 

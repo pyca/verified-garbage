@@ -47,7 +47,7 @@ public import VerifiedGarbage.Proof.BrainpoolP384r1.X86.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86.BrainpoolP384r1Decompress
 
-/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on x86 (32-bit) -/
+/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on x86 -/
 
 @[expose] public section
 

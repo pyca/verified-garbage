@@ -70,7 +70,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86_64.InvInterface
 public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.BrainpoolP512r1
 public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 
-/-! # brainpoolP512r1 on x86-64, generic over its proven group law and inversions -/
+/-! # ECDSA over brainpoolP512r1 (FIPS 186-5) on x86-64 -/
 
 @[expose] public section
 

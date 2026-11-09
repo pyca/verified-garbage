@@ -27,7 +27,7 @@ public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.BrainpoolP384r1Decompress
 public import VerifiedGarbage.Proof.Weierstrass.AArch64.InvInterface
 
-/-! # brainpoolP384r1 on AArch64, generic over its proven group law and inversions -/
+/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on AArch64 -/
 
 @[expose] public section
 

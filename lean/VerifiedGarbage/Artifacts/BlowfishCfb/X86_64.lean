@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.Blowfish.X86_64.FbFinalLit
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 
-/-! # Blowfish-CFB64 artifacts on baseline x86-64 -/
+/-! # Blowfish-CFB64 on x86-64 -/
 
 @[expose] public section
 

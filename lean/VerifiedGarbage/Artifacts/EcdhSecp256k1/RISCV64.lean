@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.Ecdh.RISCV64.Secp256k1.EcdhLit
 public import VerifiedGarbage.Proof.Secp256k1.RISCV64.Law
 
-/-! # ECDH over secp256k1 (SP 800-56A §5.7.1.2) on RISC-V -/
+/-! # ECDH over secp256k1 (SP 800-56A) on RISC-V -/
 
 @[expose] public section
 

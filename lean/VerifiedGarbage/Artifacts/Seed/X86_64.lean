@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Seed.X86_64.Lit
 
-/-! # SEED artifacts on baseline x86-64 -/
+/-! # SEED on x86-64 -/
 
 @[expose] public section
 

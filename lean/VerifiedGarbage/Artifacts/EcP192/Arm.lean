@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.P192.Arm.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P192
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.P192Decompress
 
-/-! # P-192 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # P-192 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 

@@ -40,7 +40,7 @@ public import VerifiedGarbage.Proof.X25519.Field
 public import VerifiedGarbage.TCB.Arm.Print
 public import VerifiedGarbage.Proof.BrainpoolP256r1.Arm.Law
 
-/-! # ECDH over brainpoolP256r1 (SP 800-64A) on 32-bit ARM -/
+/-! # ECDH over brainpoolP256r1 (SP 800-56A) on ARMv7 -/
 
 @[expose] public section
 

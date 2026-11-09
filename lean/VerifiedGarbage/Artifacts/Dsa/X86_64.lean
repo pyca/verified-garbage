@@ -16,7 +16,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # DSA parameter search on x86-64 -/
+/-! # DSA (FIPS 186-4) on x86-64 -/
 
 @[expose] public section
 

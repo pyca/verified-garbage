@@ -149,7 +149,7 @@ public import VerifiedGarbage.Proof.Weierstrass.X86.Bytes
 public import VerifiedGarbage.Proof.Weierstrass.X86.BytesLen
 public import VerifiedGarbage.Proof.Variants.RsaPrivateCrt.X86
 
-/-! # i686 public PKCS #1 signature operations -/
+/-! # RSASSA-PKCS1-v1_5 (RFC 8017) on x86 -/
 
 @[expose] public section
 

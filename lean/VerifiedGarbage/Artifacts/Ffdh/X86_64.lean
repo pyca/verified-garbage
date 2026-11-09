@@ -19,7 +19,7 @@ public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.PrecomputeVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.AttemptVerified
 public import VerifiedGarbage.Proof.Ffdh.X86_64.Cached.SearchProof.Verified
 
-/-! # Emit FFDH domain operations for every shared arithmetic backend and exponentiation -/
+/-! # Finite-field Diffie–Hellman (SP 800-56A) on x86-64 -/
 
 @[expose] public section
 

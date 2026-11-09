@@ -54,7 +54,7 @@ public import VerifiedGarbage.Proof.EcKey.Validate.X86_64.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.X86_64.BrainpoolP384r1Decompress
 
-/-! # brainpoolP384r1 on x86-64, generic over its proven group law and inversions -/
+/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on x86-64 -/
 
 @[expose] public section
 

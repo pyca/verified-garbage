@@ -10,7 +10,7 @@ public import VerifiedGarbage.TCB.PPC64LE.Print
 import VerifiedGarbage.Proof.Ecdh.PPC64LE.Secp256k1.Lit
 public import VerifiedGarbage.Proof.Secp256k1.PPC64LE.Law
 
-/-! # ECDH over secp256k1 (SP 800-56A §5.7.1.2) on PPC64LE -/
+/-! # ECDH over secp256k1 (SP 800-56A) on PPC64LE -/
 
 @[expose] public section
 

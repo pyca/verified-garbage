@@ -93,7 +93,7 @@ import VerifiedGarbage.Proof.Poly1305.Limbs64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 
-/-! # RSAES-OAEP decryption on x86-64, with both hash functions as tables -/
+/-! # RSAES-OAEP (RFC 8017) on x86-64 -/
 
 @[expose] public section
 

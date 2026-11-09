@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.X86_64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.X86_64
 public import VerifiedGarbage.Proof.Variants.Zeroize.X86_64
 
-/-! # AES-CBC decryption with thirty-two AVX-512 VAES states -/
+/-! # AES-CBC (NIST SP 800-38A §6.2) on x86-64 -/
 
 @[expose] public section
 

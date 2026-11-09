@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 import VerifiedGarbage.Proof.TripleDes.RISCV64.ModesLit
 import VerifiedGarbage.Proof.TripleDes.RISCV64.FbFinalLit
 
-/-! # Triple DES-OFB artifacts on baseline RISC-V -/
+/-! # Triple DES-OFB on RISC-V -/
 
 @[expose] public section
 

@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.X86.Print
 import VerifiedGarbage.Proof.TripleDes.X86.FbLit
 import VerifiedGarbage.Proof.TripleDes.X86.FbFinalLit
 
-/-! # Triple DES-OFB artifacts on baseline x86 (32-bit) -/
+/-! # Triple DES-OFB on x86 -/
 
 @[expose] public section
 

@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.RsaPss.PPC64LE.Verified
 public import VerifiedGarbage.Spec.RsaPss.Table
 public import VerifiedGarbage.TCB.PPC64LE.Print
 
-/-! # RSASSA-PSS on PPC64LE, with the hash functions as tables -/
+/-! # RSASSA-PSS (RFC 8017) on PPC64LE -/
 
 @[expose] public section
 

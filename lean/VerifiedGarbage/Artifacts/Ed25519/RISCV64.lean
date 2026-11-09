@@ -7,7 +7,7 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.ExpandedVerified
 public import VerifiedGarbage.Proof.Ed25519.RISCV64.Whole.VerifyMsgVerified
 
-/-! # Ed25519 (RFC 8032) on RISC-V (RV64) -/
+/-! # Ed25519 (RFC 8032) on RISC-V -/
 
 @[expose] public section
 

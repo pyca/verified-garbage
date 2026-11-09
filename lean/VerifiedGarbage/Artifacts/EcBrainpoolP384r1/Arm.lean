@@ -39,7 +39,7 @@ public import VerifiedGarbage.Proof.BrainpoolP384r1.Arm.Law
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP384r1
 public import VerifiedGarbage.Proof.EcKey.Compressed.Arm.BrainpoolP384r1Decompress
 
-/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on 32-bit ARM -/
+/-! # brainpoolP384r1 public keys (FIPS 186-5 §A.2) on ARMv7 -/
 
 @[expose] public section
 
