@@ -9,7 +9,6 @@ import VerifiedGarbage.Proof.Secp256k1.Comb7
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 import VerifiedGarbage.Proof.Weierstrass.Env
 import VerifiedGarbage.Proof.Weierstrass.BytesLen
-import VerifiedGarbage.Proof.Secp256k1.Comb7Shape
 public import VerifiedGarbage.Proof.Framework.ConstMem
 
 /-!
@@ -30,6 +29,18 @@ open VG.Proof.Mont VG.Proof.Weierstrass VG.Proof.Weierstrass.PPC64LE VG.Proof.We
   VG.Proof.Weierstrass.PPC64LE.TComb VG.Proof.Ecdsa.PPC64LE
 open Spec.Weierstrass
 
+/-- The table has 37 rows, as `tcombWords_length` needs (the kernel walks
+the list once). -/
+theorem secp256k1Comb7_length : secp256k1Comb7.length = 37 := by decide +kernel
+
+/-- Every table has 64 points (checked by `List.all`, which walks the tables
+once, rather than by `getD` at each index). -/
+theorem secp256k1Comb7_rows : ∀ j < 37, (secp256k1Comb7.getD j []).length = 64 := by
+  have h := List.all_eq_true.mp (show secp256k1Comb7.all (·.length == 64) = true by decide +kernel)
+  intro j hj
+  rw [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem (secp256k1Comb7_length ▸ hj), Option.getD_some]
+  exact beq_iff_eq.mp (h _ (List.getElem_mem _))
+
 theorem comb_layout : Layout secp256k1Comb where
   point := ladPtLay secp256k1_ok (by decide) (by decide) (gx := GX) (gy := GY) (by decide) (by decide)
   low := by decide
@@ -46,7 +57,7 @@ theorem comb_config (hC : Law Spec.Secp256k1.curve) :
   modulus := modP secp256k1_ok
   odd := secp256k1_ok.p_odd
   unit := unitMod_pow_two secp256k1_ok.p_odd _
-  tables := Proof.Secp256k1.combOk7 hC
+  tables := Proof.Secp256k1.combOk7 hC secp256k1_ok.onG
   one_lt := Nat.mod_lt _ (by decide)
   one := toM_one (unitMod_pow_two secp256k1_ok.p_odd _)
   startX := rfl
@@ -66,7 +77,7 @@ theorem comb_words_eq : tableWords secp256k1Comb Spec.Secp256k1.curve secp256k1C
 
 theorem comb_words_length : secp256k1CombWords.length = 18944 := by
   unfold secp256k1CombWords
-  rw [tcombWords_length (H := 64) Proof.Secp256k1.secp256k1Comb7_length Proof.Secp256k1.secp256k1Comb7_rows]
+  rw [tcombWords_length (H := 64) secp256k1Comb7_length secp256k1Comb7_rows]
 
 theorem comb_writes_cover : ∀ w ∈ writes secp256k1Comb, ∃ v ∈ ladWp (ladderAt secp256k1 GX GY) ++ genX secp256k1,
     v.1 ≤ w.1 ∧ w.1 + w.2 ≤ v.1 + v.2 := by decide
