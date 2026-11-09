@@ -31,6 +31,11 @@ meta import VerifiedGarbage.Proof.AesCbc.PPC64LE.Group
 meta import VerifiedGarbage.Proof.AesXts.PPC64LE.Steps
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.AesXts.PPC64LE.Rounds
+meta import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.RegUpd
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.Step
+meta import VerifiedGarbage.Proof.Aes.PPC64LE.Crypto.Groups
 
 /-!
 # XTS-AES on PPC64LE: the contracts
@@ -41,6 +46,11 @@ meta import VerifiedGarbage.Proof.AesXts.PPC64LE.Rounds
 tweaks doubled in two words and saved in the slots, then the blocks in
 vector registers through `Proof/Aes/PPC64LE/Crypto/`'s rounds), and the
 contracts of `Spec/Xts/Contract.lean` from `modePPC64LE (xtsMode enc)`.
+
+The groups keep round keys 1–9 in `kreg 1` … `kreg 9` (`KeysIn`), which
+`preload` loads once before the first group (`preload_ok`): AES-CBC's
+`batchedX_wp` and `batchedX_ct` carry them from group to group, and the
+rounds with them are `Rounds.lean`'s `aesRes_ok`.
 -/
 
 @[expose] public section
