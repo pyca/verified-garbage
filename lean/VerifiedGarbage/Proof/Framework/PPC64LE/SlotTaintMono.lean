@@ -161,7 +161,19 @@ theorem step_upd (hr : τ.regs.subset r = true) (hsl : Sub τ.slots sl) (i : Ins
   have and_imp : ∀ {a b : Reg}, (pub τ a && pub τ b) = true → (pub (upd τ r sl) a && pub (upd τ r sl) b) = true :=
     and_upd hr
   cases i with
-  | push | pop | alloc | free | bctrl | adrSym | vop | lxvd2x | lxvd2xTbl | stxvd2x | mtvsrd | mfvsrd => simp only [step, reduceCtorEq] at hs
+  | push | pop | alloc | free | bctrl | lxvd2x | stxvd2x => simp only [step, reduceCtorEq] at hs
+  | vop _ | mtvsrd _ _ =>
+    simp only [step, Option.some.injEq] at hs ⊢; subst hs
+    exact ⟨_, rfl, ⟨hr, hsl, rfl⟩⟩
+  | mfvsrd d _ | adrSym d _ =>
+    simp only [step, Option.some.injEq] at hs ⊢; subst hs
+    exact ⟨_, rfl, wr_upd hr hsl d id⟩
+  | lxvd2xTbl _ _ b _ _ =>
+    simp only [step] at hs ⊢
+    split at hs <;> [rename_i hb; cases hs]
+    cases hs
+    rw [ite_t (pub_upd hr hb)]
+    exact ⟨_, rfl, ⟨hr, hsl, rfl⟩⟩
   | add d n m | sub d n m | mul d n m | mulhu d n m | addc d n m | subc d n m =>
     simp only [step, Option.some.injEq] at hs ⊢; subst hs
     exact ⟨_, rfl, wr_upd hr hsl d and_imp⟩
