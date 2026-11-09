@@ -32,6 +32,7 @@ import VerifiedGarbage.Proof.Pbkdf2.Scratch
 import VerifiedGarbage.Proof.Sha256.StateMem
 import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
+public import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.AddrArith
@@ -64,6 +65,7 @@ public meta import VerifiedGarbage.Proof.Pbkdf2.Scratch
 public meta import VerifiedGarbage.Proof.Sha256.StateMem
 public meta import VerifiedGarbage.Proof.Sha512.X86_64.Wide
 public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha256Scrub
+public meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Hashes.Sha224
 
 /-!
 # SHA-256 on x86-64 with the SHA extensions: the variant's code and proofs
@@ -121,9 +123,40 @@ theorem finalize_noResidue : NoResidue finalize.code (finFn compress).contract (
 theorem digest_noResidue : NoResidue digest.code (digFn compress).contract (digFn compress).retBits :=
   StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
 
+/-! SHA-224's `finalize` and `digest`, with the same compression function. -/
+
+def fin224Ks : List Nat :=
+  keep_for% Spec.Sha256.finalize224Api.sig (Sha224.finFn compress).stack (Sha224.finFn compress).code
+def dig224Ks : List Nat :=
+  keep_for% Spec.Sha256.digest224Api.sig (Sha224.digFn compress).stack (Sha224.digFn compress).code
+
+theorem fin224Res : ResOk (Sha224.finFn compress).code (Sha224.finFn compress).contract
+    (Sha224.finFn compress).stack fin224Ks (chunks (Sha224.finFn compress).stack) :=
+  RScrub.resOk_reg0 (Sha224.finFn compress).reg fin224Ks (by taint_decide)
+theorem dig224Res : ResOk (Sha224.digFn compress).code (Sha224.digFn compress).contract
+    (Sha224.digFn compress).stack dig224Ks (chunks (Sha224.digFn compress).stack) :=
+  RScrub.resOk_reg0 (Sha224.digFn compress).reg dig224Ks (by taint_decide)
+
+def finalize224 : StreamFn := (Sha224.finFn compress).scrub .sse fin224Ks (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (Sha224.finOut compress) fin224Res
+def digest224 : StreamFn := (Sha224.digFn compress).scrub .sse dig224Ks (by lit_decide) (by decide) (by decide)
+  (by lit_decide) (by decide) (Sha224.digOut compress) dig224Res
+
+theorem finalize224_noResidue :
+    NoResidue finalize224.code (Sha224.finFn compress).contract (Sha224.finFn compress).retBits :=
+  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+theorem digest224_noResidue :
+    NoResidue digest224.code (Sha224.digFn compress).contract (Sha224.digFn compress).retBits :=
+  StreamFn.scrub_noResidue _ _ _ _ _ _ _ _ _ _
+
 end Scrub
 
 def variant : Proof.Pbkdf2.Md.X86_64.MdHash :=
   { Proof.Pbkdf2.Md.X86_64.Sha256.variant compress with stream := [update, finalize, digest] }
+
+/-- SHA-224 with this compression function, its `finalize` and `digest`
+without secret residue. -/
+def variant224 : Proof.Pbkdf2.Md.X86_64.MdHash :=
+  { Proof.Pbkdf2.Md.X86_64.Sha224.variant compress with stream := [finalize224, digest224] }
 
 end VG.Proof.Variants.MdHash.X86_64.Sha256ShaNi
