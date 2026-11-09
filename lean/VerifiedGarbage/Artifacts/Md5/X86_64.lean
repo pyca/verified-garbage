@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Md5.X86_64.Shared
+public import VerifiedGarbage.Proof.Md5.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.X86_64.Print
 import VerifiedGarbage.Proof.Md5.X86_64.Lit
@@ -31,17 +32,9 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.Md5.X86_64
 
 def artifacts : List Artifact := [
-  Spec.Md5.initApi.artifact X86_64.target {
-    code := Impl.Md5.X86_64.Stream.init
-    verified := Proof.Md5.X86_64.Shared.init },
-  Spec.Md5.updateApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratch 120 .r8 Impl.Md5.X86_64.Stream.update
-    stack := 8 + 120
-    verified := Proof.Md5.X86_64.Shared.update },
-  Spec.Md5.finalizeApi.artifact X86_64.target {
-    code := Impl.StackScratch.X86_64.withStackScratch 120 .rcx Impl.Md5.X86_64.Stream.finalize
-    stack := 8 + 120
-    verified := Proof.Md5.X86_64.Shared.finalize }] ++
+  Spec.Md5.initApi.artifact X86_64.target Proof.Md5.X86_64.initReg,
+  Spec.Md5.updateApi.artifact X86_64.target Proof.Md5.X86_64.updateReg,
+  Spec.Md5.finalizeApi.artifact X86_64.target Proof.Md5.X86_64.finalizeReg] ++
   (VG.Proof.Variants.MdHash.X86_64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.X86_64.MdHash) =>
     v.stream.map fun f =>
       f.api.artifact X86_64.target { f.reg with suffix := v.suffix})
