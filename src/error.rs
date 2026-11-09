@@ -232,7 +232,6 @@ mod tests {
             crate::aead::chacha20poly1305::Error::TooManyPieces,
             crate::ed448::Error::ContextTooLong,
             crate::cipher::rc2::Error::InvalidEffectiveBits,
-            crate::cipher::rc2::Error::InvalidIvLength,
             crate::cipher::rc2::Error::InvalidKeyLength,
             crate::aead::sm4_gcm::Error::AadAfterText,
             crate::aead::sm4_gcm::Error::InvalidAadLength,

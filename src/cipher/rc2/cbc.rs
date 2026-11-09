@@ -17,6 +17,9 @@ use crate::arch::dispatch::rc2::{
 use crate::error::{IncompleteBlock, OutputTooSmall};
 use crate::zeroize::zeroize;
 
+/// The key length is outside 1..=128 bytes.
+pub use crate::error::InvalidKeyLength;
+
 /// Why an RC2-CBC encryptor or decryptor was not created.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
@@ -24,15 +27,12 @@ pub enum Error {
     InvalidKeyLength,
     /// The effective key size is outside 1..=1024 bits.
     InvalidEffectiveBits,
-    /// The IV is not eight bytes long.
-    InvalidIvLength,
 }
 
 crate::error::impl_error! {
     Error {
         InvalidKeyLength => "invalid RC2 key length",
         InvalidEffectiveBits => "invalid RC2 effective key size",
-        InvalidIvLength => "invalid RC2-CBC IV length",
     }
 }
 
@@ -47,7 +47,7 @@ struct Cbc<const DECRYPT: bool> {
 
 impl<const DECRYPT: bool> Cbc<DECRYPT> {
     /// Initializes CBC with an effective key size of `effective_bits`.
-    fn new(key: &[u8], iv: &[u8], effective_bits: usize) -> Result<Self, Error> {
+    fn new(key: &[u8], iv: &[u8; 8], effective_bits: usize) -> Result<Self, Error> {
         let mut ctx = Self {
             ctx: CacheAligned([0; 144]),
             pending_len: 0,
@@ -70,7 +70,10 @@ impl<const DECRYPT: bool> Cbc<DECRYPT> {
             0 => Ok(ctx),
             1 => Err(Error::InvalidKeyLength),
             2 => Err(Error::InvalidEffectiveBits),
-            _ => Err(Error::InvalidIvLength),
+            // The fixed-size IV rules out the primitive's only other status.
+            // NO-COVERAGE-START
+            _ => unreachable!("RC2-CBC IV is exactly eight bytes"),
+            // NO-COVERAGE-END
         }
     }
 
@@ -142,16 +145,20 @@ pub struct Rc2CbcEncryptor {
 
 impl Rc2CbcEncryptor {
     /// Initializes CBC, using the supplied key's bit length as the effective
-    /// key size. Keys may contain 1..=128 bytes; the IV must contain eight.
-    pub fn new(key: &[u8], iv: &[u8]) -> Result<Self, Error> {
+    /// key size. Returns [`InvalidKeyLength`] unless the key contains
+    /// 1..=128 bytes.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Self::new_with_effective_bits(key, iv, key.len().saturating_mul(8))
+            .map_err(|_| InvalidKeyLength)
     }
 
     /// Initializes CBC with an explicit effective key size of 1..=1024 bits,
     /// independently of the supplied key's length of 1..=128 bytes.
+    /// Returns [`Error::InvalidKeyLength`] for an invalid key length or
+    /// [`Error::InvalidEffectiveBits`] for an invalid effective key size.
     pub fn new_with_effective_bits(
         key: &[u8],
-        iv: &[u8],
+        iv: &[u8; 8],
         effective_bits: usize,
     ) -> Result<Self, Error> {
         Ok(Self {
@@ -197,16 +204,20 @@ pub struct Rc2CbcDecryptor {
 
 impl Rc2CbcDecryptor {
     /// Initializes CBC, using the supplied key's bit length as the effective
-    /// key size. Keys may contain 1..=128 bytes; the IV must contain eight.
-    pub fn new(key: &[u8], iv: &[u8]) -> Result<Self, Error> {
+    /// key size. Returns [`InvalidKeyLength`] unless the key contains
+    /// 1..=128 bytes.
+    pub fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
         Self::new_with_effective_bits(key, iv, key.len().saturating_mul(8))
+            .map_err(|_| InvalidKeyLength)
     }
 
     /// Initializes CBC with an explicit effective key size of 1..=1024 bits,
     /// independently of the supplied key's length of 1..=128 bytes.
+    /// Returns [`Error::InvalidKeyLength`] for an invalid key length or
+    /// [`Error::InvalidEffectiveBits`] for an invalid effective key size.
     pub fn new_with_effective_bits(
         key: &[u8],
-        iv: &[u8],
+        iv: &[u8; 8],
         effective_bits: usize,
     ) -> Result<Self, Error> {
         Ok(Self {

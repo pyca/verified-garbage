@@ -10,15 +10,15 @@
 ))]
 
 use verified_garbage::cipher::rc2::{Error, Rc2CbcDecryptor, Rc2CbcEncryptor};
-use verified_garbage::error::{IncompleteBlock, OutputTooSmall};
+use verified_garbage::error::{IncompleteBlock, InvalidKeyLength, OutputTooSmall};
 
 use verified_garbage_test_vectors::{Record, unhex};
 
 /// What [`Rc2CbcEncryptor`] and [`Rc2CbcDecryptor`] both have, so that
 /// each test runs in both directions.
 trait Cbc: Sized {
-    fn new(key: &[u8], iv: &[u8]) -> Result<Self, Error>;
-    fn with_bits(key: &[u8], iv: &[u8], bits: usize) -> Result<Self, Error>;
+    fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength>;
+    fn with_bits(key: &[u8], iv: &[u8; 8], bits: usize) -> Result<Self, Error>;
     fn output_len(&self, input_len: usize) -> usize;
     fn update(&mut self, input: &[u8], output: &mut [u8]) -> Result<usize, OutputTooSmall>;
     fn finalize(self) -> Result<(), IncompleteBlock>;
@@ -27,10 +27,10 @@ trait Cbc: Sized {
 macro_rules! cbc {
     ($t:ty) => {
         impl Cbc for $t {
-            fn new(key: &[u8], iv: &[u8]) -> Result<Self, Error> {
+            fn new(key: &[u8], iv: &[u8; 8]) -> Result<Self, InvalidKeyLength> {
                 <$t>::new(key, iv)
             }
-            fn with_bits(key: &[u8], iv: &[u8], bits: usize) -> Result<Self, Error> {
+            fn with_bits(key: &[u8], iv: &[u8; 8], bits: usize) -> Result<Self, Error> {
                 <$t>::new_with_effective_bits(key, iv, bits)
             }
             fn output_len(&self, input_len: usize) -> usize {
@@ -75,7 +75,7 @@ fn feed<C: Cbc>(ctx: &mut C, input: &[u8], extra: usize) -> Vec<u8> {
 /// `C` turns `input` into `expected`, split at every point and in chunks
 /// of several sizes (a byte at a time, among others), into outputs exactly
 /// as long as it writes and with room to spare.
-fn check_one<C: Cbc>(key: &[u8], iv: &[u8], bits: usize, input: &[u8], expected: &[u8]) {
+fn check_one<C: Cbc>(key: &[u8], iv: &[u8; 8], bits: usize, input: &[u8], expected: &[u8]) {
     for extra in [0, 1, 7] {
         for split in 0..=input.len() {
             let mut ctx = C::with_bits(key, iv, bits).unwrap();
@@ -99,7 +99,7 @@ fn check_one<C: Cbc>(key: &[u8], iv: &[u8], bits: usize, input: &[u8], expected:
     }
 }
 
-fn check(key: &[u8], iv: &[u8], bits: usize, plaintext: &[u8], ciphertext: &[u8]) {
+fn check(key: &[u8], iv: &[u8; 8], bits: usize, plaintext: &[u8], ciphertext: &[u8]) {
     assert_eq!(plaintext.len(), ciphertext.len());
     check_one::<Rc2CbcEncryptor>(key, iv, bits, plaintext, ciphertext);
     check_one::<Rc2CbcDecryptor>(key, iv, bits, ciphertext, plaintext);
@@ -171,7 +171,7 @@ fn openssl_cbc() {
             .map_or(default_bits, |value| value.parse().unwrap());
         check(
             &unhex(f["Key"]),
-            &unhex(f["IV"]),
+            &unhex(f["IV"]).try_into().unwrap(),
             bits,
             &unhex(f["Plaintext"]),
             &unhex(f["Ciphertext"]),
@@ -186,7 +186,7 @@ fn cryptography_cbc_and_default_bits() {
     let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
     let f = Record::parse(&text);
     let key = unhex(f["Key"]);
-    let iv = unhex(f["IV"]);
+    let iv: [u8; 8] = unhex(f["IV"]).try_into().unwrap();
     let plaintext = unhex(f["Plaintext"]);
     let ciphertext = unhex(f["Ciphertext"]);
     check(&key, &iv, 128, &plaintext, &ciphertext);
@@ -203,7 +203,7 @@ fn cryptography_cbc_and_default_bits() {
 
 /// A failed update changes nothing: after an output one byte too short,
 /// the same update with enough room produces the known answer.
-fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8], input: &[u8], expected: &[u8]) {
+fn output_too_small_of<C: Cbc>(key: &[u8], iv: &[u8; 8], input: &[u8], expected: &[u8]) {
     let mut ctx = C::new(key, iv).unwrap();
     let mut output = vec![UNWRITTEN; input.len()];
     // Five bytes pending complete no block, so they need no room.
@@ -230,7 +230,7 @@ fn output_too_small() {
     let text = crate::vectors::text("vectors/cryptography-rc2/rc2-cbc.txt");
     let f = Record::parse(&text);
     let key = unhex(f["Key"]);
-    let iv = unhex(f["IV"]);
+    let iv: [u8; 8] = unhex(f["IV"]).try_into().unwrap();
     let plaintext = unhex(f["Plaintext"]);
     let ciphertext = unhex(f["Ciphertext"]);
     output_too_small_of::<Rc2CbcEncryptor>(&key, &iv, &plaintext, &ciphertext);
@@ -262,16 +262,17 @@ fn invalid_parameters_of<C: Cbc>() {
     let key = [0; 16];
     let iv = [0; 8];
     for key in [&[][..], &[0; 129][..]] {
-        assert_eq!(C::new(key, &iv).err(), Some(Error::InvalidKeyLength));
+        assert_eq!(C::new(key, &iv).err(), Some(InvalidKeyLength));
+        assert_eq!(
+            C::with_bits(key, &iv, 128).err(),
+            Some(Error::InvalidKeyLength)
+        );
     }
     for bits in [0, 1025, usize::MAX] {
         assert_eq!(
             C::with_bits(&key, &iv, bits).err(),
             Some(Error::InvalidEffectiveBits)
         );
-    }
-    for iv in [&[][..], &[0; 7][..], &[0; 9][..]] {
-        assert_eq!(C::new(&key, iv).err(), Some(Error::InvalidIvLength));
     }
 }
 
